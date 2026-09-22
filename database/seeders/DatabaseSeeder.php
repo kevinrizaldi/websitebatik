@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         // Pemanggilan seeder HARUS di dalam method run() ini
         $this->call([
+            AdminSeeder::class,
             OrderSeeder::class,
             UlasanSeeder::class,
         ]);
