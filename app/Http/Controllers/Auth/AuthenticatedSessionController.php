@@ -29,11 +29,8 @@ class AuthenticatedSessionController extends Controller
 
             $request->session()->regenerate();
 
-<<<<<<< HEAD
-        return redirect()->intended(route('produk.index', absolute: false));
-=======
             if ($request->user()->isAdmin()) {
-                return redirect()->intended(route('dashboard', absolute: false));
+                return redirect()->intended(route('admin.orders.index', absolute: false));
             }
 
             return redirect()->intended('/');
@@ -44,7 +41,6 @@ class AuthenticatedSessionController extends Controller
                 'email' => 'Terjadi kesalahan sistem saat mencoba masuk. Silakan coba beberapa saat lagi.',
             ]);
         }
->>>>>>> c40728ab01d9d5ddfea0ececde665f52e5687dd2
     }
 
     /**

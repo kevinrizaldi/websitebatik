@@ -4,9 +4,21 @@
 
             {{-- Alert Notifikasi Sukses --}}
             @if (session('success'))
-                <div class="mb-4 p-4 bg-emerald-100 border border-emerald-400 text-emerald-800 rounded-xl flex justify-between items-center text-sm">
-                    <span>{{ session('success') }}</span>
-                    <button onclick="this.parentElement.remove()" class="font-bold text-lg">&times;</button>
+                <div class="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl flex justify-between items-center text-sm shadow-sm">
+                    <span class="flex items-center gap-2"><span>✓</span> {{ session('success') }}</span>
+                    <button onclick="this.parentElement.remove()" class="font-bold text-lg leading-none">&times;</button>
+                </div>
+            @endif
+
+            {{-- Alert Error / Validasi --}}
+            @if ($errors->any())
+                <div class="mb-4 p-4 bg-rose-50 border border-rose-300 text-rose-800 rounded-xl text-sm shadow-sm">
+                    <div class="font-bold flex items-center gap-2 mb-1">
+                        <span>⚠️</span> Peringatan Transisi Status:
+                    </div>
+                    @foreach ($errors->all() as $error)
+                        <p class="text-xs text-rose-700 ml-5">• {{ $error }}</p>
+                    @endforeach
                 </div>
             @endif
 
@@ -14,17 +26,35 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
                     <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1">
-                        DASHBOARD / PESANAN / <span class="text-stone-700 font-bold">#{{ $order->code }}</span>
+                        <a href="{{ route('admin.orders.index') }}" class="hover:text-stone-700 hover:underline">KELOLA PESANAN</a> / <span class="text-stone-700 font-bold">#{{ $order->code }}</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <h1 class="text-2xl font-extrabold text-stone-900">#{{ $order->code }}</h1>
-                        <span class="px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-amber-800 border border-amber-200">
+                        @php
+                            $statusClasses = [
+                                'Belum Dibayar'       => 'bg-amber-50 text-amber-700 border-amber-200',
+                                'Menunggu Konfirmasi' => 'bg-amber-50 text-amber-700 border-amber-200',
+                                'Sudah Dibayar'       => 'bg-blue-50 text-blue-700 border-blue-200',
+                                'Diproses'            => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                'Dikirim'             => 'bg-purple-50 text-purple-700 border-purple-200',
+                                'Selesai'             => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                'Batal'               => 'bg-rose-50 text-rose-700 border-rose-200',
+                                'Dibatalkan'          => 'bg-rose-50 text-rose-700 border-rose-200',
+                            ];
+                            $badgeClass = $statusClasses[$order->status] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+                        @endphp
+                        <span class="px-3 py-1 rounded-full text-xs font-bold border {{ $badgeClass }}">
                             {{ $order->status }}
                         </span>
                     </div>
                     <div class="text-gray-400 text-[11px] mt-1">
                         📅 {{ $order->created_at->format('d F Y, H:i') }} WIB
                     </div>
+                </div>
+                <div>
+                    <a href="{{ route('admin.orders.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-gray-50 shadow-sm transition">
+                        ← Kembali ke Daftar Pesanan
+                    </a>
                 </div>
             </div>
 
@@ -40,12 +70,12 @@
                             <div class="flex gap-3">
                                 <div class="w-8 h-8 rounded-full bg-orange-100 text-amber-700 flex items-center justify-center font-bold">💳</div>
                                 <div>
-                                    <h3 class="font-bold text-stone-900 text-sm">Verifikasi Bukti Transfer Bank</h3>
-                                    <p class="text-gray-400 text-[11px]">Mohon periksa mutasi rekening sebelum memproses pesanan ini.</p>
+                                    <h3 class="font-bold text-stone-900 text-sm">Verifikasi Pembayaran & Status</h3>
+                                    <p class="text-gray-400 text-[11px]">Kelola alur pembayaran dan proses pesanan sesuai urutan.</p>
                                 </div>
                             </div>
                             <span class="bg-orange-100/80 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded uppercase">
-                                TRANSFER BANK
+                                {{ $order->payment_method ?? 'TRANSFER BANK' }}
                             </span>
                         </div>
 
@@ -53,15 +83,15 @@
                         <div class="grid grid-cols-3 gap-2 bg-orange-50/40 rounded-xl p-3 text-[11px]">
                             <div>
                                 <div class="text-gray-400">NAMA PEMBELI:</div>
-                                <div class="font-bold text-stone-900">{{ $order->customer_name }}</div>
+                                <div class="font-bold text-stone-900 truncate">{{ $order->customer_name }}</div>
                             </div>
                             <div>
-                                <div class="text-gray-400">TOTAL TRANSFER:</div>
+                                <div class="text-gray-400">TOTAL TAGIHAN:</div>
                                 <div class="font-bold text-amber-700">Rp {{ number_format($order->total_price, 0, ',', '.') }}</div>
                             </div>
                             <div>
                                 <div class="text-gray-400">WAKTU PESAN:</div>
-                                <div class="font-medium text-stone-800">{{ $order->created_at->format('d Feb Y, H:i') }}</div>
+                                <div class="font-medium text-stone-800">{{ $order->created_at->format('d M Y, H:i') }}</div>
                             </div>
                         </div>
 
@@ -69,33 +99,90 @@
                         <div class="border border-gray-100 rounded-xl p-3 flex items-center justify-between bg-gray-50/50">
                             <div class="flex items-center gap-3">
                                 <div class="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden border flex items-center justify-center text-gray-400">
-                                    📄
+                                    @if ($order->payment_proof)
+                                        <img src="{{ asset('storage/' . $order->payment_proof) }}" class="w-full h-full object-cover">
+                                    @else
+                                        📄
+                                    @endif
                                 </div>
                                 <div>
                                     <div class="font-bold text-stone-800">Bukti Pembayaran Transfer</div>
-                                    <div class="text-gray-400 text-[10px]">Status: {{ $order->status === 'Menunggu Konfirmasi' ? 'Perlu Diverifikasi' : 'Sudah Diverifikasi' }}</div>
+                                    <div class="text-gray-400 text-[10px]">
+                                        Status: {{ in_array($order->status, ['Belum Dibayar', 'Menunggu Konfirmasi']) ? 'Perlu Dikonfirmasi' : 'Pembayaran Terkonfirmasi' }}
+                                    </div>
                                 </div>
                             </div>
+                            @if ($order->payment_proof)
+                                <a href="{{ asset('storage/' . $order->payment_proof) }}" target="_blank" class="text-xs text-amber-700 font-bold hover:underline">Lihat Foto</a>
+                            @endif
                         </div>
 
-                        <!-- Tombol Aksi Verifikasi -->
-                        @if ($order->status === 'Menunggu Konfirmasi')
+                        <!-- Tombol Aksi Sesuai State Machine -->
+                        @if (in_array($order->status, ['Belum Dibayar', 'Menunggu Konfirmasi']))
+                            {{-- Step 1: Belum Dibayar -> Sudah Dibayar atau Batal --}}
+                            <div class="flex gap-3 pt-2">
+                                <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="flex-1">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="Sudah Dibayar">
+                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl shadow-sm transition text-center flex justify-center items-center gap-2">
+                                        <span>✓</span> Konfirmasi Pembayaran (Ubah ke Sudah Dibayar)
+                                    </button>
+                                </form>
+                                <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMBATALKAN pesanan ini?')">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-4 py-2.5 rounded-xl transition">
+                                        🚫 Batalkan
+                                    </button>
+                                </form>
+                            </div>
+                        @elseif ($order->status === 'Sudah Dibayar')
+                            {{-- Step 2: Sudah Dibayar -> Diproses atau Batal --}}
                             <div class="flex gap-3 pt-2">
                                 <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="flex-1">
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="status" value="Diproses">
                                     <button type="submit" class="w-full bg-stone-900 hover:bg-black text-white font-bold py-2.5 rounded-xl shadow-sm transition text-center flex justify-center items-center gap-2">
-                                        <span>✓</span> Verifikasi & Setujui Pembayaran
+                                        <span>⚙️</span> Mulai Proses & Kemas Pesanan
                                     </button>
                                 </form>
-                                <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MENOLAK pesanan ini?')">
+                                <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMBATALKAN pesanan ini?')">
                                     @csrf
                                     @method('PATCH')
                                     <button type="submit" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-4 py-2.5 rounded-xl transition">
-                                        🚫 Tolak
+                                        🚫 Batalkan
                                     </button>
                                 </form>
+                            </div>
+                        @elseif ($order->status === 'Diproses')
+                            {{-- Step 3: Sedang Diproses -> Silakan input nomor resi di kartu sebelah kanan untuk mengirim --}}
+                            <div class="flex items-center justify-between p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 text-xs">
+                                <div>
+                                    <span class="font-bold">⚙️ Pesanan Sedang Dikemas.</span>
+                                    <p class="text-[11px] text-indigo-700 mt-0.5">Input nomor resi di kartu Pengiriman (kolom kanan) untuk mengubah status ke <strong>Dikirim</strong>.</p>
+                                </div>
+                                <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMBATALKAN pesanan ini?')">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-lg text-xs transition">
+                                        🚫 Batal
+                                    </button>
+                                </form>
+                            </div>
+                        @elseif ($order->status === 'Dikirim')
+                            <div class="p-3 bg-purple-50 border border-purple-100 rounded-xl text-purple-900 text-xs">
+                                <span class="font-bold">🚚 Pesanan Dalam Pengiriman.</span>
+                                <p class="text-[11px] text-purple-700 mt-0.5">Pesanan sedang dalam perjalanan menuju pembeli. Anda dapat mengonfirmasi selesai di kolom sebelah kanan.</p>
+                            </div>
+                        @elseif ($order->status === 'Selesai')
+                            <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-900 text-xs font-semibold flex items-center gap-2">
+                                <span>🎉</span> Pesanan telah selesai dan barang berhasil diterima pembeli.
+                            </div>
+                        @elseif (in_array($order->status, ['Batal', 'Dibatalkan']))
+                            <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-900 text-xs font-semibold flex items-center gap-2">
+                                <span>❌</span> Pesanan ini telah dibatalkan.
                             </div>
                         @endif
                     </div>
@@ -215,6 +302,17 @@
                                     </button>
                                 </form>
                             </details>
+
+                            @if ($order->status === 'Dikirim')
+                                <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="pt-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="Selesai">
+                                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow-sm transition flex justify-center items-center gap-2 text-xs">
+                                        <span>✓</span> Konfirmasi Pesanan Selesai / Diterima
+                                    </button>
+                                </form>
+                            @endif
                         @elseif ($order->status === 'Diproses')
                             <!-- KONDISI 2: JIKA STATUS DIPROSES (FORM INPUT RESI BARU) -->
                             <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="space-y-3">

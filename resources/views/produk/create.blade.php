@@ -1,255 +1,135 @@
-<!DOCTYPE html>
-<html lang="id">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Tambah Produk</title>
-
-    <link rel="stylesheet" href="{{ asset('css/produk.css') }}">
-</head>
-
-<body>
-
-<div class="produk-shell">
-
-    <aside class="produk-sidebar">
-        <div class="brand-box">
-            <div class="brand-logo">B</div>
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex items-center justify-between">
             <div>
-                <div class="brand-name">Batik Store</div>
-                <small>Admin Panel</small>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                    {{ __('Tambah Produk Baru') }}
+                </h2>
+                <p class="text-xs sm:text-sm text-gray-500 mt-1">
+                    Masukkan informasi produk batik baru ke dalam inventaris
+                </p>
             </div>
+            <a href="{{ route('produk.index') }}" class="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 hover:text-gray-900">
+                &larr; Kembali ke Kelola Produk
+            </a>
         </div>
+    </x-slot>
 
-        <nav class="sidebar-nav">
-            <a href="{{ route('produk.index') }}" class="{{ request()->routeIs('produk.*') ? 'active' : '' }}">
-                <i class="bi bi-box-seam"></i>
-                Produk
-            </a>
-            <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                <i class="bi bi-bag-check"></i>
-                Orders
-            </a>
-            <a href="{{ route('profile.edit') }}">
-                <i class="bi bi-person-circle"></i>
-                Profile
-            </a>
-        </nav>
+    <div class="py-8">
+        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6 sm:p-8">
 
-        <div class="sidebar-footer">
-            <div class="user-box">
-                <div class="user-avatar">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</div>
-                <div>
-                    <strong>{{ Auth::user()->name ?? 'Admin' }}</strong>
-                    <small>{{ Auth::user()->email ?? 'admin@example.com' }}</small>
-                </div>
-            </div>
+                @if($errors->any())
+                    <div class="p-4 mb-6 bg-rose-50 border border-rose-200 text-rose-800 rounded-lg text-sm">
+                        <p class="font-bold mb-1">Harap perbaiki kesalahan berikut:</p>
+                        <ul class="list-disc pl-5 space-y-0.5 text-xs">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="logout-btn">
-                    <i class="bi bi-box-arrow-right"></i>
-                    Logout
-                </button>
-            </form>
-        </div>
-    </aside>
+                <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+                    @csrf
 
-    <main class="produk-main">
-        <div class="form-container">
-
-            <h1>Tambah Produk</h1>
-
-            @if($errors->any())
-
-                <div class="alert-error">
-
-                    <ul>
-
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-
-                    </ul>
-
-                </div>
-
-            @endif
-
-
-            <form
-                action="{{ route('produk.store') }}"
-                method="POST"
-                enctype="multipart/form-data">
-
-                @csrf
-
-                <div class="form-group">
-
-                    <label>Nama Produk</label>
-
-                    <input
-                        type="text"
-                        name="nama"
-                        value="{{ old('nama') }}"
-                        placeholder="Contoh: Kemeja Batik Parang"
-                        required>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label>SKU</label>
-
-                    <input
-                        type="text"
-                        name="sku"
-                        value="{{ old('sku') }}"
-                        placeholder="HSO-BJK-001"
-                        required>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label>Kategori</label>
-
-                    <select name="kategori" required>
-
-                        <option value="">-- Pilih Kategori --</option>
-
-                        <option value="Baju Batik">
-                            Baju Batik
-                        </option>
-
-                        <option value="Olahan Kain">
-                            Olahan Kain
-                        </option>
-
-                        <option value="Kain Batik">
-                            Kain Batik
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div class="form-row">
-
-                    <div class="form-group">
-
-                        <label>Harga</label>
-
-                        <input
-                            type="number"
-                            name="harga"
-                            value="{{ old('harga') }}"
-                            min="0"
-                            required>
-
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                            Nama Produk <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="text" name="nama" value="{{ old('nama') }}" placeholder="Contoh: Kemeja Batik Parang Kusumo Pria" required
+                               class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
 
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                SKU / Kode Produk <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text" name="sku" value="{{ old('sku') }}" placeholder="Contoh: HSO-BJK-001" required
+                                   class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
 
-                    <div class="form-group">
-
-                        <label>Stok</label>
-
-                        <input
-                            type="number"
-                            name="stok"
-                            value="{{ old('stok', 0) }}"
-                            min="0"
-                            required>
-
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Kategori <span class="text-rose-500">*</span>
+                            </label>
+                            <select name="kategori" required
+                                    class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">-- Pilih Kategori --</option>
+                                <option value="Baju Batik" {{ old('kategori') == 'Baju Batik' ? 'selected' : '' }}>Baju Batik</option>
+                                <option value="Olahan Kain" {{ old('kategori') == 'Olahan Kain' ? 'selected' : '' }}>Olahan Kain</option>
+                                <option value="Kain Batik" {{ old('kategori') == 'Kain Batik' ? 'selected' : '' }}>Kain Batik</option>
+                            </select>
+                        </div>
                     </div>
 
-                </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Harga (Rp) <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="number" name="harga" value="{{ old('harga') }}" min="0" required
+                                   placeholder="Contoh: 250000"
+                                   class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
 
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Stok (Pcs) <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="number" name="stok" value="{{ old('stok', 0) }}" min="0" required
+                                   class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
 
-                <div class="form-group">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Status Stok <span class="text-rose-500">*</span>
+                            </label>
+                            <select name="status" required
+                                    class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="Tersedia" {{ old('status') == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
+                                <option value="Stok Menipis" {{ old('status') == 'Stok Menipis' ? 'selected' : '' }}>Stok Menipis</option>
+                                <option value="Habis" {{ old('status') == 'Habis' ? 'selected' : '' }}>Habis</option>
+                            </select>
+                        </div>
+                    </div>
 
-                    <label>Status</label>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                            Material / Bahan
+                        </label>
+                        <input type="text" name="material" value="{{ old('material') }}" placeholder="Contoh: Katun Prima 100%"
+                               class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
 
-                    <select name="status" required>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                            Deskripsi Produk
+                        </label>
+                        <textarea name="deskripsi" rows="3" placeholder="Deskripsi lengkap produk batik..."
+                                  class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">{{ old('deskripsi') }}</textarea>
+                    </div>
 
-                        <option value="Tersedia">
-                            Tersedia
-                        </option>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                            Foto Produk
+                        </label>
+                        <input type="file" name="gambar" accept="image/*"
+                               class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                    </div>
 
-                        <option value="Stok Menipis">
-                            Stok Menipis
-                        </option>
+                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                        <a href="{{ route('produk.index') }}" class="px-4 py-2 border border-gray-300 rounded-md text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
+                            Batal
+                        </a>
+                        <button type="submit" class="px-5 py-2 bg-gray-900 hover:bg-black text-white rounded-md text-xs font-semibold uppercase tracking-wider shadow-sm transition">
+                            Simpan Produk
+                        </button>
+                    </div>
+                </form>
 
-                        <option value="Habis">
-                            Habis
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label>Deskripsi Produk</label>
-
-                    <input
-                        type="text"
-                        name="deskripsi"
-                        value="{{ old('deskripsi') }}"
-                        placeholder="Contoh: Kualitas premium, cocok untuk acara formal">
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label>Material</label>
-
-                    <input
-                        type="text"
-                        name="material"
-                        value="{{ old('material') }}"
-                        placeholder="Contoh: Katun Prima">
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label>Gambar Produk</label>
-
-                    <input
-                        type="file"
-                        name="gambar"
-                        accept="image/*">
-
-                </div>
-
-
-                <div class="form-actions">
-
-                    <a href="{{ route('produk.index') }}">
-                        Batal
-                    </a>
-
-                    <button type="submit">
-                        Simpan Produk
-                    </button>
-
-                </div>
-
-            </form>
-
+            </div>
         </div>
-    </main>
-</div>
-
-</body>
-
-</html>
+    </div>
+</x-app-layout>

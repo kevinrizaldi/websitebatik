@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('total_price', 12, 2);
             $table->string('payment_method')->default('Transfer Bank');
             $table->string('payment_proof')->nullable(); // Foto bukti pembayaran
-            $table->enum('status', ['Menunggu Konfirmasi', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan'])->default('Menunggu Konfirmasi');
+            $table->string('status')->default('Belum Dibayar');
             $table->timestamps();
         });
     }

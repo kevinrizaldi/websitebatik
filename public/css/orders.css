@@ -1,0 +1,430 @@
+/* ===========================
+   ORDERS PAGE - ADDITIONAL CSS
+   Extends produk.css base styles
+   =========================== */
+
+/* --- Total Badge Header --- */
+.order-total-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f5f0ed;
+    border: 1px solid #e8dfd9;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #5c524c;
+}
+
+.order-total-badge i {
+    font-size: 15px;
+    color: #8b7a70;
+}
+
+.order-total-badge strong {
+    color: #1d1714;
+}
+
+/* --- Alerts --- */
+.order-alert {
+    margin: 16px 35px;
+    padding: 12px 16px;
+    border-radius: 9px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.order-alert-success {
+    background: #eaf7ed;
+    color: #23723b;
+    border: 1px solid #b7e7c4;
+}
+
+.order-alert-error {
+    background: #fdf2f2;
+    color: #a72828;
+    border: 1px solid #f3c0c0;
+}
+
+.order-alert-error p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.alert-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.alert-inner i {
+    font-size: 15px;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.alert-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: .5;
+    flex-shrink: 0;
+}
+
+.alert-close:hover {
+    opacity: 1;
+}
+
+/* --- Status Tabs --- */
+.order-tabs-wrapper {
+    padding: 16px 35px 0;
+    border-bottom: 1px solid #ece5df;
+}
+
+.order-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 0;
+    scrollbar-width: none;
+}
+
+.order-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.order-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    text-decoration: none;
+    white-space: nowrap;
+    color: #6b5f58;
+    border: 1px solid transparent;
+    border-bottom: none;
+    transition: .15s ease;
+    background: #f5f0ed;
+    margin-bottom: -1px;
+}
+
+.order-tab:hover {
+    background: #ede7e1;
+    color: #1d1714;
+}
+
+.order-tab-active {
+    background: white;
+    color: #1d1714;
+    font-weight: 600;
+    border-color: #ece5df;
+    border-bottom-color: white;
+}
+
+.order-tab-count {
+    background: #e8e0da;
+    color: #6b5f58;
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.order-tab-count-active {
+    background: #1d1714;
+    color: white;
+}
+
+/* --- Search Input --- */
+.order-search-input {
+    width: 100%;
+    border: 1px solid #ddd6d0;
+    border-radius: 8px;
+    padding: 8px 12px 8px 34px;
+    font-size: 13px;
+    background: #faf8f6;
+    outline: none;
+    transition: .15s;
+}
+
+.order-search-input:focus {
+    border-color: #b09080;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(180,140,120,.1);
+}
+
+/* --- Table Cell Styles --- */
+.order-code-link {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1d1714;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.order-code-link:hover {
+    color: #b36a30;
+}
+
+.order-date {
+    font-size: 12px;
+    color: #9b9090;
+    margin-top: 4px;
+}
+
+.order-date span {
+    color: #bbb;
+}
+
+.order-customer-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1d1714;
+}
+
+.order-customer-meta,
+.order-customer-address {
+    font-size: 12px;
+    color: #9b8f8b;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.order-customer-address {
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.order-item-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.order-item-qty {
+    background: #f0ebe7;
+    color: #5c524c;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    flex-shrink: 0;
+}
+
+.order-item-name {
+    color: #3a3330;
+    font-weight: 500;
+}
+
+.order-total-price {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1d1714;
+}
+
+.order-payment-method {
+    font-size: 11px;
+    background: #f0ebe7;
+    color: #6b5f58;
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin-top: 4px;
+    border: 1px solid #e5ded8;
+}
+
+/* --- Status Badges --- */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.badge-warning  { background: #fef9ec; color: #9a6e00; border-color: #f7e39a; }
+.badge-info     { background: #edf4ff; color: #1a5fb4; border-color: #b4d0f7; }
+.badge-primary  { background: #f0eeff; color: #4a3fcb; border-color: #c5bff7; }
+.badge-sky      { background: #eef9ff; color: #0d6ea8; border-color: #a3dcf7; }
+.badge-success  { background: #eaf7ed; color: #1e7a3e; border-color: #9ee0b3; }
+.badge-danger   { background: #fdf2f2; color: #c0392b; border-color: #f3aba7; }
+.badge-gray     { background: #f5f5f5; color: #5c5c5c; border-color: #ddd; }
+
+.order-resi {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #9b8f8b;
+    margin-top: 5px;
+}
+
+.order-resi code {
+    background: #f0ebe7;
+    border: 1px solid #e0d8d2;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11px;
+    color: #1d1714;
+    font-weight: 600;
+}
+
+/* --- Final status & Detail link --- */
+.order-final-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.order-detail-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: #b36a30;
+    text-decoration: none;
+}
+
+.order-detail-link:hover {
+    text-decoration: underline;
+    color: #8a4f1f;
+}
+
+/* --- Status Select --- */
+.order-status-select {
+    font-size: 12px;
+    padding: 6px 8px;
+    border: 1px solid #ddd6d0;
+    border-radius: 7px;
+    background: #faf8f6;
+    color: #3a3330;
+    cursor: pointer;
+    outline: none;
+}
+
+.order-status-select:focus {
+    border-color: #b09080;
+    box-shadow: 0 0 0 3px rgba(180,140,120,.1);
+}
+
+/* --- Modal --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 10, 8, 0.55);
+    backdrop-filter: blur(3px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-box {
+    background: white;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 440px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eee5df;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    color: #999;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+.modal-info-box {
+    background: #faf7f4;
+    border: 1px solid #ece5df;
+    border-radius: 9px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modal-info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #8b7a70;
+}
+
+.modal-info-row code {
+    font-weight: 700;
+    color: #1d1714;
+}
+
+.modal-info-row strong {
+    color: #1d1714;
+}
+
+.modal-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    color: #4a3f3a;
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid #eee5df;
+}
