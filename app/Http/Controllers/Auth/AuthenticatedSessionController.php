@@ -24,11 +24,27 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        try {
+            $request->authenticate();
 
-        $request->session()->regenerate();
+            $request->session()->regenerate();
 
+<<<<<<< HEAD
         return redirect()->intended(route('produk.index', absolute: false));
+=======
+            if ($request->user()->isAdmin()) {
+                return redirect()->intended(route('dashboard', absolute: false));
+            }
+
+            return redirect()->intended('/');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withInput($request->only('email', 'remember'))->withErrors($e->errors());
+        } catch (\Throwable $e) {
+            return back()->withInput($request->only('email', 'remember'))->withErrors([
+                'email' => 'Terjadi kesalahan sistem saat mencoba masuk. Silakan coba beberapa saat lagi.',
+            ]);
+        }
+>>>>>>> c40728ab01d9d5ddfea0ececde665f52e5687dd2
     }
 
     /**
