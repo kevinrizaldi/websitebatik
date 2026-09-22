@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // Pemanggilan seeder HARUS di dalam method run() ini
         $this->call([
             OrderSeeder::class,
+            UlasanSeeder::class,
         ]);
     }
 }

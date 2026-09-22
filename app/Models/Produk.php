@@ -19,4 +19,12 @@ class Produk extends Model
         'material',
         'gambar',
     ];
+
+    /**
+     * Relasi ke ulasan produk
+     */
+    public function ulasans()
+    {
+        return $this->hasMany(Ulasan::class, 'produk_id');
+    }
 }
