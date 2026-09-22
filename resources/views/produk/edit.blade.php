@@ -12,196 +12,243 @@
 
 <body>
 
-<div class="form-container">
+<div class="produk-shell">
 
-    <h1>Tambah Produk</h1>
-
-    @if($errors->any())
-
-        <div class="alert-error">
-
-            <ul>
-
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-
-            </ul>
-
-        </div>
-
-    @endif
-
-
-    <form
-        action="{{ route('produk.update', $produk) }}"
-        method="POST"
-        enctype="multipart/form-data">
-
-        @csrf
-        @method('PUT')
-
-        <div class="form-group">
-
-            <label>Nama Produk</label>
-
-            <input
-                type="text"
-                name="nama"
-                value="{{ old('nama', $produk->nama) }}"
-                placeholder="Contoh: Kemeja Batik Parang"
-                required>
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label>SKU</label>
-
-            <input
-                type="text"
-                name="sku"
-                value="{{ old('sku', $produk->sku) }}"
-                placeholder="HSO-BJK-001"
-                required>
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label>Kategori</label>
-
-            <select name="kategori" required>
-
-                <option value="">-- Pilih Kategori --</option>
-
-                <option value="Baju Batik">
-                    Baju Batik
-                </option>
-
-                <option value="Olahan Kain">
-                    Olahan Kain
-                </option>
-
-                <option value="Kain Batik">
-                    Kain Batik
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <div class="form-row">
-
-            <div class="form-group">
-
-                <label>Harga</label>
-
-                <input
-                    type="number"
-                    name="harga"
-                    value="{{ old('harga', $produk->harga) }}"
-                    min="0"
-                    required>
-
+    <aside class="produk-sidebar">
+        <div class="brand-box">
+            <div class="brand-logo">B</div>
+            <div>
+                <div class="brand-name">Batik Store</div>
+                <small>Admin Panel</small>
             </div>
-
-
-            <div class="form-group">
-
-                <label>Stok</label>
-
-                <input
-                    type="number"
-                    name="stok"
-                    value="{{ old('stok', $produk->stok) }}"
-                    min="0"
-                    required>
-
-            </div>
-
         </div>
 
-
-        <div class="form-group">
-
-            <label>Status</label>
-
-            <select name="status" required>
-
-                <option value="Tersedia">
-                    Tersedia
-                </option>
-
-                <option value="Stok Menipis">
-                    Stok Menipis
-                </option>
-
-                <option value="Habis">
-                    Habis
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label>Deskripsi Produk</label>
-
-            <input
-                type="text"
-                name="deskripsi"
-                value="{{ old('deskripsi', $produk->deskripsi) }}"
-                placeholder="Contoh: Kualitas premium, cocok untuk acara formal">
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label>Material</label>
-
-            <input
-                type="text"
-                name="material"
-                value="{{ old('material', $produk->material) }}"
-                placeholder="Contoh: Katun Prima">
-
-        </div>
-
-
-        <div class="form-group">
-
-            <label>Gambar Produk</label>
-
-            <input
-                type="file"
-                name="gambar"
-                accept="image/*">
-                value="{{ old('gambar', $produk->gambar) }}"
-
-        </div>
-
-
-        <div class="form-actions">
-
-            <a href="{{ route('produk.index') }}">
-                Batal
+        <nav class="sidebar-nav">
+            <a href="{{ route('produk.index') }}" class="{{ request()->routeIs('produk.*') ? 'active' : '' }}">
+                <i class="bi bi-box-seam"></i>
+                Produk
             </a>
+            <a href="{{ route('admin.orders.index') }}" class="{{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                <i class="bi bi-bag-check"></i>
+                Orders
+            </a>
+            <a href="{{ route('profile.edit') }}">
+                <i class="bi bi-person-circle"></i>
+                Profile
+            </a>
+        </nav>
 
-            <button type="submit">
-                Simpan Produk
-            </button>
+        <div class="sidebar-footer">
+            <div class="user-box">
+                <div class="user-avatar">{{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}</div>
+                <div>
+                    <strong>{{ Auth::user()->name ?? 'Admin' }}</strong>
+                    <small>{{ Auth::user()->email ?? 'admin@example.com' }}</small>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="logout-btn">
+                    <i class="bi bi-box-arrow-right"></i>
+                    Logout
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <main class="produk-main">
+        <div class="form-container">
+
+            <h1>Edit Produk</h1>
+
+            @if($errors->any())
+
+                <div class="alert-error">
+
+                    <ul>
+
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+
+                    </ul>
+
+                </div>
+
+            @endif
+
+
+            <form
+                action="{{ route('produk.update', $produk) }}"
+                method="POST"
+                enctype="multipart/form-data">
+
+                @csrf
+                @method('PUT')
+
+                <div class="form-group">
+
+                    <label>Nama Produk</label>
+
+                    <input
+                        type="text"
+                        name="nama"
+                        value="{{ old('nama', $produk->nama) }}"
+                        placeholder="Contoh: Kemeja Batik Parang"
+                        required>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>SKU</label>
+
+                    <input
+                        type="text"
+                        name="sku"
+                        value="{{ old('sku', $produk->sku) }}"
+                        placeholder="HSO-BJK-001"
+                        required>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Kategori</label>
+
+                    <select name="kategori" required>
+
+                        <option value="">-- Pilih Kategori --</option>
+
+                        <option value="Baju Batik" {{ old('kategori', $produk->kategori) == 'Baju Batik' ? 'selected' : '' }}>
+                            Baju Batik
+                        </option>
+
+                        <option value="Olahan Kain" {{ old('kategori', $produk->kategori) == 'Olahan Kain' ? 'selected' : '' }}>
+                            Olahan Kain
+                        </option>
+
+                        <option value="Kain Batik" {{ old('kategori', $produk->kategori) == 'Kain Batik' ? 'selected' : '' }}>
+                            Kain Batik
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label>Harga</label>
+
+                        <input
+                            type="number"
+                            name="harga"
+                            value="{{ old('harga', $produk->harga) }}"
+                            min="0"
+                            required>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>Stok</label>
+
+                        <input
+                            type="number"
+                            name="stok"
+                            value="{{ old('stok', $produk->stok) }}"
+                            min="0"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Status</label>
+
+                    <select name="status" required>
+
+                        <option value="Tersedia" {{ old('status', $produk->status) == 'Tersedia' ? 'selected' : '' }}>
+                            Tersedia
+                        </option>
+
+                        <option value="Stok Menipis" {{ old('status', $produk->status) == 'Stok Menipis' ? 'selected' : '' }}>
+                            Stok Menipis
+                        </option>
+
+                        <option value="Habis" {{ old('status', $produk->status) == 'Habis' ? 'selected' : '' }}>
+                            Habis
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Deskripsi Produk</label>
+
+                    <input
+                        type="text"
+                        name="deskripsi"
+                        value="{{ old('deskripsi', $produk->deskripsi) }}"
+                        placeholder="Contoh: Kualitas premium, cocok untuk acara formal">
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Material</label>
+
+                    <input
+                        type="text"
+                        name="material"
+                        value="{{ old('material', $produk->material) }}"
+                        placeholder="Contoh: Katun Prima">
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>Gambar Produk</label>
+
+                    <input
+                        type="file"
+                        name="gambar"
+                        accept="image/*">
+
+                </div>
+
+
+                <div class="form-actions">
+
+                    <a href="{{ route('produk.index') }}">
+                        Batal
+                    </a>
+
+                    <button type="submit">
+                        Simpan Produk
+                    </button>
+
+                </div>
+
+            </form>
 
         </div>
-
-    </form>
-
+    </main>
 </div>
 
 </body>
