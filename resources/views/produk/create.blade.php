@@ -69,17 +69,20 @@
                             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                                 Harga (Rp) <span class="text-rose-500">*</span>
                             </label>
-                            <input type="number" name="harga" value="{{ old('harga') }}" min="0" required
-                                   placeholder="Contoh: 250000"
+                            <input type="number" name="harga" value="{{ old('harga') }}" min="0" max="1000000" required
+                                   placeholder="Contoh: 250000 (Maks. 1.000.000)"
                                    class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <p class="text-[11px] text-gray-500 mt-1">Maks. Rp 1.000.000 (tidak boleh minus)</p>
                         </div>
 
                         <div>
                             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                                 Stok (Pcs) <span class="text-rose-500">*</span>
                             </label>
-                            <input type="number" name="stok" value="{{ old('stok', 0) }}" min="0" required
+                            <input type="number" name="stok" value="{{ old('stok', 0) }}" min="0" max="1000" required
+                                   placeholder="Maks. 1000"
                                    class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <p class="text-[11px] text-gray-500 mt-1">Maks. 1.000 unit (tidak boleh minus)</p>
                         </div>
 
                         <div>

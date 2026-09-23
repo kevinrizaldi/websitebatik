@@ -41,30 +41,7 @@
 
                 {{-- Toolbar Atas --}}
                 <div class="p-4 sm:p-5 border-b border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div class="flex items-center gap-4 text-xs">
-                        <label class="inline-flex items-center gap-2 cursor-pointer font-medium text-gray-700">
-                            <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
-                            <span>Pilih Semua</span>
-                        </label>
 
-                        <span class="h-4 w-px bg-gray-200"></span>
-
-                        <div class="flex items-center gap-2">
-                            <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md font-medium transition text-xs">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                                </svg>
-                                <span>Ubah Status</span>
-                            </button>
-
-                            <button type="button" class="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-md font-medium transition text-xs">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                </svg>
-                                <span>Hapus Pilihan</span>
-                            </button>
-                        </div>
-                    </div>
 
                     <div class="text-xs text-gray-500">
                         Menampilkan <span class="font-medium text-gray-900">{{ $produks->firstItem() ?? 0 }}</span> – <span class="font-medium text-gray-900">{{ $produks->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-900">{{ $produks->total() }}</span> produk
@@ -76,7 +53,7 @@
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col" class="w-10 px-4 py-3.5 text-center"></th>
+
                                 <th scope="col" class="px-6 py-3.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Produk &amp; SKU
                                 </th>
@@ -103,10 +80,6 @@
                         <tbody class="bg-white divide-y divide-gray-100 text-gray-700">
                             @forelse($produks as $produk)
                                 <tr class="hover:bg-gray-50/70 transition-colors">
-                                    {{-- CHECKBOX --}}
-                                    <td class="w-10 px-4 py-4 text-center align-top">
-                                        <input type="checkbox" class="product-checkbox rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4" value="{{ $produk->id }}">
-                                    </td>
 
                                     {{-- PRODUK & SKU --}}
                                     <td class="px-6 py-4 align-top">

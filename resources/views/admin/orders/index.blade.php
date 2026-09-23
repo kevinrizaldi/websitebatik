@@ -71,10 +71,19 @@
                         @endphp
 
                         @foreach ($tabs as $key => $tab)
+                            @php $isActive = ($activeStatus === (string)$key); @endphp
                             <a href="{{ route('admin.orders.index', array_merge(request()->only('search'), $key !== '' ? ['status' => $key] : [])) }}"
-                               class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition whitespace-nowrap {{ ($activeStatus === (string)$key) ? 'bg-gray-900 text-white font-semibold shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                               @class([
+                                   'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition whitespace-nowrap',
+                                   'bg-gray-900 text-white font-semibold shadow-sm' => $isActive,
+                                   'bg-gray-100 text-gray-700 hover:bg-gray-200' => !$isActive,
+                               ])>
                                 <span>{{ $tab['label'] }}</span>
-                                <span class="text-xs px-2 py-0.5 rounded-full {{ ($activeStatus === (string)$key) ? 'bg-white/20 text-white' : 'bg-white text-gray-600 border border-gray-200' }}">
+                                <span @class([
+                                    'text-xs px-2 py-0.5 rounded-full',
+                                    'bg-white/20 text-white' => $isActive,
+                                    'bg-white text-gray-600 border border-gray-200' => !$isActive,
+                                ])>
                                     {{ $tab['count'] }}
                                 </span>
                             </a>
