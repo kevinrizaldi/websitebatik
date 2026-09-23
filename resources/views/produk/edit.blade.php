@@ -60,11 +60,12 @@
                                 <option value="Baju Batik" {{ old('kategori', $produk->kategori) == 'Baju Batik' ? 'selected' : '' }}>Baju Batik</option>
                                 <option value="Olahan Kain" {{ old('kategori', $produk->kategori) == 'Olahan Kain' ? 'selected' : '' }}>Olahan Kain</option>
                                 <option value="Kain Batik" {{ old('kategori', $produk->kategori) == 'Kain Batik' ? 'selected' : '' }}>Kain Batik</option>
+                                <option value="Wanita" {{ old('kategori', $produk->kategori) == 'Wanita' ? 'selected' : '' }}>Wanita</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                                 Harga (Rp) <span class="text-rose-500">*</span>
@@ -83,18 +84,6 @@
                                    placeholder="Maks. 1000"
                                    class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                             <p class="text-[11px] text-gray-500 mt-1">Maks. 1.000 unit (tidak boleh minus)</p>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                Status Stok <span class="text-rose-500">*</span>
-                            </label>
-                            <select name="status" required
-                                    class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="Tersedia" {{ old('status', $produk->status) == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
-                                <option value="Stok Menipis" {{ old('status', $produk->status) == 'Stok Menipis' ? 'selected' : '' }}>Stok Menipis</option>
-                                <option value="Habis" {{ old('status', $produk->status) == 'Habis' ? 'selected' : '' }}>Habis</option>
-                            </select>
                         </div>
                     </div>
 

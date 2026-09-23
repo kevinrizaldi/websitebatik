@@ -34,6 +34,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/ulasans', [UlasanController::class, 'index'])->name('ulasans.index');
         Route::patch('/ulasans/{ulasan}/status', [UlasanController::class, 'updateStatus'])->name('ulasans.update-status');
         Route::delete('/ulasans/{ulasan}', [UlasanController::class, 'destroy'])->name('ulasans.destroy');
+        // Kelola Laporan
+        Route::get('/laporan', [App\Http\Controllers\Admin\LaporanController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/print', [App\Http\Controllers\Admin\LaporanController::class, 'print'])->name('laporan.print');
     });
 });
 require __DIR__.'/auth.php';
