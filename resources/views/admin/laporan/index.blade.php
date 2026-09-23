@@ -30,11 +30,13 @@
                         <div class="flex-1 w-full">
                             <label for="start_date" class="block text-xs font-semibold text-gray-700 mb-1">Tanggal Mulai (Opsional)</label>
                             <input type="date" name="start_date" id="start_date" value="{{ request('start_date', $startDate) }}"
+                                   max="{{ date('Y-m-d') }}"
                                    class="w-full text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
                         </div>
                         <div class="flex-1 w-full">
                             <label for="end_date" class="block text-xs font-semibold text-gray-700 mb-1">Tanggal Akhir (Opsional)</label>
                             <input type="date" name="end_date" id="end_date" value="{{ request('end_date', $endDate) }}"
+                                   max="{{ date('Y-m-d') }}"
                                    class="w-full text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
                         </div>
                         <div class="flex-1 w-full">

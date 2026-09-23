@@ -55,7 +55,7 @@ class ProdukController extends Controller
 
         if ($validated['stok'] == 0) {
             $validated['status'] = 'Habis';
-        } elseif ($validated['stok'] <= 5) {
+        } elseif ($validated['stok'] <= 15) {
             $validated['status'] = 'Stok Menipis';
         } else {
             $validated['status'] = 'Tersedia';
@@ -118,7 +118,7 @@ class ProdukController extends Controller
 
         if ($validated['stok'] == 0) {
             $validated['status'] = 'Habis';
-        } elseif ($validated['stok'] <= 5) {
+        } elseif ($validated['stok'] <= 15) {
             $validated['status'] = 'Stok Menipis';
         } else {
             $validated['status'] = 'Tersedia';
