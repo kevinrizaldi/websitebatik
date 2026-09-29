@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\UlasanController;
+use App\Http\Controllers\MidtransWebhookController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\Admin\UlasanController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -36,4 +38,15 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::delete('/ulasans/{ulasan}', [UlasanController::class, 'destroy'])->name('ulasans.destroy');
     });
 });
+
+// ── Payment routes (authenticated users) ──────────────────────────────────────
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::post('/payment/token', [PaymentController::class, 'token'])->name('payment.token');
+    Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
+});
+
+// ── Midtrans webhook (public, no auth, CSRF excluded in bootstrap/app.php) ────
+Route::post('/midtrans/notification', [MidtransWebhookController::class, 'handle'])
+    ->name('midtrans.notification');
+
 require __DIR__.'/auth.php';
