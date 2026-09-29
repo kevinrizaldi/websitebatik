@@ -24,7 +24,7 @@ class MidtransService
      * Convert a decimal money string to integer rupiah.
      *
      * Rules:
-     * - Split on '.'. If the fractional part is not all zeros, throw.
+     * - Split on ".". If the fractional part is not all zeros, throw.
      * - Return the integer part as int.
      *
      * @throws InvalidArgumentException
@@ -46,11 +46,16 @@ class MidtransService
     }
 
     /**
-     * Build the Snap parameter array for an order.
+     * Build the item_details array for an order (single source of truth for gross amount).
      *
-     * @throws InvalidArgumentException if the order has no items.
+     * Includes one row per order item plus an optional SHIPPING row.
+     * The sum of (price * quantity) across all rows equals the gross amount.
+     *
+     * @return array{item_details: list<array{id: string, price: int, quantity: int, name: string}>, gross_amount: int}
+     *
+     * @throws InvalidArgumentException if the order has no items or a money value has non-zero fractional rupiah.
      */
-    public function buildSnapParams(Order $order): array
+    public function buildItemDetails(Order $order): array
     {
         $items = $order->items()->get();
 
@@ -59,8 +64,6 @@ class MidtransService
                 "Order #{$order->id} has no items and cannot be submitted to Midtrans."
             );
         }
-
-        $user = $order->user;
 
         $itemDetails = [];
         $grossAmount = 0;
@@ -90,6 +93,23 @@ class MidtransService
         }
 
         return [
+            'item_details' => $itemDetails,
+            'gross_amount' => $grossAmount,
+        ];
+    }
+
+    /**
+     * Build the Snap parameter array for an order.
+     *
+     * @throws InvalidArgumentException if the order has no items.
+     */
+    public function buildSnapParams(Order $order): array
+    {
+        ['item_details' => $itemDetails, 'gross_amount' => $grossAmount] = $this->buildItemDetails($order);
+
+        $user = $order->user;
+
+        return [
             'transaction_details' => [
                 'order_id' => $order->midtrans_order_id,
                 'gross_amount' => $grossAmount,
@@ -107,7 +127,7 @@ class MidtransService
             ],
             'expiry' => [
                 'unit' => 'hours',
-                'duration' => config('midtrans.expiry_hours'),
+                'duration' => max(1, (int) config('midtrans.expiry_hours')),
             ],
             'callbacks' => [
                 'finish' => route('payment.finish'),
@@ -119,8 +139,8 @@ class MidtransService
      * Retrieve an existing snap token or generate a new one.
      *
      * A payable order must have:
-     *   - status === STATUS_UNPAID ('Belum Dibayar')
-     *   - payment_status === PAYMENT_PENDING ('pending')
+     *   - status === STATUS_UNPAID ("Belum Dibayar")
+     *   - payment_status === PAYMENT_PENDING ("pending")
      *
      * @throws InvalidArgumentException if the order is not payable.
      */
@@ -172,12 +192,15 @@ class MidtransService
      *
      * Formula: SHA-512(order_id + status_code + gross_amount + server_key)
      * compared with hash_equals to prevent timing attacks.
+     *
+     * All four fields must be non-empty strings; an integer 0 or boolean false
+     * must not be treated as present (avoids empty() pitfall).
      */
     public function verifySignature(array $payload): bool
     {
         $required = ['order_id', 'status_code', 'gross_amount', 'signature_key'];
         foreach ($required as $field) {
-            if (empty($payload[$field])) {
+            if (! isset($payload[$field]) || ! is_string($payload[$field]) || $payload[$field] === '') {
                 return false;
             }
         }
@@ -201,7 +224,7 @@ class MidtransService
         return match ($transactionStatus) {
             'capture' => match ($fraudStatus) {
                 'challenge' => Order::PAYMENT_PENDING,
-                default => Order::PAYMENT_PAID,   // 'accept' or null
+                default => Order::PAYMENT_PAID,   // "accept" or null
             },
             'settlement' => Order::PAYMENT_PAID,
             'pending' => Order::PAYMENT_PENDING,

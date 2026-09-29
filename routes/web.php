@@ -41,7 +41,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
 // ── Payment routes (authenticated users) ──────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::post('/payment/token', [PaymentController::class, 'token'])->name('payment.token');
+    Route::post('/payment/token', [PaymentController::class, 'token'])->name('payment.token')->middleware('throttle:10,1');
     Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
 });
 

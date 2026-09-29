@@ -435,4 +435,177 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
         $this->assertSame(Order::STATUS_CANCELLED, $order->status); // 'Batal'
     }
+
+    // ── NEW Hardening Tests ───────────────────────────────────────────────────
+
+    // ── HT-1: buildItemDetails returns correct gross_amount and item rows ─────
+
+    public function test_build_item_details_returns_correct_gross_amount_and_rows(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 75000, 3, 10000); // 75000*3 + 10000 = 235000
+
+        $service = new MidtransService;
+        $result = $service->buildItemDetails($order);
+
+        $this->assertSame(235000, $result['gross_amount']);
+
+        // Two rows: one product row + one SHIPPING row
+        $this->assertCount(2, $result['item_details']);
+
+        $productRow = $result['item_details'][0];
+        $shippingRow = $result['item_details'][1];
+
+        $this->assertSame(75000, $productRow['price']);
+        $this->assertSame(3, $productRow['quantity']);
+
+        $this->assertSame('SHIPPING', $shippingRow['id']);
+        $this->assertSame(10000, $shippingRow['price']);
+        $this->assertSame(1, $shippingRow['quantity']);
+    }
+
+    // ── HT-2: buildItemDetails throws when order has no items ─────────────────
+
+    public function test_build_item_details_throws_for_order_with_no_items(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => Order::STATUS_UNPAID,
+            'payment_status' => Order::PAYMENT_PENDING,
+            'shipping_cost' => 0,
+        ]);
+        // No OrderItem created.
+
+        $service = new MidtransService;
+
+        $this->expectException(\InvalidArgumentException::class);
+        $service->buildItemDetails($order);
+    }
+
+    // ── HT-3: webhook controller uses buildItemDetails (same source of truth) --
+
+    public function test_webhook_gross_amount_uses_build_item_details_as_source_of_truth(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 50000, 4, 5000); // 50000*4 + 5000 = 205000
+        $order->update(['midtrans_order_id' => 'ORD-SOT-001']);
+
+        $correctAmount = '205000.00';
+        $sig = $this->buildSignature('ORD-SOT-001', '200', $correctAmount);
+
+        $this->postJson('/midtrans/notification', [
+            'order_id' => 'ORD-SOT-001',
+            'status_code' => '200',
+            'gross_amount' => $correctAmount,
+            'signature_key' => $sig,
+            'transaction_status' => 'settlement',
+            'payment_type' => 'bank_transfer',
+            'transaction_id' => 'TXN-SOT-001',
+        ])->assertStatus(200);
+
+        $order->refresh();
+        $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
+    }
+
+    // ── HT-4: verifySignature rejects non-string field (integer 0 status_code) -
+
+    public function test_verify_signature_rejects_non_string_field(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->update(['midtrans_order_id' => 'ORD-VSTR-001']);
+
+        // status_code sent as integer 0 instead of string
+        $this->postJson('/midtrans/notification', [
+            'order_id' => 'ORD-VSTR-001',
+            'status_code' => 0,             // non-string
+            'gross_amount' => '200000.00',
+            'signature_key' => 'whatever',
+            'transaction_status' => 'settlement',
+        ])->assertStatus(400); // missing/invalid field
+    }
+
+    // ── HT-5: expiry_hours=0 config still sends duration >= 1 ─────────────────
+
+    public function test_expiry_hours_zero_config_sends_minimum_duration_of_one(): void
+    {
+        config(['midtrans.expiry_hours' => 0]);
+        $this->setTestServerKey();
+
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+
+        $capturedParams = null;
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken'])
+            ->getMock();
+
+        $mock->method('requestSnapToken')
+            ->willReturnCallback(function (array $params) use (&$capturedParams) {
+                $capturedParams = $params;
+
+                return 'tok-expiry';
+            });
+
+        $this->app->instance(MidtransService::class, $mock);
+
+        $this->actingAs($user)->postJson('/payment/token', ['order_id' => $order->id]);
+
+        $this->assertNotNull($capturedParams);
+        $this->assertGreaterThanOrEqual(1, $capturedParams['expiry']['duration']);
+    }
+
+    // ── HT-6: raw_notification stored without signature_key ──────────────────
+
+    public function test_raw_notification_stored_without_signature_key(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $order->update(['midtrans_order_id' => 'ORD-RAWKEY-001']);
+
+        $grossAmount = '200000.00';
+        $sig = $this->buildSignature('ORD-RAWKEY-001', '200', $grossAmount);
+
+        $this->postJson('/midtrans/notification', [
+            'order_id' => 'ORD-RAWKEY-001',
+            'status_code' => '200',
+            'gross_amount' => $grossAmount,
+            'signature_key' => $sig,
+            'transaction_status' => 'settlement',
+            'payment_type' => 'bank_transfer',
+            'transaction_id' => 'TXN-RAWKEY-001',
+        ])->assertStatus(200);
+
+        $stored = $order->fresh()->raw_notification;
+
+        // signature_key must NOT be persisted
+        $this->assertArrayNotHasKey('signature_key', (array) $stored);
+        // Other fields are kept
+        $this->assertArrayHasKey('transaction_status', (array) $stored);
+    }
+
+    // ── HT-7: token endpoint respects throttle (429 on 11th request) ──────────
+
+    public function test_token_endpoint_is_throttled_after_ten_requests(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+
+        $this->mockSnapToken('tok-throttle');
+
+        // Drain the 10-request allowance
+        for ($i = 0; $i < 10; $i++) {
+            $this->actingAs($user)->postJson('/payment/token', ['order_id' => $order->id]);
+        }
+
+        // 11th request must be rate-limited
+        $this->actingAs($user)
+            ->postJson('/payment/token', ['order_id' => $order->id])
+            ->assertStatus(429);
+    }
 }
