@@ -70,7 +70,7 @@ class MidtransWebhookController extends Controller
             }
 
             // Compare gross_amount with the attempt's gross_amount
-            $attemptGross = (int) round((float) $lockedPayment->gross_amount);
+            $attemptGross = $this->midtransService->toRupiah((string) $lockedPayment->gross_amount);
             $payloadAmount = (int) $payload['gross_amount'];
 
             if ($attemptGross !== $payloadAmount) {

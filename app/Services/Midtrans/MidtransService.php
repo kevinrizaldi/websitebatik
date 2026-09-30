@@ -41,7 +41,7 @@ class MidtransService
      *
      * @throws InvalidArgumentException
      */
-    private function decimalToRupiah(string $decimal): int
+    public function toRupiah(string $decimal): int
     {
         if (str_contains($decimal, '.')) {
             [$integer, $fraction] = explode('.', $decimal, 2);
@@ -81,7 +81,7 @@ class MidtransService
         $grossAmount = 0;
 
         foreach ($items as $item) {
-            $priceRupiah = $this->decimalToRupiah((string) $item->price);
+            $priceRupiah = $this->toRupiah((string) $item->price);
             $lineTotal = $priceRupiah * (int) $item->quantity;
             $grossAmount += $lineTotal;
 
@@ -93,7 +93,7 @@ class MidtransService
             ];
         }
 
-        $shippingRupiah = $this->decimalToRupiah((string) $order->shipping_cost);
+        $shippingRupiah = $this->toRupiah((string) $order->shipping_cost);
         if ($shippingRupiah > 0) {
             $grossAmount += $shippingRupiah;
             $itemDetails[] = [
@@ -115,12 +115,12 @@ class MidtransService
      *
      * @throws InvalidArgumentException if the order has no items.
      */
-    public function buildSnapParams(Order $order, ?string $midtransOrderId = null): array
+    public function buildSnapParams(Order $order, string $midtransOrderId): array
     {
         ['item_details' => $itemDetails, 'gross_amount' => $grossAmount] = $this->buildItemDetails($order);
 
         $user = $order->user;
-        $orderId = $midtransOrderId ?? $order->midtrans_order_id ?? '';
+        $orderId = $midtransOrderId;
 
         return [
             'transaction_details' => [
