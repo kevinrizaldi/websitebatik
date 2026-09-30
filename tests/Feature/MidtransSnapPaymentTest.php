@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Midtrans\MidtransService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
@@ -1695,5 +1696,98 @@ class MidtransSnapPaymentTest extends TestCase
         $this->actingAs($other)
             ->postJson('/payment/change-method', ['order_id' => $order->id])
             ->assertStatus(403);
+    }
+
+    // ── 18. GET /orders/{order}/payment/qr (PAY-22) ───────────────────────────
+
+    public function test_qr_route_returns_403_for_non_owner(): void
+    {
+        $owner = User::factory()->create(['role' => 'customer']);
+        $other = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($owner);
+
+        $this->actingAs($other)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertStatus(403);
+    }
+
+    public function test_qr_route_returns_404_when_no_active_attempt(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertStatus(404);
+    }
+
+    public function test_qr_route_returns_404_when_qr_url_not_in_payment_details(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'expires_at' => now()->addHours(1),
+            'payment_details' => ['payment_type' => 'bank_transfer'], // no QR action
+        ]);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertStatus(404);
+    }
+
+    public function test_qr_route_proxies_image_from_midtrans(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'expires_at' => now()->addHours(1),
+            'payment_details' => [
+                'actions' => [
+                    [
+                        'name' => 'generate-qr-code',
+                        'method' => 'GET',
+                        'url' => 'https://api.sandbox.midtrans.com/v2/qris/fake-qr',
+                    ],
+                ],
+            ],
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/*' => Http::response(
+                'fake-png-data',
+                200,
+                ['Content-Type' => 'image/png']
+            ),
+        ]);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/png')
+            ->assertHeader('Content-Disposition');
+    }
+
+    public function test_qr_route_returns_404_when_attempt_expired(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'expires_at' => now()->subMinutes(5), // expired
+            'payment_details' => [
+                'actions' => [
+                    ['name' => 'generate-qr-code', 'method' => 'GET', 'url' => 'https://api.sandbox.midtrans.com/qr'],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertStatus(404);
     }
 }

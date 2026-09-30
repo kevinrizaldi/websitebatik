@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\PaymentChangeMethodController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentQrController;
 use App\Http\Controllers\PaymentSyncController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/payment/sync', [PaymentSyncController::class, 'sync'])->name('payment.sync')->middleware('throttle:20,1');
     Route::post('/payment/change-method', [PaymentChangeMethodController::class, 'change'])->name('payment.change-method')->middleware('throttle:5,1');
     Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
+    Route::get('/orders/{order}/payment/qr', [PaymentQrController::class, 'download'])->name('payment.qr')->middleware('throttle:10,1');
 });
 
 // ── Midtrans webhook (public, no auth, CSRF excluded in bootstrap/app.php) ────
