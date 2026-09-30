@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Payment;
 use App\Services\Midtrans\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,12 @@ class MidtransWebhookController extends Controller
             }
         }
 
+        // Validate optional fraud_status type before any DB work
+        $rawFraudStatus = $payload['fraud_status'] ?? null;
+        if ($rawFraudStatus !== null && ! is_string($rawFraudStatus)) {
+            return response()->json(['message' => 'Invalid field: fraud_status'], 400);
+        }
+
         // -- 2. Verify signature before any DB work ----------------------------
         if (! $this->midtransService->verifySignature($payload)) {
             Log::warning('Midtrans webhook: invalid signature', [
@@ -40,92 +47,171 @@ class MidtransWebhookController extends Controller
             return response()->json(['message' => 'Invalid signature.'], 403);
         }
 
-        // -- 3. DB transaction with row lock -----------------------------------
-        return DB::transaction(function () use ($payload): JsonResponse {
+        // -- 3. Lookup payment attempt by midtrans_order_id (unlocked read) ----
+        $payment = Payment::where('midtrans_order_id', $payload['order_id'])->first();
+        if (! $payment) {
+            return response()->json(['message' => 'Payment attempt not found.'], 404);
+        }
+
+        // -- 4. DB transaction with strict lock order: Order, then Payment -----
+        return DB::transaction(function () use ($payment, $payload, $rawFraudStatus): JsonResponse {
             /** @var Order|null $order */
-            $order = Order::where('midtrans_order_id', $payload['order_id'])
-                ->lockForUpdate()
-                ->first();
+            $order = Order::whereKey($payment->order_id)->lockForUpdate()->first();
+            /** @var Payment|null $lockedPayment */
+            $lockedPayment = Payment::whereKey($payment->id)->lockForUpdate()->first();
 
-            if (! $order) {
-                return response()->json(['message' => 'Pesanan tidak ditemukan.'], 404);
+            if (! $order || ! $lockedPayment) {
+                return response()->json(['message' => 'Record not found.'], 404);
             }
 
-            // -- 4. Idempotency: early return if already final -----------------
-            if ($order->isPaymentFinal()) {
-                return response()->json(['message' => 'OK (already final).'], 200);
+            // Early return if attempt is already paid
+            if ($lockedPayment->status === Payment::STATUS_PAID) {
+                return response()->json(['message' => 'OK (already paid)'], 200);
             }
 
-            // -- 5. Gross amount integrity check (single source of truth) ------
-            try {
-                ['gross_amount' => $serverGrossAmount] = $this->midtransService->buildItemDetails($order);
-            } catch (\InvalidArgumentException $e) {
-                Log::warning('Midtrans webhook: could not compute gross amount', [
-                    'order_id' => $order->id,
-                    'reason' => $e->getMessage(),
-                ]);
-
-                return response()->json(['message' => 'Cannot compute order amount.'], 400);
-            }
-
+            // Compare gross_amount with the attempt's gross_amount
+            $attemptGross = (int) round((float) $lockedPayment->gross_amount);
             $payloadAmount = (int) $payload['gross_amount'];
 
-            if ($serverGrossAmount !== $payloadAmount) {
-                Log::warning('Midtrans webhook: gross_amount mismatch', [
+            if ($attemptGross !== $payloadAmount) {
+                Log::warning('Midtrans webhook: gross_amount mismatch with payment attempt', [
                     'order_id' => $order->id,
-                    'server_amount' => $serverGrossAmount,
-                    'payload_amount' => $payloadAmount,
+                    'payment_id' => $lockedPayment->id,
                 ]);
 
                 return response()->json(['message' => 'Gross amount mismatch.'], 400);
             }
 
-            // -- 6. Validate optional fraud_status type -----------------------
-            $rawFraudStatus = $payload['fraud_status'] ?? null;
-            if ($rawFraudStatus !== null && ! is_string($rawFraudStatus)) {
-                return response()->json(['message' => 'Invalid field: fraud_status'], 400);
-            }
-
-            // -- 7. Map status -------------------------------------------------
-            $newPaymentStatus = $this->midtransService->mapPaymentStatus(
+            // Map incoming transaction status
+            $incoming = $this->midtransService->mapPaymentStatus(
                 $payload['transaction_status'],
                 $rawFraudStatus
             );
 
-            if ($newPaymentStatus === null) {
-                // Unknown / no-op transaction status — acknowledge silently.
-                return response()->json(['message' => 'OK (ignored).'], 200);
+            if ($incoming === null) {
+                return response()->json(['message' => 'OK (ignored)'], 200);
             }
 
-            // -- 8. Update payment fields (exclude signature_key from raw_notification) --
-            $order->payment_status = $newPaymentStatus;
-            if (isset($payload['payment_type']) && is_string($payload['payment_type'])) {
-                $order->payment_type = $payload['payment_type'];
-            }
-            if (isset($payload['transaction_id']) && is_string($payload['transaction_id'])) {
-                $order->transaction_id = $payload['transaction_id'];
-            }
-            $order->raw_notification = array_diff_key($payload, ['signature_key' => true]);
+            // -- 5. Apply state transitions ------------------------------------
+            if ($incoming === Payment::STATUS_PAID) {
+                // Verify server gross amount matches the attempt gross amount
+                try {
+                    ['gross_amount' => $serverGross] = $this->midtransService->buildItemDetails($order);
+                } catch (\InvalidArgumentException $e) {
+                    Log::warning('Midtrans webhook: could not compute order gross amount', [
+                        'order_id' => $order->id,
+                        'payment_id' => $lockedPayment->id,
+                    ]);
 
-            if ($newPaymentStatus === Order::PAYMENT_PAID) {
-                $order->paid_at = now();
-
-                // Advance order status only if not already beyond waiting-for-payment.
-                if (
-                    $order->status === Order::STATUS_UNPAID
-                    || $order->status === Order::STATUS_WAITING
-                ) {
-                    $order->status = Order::STATUS_PAID;
+                    return response()->json(['message' => 'Cannot compute order amount.'], 400);
                 }
-                // If status is Diproses / Dikirim / Selesai etc., do NOT downgrade.
-            } elseif (in_array($newPaymentStatus, [Order::PAYMENT_FAILED, Order::PAYMENT_CANCELLED, Order::PAYMENT_EXPIRED], true)) {
-                // Only cancel the order if it has not progressed past "Belum Dibayar".
-                if ($order->status === Order::STATUS_UNPAID) {
-                    $order->status = Order::STATUS_CANCELLED;
+
+                if ($serverGross !== $attemptGross) {
+                    Log::warning('Midtrans webhook: server gross amount mismatch with attempt gross', [
+                        'order_id' => $order->id,
+                        'payment_id' => $lockedPayment->id,
+                    ]);
+
+                    return response()->json(['message' => 'Server amount mismatch.'], 400);
+                }
+
+                // Update attempt
+                $lockedPayment->status = Payment::STATUS_PAID;
+                $lockedPayment->paid_at = now();
+                if (isset($payload['payment_type']) && is_string($payload['payment_type'])) {
+                    $lockedPayment->payment_type = $payload['payment_type'];
+                }
+                if (isset($payload['transaction_id']) && is_string($payload['transaction_id'])) {
+                    $lockedPayment->transaction_id = $payload['transaction_id'];
+                }
+                $lockedPayment->raw_notification = array_diff_key($payload, ['signature_key' => true]);
+                $extracted = $this->midtransService->extractPaymentDetails($payload);
+                $lockedPayment->payment_details = array_merge($lockedPayment->payment_details ?? [], $extracted);
+                $lockedPayment->save();
+
+                // Order handling
+                if ($order->status === Order::STATUS_CANCELLED) {
+                    Log::warning('Midtrans: payment received for cancelled order', [
+                        'order_id' => $order->id,
+                        'payment_id' => $lockedPayment->id,
+                    ]);
+                } elseif ($order->payment_status === Order::PAYMENT_PAID) {
+                    Log::warning('Midtrans: duplicate payment for paid order', [
+                        'order_id' => $order->id,
+                        'payment_id' => $lockedPayment->id,
+                    ]);
+                } else {
+                    $order->payment_status = Order::PAYMENT_PAID;
+                    $order->paid_at = now();
+
+                    if (
+                        $order->status === Order::STATUS_UNPAID
+                        || $order->status === Order::STATUS_WAITING
+                    ) {
+                        $order->status = Order::STATUS_PAID;
+                    }
+
+                    $order->save();
+
+                    // Cancel other pending attempts of this order locally
+                    $otherPendingPayments = Payment::where('order_id', $order->id)
+                        ->where('id', '!=', $lockedPayment->id)
+                        ->where('status', Payment::STATUS_PENDING)
+                        ->get();
+
+                    foreach ($otherPendingPayments as $other) {
+                        $other->status = Payment::STATUS_CANCELLED;
+                        $other->save();
+                        Log::warning('Midtrans: cancelled pending payment attempt locally', [
+                            'order_id' => $order->id,
+                            'payment_id' => $other->id,
+                        ]);
+                    }
+                }
+            } elseif ($incoming === Payment::STATUS_PENDING) {
+                if (in_array($lockedPayment->status, [Payment::STATUS_PENDING, Payment::STATUS_FAILED], true)) {
+                    $lockedPayment->status = Payment::STATUS_PENDING;
+                    if (isset($payload['payment_type']) && is_string($payload['payment_type'])) {
+                        $lockedPayment->payment_type = $payload['payment_type'];
+                    }
+                    if (isset($payload['transaction_id']) && is_string($payload['transaction_id'])) {
+                        $lockedPayment->transaction_id = $payload['transaction_id'];
+                    }
+                    $lockedPayment->payment_details = $this->midtransService->extractPaymentDetails($payload);
+                    if (isset($payload['expiry_time']) && is_string($payload['expiry_time'])) {
+                        $parsedExpiry = $this->midtransService->parseExpiryTime($payload['expiry_time']);
+                        if ($parsedExpiry !== null) {
+                            $lockedPayment->expires_at = $parsedExpiry;
+                        }
+                    }
+                    $lockedPayment->raw_notification = array_diff_key($payload, ['signature_key' => true]);
+                    $lockedPayment->save();
+                }
+            } elseif ($incoming === Payment::STATUS_FAILED) {
+                if ($lockedPayment->status === Payment::STATUS_PENDING) {
+                    $lockedPayment->status = Payment::STATUS_FAILED;
+                    if (isset($payload['payment_type']) && is_string($payload['payment_type'])) {
+                        $lockedPayment->payment_type = $payload['payment_type'];
+                    }
+                    if (isset($payload['transaction_id']) && is_string($payload['transaction_id'])) {
+                        $lockedPayment->transaction_id = $payload['transaction_id'];
+                    }
+                    $lockedPayment->raw_notification = array_diff_key($payload, ['signature_key' => true]);
+                    $lockedPayment->save();
+                }
+            } elseif (in_array($incoming, [Payment::STATUS_CANCELLED, Payment::STATUS_EXPIRED], true)) {
+                if (in_array($lockedPayment->status, [Payment::STATUS_PENDING, Payment::STATUS_FAILED], true)) {
+                    $lockedPayment->status = $incoming;
+                    if (isset($payload['payment_type']) && is_string($payload['payment_type'])) {
+                        $lockedPayment->payment_type = $payload['payment_type'];
+                    }
+                    if (isset($payload['transaction_id']) && is_string($payload['transaction_id'])) {
+                        $lockedPayment->transaction_id = $payload['transaction_id'];
+                    }
+                    $lockedPayment->raw_notification = array_diff_key($payload, ['signature_key' => true]);
+                    $lockedPayment->save();
                 }
             }
-
-            $order->save();
 
             return response()->json(['message' => 'OK'], 200);
         });

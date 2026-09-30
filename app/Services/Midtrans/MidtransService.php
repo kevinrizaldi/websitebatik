@@ -3,6 +3,10 @@
 namespace App\Services\Midtrans;
 
 use App\Models\Order;
+use App\Models\Payment;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Midtrans\Config as MidtransConfig;
 use Midtrans\Snap;
@@ -18,6 +22,14 @@ class MidtransService
         MidtransConfig::$isProduction = config('midtrans.is_production');
         MidtransConfig::$isSanitized = config('midtrans.is_sanitized');
         MidtransConfig::$is3ds = config('midtrans.is_3ds');
+    }
+
+    /**
+     * Expiry hours for payment attempts (minimum 1 hour).
+     */
+    private function expiryHours(): int
+    {
+        return max(1, (int) config('midtrans.expiry_hours'));
     }
 
     /**
@@ -103,15 +115,16 @@ class MidtransService
      *
      * @throws InvalidArgumentException if the order has no items.
      */
-    public function buildSnapParams(Order $order): array
+    public function buildSnapParams(Order $order, ?string $midtransOrderId = null): array
     {
         ['item_details' => $itemDetails, 'gross_amount' => $grossAmount] = $this->buildItemDetails($order);
 
         $user = $order->user;
+        $orderId = $midtransOrderId ?? $order->midtrans_order_id ?? '';
 
         return [
             'transaction_details' => [
-                'order_id' => $order->midtrans_order_id,
+                'order_id' => $orderId,
                 'gross_amount' => $grossAmount,
             ],
             'item_details' => $itemDetails,
@@ -127,7 +140,7 @@ class MidtransService
             ],
             'expiry' => [
                 'unit' => 'hours',
-                'duration' => max(1, (int) config('midtrans.expiry_hours')),
+                'duration' => $this->expiryHours(),
             ],
             'callbacks' => [
                 'finish' => route('payment.finish'),
@@ -136,42 +149,56 @@ class MidtransService
     }
 
     /**
-     * Retrieve an existing snap token or generate a new one.
-     *
-     * A payable order must have:
-     *   - status === STATUS_UNPAID ("Belum Dibayar")
-     *   - payment_status === PAYMENT_PENDING ("pending")
+     * Retrieve an existing reusable snap token or generate a new payment attempt.
      *
      * @throws InvalidArgumentException if the order is not payable.
      */
     public function getOrCreateSnapToken(Order $order): string
     {
-        if (
-            $order->status !== Order::STATUS_UNPAID
-            || $order->payment_status !== Order::PAYMENT_PENDING
-        ) {
-            throw new InvalidArgumentException(
-                "Order #{$order->id} is not payable (status={$order->status}, payment_status={$order->payment_status})."
-            );
-        }
+        return DB::transaction(function () use ($order): string {
+            /** @var Order $locked */
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-        // Return existing token without a new Midtrans API call.
-        if ($order->snap_token && $order->payment_status === Order::PAYMENT_PENDING) {
-            return $order->snap_token;
-        }
+            if (
+                $locked->status !== Order::STATUS_UNPAID
+                || $locked->payment_status !== Order::PAYMENT_PENDING
+            ) {
+                throw new InvalidArgumentException(
+                    "Order #{$locked->id} is not payable (status={$locked->status}, payment_status={$locked->payment_status})."
+                );
+            }
 
-        // Generate a unique midtrans_order_id (max 50 chars).
-        $midtransOrderId = mb_substr($order->code.'-'.time(), 0, 50);
-        $order->midtrans_order_id = $midtransOrderId;
-        $order->save();
+            /** @var Payment|null $reusable */
+            $reusable = Payment::where('order_id', $locked->id)
+                ->where('status', Payment::STATUS_PENDING)
+                ->whereNotNull('snap_token')
+                ->where('snap_token', '!=', '')
+                ->where('expires_at', '>', now())
+                ->latest('id')
+                ->first();
 
-        $params = $this->buildSnapParams($order);
-        $snapToken = $this->requestSnapToken($params);
+            if ($reusable) {
+                return $reusable->snap_token;
+            }
 
-        $order->snap_token = $snapToken;
-        $order->save();
+            ['gross_amount' => $gross] = $this->buildItemDetails($locked);
 
-        return $snapToken;
+            $midtransOrderId = mb_substr((string) $locked->code, 0, 30).'-'.time().'-'.Str::lower(Str::random(4));
+
+            $params = $this->buildSnapParams($locked, $midtransOrderId);
+            $snapToken = $this->requestSnapToken($params);
+
+            Payment::create([
+                'order_id' => $locked->id,
+                'midtrans_order_id' => $midtransOrderId,
+                'snap_token' => $snapToken,
+                'status' => Payment::STATUS_PENDING,
+                'gross_amount' => $gross,
+                'expires_at' => now()->addHours($this->expiryHours()),
+            ]);
+
+            return $snapToken;
+        });
     }
 
     /**
@@ -185,6 +212,85 @@ class MidtransService
         $this->configure();
 
         return Snap::getSnapToken($params);
+    }
+
+    /**
+     * Extract whitelisted payment details from a notification payload.
+     * Drops all sensitive and non-whitelisted data.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function extractPaymentDetails(array $payload): array
+    {
+        $details = [];
+
+        if (isset($payload['payment_type']) && is_string($payload['payment_type']) && $payload['payment_type'] !== '') {
+            $details['payment_type'] = $payload['payment_type'];
+        }
+
+        if (isset($payload['va_numbers']) && is_array($payload['va_numbers'])) {
+            $vaList = [];
+            foreach ($payload['va_numbers'] as $va) {
+                if (is_array($va) && isset($va['bank'], $va['va_number'])
+                    && is_string($va['bank']) && is_string($va['va_number'])) {
+                    $vaList[] = [
+                        'bank' => $va['bank'],
+                        'va_number' => $va['va_number'],
+                    ];
+                }
+            }
+            if (! empty($vaList)) {
+                $details['va_numbers'] = $vaList;
+            }
+        }
+
+        foreach (['permata_va_number', 'bill_key', 'biller_code', 'payment_code', 'store', 'qr_string', 'expiry_time'] as $key) {
+            if (isset($payload[$key]) && is_string($payload[$key]) && $payload[$key] !== '') {
+                $details[$key] = $payload[$key];
+            }
+        }
+
+        if (isset($payload['actions']) && is_array($payload['actions'])) {
+            $actionList = [];
+            foreach ($payload['actions'] as $action) {
+                if (is_array($action) && isset($action['name'], $action['method'], $action['url'])
+                    && is_string($action['name']) && is_string($action['method']) && is_string($action['url'])) {
+                    $parsed = parse_url($action['url']);
+                    $scheme = strtolower($parsed['scheme'] ?? '');
+                    $host = strtolower($parsed['host'] ?? '');
+
+                    if ($scheme === 'https' && ($host === 'midtrans.com' || str_ends_with($host, '.midtrans.com'))) {
+                        $actionList[] = [
+                            'name' => $action['name'],
+                            'method' => $action['method'],
+                            'url' => $action['url'],
+                        ];
+                    }
+                }
+            }
+            if (! empty($actionList)) {
+                $details['actions'] = $actionList;
+            }
+        }
+
+        return $details;
+    }
+
+    /**
+     * Parse Midtrans expiry_time (Asia/Jakarta / WIB) to application timezone.
+     */
+    public function parseExpiryTime(?string $value): ?Carbon
+    {
+        if (empty($value) || ! is_string($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value, 'Asia/Jakarta')->setTimezone(config('app.timezone'));
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
