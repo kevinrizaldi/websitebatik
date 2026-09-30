@@ -1347,4 +1347,112 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Payment::STATUS_PENDING, $payment->fresh()->status);
         $this->assertSame(Order::PAYMENT_PENDING, $order->fresh()->payment_status);
     }
+
+    // ── 14. payment_deadline is set on first attempt creation ─────────────────
+
+    public function test_payment_deadline_is_set_when_first_attempt_is_created(): void
+    {
+        config(['midtrans.payment_deadline_hours' => 24]);
+        $this->mockSnapToken('tok-deadline');
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+
+        $this->assertNull($order->payment_deadline);
+
+        $svc = app(MidtransService::class);
+        $svc->getOrCreateSnapToken($order);
+
+        $order->refresh();
+        $this->assertNotNull($order->payment_deadline);
+        $this->assertTrue($order->payment_deadline->isFuture());
+        // deadline should be ~24 h from now
+        $this->assertEqualsWithDelta(now()->addHours(24)->timestamp, $order->payment_deadline->timestamp, 5);
+    }
+
+    public function test_expires_at_is_capped_to_payment_deadline(): void
+    {
+        // Deadline = 1 h, attempt expiry = 24 h → expires_at should be ≤ deadline
+        config(['midtrans.payment_deadline_hours' => 1, 'midtrans.expiry_hours' => 24]);
+        $this->mockSnapToken('tok-cap');
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+
+        $svc = app(MidtransService::class);
+        $svc->getOrCreateSnapToken($order);
+
+        $payment = Payment::where('order_id', $order->id)->latest('id')->first();
+        $order->refresh();
+
+        $this->assertNotNull($payment);
+        $this->assertNotNull($order->payment_deadline);
+        // expires_at must not exceed deadline
+        $this->assertFalse($payment->expires_at->gt($order->payment_deadline));
+    }
+
+    public function test_token_endpoint_rejects_order_past_payment_deadline(): void
+    {
+        $this->mockSnapToken('tok-old');
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->subMinutes(5);
+        $order->save();
+
+        $this->actingAs($user)
+            ->postJson('/payment/token', ['order_id' => $order->id])
+            ->assertStatus(422);
+    }
+
+    // ── 15. ExpireOverdueOrders command ───────────────────────────────────────
+
+    public function test_expire_overdue_orders_cancels_overdue_unpaid_order(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->subMinutes(10);
+        $order->save();
+
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+        ]);
+
+        $this->artisan('orders:expire-overdue')->assertExitCode(0);
+
+        $order->refresh();
+        $this->assertSame(Order::STATUS_CANCELLED, $order->status);
+        $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
+
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_EXPIRED,
+        ]);
+    }
+
+    public function test_expire_overdue_orders_does_not_cancel_paid_order(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->subMinutes(10);
+        $order->payment_status = Order::PAYMENT_PAID;
+        $order->status = Order::STATUS_PAID;
+        $order->save();
+
+        $this->artisan('orders:expire-overdue')->assertExitCode(0);
+
+        $order->refresh();
+        $this->assertSame(Order::STATUS_PAID, $order->status);
+    }
+
+    public function test_expire_overdue_orders_does_not_cancel_order_with_future_deadline(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->addHours(2);
+        $order->save();
+
+        $this->artisan('orders:expire-overdue')->assertExitCode(0);
+
+        $order->refresh();
+        $this->assertSame(Order::STATUS_UNPAID, $order->status);
+    }
 }

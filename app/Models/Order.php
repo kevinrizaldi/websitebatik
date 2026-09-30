@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
@@ -17,6 +18,9 @@ class Order extends Model
     const STATUS_PAID = 'Sudah Dibayar';
 
     const STATUS_CANCELLED = 'Batal';
+
+    /** Hours a new payment deadline lasts (can be overridden in config). */
+    const DEFAULT_DEADLINE_HOURS = 24;
 
     // ── Payment status constants ──────────────────────────────────────────────
     const PAYMENT_PENDING = 'pending';
@@ -48,6 +52,7 @@ class Order extends Model
         'payment_type',
         'transaction_id',
         'paid_at',
+        'payment_deadline',
         'raw_notification',
     ];
 
@@ -55,6 +60,7 @@ class Order extends Model
         'total_price' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
         'paid_at' => 'datetime',
+        'payment_deadline' => 'datetime',
         'raw_notification' => 'array',
     ];
 
@@ -81,6 +87,27 @@ class Order extends Model
         return in_array($this->payment_status, self::finalPaymentStatuses(), true);
     }
 
+    /**
+     * Whether the payment_deadline has passed (null deadline = never expires).
+     */
+    public function isPastDeadline(): bool
+    {
+        return $this->payment_deadline !== null && $this->payment_deadline->isPast();
+    }
+
+    /**
+     * The most recent pending payment attempt for this order.
+     */
+    public function activePayment(): ?Payment
+    {
+        return $this->payments()
+            ->where('status', Payment::STATUS_PENDING)
+            ->whereNotNull('snap_token')
+            ->where('snap_token', '!=', '')
+            ->latest('id')
+            ->first();
+    }
+
     // ── Relationships ─────────────────────────────────────────────────────────
 
     public function user()
@@ -93,6 +120,7 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    /** @return HasMany<Payment> */
     public function payments()
     {
         return $this->hasMany(Payment::class);

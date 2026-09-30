@@ -16,6 +16,8 @@ return [
 
     'expiry_hours' => (int) env('MIDTRANS_EXPIRY_HOURS', 24),
 
+    'payment_deadline_hours' => (int) env('MIDTRANS_PAYMENT_DEADLINE_HOURS', 24),
+
     'snap_js_url' => env('MIDTRANS_IS_PRODUCTION', false)
         ? 'https://app.midtrans.com/snap/snap.js'
         : 'https://app.sandbox.midtrans.com/snap/snap.js',

@@ -151,7 +151,7 @@ class MidtransService
     /**
      * Retrieve an existing reusable snap token or generate a new payment attempt.
      *
-     * @throws InvalidArgumentException if the order is not payable.
+     * @throws InvalidArgumentException if the order is not payable or past its deadline.
      */
     public function getOrCreateSnapToken(Order $order): string
     {
@@ -165,6 +165,12 @@ class MidtransService
             ) {
                 throw new InvalidArgumentException(
                     "Order #{$locked->id} is not payable (status={$locked->status}, payment_status={$locked->payment_status})."
+                );
+            }
+
+            if ($locked->isPastDeadline()) {
+                throw new InvalidArgumentException(
+                    "Order #{$locked->id} has passed its payment deadline."
                 );
             }
 
@@ -183,6 +189,19 @@ class MidtransService
 
             ['gross_amount' => $gross] = $this->buildItemDetails($locked);
 
+            // Set the order's payment_deadline on the first attempt (PAY-17).
+            $deadlineHours = max(1, (int) config('midtrans.payment_deadline_hours', 24));
+            if ($locked->payment_deadline === null) {
+                $locked->payment_deadline = now()->addHours($deadlineHours);
+                $locked->save();
+            }
+
+            // Cap expires_at to the order deadline so the attempt expires before the order (PAY-19).
+            $attemptExpiry = now()->addHours($this->expiryHours());
+            if ($locked->payment_deadline->lt($attemptExpiry)) {
+                $attemptExpiry = $locked->payment_deadline->copy();
+            }
+
             $midtransOrderId = mb_substr((string) $locked->code, 0, 30).'-'.time().'-'.Str::lower(Str::random(4));
 
             $params = $this->buildSnapParams($locked, $midtransOrderId);
@@ -194,7 +213,7 @@ class MidtransService
                 'snap_token' => $snapToken,
                 'status' => Payment::STATUS_PENDING,
                 'gross_amount' => $gross,
-                'expires_at' => now()->addHours($this->expiryHours()),
+                'expires_at' => $attemptExpiry,
             ]);
 
             return $snapToken;
