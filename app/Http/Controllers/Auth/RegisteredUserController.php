@@ -35,7 +35,7 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ], [
-            'name.regex' => 'Nama tidak boleh menggunakan simbol.'
+            'name.regex' => 'Nama tidak boleh menggunakan simbol.',
         ]);
 
         $user = User::create([

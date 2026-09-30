@@ -21,9 +21,9 @@ class AdminSeeder extends Seeder
         $admin = User::updateOrCreate(
             ['email' => $email],
             [
-                'name'              => 'Administrator',
-                'password'          => Hash::make('admin12345'),
-                'role'              => 'admin',
+                'name' => 'Administrator',
+                'password' => Hash::make('admin12345'),
+                'role' => 'admin',
                 'email_verified_at' => now(),
             ]
         );

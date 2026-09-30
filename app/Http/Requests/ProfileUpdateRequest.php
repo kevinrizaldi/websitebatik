@@ -32,7 +32,7 @@ class ProfileUpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.regex' => 'Nama tidak boleh menggunakan simbol.'
+            'name.regex' => 'Nama tidak boleh menggunakan simbol.',
         ];
     }
 }

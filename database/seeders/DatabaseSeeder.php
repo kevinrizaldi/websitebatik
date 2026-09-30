@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -16,6 +14,7 @@ class DatabaseSeeder extends Seeder
         // Pemanggilan seeder HARUS di dalam method run() ini
         $this->call([
             AdminSeeder::class,
+            ProdukSeeder::class,
             OrderSeeder::class,
             UlasanSeeder::class,
         ]);
