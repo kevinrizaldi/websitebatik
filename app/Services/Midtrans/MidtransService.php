@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Midtrans\Config as MidtransConfig;
-use Midtrans\Exceptions\MidtransApiException;
 use Midtrans\Snap;
 use Midtrans\Transaction;
 
@@ -236,6 +235,19 @@ class MidtransService
     }
 
     /**
+     * The ONLY method that calls the real Midtrans Cancel API.
+     * Kept as a separate public method so tests can mock it.
+     *
+     * @throws \Exception on Midtrans API failure.
+     */
+    public function cancelTransaction(string $midtransOrderId): void
+    {
+        $this->configure();
+
+        Transaction::cancel($midtransOrderId);
+    }
+
+    /**
      * Extract whitelisted payment details from a notification payload.
      * Drops all sensitive and non-whitelisted data.
      *
@@ -379,7 +391,7 @@ class MidtransService
             $response = Transaction::status($midtransOrderId);
 
             return (array) $response;
-        } catch (MidtransApiException $e) {
+        } catch (\Exception $e) {
             if ($e->getCode() === 404) {
                 return null; // transaction not yet created at Midtrans
             }

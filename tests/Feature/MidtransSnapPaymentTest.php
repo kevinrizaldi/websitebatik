@@ -1558,4 +1558,142 @@ class MidtransSnapPaymentTest extends TestCase
 
         $this->assertNull($payment->fresh()->payment_type);
     }
+
+    // ── 17. POST /payment/change-method (PAY-15) ──────────────────────────────
+
+    /**
+     * Build a partial MidtransService mock for change-method scenarios.
+     * Stubs requestSnapToken, cancelTransaction, and getTransactionStatus.
+     */
+    private function mockChangeMethod(
+        string $newToken = 'new-snap-token',
+        ?array $getStatusResponse = null,
+        bool $cancelThrows = false,
+    ): void {
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        $mock->method('requestSnapToken')->willReturn($newToken);
+        $mock->method('getTransactionStatus')->willReturn($getStatusResponse);
+
+        if ($cancelThrows) {
+            // SDK throws plain \Exception with HTTP status as the code.
+            $mock->method('cancelTransaction')->willThrowException(
+                new \Exception('Midtrans cancel failed', 500)
+            );
+        }
+        // When not throwing, cancelTransaction() is void — no return stub needed.
+
+        $this->app->instance(MidtransService::class, $mock);
+    }
+
+    public function test_change_method_reuses_token_when_buyer_has_not_chosen_method(): void
+    {
+        config(['midtrans.client_key' => 'test-client-key']);
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'snap_token' => 'existing-snap-token',
+            'payment_type' => null, // no method chosen yet
+        ]);
+
+        // getTransactionStatus returns null → buyer never chose method
+        $this->mockChangeMethod('new-snap-token', null);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertOk()
+            ->assertJsonPath('snap_token', 'existing-snap-token');
+
+        // Existing attempt must not be replaced
+        $this->assertSame(Payment::STATUS_PENDING, $existing->fresh()->status);
+    }
+
+    public function test_change_method_cancels_old_attempt_and_creates_new_one(): void
+    {
+        config(['midtrans.client_key' => 'test-client-key', 'midtrans.payment_deadline_hours' => 24]);
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'snap_token' => 'old-snap-token',
+            'payment_type' => 'bank_transfer', // buyer already chose method
+            'gross_amount' => 200000,
+        ]);
+
+        // getTransactionStatus returns non-null → buyer already interacted
+        $this->mockChangeMethod('brand-new-token', ['transaction_status' => 'pending']);
+
+        $response = $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertOk();
+
+        $this->assertSame('brand-new-token', $response->json('snap_token'));
+
+        // Old attempt must be replaced
+        $this->assertSame(Payment::STATUS_REPLACED, $existing->fresh()->status);
+
+        // A new pending attempt must exist
+        $this->assertDatabaseHas('payments', [
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'snap_token' => 'brand-new-token',
+        ]);
+    }
+
+    public function test_change_method_cancel_api_failure_returns_502_and_keeps_old_attempt(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'snap_token' => 'keep-this-token',
+            'payment_type' => 'bank_transfer',
+            'gross_amount' => 200000,
+        ]);
+
+        $this->mockChangeMethod('ignored', ['transaction_status' => 'pending'], cancelThrows: true);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertStatus(502);
+
+        // Old attempt must remain pending
+        $this->assertSame(Payment::STATUS_PENDING, $existing->fresh()->status);
+    }
+
+    public function test_change_method_returns_422_when_order_is_already_paid(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_status = Order::PAYMENT_PAID;
+        $order->status = Order::STATUS_PAID;
+        $order->save();
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertStatus(422);
+    }
+
+    public function test_change_method_returns_403_for_non_owner(): void
+    {
+        $owner = User::factory()->create(['role' => 'customer']);
+        $other = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($owner);
+
+        $this->actingAs($other)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertStatus(403);
+    }
 }

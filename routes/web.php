@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\MidtransWebhookController;
+use App\Http\Controllers\PaymentChangeMethodController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentSyncController;
 use App\Http\Controllers\ProdukController;
@@ -44,6 +45,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/payment/token', [PaymentController::class, 'token'])->name('payment.token')->middleware('throttle:10,1');
     Route::post('/payment/sync', [PaymentSyncController::class, 'sync'])->name('payment.sync')->middleware('throttle:20,1');
+    Route::post('/payment/change-method', [PaymentChangeMethodController::class, 'change'])->name('payment.change-method')->middleware('throttle:5,1');
     Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
 });
 
