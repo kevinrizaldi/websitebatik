@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\Auth;
  * @method static \Illuminate\Database\Eloquent\Builder|CartItem forCurrentVisitor()
  * @method static \Illuminate\Database\Eloquent\Builder|CartItem query()
  * @method static \Illuminate\Database\Eloquent\Builder|CartItem where($column, $operator = null, $value = null, $boolean = 'and')
+ * @method static \Illuminate\Database\Eloquent\Builder|CartItem with($relations, $callback = null)
+ * @method static CartItem create(array $attributes = [])
  *
  * @mixin Builder
  */

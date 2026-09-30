@@ -68,6 +68,7 @@ class CartController extends Controller
             })
             ->first();
 
+        $item = null;
         if ($existing) {
             $newQty = $existing->qty + $qty;
             if ($produk->stok > 0 && $newQty > $produk->stok) {
@@ -177,7 +178,7 @@ class CartController extends Controller
     /**
      * Display the checkout page with selected items from database cart.
      */
-    public function checkoutPage(Request $request): View|RedirectResponse
+    public function checkoutPage(): View|RedirectResponse
     {
         $this->consolidateGuestCart();
 
