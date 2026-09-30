@@ -176,6 +176,7 @@
                         </svg>
                         <span class="absolute top-1 right-1 w-4 h-4 bg-[#B58742] text-white text-[10px] font-bold rounded-full flex items-center justify-center"
                               x-text="cartCount">
+                            {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }}
                         </span>
                     </a>
 

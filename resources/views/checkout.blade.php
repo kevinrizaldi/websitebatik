@@ -399,35 +399,38 @@
                 </div>
 
                 <!-- Desktop Navigation Links -->
-                <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-stone-700">
-                    <a href="{{ url('/') }}" class="hover:text-stone-950 transition">Home</a>
-                    <a href="{{ route('koleksi.index') }}" class="hover:text-stone-950 transition">Produk</a>
-                    <a href="{{ route('koleksi.index') }}" class="hover:text-stone-950 transition">Kategori</a>
-                    <a href="{{ url('/') }}#tentang-kami" class="hover:text-stone-950 transition">Tentang Kami</a>
-                    <a href="{{ url('/') }}#kontak" class="hover:text-stone-950 transition">Kontak</a>
+                <nav class="hidden md:flex items-center gap-8">
+                    <a href="{{ url('/') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Home
+                    </a>
+                    <a href="{{ route('koleksi.index') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Produk
+                    </a>
+                    <a href="{{ route('pesanan.index') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Pesanan
+                    </a>
                 </nav>
 
                 <!-- Action Utilities: Search, Cart Icon, User Profile -->
-                <div class="flex items-center gap-3 sm:gap-4">
+                <div class="flex items-center gap-4">
                     <!-- Search Button -->
                     <a href="{{ route('koleksi.index') }}" 
                        class="p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"
                        title="Cari Koleksi Batik">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                         </svg>
                     </a>
 
                     <!-- Cart Icon with Badge -->
                     <a href="{{ route('keranjang.index') }}" 
-                       class="p-2 text-stone-700 hover:text-stone-900 rounded-full hover:bg-stone-200/50 relative transition"
+                       class="relative p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"
                        title="Lihat Keranjang">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                         </svg>
-                        <span class="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#5C3D28] text-white text-[10px] font-bold flex items-center justify-center leading-none"
-                              x-text="totalItemQty">
-                            {{ isset($cartItems) ? $cartItems->sum('qty') : 3 }}
+                        <span class="absolute top-1 right-1 w-4 h-4 bg-[#B58742] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                            {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }}
                         </span>
                     </a>
 
@@ -436,11 +439,14 @@
                         <div class="relative" x-data="{ userMenu: false }">
                             @auth
                                 <button @click="userMenu = !userMenu" 
-                                        class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-stone-300 hover:border-stone-500 text-xs font-semibold text-stone-800 bg-white/60 hover:bg-white transition">
-                                    <div class="w-6 h-6 rounded-full bg-[#201A17] text-white flex items-center justify-center text-[11px] font-bold">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                                        @click.away="userMenu = false"
+                                        class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white/70 transition">
+                                    <div class="w-7 h-7 rounded-full bg-[#201A17] text-[#E5C38E] flex items-center justify-center font-bold text-xs uppercase">
+                                        {{ substr(Auth::user()->name, 0, 1) }}
                                     </div>
-                                    <span class="max-w-[80px] truncate hidden sm:inline">{{ Auth::user()->name }}</span>
+                                    <span class="text-xs font-semibold text-stone-800 max-w-[90px] truncate hidden sm:inline">
+                                        {{ Auth::user()->name }}
+                                    </span>
                                     <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                 </button>
 
