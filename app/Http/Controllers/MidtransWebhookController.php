@@ -60,12 +60,12 @@ class MidtransWebhookController extends Controller
             try {
                 ['gross_amount' => $serverGrossAmount] = $this->midtransService->buildItemDetails($order);
             } catch (\InvalidArgumentException $e) {
-                Log::error('Midtrans webhook: could not compute gross amount', [
+                Log::warning('Midtrans webhook: could not compute gross amount', [
                     'order_id' => $order->id,
-                    'error' => $e->getMessage(),
+                    'reason' => $e->getMessage(),
                 ]);
 
-                return response()->json(['message' => 'Internal error computing order amount.'], 500);
+                return response()->json(['message' => 'Cannot compute order amount.'], 400);
             }
 
             $payloadAmount = (int) $payload['gross_amount'];
@@ -80,10 +80,16 @@ class MidtransWebhookController extends Controller
                 return response()->json(['message' => 'Gross amount mismatch.'], 400);
             }
 
-            // -- 6. Map status -------------------------------------------------
+            // -- 6. Validate optional fraud_status type -----------------------
+            $rawFraudStatus = $payload['fraud_status'] ?? null;
+            if ($rawFraudStatus !== null && ! is_string($rawFraudStatus)) {
+                return response()->json(['message' => 'Invalid field: fraud_status'], 400);
+            }
+
+            // -- 7. Map status -------------------------------------------------
             $newPaymentStatus = $this->midtransService->mapPaymentStatus(
                 $payload['transaction_status'],
-                $payload['fraud_status'] ?? null
+                $rawFraudStatus
             );
 
             if ($newPaymentStatus === null) {
@@ -91,10 +97,14 @@ class MidtransWebhookController extends Controller
                 return response()->json(['message' => 'OK (ignored).'], 200);
             }
 
-            // -- 7. Update payment fields (FIX 4: exclude signature_key) -------
+            // -- 8. Update payment fields (exclude signature_key from raw_notification) --
             $order->payment_status = $newPaymentStatus;
-            $order->payment_type = $payload['payment_type'] ?? $order->payment_type;
-            $order->transaction_id = $payload['transaction_id'] ?? $order->transaction_id;
+            if (isset($payload['payment_type']) && is_string($payload['payment_type'])) {
+                $order->payment_type = $payload['payment_type'];
+            }
+            if (isset($payload['transaction_id']) && is_string($payload['transaction_id'])) {
+                $order->transaction_id = $payload['transaction_id'];
+            }
             $order->raw_notification = array_diff_key($payload, ['signature_key' => true]);
 
             if ($newPaymentStatus === Order::PAYMENT_PAID) {

@@ -608,4 +608,103 @@ class MidtransSnapPaymentTest extends TestCase
             ->postJson('/payment/token', ['order_id' => $order->id])
             ->assertStatus(429);
     }
+
+    // ── HT-8: 422 body does not leak internal exception message ──────────────
+    // Equivalent check: test_non_payable_status_returns_422 (line ~164) only asserts
+    // HTTP 422 but does NOT assert the body content — so this is NOT a duplicate.
+
+    public function test_non_payable_order_422_body_does_not_contain_internals(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'Menunggu Konfirmasi', // not STATUS_UNPAID → not payable
+            'payment_status' => Order::PAYMENT_PENDING,
+            'shipping_cost' => 0,
+        ]);
+        OrderItem::factory()->create(['order_id' => $order->id, 'produk_id' => null]);
+
+        $response = $this->actingAs($user)
+            ->postJson('/payment/token', ['order_id' => $order->id]);
+
+        $response->assertStatus(422);
+
+        $body = $response->getContent();
+        // The response must NOT expose internal exception text.
+        $this->assertStringNotContainsString('payment_status=', $body);
+        $this->assertStringNotContainsString('Money value', $body);
+        $this->assertStringNotContainsString('Order #', $body);
+    }
+
+    // ── HT-9: Webhook with fractional shipping_cost returns 400, no state change
+
+    public function test_webhook_fractional_shipping_cost_returns_400_and_no_state_change(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+
+        // Create order with a non-integer shipping_cost (15000.50 has non-zero fraction)
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => Order::STATUS_UNPAID,
+            'payment_status' => Order::PAYMENT_PENDING,
+            'shipping_cost' => 15000.50,
+            'total_price' => 215000,
+        ]);
+        OrderItem::factory()->create([
+            'order_id' => $order->id,
+            'produk_id' => null,
+            'produk_name' => 'Batik Test',
+            'price' => 100000,
+            'quantity' => 2,
+            'subtotal' => 200000,
+        ]);
+        $order->update(['midtrans_order_id' => 'ORD-FRAC-001']);
+
+        // Build a "correct" signature for the amount the client claims.
+        // The server will reject before amount comparison because buildItemDetails throws.
+        $grossAmount = '215001.00'; // any amount — server rejects at buildItemDetails
+        $sig = $this->buildSignature('ORD-FRAC-001', '200', $grossAmount);
+
+        $response = $this->postJson('/midtrans/notification', [
+            'order_id' => 'ORD-FRAC-001',
+            'status_code' => '200',
+            'gross_amount' => $grossAmount,
+            'signature_key' => $sig,
+            'transaction_status' => 'settlement',
+        ]);
+
+        $response->assertStatus(400);
+
+        // payment_status must remain unchanged (no state change)
+        $this->assertSame(Order::PAYMENT_PENDING, $order->fresh()->payment_status);
+    }
+
+    // ── HT-10: Webhook with fraud_status as array returns 400, not 500 ────────
+
+    public function test_webhook_fraud_status_as_array_returns_400_not_500(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0); // gross = 200000
+        $order->update(['midtrans_order_id' => 'ORD-FRAUDARR-001']);
+
+        $grossAmount = '200000.00';
+        $sig = $this->buildSignature('ORD-FRAUDARR-001', '200', $grossAmount);
+
+        // fraud_status sent as an array instead of a string
+        $response = $this->postJson('/midtrans/notification', [
+            'order_id' => 'ORD-FRAUDARR-001',
+            'status_code' => '200',
+            'gross_amount' => $grossAmount,
+            'signature_key' => $sig,
+            'transaction_status' => 'capture',
+            'fraud_status' => ['accept', 'challenge'], // invalid: array not string
+        ]);
+
+        $response->assertStatus(400);
+
+        // No state change
+        $this->assertSame(Order::PAYMENT_PENDING, $order->fresh()->payment_status);
+    }
 }

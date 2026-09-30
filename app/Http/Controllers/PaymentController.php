@@ -35,8 +35,13 @@ class PaymentController extends Controller
         try {
             $snapToken = $this->midtransService->getOrCreateSnapToken($order);
         } catch (InvalidArgumentException $e) {
+            Log::warning('Midtrans token: order not payable', [
+                'order_id' => $order->id,
+                'reason' => $e->getMessage(),
+            ]);
+
             return response()->json([
-                'message' => 'Pesanan tidak dapat diproses: '.$e->getMessage(),
+                'message' => 'Pesanan ini tidak dapat dibayar saat ini.',
             ], 422);
         } catch (\Exception $e) {
             Log::error('Midtrans Snap token request failed', [
