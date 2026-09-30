@@ -1455,4 +1455,107 @@ class MidtransSnapPaymentTest extends TestCase
         $order->refresh();
         $this->assertSame(Order::STATUS_UNPAID, $order->status);
     }
+
+    // ── 16. POST /payment/sync (PAY-09, PAY-14) ───────────────────────────────
+
+    /** Build a MidtransService mock that stubs getTransactionStatus. */
+    private function mockGetTransactionStatus(?array $response): void
+    {
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['getTransactionStatus'])
+            ->getMock();
+
+        $mock->method('getTransactionStatus')->willReturn($response);
+
+        $this->app->instance(MidtransService::class, $mock);
+    }
+
+    public function test_sync_updates_payment_details_from_midtrans_status(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $payment = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-SYNC-TEST',
+        ]);
+
+        $this->mockGetTransactionStatus([
+            'transaction_status' => 'pending',
+            'payment_type' => 'bank_transfer',
+            'transaction_id' => 'TRX-SYNC-001',
+            'va_numbers' => [['bank' => 'bca', 'va_number' => '1234567890']],
+            'expiry_time' => '2026-12-31 23:59:59',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertOk()
+            ->assertJsonPath('message', 'Sinkronisasi berhasil.')
+            ->assertJsonPath('payment_type', 'bank_transfer');
+
+        $payment->refresh();
+        $this->assertSame('bank_transfer', $payment->payment_type);
+        $this->assertSame('TRX-SYNC-001', $payment->transaction_id);
+        $this->assertNotEmpty($payment->payment_details);
+    }
+
+    public function test_sync_returns_404_when_no_active_attempt(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertStatus(404);
+    }
+
+    public function test_sync_returns_403_for_non_owner(): void
+    {
+        $owner = User::factory()->create(['role' => 'customer']);
+        $other = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($owner);
+        Payment::factory()->create(['order_id' => $order->id, 'status' => Payment::STATUS_PENDING]);
+
+        $this->actingAs($other)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertStatus(403);
+    }
+
+    public function test_sync_returns_200_when_no_midtrans_transaction_yet(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-NO-TXN',
+        ]);
+
+        $this->mockGetTransactionStatus(null);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertOk()
+            ->assertJsonPath('message', 'Transaksi belum dibuat di Midtrans.');
+    }
+
+    public function test_sync_payment_attempt_ignores_non_pending_attempt(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $payment = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PAID,
+            'payment_type' => null,
+        ]);
+
+        $svc = app(MidtransService::class);
+        $svc->syncPaymentAttempt($payment, [
+            'payment_type' => 'bank_transfer',
+            'transaction_id' => 'should-not-apply',
+        ]);
+
+        $this->assertNull($payment->fresh()->payment_type);
+    }
 }

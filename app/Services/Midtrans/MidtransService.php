@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Midtrans\Config as MidtransConfig;
+use Midtrans\Exceptions\MidtransApiException;
 use Midtrans\Snap;
+use Midtrans\Transaction;
 
 class MidtransService
 {
@@ -358,5 +360,67 @@ class MidtransService
             'expire' => Order::PAYMENT_EXPIRED,
             default => null,
         };
+    }
+
+    /**
+     * The ONLY method that calls the real Midtrans GET-status API.
+     * Returns the raw response array, or null when Midtrans returns 404 (no transaction yet).
+     * Kept as a separate public method so tests can mock it.
+     *
+     * @return array<string, mixed>|null
+     *
+     * @throws \Exception on non-404 API failure.
+     */
+    public function getTransactionStatus(string $midtransOrderId): ?array
+    {
+        $this->configure();
+
+        try {
+            $response = Transaction::status($midtransOrderId);
+
+            return (array) $response;
+        } catch (MidtransApiException $e) {
+            if ($e->getCode() === 404) {
+                return null; // transaction not yet created at Midtrans
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Apply a Midtrans GET-status response to a Payment attempt.
+     *
+     * - Updates payment_type, transaction_id, payment_details, expires_at.
+     * - Only updates when the attempt is still pending.
+     *
+     * @param  array<string, mixed>  $statusResponse
+     */
+    public function syncPaymentAttempt(Payment $payment, array $statusResponse): void
+    {
+        if ($payment->status !== Payment::STATUS_PENDING) {
+            return;
+        }
+
+        if (isset($statusResponse['payment_type']) && is_string($statusResponse['payment_type'])) {
+            $payment->payment_type = $statusResponse['payment_type'];
+        }
+
+        if (isset($statusResponse['transaction_id']) && is_string($statusResponse['transaction_id'])) {
+            $payment->transaction_id = $statusResponse['transaction_id'];
+        }
+
+        $extracted = $this->extractPaymentDetails($statusResponse);
+        if (! empty($extracted)) {
+            $payment->payment_details = array_merge($payment->payment_details ?? [], $extracted);
+        }
+
+        if (isset($statusResponse['expiry_time']) && is_string($statusResponse['expiry_time'])) {
+            $parsed = $this->parseExpiryTime($statusResponse['expiry_time']);
+            if ($parsed !== null) {
+                $payment->expires_at = $parsed;
+            }
+        }
+
+        $payment->save();
     }
 }

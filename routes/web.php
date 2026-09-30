@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentSyncController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 // ── Payment routes (authenticated users) ──────────────────────────────────────
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/payment/token', [PaymentController::class, 'token'])->name('payment.token')->middleware('throttle:10,1');
+    Route::post('/payment/sync', [PaymentSyncController::class, 'sync'])->name('payment.sync')->middleware('throttle:20,1');
     Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
 });
 
