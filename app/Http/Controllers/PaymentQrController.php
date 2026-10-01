@@ -11,12 +11,19 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentQrController extends Controller
 {
+    /** Maximum accepted QR image body size in bytes (1 MB). */
+    private const MAX_BODY_BYTES = 1_048_576;
+
     /**
      * Stream the official Midtrans QR image for an active pending payment attempt.
      *
      * - Verifies order ownership and that the attempt is still pending and not expired.
      * - Resolves the QR URL from payment_details.actions (set by webhook or sync).
      * - Proxies the image from Midtrans without storing it permanently (PAY-22).
+     * - Does NOT follow redirects; treats 3xx as failure.
+     * - Accepts only image/png or image/jpeg content types.
+     * - Rejects bodies larger than 1 MB.
+     * - Adds X-Content-Type-Options: nosniff.
      *
      * GET /orders/{order}/payment/qr
      */
@@ -40,7 +47,8 @@ class PaymentQrController extends Controller
         }
 
         try {
-            $imageResponse = Http::timeout(10)->get($qrUrl);
+            // withoutRedirecting() ensures 3xx responses are returned as-is (not followed).
+            $imageResponse = Http::withoutRedirecting()->timeout(10)->get($qrUrl);
         } catch (\Exception $e) {
             Log::warning('PaymentQr: failed to fetch QR image from Midtrans', [
                 'order_id' => $order->id,
@@ -50,20 +58,37 @@ class PaymentQrController extends Controller
             abort(502, 'Gagal mengambil gambar QR dari Midtrans.');
         }
 
+        // Treat any non-2xx response (including 3xx redirects) as failure.
         if (! $imageResponse->successful()) {
             abort(502, 'Gagal mengambil gambar QR dari Midtrans.');
         }
 
-        $contentType = $imageResponse->header('Content-Type') ?? 'image/png';
-        // Only allow image content types
-        if (! str_starts_with($contentType, 'image/')) {
-            abort(502, 'Respons dari Midtrans bukan gambar.');
+        $contentType = $imageResponse->header('Content-Type') ?? '';
+        // Strip any parameters (e.g. "; charset=utf-8") for comparison.
+        $mimeType = strtolower(trim(explode(';', $contentType)[0]));
+
+        // Only allow image/png or image/jpeg.
+        if (! in_array($mimeType, ['image/png', 'image/jpeg'], true)) {
+            abort(502, 'Respons dari Midtrans bukan gambar yang diizinkan.');
         }
 
-        return response($imageResponse->body(), 200, [
-            'Content-Type' => $contentType,
+        // Reject oversized bodies: check Content-Length header first (fast path),
+        // then check the real body size.
+        $contentLength = $imageResponse->header('Content-Length');
+        if ($contentLength !== null && (int) $contentLength > self::MAX_BODY_BYTES) {
+            abort(502, 'Respons dari Midtrans terlalu besar.');
+        }
+
+        $body = $imageResponse->body();
+        if (strlen($body) > self::MAX_BODY_BYTES) {
+            abort(502, 'Respons dari Midtrans terlalu besar.');
+        }
+
+        return response($body, 200, [
+            'Content-Type' => $mimeType,
             'Content-Disposition' => 'attachment; filename="qr-payment-'.$payment->midtrans_order_id.'.png"',
             'Cache-Control' => 'no-store, no-cache',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 

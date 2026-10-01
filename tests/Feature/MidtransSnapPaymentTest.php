@@ -2407,4 +2407,205 @@ class MidtransSnapPaymentTest extends TestCase
             $details['actions'][0]['url']
         );
     }
+
+    // ── COMMIT 3: Expiry cap, QR hardening, null-deadline expire ─────────────────
+
+    /** 3a: buildSnapParams uses unit=minutes and duration=minutes remaining. */
+    public function test_build_snap_params_expiry_uses_minutes(): void
+    {
+        $service = new MidtransService;
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+
+        // 60 minutes from now
+        $expiresAt = now()->addMinutes(60);
+        $params = $service->buildSnapParams($order, 'ORD-TEST-MINUTES', $expiresAt);
+
+        $this->assertSame('minutes', $params['expiry']['unit']);
+        $this->assertGreaterThanOrEqual(59, $params['expiry']['duration']);
+        $this->assertLessThanOrEqual(61, $params['expiry']['duration']);
+    }
+
+    /** 3a: when deadline < expiry_hours, params expiry is capped to ≤ deadline minutes. */
+    public function test_build_snap_params_expiry_is_capped_to_deadline_minutes(): void
+    {
+        $service = new MidtransService;
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+
+        // 10 minutes from now (short deadline)
+        $expiresAt = now()->addMinutes(10);
+        $params = $service->buildSnapParams($order, 'ORD-TEST-CAP', $expiresAt);
+
+        $this->assertSame('minutes', $params['expiry']['unit']);
+        $this->assertLessThanOrEqual(11, $params['expiry']['duration']);
+        $this->assertGreaterThanOrEqual(9, $params['expiry']['duration']);
+    }
+
+    /** 3b: redirect from QR URL → 502. */
+    public function test_qr_route_returns_502_when_midtrans_returns_redirect(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'expires_at' => now()->addHours(1),
+            'payment_details' => [
+                'actions' => [
+                    ['name' => 'generate-qr-code', 'method' => 'GET', 'url' => 'https://api.sandbox.midtrans.com/v2/qris/test/qr-code'],
+                ],
+            ],
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/*' => Http::response('', 302, ['Location' => 'https://evil.com/bad']),
+        ]);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertStatus(502);
+    }
+
+    /** 3b: wrong Content-Type (text/html) → 502. */
+    public function test_qr_route_returns_502_when_content_type_is_not_image(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'expires_at' => now()->addHours(1),
+            'payment_details' => [
+                'actions' => [
+                    ['name' => 'generate-qr-code', 'method' => 'GET', 'url' => 'https://api.sandbox.midtrans.com/v2/qris/test/qr-code'],
+                ],
+            ],
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/*' => Http::response('<html>Not an image</html>', 200, ['Content-Type' => 'text/html']),
+        ]);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertStatus(502);
+    }
+
+    /** 3b: Content-Length header exceeds 1 MB → 502. */
+    public function test_qr_route_returns_502_when_content_length_exceeds_limit(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'expires_at' => now()->addHours(1),
+            'payment_details' => [
+                'actions' => [
+                    ['name' => 'generate-qr-code', 'method' => 'GET', 'url' => 'https://api.sandbox.midtrans.com/v2/qris/test/qr-code'],
+                ],
+            ],
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/*' => Http::response(
+                'x',
+                200,
+                ['Content-Type' => 'image/png', 'Content-Length' => '2097152'] // 2 MB in header
+            ),
+        ]);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertStatus(502);
+    }
+
+    /** 3b: successful QR response includes X-Content-Type-Options: nosniff. */
+    public function test_qr_route_response_includes_nosniff_header(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'expires_at' => now()->addHours(1),
+            'payment_details' => [
+                'actions' => [
+                    ['name' => 'generate-qr-code', 'method' => 'GET', 'url' => 'https://api.sandbox.midtrans.com/v2/qris/test/qr-code'],
+                ],
+            ],
+        ]);
+
+        Http::fake([
+            'https://api.sandbox.midtrans.com/*' => Http::response(
+                str_repeat('x', 100),
+                200,
+                ['Content-Type' => 'image/png']
+            ),
+        ]);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertOk()
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+    }
+
+    /** 3b: non-midtrans.com QR URL is rejected → 404 (resolveQrUrl filters it). */
+    public function test_qr_route_returns_404_for_non_midtrans_url(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'expires_at' => now()->addHours(1),
+            'payment_details' => [
+                'actions' => [
+                    ['name' => 'generate-qr-code', 'method' => 'GET', 'url' => 'https://evil.com/steal.png'],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->get("/orders/{$order->id}/payment/qr")
+            ->assertStatus(404);
+    }
+
+    /** 3c: orders:expire-overdue cancels an order that never started a payment attempt. */
+    public function test_expire_overdue_orders_cancels_order_without_any_attempt(): void
+    {
+        config(['midtrans.payment_deadline_hours' => 24]);
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        // No Payment record created — buyer never reached the token endpoint.
+        // Simulate order created more than 24 h ago.
+        $order->created_at = now()->subHours(25);
+        $order->payment_deadline = null;
+        $order->save();
+
+        $this->artisan('orders:expire-overdue')->assertExitCode(0);
+
+        $order->refresh();
+        $this->assertSame(Order::STATUS_CANCELLED, $order->status);
+        $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
+    }
+
+    /** 3c: orders:expire-overdue does NOT cancel an order without attempt that is still young. */
+    public function test_expire_overdue_does_not_cancel_young_order_without_attempt(): void
+    {
+        config(['midtrans.payment_deadline_hours' => 24]);
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        // Created only 1 h ago — still within the 24 h window.
+        $order->created_at = now()->subHour();
+        $order->payment_deadline = null;
+        $order->save();
+
+        $this->artisan('orders:expire-overdue')->assertExitCode(0);
+
+        $order->refresh();
+        $this->assertSame(Order::STATUS_UNPAID, $order->status);
+        $this->assertSame(Order::PAYMENT_PENDING, $order->payment_status);
+    }
 }

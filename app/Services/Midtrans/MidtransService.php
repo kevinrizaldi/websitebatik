@@ -114,14 +114,20 @@ class MidtransService
     /**
      * Build the Snap parameter array for an order.
      *
+     * The $expiresAt value is used for BOTH Payment.expires_at and the Snap request,
+     * ensuring the Midtrans-side expiry never exceeds the order deadline.
+     *
      * @throws InvalidArgumentException if the order has no items.
      */
-    public function buildSnapParams(Order $order, string $midtransOrderId): array
+    public function buildSnapParams(Order $order, string $midtransOrderId, Carbon $expiresAt): array
     {
         ['item_details' => $itemDetails, 'gross_amount' => $grossAmount] = $this->buildItemDetails($order);
 
         $user = $order->user;
         $orderId = $midtransOrderId;
+
+        // Convert remaining seconds to minutes, minimum 1.
+        $minutesLeft = max(1, (int) ceil($expiresAt->diffInSeconds(now(), false) * -1 / 60));
 
         return [
             'transaction_details' => [
@@ -140,8 +146,8 @@ class MidtransService
                 ],
             ],
             'expiry' => [
-                'unit' => 'hours',
-                'duration' => $this->expiryHours(),
+                'unit' => 'minutes',
+                'duration' => $minutesLeft,
             ],
             'callbacks' => [
                 'finish' => route('payment.finish'),
@@ -197,7 +203,9 @@ class MidtransService
                 $locked->save();
             }
 
-            // Cap expires_at to the order deadline so the attempt expires before the order (PAY-19).
+            // Compute ONE expiry value: min(now + expiryHours, payment_deadline).
+            // This is used for BOTH Payment.expires_at and the Midtrans Snap request,
+            // so the Midtrans-side expiry can never exceed the order deadline (PAY-19, commit 3a).
             $attemptExpiry = now()->addHours($this->expiryHours());
             if ($locked->payment_deadline->lt($attemptExpiry)) {
                 $attemptExpiry = $locked->payment_deadline->copy();
@@ -205,7 +213,7 @@ class MidtransService
 
             $midtransOrderId = mb_substr((string) $locked->code, 0, 30).'-'.time().'-'.Str::lower(Str::random(4));
 
-            $params = $this->buildSnapParams($locked, $midtransOrderId);
+            $params = $this->buildSnapParams($locked, $midtransOrderId, $attemptExpiry);
             $snapToken = $this->requestSnapToken($params);
 
             Payment::create([
