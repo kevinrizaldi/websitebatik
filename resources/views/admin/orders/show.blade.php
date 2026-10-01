@@ -32,14 +32,16 @@
                         <h1 class="text-2xl font-extrabold text-stone-900">#{{ $order->code }}</h1>
                         @php
                             $statusClasses = [
-                                'Belum Dibayar'       => 'bg-amber-50 text-amber-700 border-amber-200',
+                                'Belum Dibayar' => 'bg-amber-50 text-amber-700 border-amber-200',
+                                'Menunggu Pembayaran' => 'bg-amber-50 text-amber-700 border-amber-200',
                                 'Menunggu Konfirmasi' => 'bg-amber-50 text-amber-700 border-amber-200',
-                                'Sudah Dibayar'       => 'bg-blue-50 text-blue-700 border-blue-200',
-                                'Diproses'            => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                                'Dikirim'             => 'bg-purple-50 text-purple-700 border-purple-200',
-                                'Selesai'             => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                'Batal'               => 'bg-rose-50 text-rose-700 border-rose-200',
-                                'Dibatalkan'          => 'bg-rose-50 text-rose-700 border-rose-200',
+                                'Menunggu Verifikasi' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                'Sudah Dibayar' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                'Diproses' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                                'Dikirim' => 'bg-purple-50 text-purple-700 border-purple-200',
+                                'Selesai' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                'Batal' => 'bg-rose-50 text-rose-700 border-rose-200',
+                                'Dibatalkan' => 'bg-rose-50 text-rose-700 border-rose-200',
                             ];
                             $badgeClass = $statusClasses[$order->status] ?? 'bg-gray-100 text-gray-700 border-gray-200';
                         @endphp
@@ -64,18 +66,18 @@
                 <!-- KOLOM KIRI (7/12) -->
                 <div class="lg:col-span-7 space-y-6">
 
-                    <!-- Kartu Verifikasi Bukti Transfer -->
+                    <!-- Kartu Status Pembayaran Midtrans -->
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
                         <div class="flex justify-between items-start">
                             <div class="flex gap-3">
                                 <div class="w-8 h-8 rounded-full bg-orange-100 text-amber-700 flex items-center justify-center font-bold">💳</div>
                                 <div>
-                                    <h3 class="font-bold text-stone-900 text-sm">Verifikasi Pembayaran & Status</h3>
-                                    <p class="text-gray-400 text-[11px]">Kelola alur pembayaran dan proses pesanan sesuai urutan.</p>
+                                    <h3 class="font-bold text-stone-900 text-sm">Status Pembayaran & Pesanan</h3>
+                                    <p class="text-gray-400 text-[11px]">Status pembayaran diperoleh otomatis dari Midtrans (tanpa verifikasi manual).</p>
                                 </div>
                             </div>
                             <span class="bg-orange-100/80 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded uppercase">
-                                {{ $order->payment_method ?? 'TRANSFER BANK' }}
+                                {{ $order->payment_method ?? 'MIDTRANS' }}
                             </span>
                         </div>
 
@@ -95,40 +97,32 @@
                             </div>
                         </div>
 
-                        <!-- Box File Bukti Transfer -->
+                        <!-- Box Status Pembayaran Midtrans -->
                         <div class="border border-gray-100 rounded-xl p-3 flex items-center justify-between bg-gray-50/50">
                             <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden border flex items-center justify-center text-gray-400">
-                                    @if ($order->payment_proof)
-                                        <img src="{{ asset('storage/' . $order->payment_proof) }}" class="w-full h-full object-cover">
-                                    @else
-                                        📄
-                                    @endif
+                                <div class="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-lg overflow-hidden flex items-center justify-center text-emerald-600 text-lg">
+                                    ✓
                                 </div>
                                 <div>
-                                    <div class="font-bold text-stone-800">Bukti Pembayaran Transfer</div>
+                                    <div class="font-bold text-stone-800">Pembayaran via Midtrans</div>
                                     <div class="text-gray-400 text-[10px]">
-                                        Status: {{ in_array($order->status, ['Belum Dibayar', 'Menunggu Konfirmasi']) ? 'Perlu Dikonfirmasi' : 'Pembayaran Terkonfirmasi' }}
+                                        Status Midtrans:
+                                        <span class="font-semibold text-stone-700">{{ $order->pembayaran->status_pembayaran ?? $order->status }}</span>
+                                        @if ($order->pembayaran?->metode_pembayaran)
+                                            • {{ $order->pembayaran->metode_pembayaran }}
+                                        @endif
                                     </div>
                                 </div>
                             </div>
-                            @if ($order->payment_proof)
-                                <a href="{{ asset('storage/' . $order->payment_proof) }}" target="_blank" class="text-xs text-amber-700 font-bold hover:underline">Lihat Foto</a>
-                            @endif
                         </div>
 
-                        <!-- Tombol Aksi Sesuai State Machine -->
-                        @if (in_array($order->status, ['Belum Dibayar', 'Menunggu Konfirmasi']))
-                            {{-- Step 1: Belum Dibayar -> Sudah Dibayar atau Batal --}}
-                            <div class="flex gap-3 pt-2">
-                                <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="flex-1">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="status" value="Sudah Dibayar">
-                                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl shadow-sm transition text-center flex justify-center items-center gap-2">
-                                        <span>✓</span> Konfirmasi Pembayaran (Ubah ke Sudah Dibayar)
-                                    </button>
-                                </form>
+                        <!-- Tombol Aksi Sesuai Alur PRD -->
+                        @if (in_array($order->status, ['Belum Dibayar', 'Menunggu Pembayaran', 'Menunggu Konfirmasi']))
+                            {{-- Menunggu Pembayaran Midtrans --}}
+                            <div class="flex gap-3 pt-2 items-center">
+                                <div class="flex-1 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-[12px] text-amber-800">
+                                    ⏳ Menunggu pembayaran Midtrans dari pelanggan...
+                                </div>
                                 <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMBATALKAN pesanan ini?')">
                                     @csrf
                                     @method('PATCH')
@@ -137,8 +131,8 @@
                                     </button>
                                 </form>
                             </div>
-                        @elseif ($order->status === 'Sudah Dibayar')
-                            {{-- Step 2: Sudah Dibayar -> Diproses atau Batal --}}
+                        @elseif (in_array($order->status, ['Menunggu Verifikasi', 'Sudah Dibayar']))
+                            {{-- Alias status lama yang berarti pembayaran Midtrans sudah berhasil --}}
                             <div class="flex gap-3 pt-2">
                                 <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="flex-1">
                                     @csrf
@@ -184,7 +178,6 @@
                             <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-900 text-xs font-semibold flex items-center gap-2">
                                 <span>❌</span> Pesanan ini telah dibatalkan.
                             </div>
-                        @endif
                     </div>
 
                     <!-- Kartu Daftar Produk Dipesan -->
@@ -201,10 +194,10 @@
                             @foreach ($order->items as $item)
                                 <div class="py-3 flex gap-4 items-center">
                                     <div class="w-14 h-14 bg-amber-100 rounded-xl overflow-hidden flex-shrink-0 border border-amber-200/50">
-                                        @if($item->produk && $item->produk->foto)
-                                            <img src="{{ asset('storage/' . $item->produk->foto) }}" class="w-full h-full object-cover">
+                                        @if ($item->produk && $item->produk->gambar)
+                                            <img src="{{ str_starts_with($item->produk->gambar, 'http') ? $item->produk->gambar : asset('storage/'.$item->produk->gambar) }}" class="h-full w-full object-cover" alt="{{ $item->produk_name }}">
                                         @else
-                                            <div class="w-full h-full flex items-center justify-center text-xs font-bold text-amber-800">Batik</div>
+                                            <div class="flex h-full w-full items-center justify-center text-xs font-bold text-amber-800">Batik</div>
                                         @endif
                                     </div>
                                     <div class="flex-1">
@@ -331,8 +324,8 @@
                             </form>
                         @else
                             <!-- KONDISI 3: MENUNGGU PEMBAYARAN / DIBATALKAN -->
-                            <p class="text-gray-400 text-xs italic">
-                                Nomor resi dapat diinputkan setelah pesanan diverifikasi / diproses.
+                            <p class="text-xs italic text-gray-400">
+                                Nomor resi dapat diinputkan setelah pembayaran Midtrans berhasil dan pesanan diproses.
                             </p>
                         @endif
                     </div>

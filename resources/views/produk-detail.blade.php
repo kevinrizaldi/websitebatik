@@ -47,11 +47,7 @@
           descOpen: true,
           sizeGuideModal: false,
           imageZoomModal: false,
-          reviewModal: false,
           toastMessage: '',
-          newRating: 5,
-          newName: '',
-          newComment: '',
           
           showToast(msg) {
               this.toastMessage = msg;
@@ -94,16 +90,6 @@
               .catch(err => {
                   this.showToast('Gagal menghubungi server');
               });
-          },
-          submitReview() {
-              if (!this.newName || !this.newComment) {
-                  alert('Mohon lengkapi nama dan ulasan Anda');
-                  return;
-              }
-              this.reviewModal = false;
-              this.showToast('Terima kasih! Ulasan Anda berhasil dikirim.');
-              this.newName = '';
-              this.newComment = '';
           }
       }">
 
@@ -215,13 +201,9 @@
                                         </a>
                                     @endif
 
-                                    <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                        Dashboard
-                                    </a>
-                                    <a href="{{ route('pesanan.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                        Pesanan Saya
+                                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        Profile
                                     </a>
 
                                     <div class="border-t border-stone-100 my-1"></div>
@@ -516,14 +498,6 @@
                             Ulasan Pelanggan
                         </h2>
                     </div>
-
-                    <button @click="reviewModal = true" 
-                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#201A17] hover:bg-stone-800 text-white text-xs sm:text-sm font-semibold transition shadow-xs">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/>
-                        </svg>
-                        <span>Tulis Ulasan Anda</span>
-                    </button>
                 </div>
 
                 <!-- Rating Breakdown Card -->
@@ -900,40 +874,6 @@
             <div class="relative max-w-3xl w-full">
                 <button @click="imageZoomModal = false" class="absolute -top-12 right-0 text-white hover:text-stone-300 text-2xl font-bold">✕ Tutup</button>
                 <img :src="activeImage" alt="Preview Gambar" class="w-full h-auto rounded-3xl shadow-2xl border border-stone-800">
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= WRITE REVIEW MODAL ================= -->
-    <div x-cloak x-show="reviewModal" class="fixed inset-0 z-50 overflow-y-auto">
-        <div class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm" @click="reviewModal = false"></div>
-        <div class="flex min-h-full items-center justify-center p-4">
-            <div class="relative bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200">
-                <div class="flex items-center justify-between pb-3 border-b border-stone-100 mb-4">
-                    <h3 class="font-serif-title font-bold text-xl text-stone-900">Tulis Ulasan Produk</h3>
-                    <button @click="reviewModal = false" class="text-stone-400 hover:text-stone-700">✕</button>
-                </div>
-                <form @submit.prevent="submitReview()" class="space-y-4 text-xs sm:text-sm">
-                    <div>
-                        <label class="block font-semibold text-stone-800 mb-1">Nama Lengkap</label>
-                        <input type="text" x-model="newName" placeholder="Contoh: Hendra Wijaya" class="w-full rounded-xl border border-stone-300 p-2.5 text-stone-800 focus:ring-2 focus:ring-[#B58742]">
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-stone-800 mb-1">Penilaian Bintang</label>
-                        <div class="flex items-center gap-2 text-2xl text-amber-500 cursor-pointer">
-                            <template x-for="star in [1, 2, 3, 4, 5]" :key="star">
-                                <span @click="newRating = star" :class="star <= newRating ? 'text-amber-500' : 'text-stone-300'">★</span>
-                            </template>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-stone-800 mb-1">Pengalaman / Ulasan Anda</label>
-                        <textarea x-model="newComment" rows="4" placeholder="Ceritakan kenyamanan bahan, kerapian jahitan, atau ukuran..." class="w-full rounded-xl border border-stone-300 p-2.5 text-stone-800 focus:ring-2 focus:ring-[#B58742]"></textarea>
-                    </div>
-                    <button type="submit" class="w-full py-3 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white font-bold transition shadow-sm">
-                        Kirim Ulasan
-                    </button>
-                </form>
             </div>
         </div>
     </div>

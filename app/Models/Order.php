@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -39,13 +42,39 @@ class Order extends Model
         'tracking_number',
     ];
 
-    public function user()
+    protected $casts = [
+        'total_price' => 'decimal:2',
+    ];
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function items()
+    public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function pembayaran(): HasOne
+    {
+        return $this->hasOne(Pembayaran::class, 'order_id');
+    }
+
+    public function pengiriman(): HasOne
+    {
+        return $this->hasOne(Pengiriman::class, 'order_id');
+    }
+
+    /**
+     * Get or create pengiriman relation
+     */
+    public function getOrInitPengiriman(): Pengiriman
+    {
+        return $this->pengiriman ?: $this->pengiriman()->create([
+            'ekspedisi' => 'JNE Reguler',
+            'no_resi' => $this->tracking_number,
+            'status_pengiriman' => $this->status === 'Dikirim' ? 'Dikirim' : ($this->status === 'Selesai' ? 'Diterima' : 'Menunggu Pengiriman'),
+        ]);
     }
 }

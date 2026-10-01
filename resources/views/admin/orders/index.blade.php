@@ -60,29 +60,28 @@
                         @php
                             $tabs = [
                                 '' => ['label' => 'Semua', 'count' => $counts['all']],
-                                'Belum Dibayar' => ['label' => 'Belum Dibayar', 'count' => $counts['belum_dibayar']],
-                                'Sudah Dibayar' => ['label' => 'Sudah Dibayar', 'count' => $counts['sudah_dibayar']],
+                                'Menunggu Pembayaran' => ['label' => 'Menunggu Pembayaran', 'count' => $counts['menunggu_pembayaran']],
                                 'Diproses' => ['label' => 'Diproses', 'count' => $counts['diproses']],
                                 'Dikirim' => ['label' => 'Dikirim', 'count' => $counts['dikirim']],
                                 'Selesai' => ['label' => 'Selesai', 'count' => $counts['selesai']],
-                                'Batal' => ['label' => 'Batal', 'count' => $counts['batal']],
+                                'Dibatalkan' => ['label' => 'Dibatalkan', 'count' => $counts['dibatalkan']],
                             ];
                             $activeStatus = request('status', '');
                         @endphp
 
                         @foreach ($tabs as $key => $tab)
-                            @php $isActive = ($activeStatus === (string)$key); @endphp
+                            @php $isActive = ($activeStatus === (string) $key); @endphp
                             <a href="{{ route('admin.orders.index', array_merge(request()->only('search'), $key !== '' ? ['status' => $key] : [])) }}"
                                @class([
                                    'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full transition whitespace-nowrap',
                                    'bg-gray-900 text-white font-semibold shadow-sm' => $isActive,
-                                   'bg-gray-100 text-gray-700 hover:bg-gray-200' => !$isActive,
+                                   'bg-gray-100 text-gray-700 hover:bg-gray-200' => ! $isActive,
                                ])>
                                 <span>{{ $tab['label'] }}</span>
                                 <span @class([
                                     'text-xs px-2 py-0.5 rounded-full',
                                     'bg-white/20 text-white' => $isActive,
-                                    'bg-white text-gray-600 border border-gray-200' => !$isActive,
+                                    'bg-white text-gray-600 border border-gray-200' => ! $isActive,
                                 ])>
                                     {{ $tab['count'] }}
                                 </span>
@@ -160,9 +159,8 @@
                             @forelse ($orders as $order)
                                 @php
                                     $statusStyle = match($order->status) {
-                                        'Belum Dibayar', 'Menunggu Konfirmasi' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-800', 'border' => 'border-amber-200', 'dot' => 'bg-amber-500'],
-                                        'Sudah Dibayar' => ['bg' => 'bg-blue-50', 'text' => 'text-blue-800', 'border' => 'border-blue-200', 'dot' => 'bg-blue-500'],
-                                        'Diproses' => ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-800', 'border' => 'border-indigo-200', 'dot' => 'bg-indigo-500'],
+                                        'Belum Dibayar', 'Menunggu Pembayaran', 'Menunggu Konfirmasi' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-800', 'border' => 'border-amber-200', 'dot' => 'bg-amber-500'],
+                                        'Sudah Dibayar', 'Menunggu Verifikasi', 'Diproses' => ['bg' => 'bg-indigo-50', 'text' => 'text-indigo-800', 'border' => 'border-indigo-200', 'dot' => 'bg-indigo-500'],
                                         'Dikirim' => ['bg' => 'bg-sky-50', 'text' => 'text-sky-800', 'border' => 'border-sky-200', 'dot' => 'bg-sky-500'],
                                         'Selesai' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-800', 'border' => 'border-emerald-200', 'dot' => 'bg-emerald-500'],
                                         'Batal', 'Dibatalkan' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-800', 'border' => 'border-rose-200', 'dot' => 'bg-rose-500'],

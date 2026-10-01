@@ -31,9 +31,6 @@
           mobileMenuOpen: false,
           searchOpen: false,
           toastMessage: '',
-          voucherCode: 'SIRKULAR50K',
-          voucherApplied: true,
-          voucherDiscount: 50000,
           shippingCost: 20000,
           freeShippingThreshold: 955000,
           
@@ -41,7 +38,7 @@
           customerName: '{{ Auth::user()->name ?? '' }}',
           customerPhone: '{{ Auth::user()->phone ?? '' }}',
           customerAddress: '',
-          paymentMethod: 'Transfer Bank BCA',
+          paymentMethod: 'Midtrans Gateway',
           isCheckingOut: false,
           
           items: [
@@ -194,14 +191,9 @@
               return this.shippingCost;
           },
 
-          get effectiveDiscount() {
-              if (!this.voucherApplied || this.selectedItems.length === 0) return 0;
-              return Math.min(this.voucherDiscount, this.rawSubtotal);
-          },
-
           get grandTotal() {
               if (this.selectedItems.length === 0) return 0;
-              return Math.max(0, this.rawSubtotal - this.effectiveDiscount + this.effectiveShipping);
+              return Math.max(0, this.rawSubtotal + this.effectiveShipping);
           },
 
           get shippingShortage() {
@@ -214,16 +206,6 @@
               return pct;
           },
 
-          applyVoucher() {
-              if (this.voucherCode.trim().toUpperCase() === 'SIRKULAR50K') {
-                  this.voucherApplied = true;
-                  this.showToast('Voucher SIRKULAR50K berhasil diterapkan! Hemat Rp 50.000');
-              } else if (this.voucherCode.trim() === '') {
-                  this.showToast('Masukkan kode voucher');
-              } else {
-                  this.showToast('Kode voucher tidak valid atau telah kedaluwarsa');
-              }
-          },
 
           addRecommendation(prod) {
               if (!prod || !prod.id) return;
@@ -278,8 +260,7 @@
                       customer_name: this.customerName,
                       phone: this.customerPhone,
                       address: this.customerAddress,
-                      payment_method: this.paymentMethod,
-                      voucher: this.voucherApplied ? this.voucherCode : null
+                      payment_method: this.paymentMethod
                   })
               })
               .then(res => res.json())
@@ -400,18 +381,15 @@
                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40"></textarea>
                     </div>
 
-                    <!-- Select: Metode Pembayaran -->
+                    <!-- Info: Metode Pembayaran (tunggal via Midtrans) -->
                     <div>
                         <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
                             Metode Pembayaran
                         </label>
-                        <select x-model="paymentMethod" 
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-white">
-                            <option value="Transfer Bank BCA">Transfer Bank BCA</option>
-                            <option value="Transfer Bank Mandiri">Transfer Bank Mandiri</option>
-                            <option value="QRIS (Gopay / ShopeePay / OVO)">QRIS (Gopay / ShopeePay / OVO)</option>
-                            <option value="Cash On Delivery (COD)">Cash On Delivery (COD)</option>
-                        </select>
+                        <div class="w-full px-3.5 py-2.5 rounded-xl border border-[#B58742] bg-[#FAF7F2] text-sm text-stone-800 font-semibold">
+                            Midtrans Payment Gateway
+                            <span class="block mt-0.5 text-[11px] font-normal text-stone-500">VA / QRIS / E-Wallet / Kartu — dipilih di jendela Midtrans</span>
+                        </div>
                     </div>
                 </div>
 
@@ -524,13 +502,9 @@
                                         </a>
                                     @endif
 
-                                    <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                        Dashboard
-                                    </a>
-                                    <a href="{{ route('pesanan.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                        Pesanan Saya
+                                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        Profile
                                     </a>
 
                                     <div class="border-t border-stone-100 my-1"></div>
@@ -777,32 +751,6 @@
                         </div>
                     </div>
 
-                    <!-- Voucher Promo Code Box -->
-                    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-[#EDE6DB] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-2xs">
-                        <div class="flex-1 flex items-center gap-2.5 bg-stone-50 border border-stone-200 rounded-xl px-3.5 py-2.5 focus-within:border-stone-400">
-                            <svg class="w-4 h-4 text-stone-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
-                            </svg>
-                            <input type="text" 
-                                   x-model="voucherCode" 
-                                   placeholder="Masukkan Kode Voucher"
-                                   class="bg-transparent text-xs sm:text-sm font-semibold text-stone-800 tracking-wider uppercase focus:outline-none w-full">
-                        </div>
-
-                        <button @click="applyVoucher()" 
-                                class="px-6 py-2.5 rounded-xl bg-[#EFE8DD] hover:bg-[#E2D6C5] text-stone-900 font-bold text-xs sm:text-sm transition shrink-0">
-                            Terapkan
-                        </button>
-                    </div>
-
-                    <!-- Applied Voucher Indicator -->
-                    <div x-cloak x-show="voucherApplied" 
-                         class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold">
-                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span>Voucher Daur Ulang Tekstil Aktif (-Rp 50.000)</span>
-                    </div>
 
                     <!-- Sustainable Commitment Notice -->
                     <div class="bg-[#F5EDE1]/60 border border-[#EADBCC] rounded-2xl p-4 flex items-start gap-3.5 text-xs text-stone-700 leading-relaxed">
@@ -839,13 +787,6 @@
                                 <span class="font-bold text-stone-900" x-text="formatRupiah(rawSubtotal)"></span>
                             </div>
 
-                            <div x-show="effectiveDiscount > 0" class="flex items-center justify-between text-emerald-700">
-                                <span class="flex items-center gap-1.5">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                                    Diskon Promo Kain Sirkular
-                                </span>
-                                <span class="font-bold" x-text="'- ' + formatRupiah(effectiveDiscount)"></span>
-                            </div>
 
                             <div class="flex items-center justify-between">
                                 <span class="flex items-center gap-1">

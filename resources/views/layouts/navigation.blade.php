@@ -28,6 +28,12 @@
                         <x-nav-link :href="route('admin.laporan.index')" :active="request()->routeIs('admin.laporan.*')">
                             {{ __('Laporan Penjualan') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('admin.kategori.index')" :active="request()->routeIs('admin.kategori.*')">
+                            {{ __('Kategori') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('admin.pengaturan.index')" :active="request()->routeIs('admin.pengaturan.*')">
+                            {{ __('Pengaturan') }}
+                        </x-nav-link>
                     @endif
                 </div>
             </div>
@@ -96,6 +102,12 @@
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.laporan.index')" :active="request()->routeIs('admin.laporan.*')">
                     {{ __('Laporan Penjualan') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.kategori.index')" :active="request()->routeIs('admin.kategori.*')">
+                    {{ __('Kategori') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.pengaturan.index')" :active="request()->routeIs('admin.pengaturan.*')">
+                    {{ __('Pengaturan') }}
                 </x-responsive-nav-link>
             @endif
         </div>

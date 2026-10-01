@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\StoreSettingController;
 use App\Http\Controllers\Admin\UlasanController;
+use App\Http\Controllers\AlamatController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UlasanController as CustomerUlasanController;
 use App\Models\Order;
 use App\Models\Produk;
 use Illuminate\Support\Facades\Auth;
@@ -72,12 +77,8 @@ Route::get('/pesanan', function () {
     $orders = collect();
     try {
         if (Schema::hasTable('orders')) {
-            $query = Order::with('items.produk')->latest();
             if (Auth::check()) {
-                $userOrders = (clone $query)->where('user_id', Auth::id())->get();
-                $orders = $userOrders->isNotEmpty() ? $userOrders : $query->take(5)->get();
-            } else {
-                $orders = $query->take(5)->get();
+                $orders = Order::with('items.produk')->where('user_id', Auth::id())->latest()->get();
             }
         }
     } catch (Throwable $e) {
@@ -87,6 +88,11 @@ Route::get('/pesanan', function () {
     return view('pesanan', compact('orders'));
 })->name('pesanan.index');
 
+Route::get('/pembayaran/{id}', [PaymentController::class, 'show'])->name('pembayaran');
+Route::get('/pembayaran/{id}/snap-token', [PaymentController::class, 'getSnapToken'])->name('pembayaran.snap-token');
+Route::post('/midtrans/notification', [PaymentController::class, 'notification'])->name('midtrans.notification');
+Route::get('/midtrans/finish', [PaymentController::class, 'finish'])->name('midtrans.finish');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard');
@@ -95,6 +101,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Alamat pelanggan
+    Route::get('/alamat', [AlamatController::class, 'index'])->name('alamat.index');
+    Route::post('/alamat', [AlamatController::class, 'store'])->name('alamat.store');
+    Route::put('/alamat/{alamat}', [AlamatController::class, 'update'])->name('alamat.update');
+    Route::patch('/alamat/{alamat}/default', [AlamatController::class, 'setDefault'])->name('alamat.setDefault');
+    Route::delete('/alamat/{alamat}', [AlamatController::class, 'destroy'])->name('alamat.destroy');
+
+    // Ulasan pelanggan
+    Route::post('/ulasan', [CustomerUlasanController::class, 'store'])->name('ulasan.store');
+
+    // Konfirmasi / batalkan pesanan oleh pelanggan
+    Route::patch('/pesanan/{order}/terima', [PaymentController::class, 'confirmReceived'])->name('pesanan.terima');
+    Route::patch('/pesanan/{order}/batal', [PaymentController::class, 'cancelOrder'])->name('pesanan.batal');
 });
 
 // Route Khusus Admin: Kelola Produk, Kelola Pesanan, & Kelola Ulasan
@@ -114,6 +134,16 @@ Route::middleware(['auth', 'admin'])->group(function () {
         // Kelola Laporan
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/print', [LaporanController::class, 'print'])->name('laporan.print');
+
+        // Kelola Kategori (halaman tunggal + modal, tanpa create/edit/show terpisah)
+        Route::resource('kategori', KategoriController::class)->only(['index', 'store', 'update', 'destroy'])->names('kategori');
+
+        // Update Pengiriman
+        Route::patch('/orders/{order}/pengiriman', [OrderController::class, 'updatePengiriman'])->name('orders.update-pengiriman');
+
+        // Pengaturan Toko
+        Route::get('/pengaturan', [StoreSettingController::class, 'index'])->name('pengaturan.index');
+        Route::patch('/pengaturan', [StoreSettingController::class, 'update'])->name('pengaturan.update');
     });
 });
 require __DIR__.'/auth.php';

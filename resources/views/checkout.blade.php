@@ -40,13 +40,29 @@
               setTimeout(() => { this.toastMessage = ''; }, 3500);
           },
 
+@php
+    $defaultAlamat = (isset($alamats) && $alamats->isNotEmpty()) 
+        ? ($alamats->where('is_utama', true)->first() ?: $alamats->first())
+        : null;
+@endphp
           // Customer & Shipping Address State
+          // Hanya memakai alamat yang diinput customer (tanpa data dummy).
           addressData: {
-              recipient: '{{ Auth::check() ? Auth::user()->name : 'Budi Santoso' }}',
-              label: 'Rumah Utama',
-              phone: '0812-3456-7890',
-              address: 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan, DKI Jakarta 12190',
-              pinpoint: 'Pinpoint telah terhubung dengan kurir ekspres'
+              recipient: '{{ $defaultAlamat ? addslashes($defaultAlamat->penerima) : (Auth::check() ? addslashes(Auth::user()->name) : '') }}',
+              label: '{{ $defaultAlamat ? addslashes($defaultAlamat->label_alamat) : '' }}',
+              phone: '{{ $defaultAlamat ? addslashes($defaultAlamat->no_telepon) : (Auth::check() && Auth::user()->phone ? addslashes(Auth::user()->phone) : '') }}',
+              address: '{{ $defaultAlamat ? addslashes($defaultAlamat->alamat_lengkap) : '' }}',
+              city: '{{ $defaultAlamat ? addslashes($defaultAlamat->kota ?? '') : '' }}',
+              hasSavedAddress: {{ $defaultAlamat ? 'true' : 'false' }}
+          },
+
+          get fullAddress() {
+              if (!this.addressData.address) return '';
+              const city = (this.addressData.city || '').trim();
+              if (city && !this.addressData.address.includes(city)) {
+                  return this.addressData.address + ', ' + city;
+              }
+              return this.addressData.address;
           },
 
           // Form fields inside address modal
@@ -54,7 +70,8 @@
               recipient: '',
               label: '',
               phone: '',
-              address: ''
+              address: '',
+              city: ''
           },
 
           openEditAddress() {
@@ -62,19 +79,41 @@
               this.tempAddress.label = this.addressData.label;
               this.tempAddress.phone = this.addressData.phone;
               this.tempAddress.address = this.addressData.address;
+              this.tempAddress.city = this.addressData.city;
               this.editAddressModal = true;
           },
 
           saveAddress() {
-              if (!this.tempAddress.recipient.trim() || !this.tempAddress.phone.trim() || !this.tempAddress.address.trim()) {
-                  this.showToast('Mohon lengkapi nama, nomor telepon, dan alamat');
+              if (!this.tempAddress.recipient.trim() || !this.tempAddress.phone.trim() || !this.tempAddress.address.trim() || !this.tempAddress.city.trim()) {
+                  this.showToast('Mohon lengkapi nama, nomor telepon, alamat, dan kota');
                   return;
               }
               this.addressData.recipient = this.tempAddress.recipient.trim();
-              this.addressData.label = this.tempAddress.label.trim() || 'Alamat Utama';
+              this.addressData.label = this.tempAddress.label.trim();
               this.addressData.phone = this.tempAddress.phone.trim();
               this.addressData.address = this.tempAddress.address.trim();
+              this.addressData.city = this.tempAddress.city.trim();
+              this.addressData.hasSavedAddress = true;
               this.editAddressModal = false;
+
+              // Persist to database if authenticated
+              fetch('{{ route('alamat.store') }}', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                      'Accept': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      penerima: this.addressData.recipient,
+                      label_alamat: this.addressData.label || 'Alamat Utama',
+                      no_telepon: this.addressData.phone,
+                      alamat_lengkap: this.addressData.address,
+                      kota: this.addressData.city,
+                      is_utama: true
+                  })
+              }).catch(() => {});
+
               this.showToast('Alamat pengiriman berhasil diperbarui!');
           },
 
@@ -103,40 +142,6 @@
                       gambar: '{{ $imgUrl }}'
                   },
                   @endforeach
-              @else
-                  {
-                      id: 1,
-                      produk_id: 1,
-                      nama: 'Kemeja Parang Seling',
-                      kategori: 'Batik Tulis',
-                      ukuran: 'L',
-                      varian: 'Kategori: Batik Tulis · Ukuran: L',
-                      qty: 1,
-                      harga: 385000,
-                      gambar: 'https://images.unsplash.com/photo-1607344645866-009c320c5ab8?auto=format&fit=crop&w=400&q=80'
-                  },
-                  {
-                      id: 2,
-                      produk_id: 2,
-                      nama: 'Artisan Patchwork Tote',
-                      kategori: 'Luring Serat Nabati',
-                      ukuran: 'One Size',
-                      varian: 'Luring Serat Nabati · Warna: Indigo Tua',
-                      qty: 1,
-                      harga: 245000,
-                      gambar: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=400&q=80'
-                  },
-                  {
-                      id: 3,
-                      produk_id: 3,
-                      nama: 'Dompet Pouch Eco Batik',
-                      kategori: 'Sisa Kain Katun Primissima',
-                      ukuran: 'Medium',
-                      varian: 'Sisa Kain Katun Primissima · Zipper: Kuningan',
-                      qty: 2,
-                      harga: 135000,
-                      gambar: 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=400&q=80'
-                  }
               @endif
           ],
 
@@ -163,26 +168,8 @@
               }
           },
 
-          // Payment Selection
-          selectedPayment: 'manual_bca',
-          paymentOptions: {
-              manual_bca: {
-                  name: 'Transfer Bank Manual (BCA / Mandiri / BNI)',
-                  label: 'Transfer Bank Manual (BCA)'
-              },
-              va_otomatis: {
-                  name: 'Virtual Account Otomatis',
-                  label: 'Virtual Account BCA'
-              },
-              qris: {
-                  name: 'QRIS Terpadu',
-                  label: 'QRIS Terpadu'
-              },
-              kartu_kredit: {
-                  name: 'Kartu Kredit / Debit Online',
-                  label: 'Kartu Kredit / Debit Online'
-              }
-          },
+          // Pembayaran: seluruh transaksi via Midtrans (metode dipilih di popup Snap).
+          paymentMethodName: 'Midtrans Gateway',
 
           // Notes for seller
           sellerNotes: '',
@@ -200,15 +187,11 @@
               return this.shippingOptions[this.selectedShipping]?.cost || 20000;
           },
 
-          get promoDiscount() {
-              // Automatically grant discount if subtotal >= 200.000 (Lestari Capsule promo)
-              return this.rawSubtotal >= 200000 ? 50000 : 0;
-          },
 
           serviceFee: 1000,
 
           get grandTotal() {
-              return Math.max(0, this.rawSubtotal - this.promoDiscount + this.shippingCost + this.serviceFee);
+              return Math.max(0, this.rawSubtotal + this.shippingCost + this.serviceFee);
           },
 
           formatRupiah(amount) {
@@ -224,7 +207,6 @@
 
               this.isSubmitting = true;
               const shippingObj = this.shippingOptions[this.selectedShipping];
-              const paymentObj = this.paymentOptions[this.selectedPayment];
 
               fetch('{{ route('checkout.store') }}', {
                   method: 'POST',
@@ -236,12 +218,11 @@
                   body: JSON.stringify({
                       customer_name: this.addressData.recipient + (this.addressData.label ? ' (' + this.addressData.label + ')' : ''),
                       phone: this.addressData.phone,
-                      address: this.addressData.address,
+                      address: this.fullAddress,
                       shipping_option: shippingObj.name,
                       shipping_cost: shippingObj.cost,
-                      payment_method: paymentObj.name,
-                      notes: this.sellerNotes,
-                      voucher: this.promoDiscount > 0 ? 'LESTARICAPSULE' : null
+                      payment_method: this.paymentMethodName,
+                      notes: this.sellerNotes
                   })
               })
               .then(res => res.json())
@@ -322,10 +303,10 @@
                             <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
                                 Nama Penerima <span class="text-rose-500">*</span>
                             </label>
-                            <input type="text" 
-                                   x-model="tempAddress.recipient"
-                                   placeholder="Contoh: Budi Santoso"
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                             <input type="text" 
+                                    x-model="tempAddress.recipient"
+                                    placeholder="Nama lengkap penerima"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
@@ -342,11 +323,21 @@
                         <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
                             Nomor WhatsApp / HP <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" 
-                               x-model="tempAddress.phone"
-                               placeholder="Contoh: 0812-3456-7890"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                    </div>
+                             <input type="text" 
+                                    x-model="tempAddress.phone"
+                                    placeholder="Nomor HP aktif penerima"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                     </div>
+
+                     <div>
+                         <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                             Kabupaten / Kota <span class="text-rose-500">*</span>
+                         </label>
+                         <input type="text"
+                                x-model="tempAddress.city"
+                                placeholder="Kota tujuan pengiriman"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
@@ -468,13 +459,9 @@
                                         </a>
                                     @endif
 
-                                    <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                        Dashboard
-                                    </a>
-                                    <a href="{{ route('pesanan.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                        Pesanan Saya
+                                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        Profile
                                     </a>
 
                                     <div class="border-t border-stone-100 my-1"></div>
@@ -600,30 +587,40 @@
                             </div>
                         </div>
 
-                        <!-- Address Info Box matching Mockup -->
-                        <div class="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-[#ECE4D8] space-y-2">
+                        <!-- Address Info Box: data asli milik customer -->
+                        <div x-show="addressData.address" class="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-[#ECE4D8] space-y-2">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div class="flex items-center gap-2 font-bold text-stone-900 text-sm">
-                                    <span x-text="addressData.recipient + ' (' + addressData.label + ')'">Budi Santoso (Rumah Utama)</span>
+                                    <span x-text="addressData.recipient + (addressData.label ? ' (' + addressData.label + ')' : '')"></span>
                                     <span class="text-stone-400 font-normal">|</span>
-                                    <span x-text="addressData.phone" class="font-semibold text-stone-700">0812-3456-7890</span>
+                                    <span x-text="addressData.phone" class="font-semibold text-stone-700"></span>
                                 </div>
 
-                                <span class="px-2.5 py-0.5 rounded-full bg-[#201A17] text-white text-[10px] font-bold tracking-wide uppercase">
+                                <span x-show="addressData.hasSavedAddress" class="px-2.5 py-0.5 rounded-full bg-[#201A17] text-white text-[10px] font-bold tracking-wide uppercase">
                                     Alamat Utama
                                 </span>
                             </div>
 
-                            <p class="text-xs sm:text-sm text-stone-600 leading-relaxed" x-text="addressData.address">
-                                Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan, DKI Jakarta 12190
-                            </p>
+                            <p class="text-xs sm:text-sm text-stone-600 leading-relaxed" x-text="fullAddress"></p>
 
-                            <div class="pt-2 flex items-center gap-1.5 text-[11px] text-stone-500">
-                                <svg class="w-3.5 h-3.5 text-[#B58742] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                                </svg>
-                                <span x-text="addressData.pinpoint">Pinpoint telah terhubung dengan kurir ekspres</span>
+                            <div class="pt-1">
+                                <a href="{{ route('alamat.index') }}" class="text-[11px] font-bold text-stone-700 hover:text-stone-950 underline transition">
+                                    Kelola alamat tersimpan →
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Empty state: customer belum punya alamat -->
+                        <div x-show="!addressData.address" class="p-5 rounded-2xl bg-amber-50/60 border border-dashed border-amber-300 text-center space-y-2">
+                            <p class="font-bold text-sm text-stone-900">Belum ada alamat pengiriman</p>
+                            <p class="text-xs text-stone-500">Isi alamat Anda atau pilih dari daftar alamat tersimpan.</p>
+                            <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+                                <button @click="openEditAddress()" type="button" class="px-4 py-2 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs font-bold transition">
+                                    Isi Alamat
+                                </button>
+                                <a href="{{ route('alamat.index') }}" class="px-4 py-2 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-800 text-xs font-bold transition">
+                                    Daftar Alamat Saya
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -842,106 +839,29 @@
                             </div>
                         </div>
 
-                        <!-- 4 Payment Options Stack -->
-                        <div class="space-y-3">
-
-                            <!-- Option 1: Transfer Bank Manual (Favorit) -->
-                            <div @click="selectedPayment = 'manual_bca'"
-                                 :class="selectedPayment === 'manual_bca' ? 'border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/30' : 'border-stone-200 hover:border-stone-300 bg-white'"
-                                 class="p-4 sm:p-5 rounded-2xl border cursor-pointer transition flex items-start justify-between gap-3">
-                                <div class="flex items-start gap-3">
-                                    <div class="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                                         :class="selectedPayment === 'manual_bca' ? 'border-[#B58742] bg-[#B58742]' : 'border-stone-300'">
-                                        <div x-show="selectedPayment === 'manual_bca'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                                    </div>
-                                    <div>
-                                        <div class="flex flex-wrap items-center gap-2">
-                                            <span class="font-bold text-sm text-stone-900">Transfer Bank Manual (BCA / Mandiri / BNI)</span>
-                                            <span class="px-2 py-0.5 rounded-full bg-[#201A17] text-white text-[10px] font-bold">Favorit</span>
-                                        </div>
-                                        <p class="text-xs text-stone-500 mt-1">
-                                            Konfirmasi manual dan unggah bukti transfer ke admin kami.
-                                        </p>
-                                    </div>
+                        <!-- Pembayaran tunggal via Midtrans (metode dipilih di popup Snap) -->
+                        <div class="p-4 sm:p-5 rounded-2xl border border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/30 flex items-start gap-3">
+                            <div class="mt-0.5 w-9 h-9 rounded-xl bg-[#201A17] text-[#E5C38E] flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-bold text-sm text-stone-900">Midtrans Payment Gateway</span>
+                                    <span class="px-2 py-0.5 rounded-full bg-[#201A17] text-white text-[10px] font-bold">Otomatis</span>
                                 </div>
-
-                                <div class="hidden sm:flex items-center gap-1.5 shrink-0">
-                                    <span class="px-2 py-0.5 rounded bg-stone-100 text-[10px] font-extrabold text-blue-900 border border-stone-200">BCA</span>
-                                    <span class="px-2 py-0.5 rounded bg-stone-100 text-[10px] font-extrabold text-amber-800 border border-stone-200">MANDIRI</span>
-                                    <span class="px-2 py-0.5 rounded bg-stone-100 text-[10px] font-extrabold text-orange-700 border border-stone-200">BNI</span>
+                                <p class="text-xs text-stone-500 mt-1">
+                                    Virtual Account, QRIS, E-Wallet, dan Kartu Kredit/Debit. Metode pembayaran dipilih pada jendela Midtrans setelah checkout — terverifikasi instan tanpa unggah bukti transfer.
+                                </p>
+                                <div class="hidden sm:flex items-center gap-1.5 mt-2.5">
+                                    <span class="px-2 py-0.5 rounded bg-white text-[10px] font-extrabold text-blue-900 border border-stone-200">BCA</span>
+                                    <span class="px-2 py-0.5 rounded bg-white text-[10px] font-extrabold text-amber-800 border border-stone-200">MANDIRI</span>
+                                    <span class="px-2 py-0.5 rounded bg-white text-[10px] font-extrabold text-orange-700 border border-stone-200">BNI</span>
+                                    <span class="px-2 py-0.5 rounded bg-white text-[10px] font-extrabold text-stone-700 border border-stone-200">QRIS</span>
+                                    <span class="px-2 py-0.5 rounded bg-white text-[10px] font-extrabold text-stone-700 border border-stone-200">VISA</span>
                                 </div>
                             </div>
-
-                            <!-- Option 2: Virtual Account Otomatis -->
-                            <div @click="selectedPayment = 'va_otomatis'"
-                                 :class="selectedPayment === 'va_otomatis' ? 'border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/30' : 'border-stone-200 hover:border-stone-300 bg-white'"
-                                 class="p-4 sm:p-5 rounded-2xl border cursor-pointer transition flex items-start justify-between gap-3">
-                                <div class="flex items-start gap-3">
-                                    <div class="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                                         :class="selectedPayment === 'va_otomatis' ? 'border-[#B58742] bg-[#B58742]' : 'border-stone-300'">
-                                        <div x-show="selectedPayment === 'va_otomatis'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                                    </div>
-                                    <div>
-                                        <span class="font-bold text-sm text-stone-900 block">Virtual Account Otomatis</span>
-                                        <p class="text-xs text-stone-500 mt-1">
-                                            Verifikasi otomatis tanpa unggah bukti transfer (BCA, Mandiri, BRI, BNI)
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <span class="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-                                    ⚡ Instan 24 Jam
-                                </span>
-                            </div>
-
-                            <!-- Option 3: QRIS Terpadu -->
-                            <div @click="selectedPayment = 'qris'"
-                                 :class="selectedPayment === 'qris' ? 'border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/30' : 'border-stone-200 hover:border-stone-300 bg-white'"
-                                 class="p-4 sm:p-5 rounded-2xl border cursor-pointer transition flex items-start justify-between gap-3">
-                                <div class="flex items-start gap-3">
-                                    <div class="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                                         :class="selectedPayment === 'qris' ? 'border-[#B58742] bg-[#B58742]' : 'border-stone-300'">
-                                        <div x-show="selectedPayment === 'qris'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                                    </div>
-                                    <div>
-                                        <span class="font-bold text-sm text-stone-900 block">QRIS Terpadu</span>
-                                        <p class="text-xs text-stone-500 mt-1">
-                                            Pindai langsung via GoPay, OVO, ShopeePay, DANA, BCA Mobile
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="p-1.5 rounded-lg bg-stone-100 text-stone-700 shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <!-- Option 4: Kartu Kredit / Debit Online -->
-                            <div @click="selectedPayment = 'kartu_kredit'"
-                                 :class="selectedPayment === 'kartu_kredit' ? 'border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/30' : 'border-stone-200 hover:border-stone-300 bg-white'"
-                                 class="p-4 sm:p-5 rounded-2xl border cursor-pointer transition flex items-start justify-between gap-3">
-                                <div class="flex items-start gap-3">
-                                    <div class="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                                         :class="selectedPayment === 'kartu_kredit' ? 'border-[#B58742] bg-[#B58742]' : 'border-stone-300'">
-                                        <div x-show="selectedPayment === 'kartu_kredit'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                                    </div>
-                                    <div>
-                                        <span class="font-bold text-sm text-stone-900 block">Kartu Kredit / Debit Online</span>
-                                        <p class="text-xs text-stone-500 mt-1">
-                                            Mendukung Visa, MasterCard, JCB dengan 3D Secure Protection
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="p-1.5 rounded-lg bg-stone-100 text-stone-700 shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-                                    </svg>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
@@ -987,13 +907,6 @@
                                 <span class="font-bold text-stone-900" x-text="formatRupiah(shippingCost)">Rp 20.000</span>
                             </div>
 
-                            <div x-show="promoDiscount > 0" class="flex items-center justify-between text-[#C2410C]">
-                                <span class="flex items-center gap-1.5">
-                                    <svg class="w-3.5 h-3.5 text-[#C2410C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
-                                    <span>Diskon Promo (Lestari Capsule)</span>
-                                </span>
-                                <span class="font-bold" x-text="'- ' + formatRupiah(promoDiscount)">- Rp 50.000</span>
-                            </div>
 
                             <div class="flex items-center justify-between">
                                 <span>Biaya Layanan & Asuransi Kurir</span>
@@ -1138,7 +1051,7 @@
                 <div class="space-y-3">
                     <h4 class="font-bold text-stone-900 text-xs uppercase tracking-wider">Media Sosial & Buletin</h4>
                     <p class="text-xs text-stone-500">
-                        Dapatkan diskon eksklusif untuk rilis kain sirkular dan seri upaya otoritas.
+                        Dapatkan info eksklusif untuk rilis kain sirkular dan seri upaya otoritas.
                     </p>
                     <div class="flex items-center gap-2 pt-2">
                         <a href="#" class="w-8 h-8 rounded-full bg-stone-200/70 hover:bg-stone-300 text-stone-700 flex items-center justify-center text-xs transition">📷</a>
