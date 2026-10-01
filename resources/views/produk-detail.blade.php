@@ -7,6 +7,8 @@
     $deskripsiProduk = $produk->deskripsi ?? 'Kemeja batik formal pria berdesain eksklusif dengan paduan motif nusantara yang berwibawa dan bernilai seni tinggi.';
     $gambarProduk = $produk ? $produk->gambar_url : asset('images/beranda/folded-shirts.jpg');
     $stokProduk = $produk->stok ?? 14;
+    $stokUkuranArray = $produk ? $produk->getStokUkuranArray() : ['S' => 2, 'M' => 4, 'L' => 4, 'XL' => 3, 'XXL' => 1];
+    $firstAvailableSize = collect($stokUkuranArray)->filter(fn($qty) => $qty > 0)->keys()->first() ?? (array_key_first($stokUkuranArray) ?? 'M');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
@@ -40,10 +42,18 @@
       x-data="{
           mobileMenuOpen: false,
           activeImage: '{{ $gambarProduk }}',
-          selectedSize: 'M',
+          stokUkuran: {{ json_encode($stokUkuranArray) }},
+          selectedSize: '{{ $firstAvailableSize }}',
           quantity: 1,
-          maxStock: {{ max(0, (int) $stokProduk) }},
-          isOutOfStock: {{ $stokProduk > 0 ? 'false' : 'true' }},
+          get currentStock() {
+              if (!this.selectedSize || this.stokUkuran[this.selectedSize] === undefined) {
+                  return {{ max(0, (int) $stokProduk) }};
+              }
+              return Math.max(0, parseInt(this.stokUkuran[this.selectedSize]) || 0);
+          },
+          get isOutOfStock() {
+              return this.currentStock <= 0;
+          },
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           descOpen: true,
           sizeGuideModal: false,
@@ -54,9 +64,19 @@
               this.toastMessage = msg;
               setTimeout(() => { this.toastMessage = ''; }, 3000);
           },
+          selectSize(sz) {
+              const stock = parseInt(this.stokUkuran[sz] || 0);
+              if (stock <= 0) {
+                  return;
+              }
+              this.selectedSize = sz;
+              if (this.quantity > stock) {
+                  this.quantity = Math.max(1, stock);
+              }
+          },
           increaseQty() {
               if (this.isOutOfStock) return;
-              if (this.quantity < this.maxStock) this.quantity++;
+              if (this.quantity < this.currentStock) this.quantity++;
           },
           decreaseQty() {
               if (this.quantity > 1) this.quantity--;
@@ -373,11 +393,14 @@
 
                         <!-- Stock Badge -->
                         <div class="text-right">
-                            <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                                {{ $stokProduk > 0 ? 'Stok Tersedia' : 'Habis' }}
+                            <span :class="currentStock > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'"
+                                  class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition">
+                                <span :class="currentStock > 0 ? 'bg-emerald-600' : 'bg-rose-600'" class="w-1.5 h-1.5 rounded-full"></span>
+                                <span x-text="currentStock > 0 ? 'Stok Tersedia' : 'Habis'"></span>
                             </span>
-                            <span class="block text-[11px] text-stone-500 mt-1 font-medium">Sisa {{ $stokProduk }} pcs</span>
+                            <span class="block text-[11px] text-stone-500 mt-1 font-medium">
+                                Sisa <strong class="text-stone-800" x-text="currentStock"></strong> pcs (<span x-text="selectedSize"></span>)
+                            </span>
                         </div>
                     </div>
 
@@ -396,7 +419,10 @@
                     <!-- Size Selector ("Pilih Ukuran") -->
                     <div>
                         <div class="flex items-center justify-between text-xs sm:text-sm font-semibold mb-3">
-                            <span class="text-stone-900">Pilih Ukuran</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-stone-900">Pilih Ukuran</span>
+                                <span class="text-xs font-normal text-stone-400">(Pilih salah satu)</span>
+                            </div>
                             <button @click="sizeGuideModal = true" class="text-amber-800 hover:text-amber-950 flex items-center gap-1 transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
@@ -406,17 +432,41 @@
                         </div>
 
                         <!-- Size Pills -->
-                        <div class="flex items-center gap-2.5">
-                            <template x-for="sz in ['S', 'M', 'L', 'XL', 'XXL']" :key="sz">
-                                <button @click="selectedSize = sz"
-                                        :class="selectedSize === sz ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-800 border border-stone-300 hover:border-stone-500'"
-                                        class="w-12 h-11 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center transition">
+                        <div class="flex flex-wrap items-center gap-2.5">
+                            <template x-for="(stock, sz) in stokUkuran" :key="sz">
+                                <button type="button"
+                                        @click="selectSize(sz)"
+                                        :disabled="stock <= 0"
+                                        :title="stock <= 0 ? 'Ukuran ' + sz + ' Stok Habis' : 'Stok Ukuran ' + sz + ': ' + stock + ' pcs'"
+                                        :class="{
+                                            'bg-[#201A17] text-white shadow-md ring-2 ring-[#201A17] border-[#201A17] scale-102': selectedSize === sz && stock > 0,
+                                            'bg-white text-stone-800 border border-stone-300 hover:border-stone-500 hover:bg-stone-50': selectedSize !== sz && stock > 0,
+                                            'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed opacity-50 line-through select-none': stock <= 0
+                                        }"
+                                        class="min-w-12 h-11 px-3.5 rounded-xl text-xs sm:text-sm font-bold flex flex-col items-center justify-center transition relative">
                                     <span x-text="sz"></span>
+                                    <span x-show="stock <= 0" class="text-[9px] uppercase tracking-tighter -mt-0.5 no-underline font-bold text-rose-500">Habis</span>
                                 </button>
                             </template>
                         </div>
 
-                        <p class="text-[11px] text-stone-500 mt-2 font-medium">
+                        <!-- Real-time Size Stock Status Message -->
+                        <div class="mt-2.5 text-xs">
+                            <template x-if="currentStock > 0">
+                                <p class="text-stone-600 font-medium flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    Stok ukuran <strong class="text-stone-900" x-text="selectedSize"></strong>: sisa <strong class="text-stone-900" x-text="currentStock"></strong> pcs
+                                </p>
+                            </template>
+                            <template x-if="currentStock <= 0">
+                                <p class="text-rose-600 font-semibold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                                    Ukuran <span x-text="selectedSize"></span> saat ini sedang habis. Silakan pilih ukuran lain yang tersedia.
+                                </p>
+                            </template>
+                        </div>
+
+                        <p class="text-[11px] text-stone-400 mt-2 font-medium">
                             Ukuran model: TB 180 cm, BB 75 kg (Menggunakan Size L)
                         </p>
                     </div>

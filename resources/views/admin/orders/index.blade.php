@@ -362,8 +362,11 @@
                            id="modalTrackingNumber"
                            name="tracking_number"
                            required
+                           pattern="[A-Za-z0-9\-]+"
+                           title="Nomor resi hanya boleh berupa kombinasi huruf dan angka"
+                           oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '')"
                            placeholder="Contoh: JNE8892103982 / J&T / SiCepat"
-                           class="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none">
+                           class="w-full px-3 py-2 text-xs border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none uppercase">
                     <p class="text-[11px] text-gray-400 mt-1">Pastikan nomor resi valid agar pembeli dapat melacak paket.</p>
                 </div>
 

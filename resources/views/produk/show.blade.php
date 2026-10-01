@@ -54,8 +54,20 @@
                                 <span class="font-mono font-bold text-gray-800">{{ $produk->sku }}</span>
                             </div>
                             <div>
-                                <span class="text-xs text-gray-500 block">Sisa Stok</span>
+                                <span class="text-xs text-gray-500 block">Sisa Stok Total</span>
                                 <span class="font-bold text-gray-800">{{ $produk->stok }} pcs</span>
+                                @php
+                                    $stokUkuran = $produk->getStokUkuranArray();
+                                @endphp
+                                @if(!isset($stokUkuran['All Size']) && count($stokUkuran) > 0)
+                                    <div class="flex flex-wrap gap-1.5 mt-2">
+                                        @foreach($stokUkuran as $sz => $stk)
+                                            <span class="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded {{ $stk > 0 ? 'bg-stone-100 text-stone-700 border border-stone-200' : 'bg-rose-50 text-rose-600 border border-rose-200' }}">
+                                                <strong>{{ $sz }}:</strong> {{ $stk }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                             <div>
                                 <span class="text-xs text-gray-500 block">Status</span>

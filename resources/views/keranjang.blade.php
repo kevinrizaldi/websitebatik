@@ -54,7 +54,7 @@
                       varian: '{{ addslashes($ci->varian ?? ($ci->ukuran ? 'Ukuran: ' . $ci->ukuran : 'Standar')) }}',
                       harga: {{ (float) ($ci->produk->harga ?? 0) }},
                       qty: {{ $ci->qty }},
-                      maxStock: {{ (int) ($ci->produk->stok ?? 99) }},
+                      maxStock: {{ (int) ($ci->produk ? $ci->produk->getStokForUkuran($ci->ukuran) : 99) }},
                       gambar: '{{ $ci->produk ? $ci->produk->gambar_url : asset('images/beranda/folded-shirts.jpg') }}'
                   }@if(!$loop->last),@endif
                   @endforeach
@@ -355,6 +355,7 @@
                         </label>
                         <input type="text" 
                                x-model="customerName"
+                               @input="customerName = customerName.replace(/[^a-zA-Z\s\'.]/g, '')"
                                placeholder="Nama Lengkap Penerima"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                     </div>
@@ -364,9 +365,12 @@
                         <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
                             Nomor WhatsApp / HP <span class="text-rose-500">*</span>
                         </label>
-                        <input type="text" 
+                        <input type="tel" 
+                               inputmode="numeric"
+                               maxlength="15"
                                x-model="customerPhone"
-                               placeholder="Contoh: 081234567890"
+                               @input="customerPhone = customerPhone.replace(/[^0-9]/g, '')"
+                               placeholder="Contoh: 081234567890 (10-15 digit)"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                     </div>
 
@@ -376,6 +380,7 @@
                             Alamat Lengkap Pengiriman <span class="text-rose-500">*</span>
                         </label>
                         <textarea x-model="customerAddress"
+                                  @input="customerAddress = customerAddress.replace(/[^a-zA-Z0-9\s.,\/\-]/g, '')"
                                   rows="3"
                                   placeholder="Jalan, Nomor Rumah, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten, Kode Pos"
                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40"></textarea>

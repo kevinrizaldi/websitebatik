@@ -58,9 +58,14 @@ class CartController extends Controller
 
         $produk = Produk::findOrFail($validated['produk_id']);
 
-        // Produk habis tidak boleh masuk keranjang sama sekali.
-        if ($produk->stok <= 0) {
-            $message = "Stok {$produk->nama} habis dan tidak dapat ditambahkan ke keranjang.";
+        $ukuran = $validated['ukuran'] ?? null;
+        $varian = $validated['varian'] ?? null;
+        $availableStock = $produk->getStokForUkuran($ukuran);
+
+        // Produk habis atau ukuran terkait habis tidak boleh masuk keranjang.
+        if ($availableStock <= 0) {
+            $sizeNotice = $ukuran ? " untuk ukuran {$ukuran}" : '';
+            $message = "Stok {$produk->nama}{$sizeNotice} sedang habis.";
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $message], 422);
             }
@@ -68,9 +73,7 @@ class CartController extends Controller
             return redirect()->back()->with('error', $message);
         }
 
-        $qty = min($validated['qty'] ?? 1, $produk->stok);
-        $ukuran = $validated['ukuran'] ?? null;
-        $varian = $validated['varian'] ?? null;
+        $qty = min($validated['qty'] ?? 1, $availableStock);
 
         $userId = Auth::id();
         $sessionId = session()->getId();
@@ -89,7 +92,7 @@ class CartController extends Controller
 
         $item = null;
         if ($existing) {
-            $newQty = min($existing->qty + $qty, $produk->stok);
+            $newQty = min($existing->qty + $qty, $availableStock);
             $existing->update([
                 'qty' => $newQty,
                 'selected' => true,
@@ -265,14 +268,26 @@ class CartController extends Controller
             return redirect()->route('login')->with('info', 'Silakan login terlebih dahulu.');
         }
 
+        if ($request->has('notes') && trim((string) $request->input('notes')) === '') {
+            $request->merge(['notes' => null]);
+        }
+
         $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:30',
-            'address' => 'required|string|max:1000',
+            'customer_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.()\-]+$/u'],
+            'phone' => ['required', 'string', 'regex:/^[0-9+\- ]{10,20}$/'],
+            'address' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()\[\]]+$/u'],
             'payment_method' => 'nullable|string|max:100',
             'shipping_option' => 'nullable|string|max:100',
             'shipping_cost' => 'nullable|numeric|min:0',
-            'notes' => 'nullable|string|max:500',
+            'notes' => ['nullable', 'string', 'max:500', 'regex:/^[\pL0-9\s.,\'\-()\/!?]+$/u'],
+        ], [
+            'customer_name.required' => 'Nama penerima wajib diisi.',
+            'customer_name.regex' => 'Nama penerima hanya boleh berupa huruf, spasi, titik, atau tanda petik.',
+            'phone.required' => 'Nomor WhatsApp / HP wajib diisi.',
+            'phone.regex' => 'Nomor WhatsApp / HP harus berupa nomor telepon yang valid.',
+            'address.required' => 'Alamat pengiriman wajib diisi.',
+            'address.regex' => 'Alamat pengiriman tidak boleh mengandung simbol khusus yang tidak valid.',
+            'notes.regex' => 'Catatan pesanan mengandung simbol yang tidak diperbolehkan.',
         ]);
 
         $cartItems = CartItem::with('produk')
@@ -288,12 +303,15 @@ class CartController extends Controller
             return redirect()->route('keranjang.index')->with('error', 'Keranjang belanja Anda kosong.');
         }
 
-        // Tolak item yang stoknya tidak mencukupi (termasuk yang sudah habis).
+        // Tolak item yang stoknya tidak mencukupi (termasuk spesifik ukuran).
         $unavailable = [];
         foreach ($cartItems as $item) {
-            $stock = $item->produk ? (int) $item->produk->stok : 0;
-            if ($stock < $item->qty) {
-                $unavailable[] = ($item->produk ? $item->produk->nama : 'Produk')." (sisa {$stock})";
+            if ($item->produk) {
+                $stock = $item->produk->getStokForUkuran($item->ukuran);
+                if ($stock < $item->qty) {
+                    $sizeLabel = $item->ukuran ? " (Ukuran {$item->ukuran})" : '';
+                    $unavailable[] = $item->produk->nama.$sizeLabel." (sisa {$stock})";
+                }
             }
         }
 
@@ -357,7 +375,7 @@ class CartController extends Controller
 
                     // Deduct stock if sufficient
                     if ($item->produk->stok >= $item->qty) {
-                        $item->produk->decrement('stok', $item->qty);
+                        $item->produk->decrementStokForUkuran($item->ukuran, $item->qty);
                     }
                 }
 

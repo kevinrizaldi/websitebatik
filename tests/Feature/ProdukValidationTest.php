@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CartItem;
 use App\Models\Produk;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -197,5 +198,130 @@ class ProdukValidationTest extends TestCase
             'harga' => 1000000,
             'stok' => 1000,
         ]);
+    }
+
+    public function test_can_create_and_update_product_with_size_stock(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Kemeja Batik Modern',
+            'sku' => 'KMT-001',
+            'kategori' => 'Baju Batik',
+            'harga' => 350000,
+            'stok_ukuran' => [
+                'S' => 2,
+                'M' => 5,
+                'L' => 0,
+                'XL' => 3,
+                'XXL' => 0,
+            ],
+        ]);
+
+        $response->assertRedirect(route('produk.index'));
+        $produk = Produk::where('sku', 'KMT-001')->first();
+        $this->assertNotNull($produk);
+        $this->assertSame(10, $produk->stok);
+        $this->assertSame('Stok Menipis', $produk->status);
+        $this->assertSame(5, $produk->getStokForUkuran('M'));
+        $this->assertSame(0, $produk->getStokForUkuran('L'));
+        $this->assertTrue($produk->isUkuranAvailable('M'));
+        $this->assertFalse($produk->isUkuranAvailable('L'));
+
+        // Update with modified sizes
+        $updateResp = $this->actingAs($this->admin)->put(route('produk.update', $produk), [
+            'nama' => 'Kemeja Batik Modern V2',
+            'sku' => 'KMT-001',
+            'kategori' => 'Baju Batik',
+            'harga' => 375000,
+            'stok_ukuran' => [
+                'S' => 0,
+                'M' => 4,
+                'L' => 6,
+                'XL' => 0,
+                'XXL' => 0,
+            ],
+        ]);
+
+        $updateResp->assertRedirect(route('produk.index'));
+        $produk->refresh();
+        $this->assertSame(10, $produk->stok);
+        $this->assertSame(0, $produk->getStokForUkuran('S'));
+        $this->assertSame(6, $produk->getStokForUkuran('L'));
+    }
+
+    public function test_cannot_add_to_cart_out_of_stock_size(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $produk = Produk::create([
+            'nama' => 'Kemeja Eksklusif Sutra',
+            'sku' => 'SUTRA-001',
+            'kategori' => 'Baju Batik',
+            'harga' => 450000,
+            'stok' => 4,
+            'stok_ukuran' => [
+                'S' => 0,
+                'M' => 4,
+                'L' => 0,
+            ],
+            'status' => 'Stok Menipis',
+        ]);
+
+        // Attempt adding size S (stock 0)
+        $response = $this->actingAs($customer)->postJson(route('keranjang.store'), [
+            'produk_id' => $produk->id,
+            'qty' => 1,
+            'ukuran' => 'S',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson(['success' => false]);
+
+        // Add size M (stock 4)
+        $responseOk = $this->actingAs($customer)->postJson(route('keranjang.store'), [
+            'produk_id' => $produk->id,
+            'qty' => 2,
+            'ukuran' => 'M',
+        ]);
+
+        $responseOk->assertOk()
+            ->assertJson(['success' => true]);
+    }
+
+    public function test_checkout_deducts_size_specific_stock_accurately(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $produk = Produk::create([
+            'nama' => 'Kemeja Katun Klasik',
+            'sku' => 'KLASIK-001',
+            'kategori' => 'Baju Batik',
+            'harga' => 250000,
+            'stok' => 7,
+            'stok_ukuran' => [
+                'S' => 2,
+                'M' => 5,
+            ],
+            'status' => 'Stok Menipis',
+        ]);
+
+        $cartItem = CartItem::create([
+            'user_id' => $customer->id,
+            'session_id' => 'test-checkout-size',
+            'produk_id' => $produk->id,
+            'ukuran' => 'M',
+            'qty' => 2,
+            'selected' => true,
+        ]);
+
+        $response = $this->actingAs($customer)->postJson(route('checkout.store'), [
+            'customer_name' => 'Aditya Pratama',
+            'phone' => '081298765432',
+            'address' => 'Jl. Slamet Riyadi No. 50, Solo',
+        ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+
+        $produk->refresh();
+        $this->assertSame(5, $produk->stok);
+        $this->assertSame(3, $produk->getStokForUkuran('M'));
+        $this->assertSame(2, $produk->getStokForUkuran('S'));
     }
 }

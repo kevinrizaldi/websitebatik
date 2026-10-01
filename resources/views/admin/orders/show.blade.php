@@ -290,7 +290,7 @@
                                     @csrf
                                     @method('PATCH')
                                     <input type="hidden" name="status" value="{{ $order->status }}">
-                                    <input type="text" name="tracking_number" value="{{ $order->tracking_number }}" class="w-full px-3 py-1.5 border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none" required>
+                                    <input type="text" name="tracking_number" value="{{ $order->tracking_number }}" pattern="[A-Za-z0-9\-]+" title="Nomor resi hanya boleh berupa kombinasi huruf dan angka" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '')" class="w-full px-3 py-1.5 border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none uppercase" required>
                                     <button type="submit" class="w-full bg-stone-800 hover:bg-black text-white font-bold py-1.5 rounded-xl transition">
                                         Simpan Perubahan
                                     </button>
@@ -316,7 +316,7 @@
 
                                 <div>
                                     <label class="block text-stone-700 font-bold text-[11px] mb-1">MASUKKAN NOMOR RESI PENGIRIMAN</label>
-                                    <input type="text" name="tracking_number" placeholder="Contoh: JNE123456789" required class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                                    <input type="text" name="tracking_number" placeholder="Contoh: JNE123456789" required pattern="[A-Za-z0-9\-]+" title="Nomor resi hanya boleh berupa kombinasi huruf dan angka" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '')" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none uppercase">
                                 </div>
 
                                 <button type="submit" class="w-full bg-stone-900 hover:bg-black text-white font-bold py-2.5 rounded-xl transition shadow-sm flex justify-center items-center gap-2">

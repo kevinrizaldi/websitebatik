@@ -96,7 +96,9 @@ class OrderController extends Controller
 
             $request->validate([
                 'status' => 'required|string',
-                'tracking_number' => 'nullable|string|max:100',
+                'tracking_number' => ['nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9\-]+$/'],
+            ], [
+                'tracking_number.regex' => 'Nomor resi hanya boleh berisi huruf dan angka tanpa simbol khusus.',
             ]);
 
             $newStatus = $this->normalizeStatus($request->status);
@@ -104,12 +106,13 @@ class OrderController extends Controller
 
             if ($newStatus === $currentStatus) {
                 if ($request->filled('tracking_number')) {
-                    $order->update(['tracking_number' => trim($request->tracking_number)]);
+                    $cleanTracking = strtoupper(trim((string) $request->tracking_number));
+                    $order->update(['tracking_number' => $cleanTracking]);
 
                     // Update pengiriman table
                     Pengiriman::updateOrCreate(
                         ['order_id' => $order->id],
-                        ['no_resi' => trim($request->tracking_number)]
+                        ['no_resi' => $cleanTracking]
                     );
 
                     return redirect()->back()->with('success', "✓ Nomor resi untuk pesanan #{$order->code} berhasil diperbarui.");
@@ -145,7 +148,7 @@ class OrderController extends Controller
 
             $payload = ['status' => $newStatus];
             if ($request->filled('tracking_number')) {
-                $payload['tracking_number'] = trim($request->tracking_number);
+                $payload['tracking_number'] = strtoupper(trim((string) $request->tracking_number));
             }
 
             $order->update($payload);
@@ -187,13 +190,17 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'ekspedisi' => 'required|string|max:100',
-            'no_resi' => 'required|string|max:100',
+            'no_resi' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9\-]+$/'],
             'tanggal_kirim' => 'nullable|date',
             'status_pengiriman' => 'required|string|in:Menunggu Pengiriman,Diproses,Dikirim,Diterima',
             'catatan' => 'nullable|string|max:500',
+        ], [
+            'no_resi.required' => 'Nomor resi wajib diisi.',
+            'no_resi.regex' => 'Nomor resi hanya boleh berisi huruf dan angka tanpa simbol khusus.',
         ]);
 
-        $order->update(['tracking_number' => $validated['no_resi']]);
+        $cleanResi = strtoupper(trim((string) $validated['no_resi']));
+        $order->update(['tracking_number' => $cleanResi]);
 
         // If shipping status is Dikirim, ensure order status is at least Dikirim
         if ($validated['status_pengiriman'] === 'Dikirim' && $order->status !== 'Dikirim') {
@@ -206,7 +213,7 @@ class OrderController extends Controller
             ['order_id' => $order->id],
             [
                 'ekspedisi' => $validated['ekspedisi'],
-                'no_resi' => $validated['no_resi'],
+                'no_resi' => $cleanResi,
                 'tanggal_kirim' => $validated['tanggal_kirim'] ?? now(),
                 'status_pengiriman' => $validated['status_pengiriman'],
                 'catatan' => $validated['catatan'] ?? null,

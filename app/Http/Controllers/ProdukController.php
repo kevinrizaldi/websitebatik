@@ -41,7 +41,9 @@ class ProdukController extends Controller
             'kategori' => 'required|string|max:100',
             'kategori_id' => 'nullable|exists:kategoris,id',
             'harga' => 'required|numeric|min:0|max:1000000',
-            'stok' => 'required|integer|min:0|max:1000',
+            'stok' => 'nullable|integer|min:0|max:1000',
+            'stok_ukuran' => 'nullable|array',
+            'stok_ukuran.*' => 'nullable|integer|min:0|max:1000',
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -52,11 +54,29 @@ class ProdukController extends Controller
             'harga.numeric' => 'Harga produk harus berupa angka.',
             'harga.min' => 'Harga produk tidak boleh minus (minimal Rp 0).',
             'harga.max' => 'Harga produk maksimal adalah Rp 1.000.000.',
-            'stok.required' => 'Stok produk wajib diisi.',
             'stok.integer' => 'Stok produk harus berupa bilangan bulat.',
             'stok.min' => 'Stok produk tidak boleh minus (minimal 0).',
             'stok.max' => 'Stok produk maksimal adalah 1.000 unit.',
         ]);
+
+        if ($request->has('stok_ukuran') && is_array($request->input('stok_ukuran'))) {
+            $filtered = [];
+            $totalStok = 0;
+            foreach ($request->input('stok_ukuran') as $size => $val) {
+                if ($val !== null && $val !== '') {
+                    $intVal = max(0, (int) $val);
+                    $filtered[(string) $size] = $intVal;
+                    $totalStok += $intVal;
+                }
+            }
+            if (! empty($filtered)) {
+                $validated['stok_ukuran'] = $filtered;
+                $validated['stok'] = $totalStok;
+                $validated['ukuran'] = implode(', ', array_keys($filtered));
+            }
+        }
+
+        $validated['stok'] = (int) ($validated['stok'] ?? 0);
 
         if ($validated['stok'] == 0) {
             $validated['status'] = 'Habis';
@@ -119,7 +139,9 @@ class ProdukController extends Controller
             'kategori' => 'required|string|max:100',
             'kategori_id' => 'nullable|exists:kategoris,id',
             'harga' => 'required|numeric|min:0|max:1000000',
-            'stok' => 'required|integer|min:0|max:1000',
+            'stok' => 'nullable|integer|min:0|max:1000',
+            'stok_ukuran' => 'nullable|array',
+            'stok_ukuran.*' => 'nullable|integer|min:0|max:1000',
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -130,11 +152,33 @@ class ProdukController extends Controller
             'harga.numeric' => 'Harga produk harus berupa angka.',
             'harga.min' => 'Harga produk tidak boleh minus (minimal Rp 0).',
             'harga.max' => 'Harga produk maksimal adalah Rp 1.000.000.',
-            'stok.required' => 'Stok produk wajib diisi.',
             'stok.integer' => 'Stok produk harus berupa bilangan bulat.',
             'stok.min' => 'Stok produk tidak boleh minus (minimal 0).',
             'stok.max' => 'Stok produk maksimal adalah 1.000 unit.',
         ]);
+
+        if ($request->has('stok_ukuran') && is_array($request->input('stok_ukuran'))) {
+            $filtered = [];
+            $totalStok = 0;
+            foreach ($request->input('stok_ukuran') as $size => $val) {
+                if ($val !== null && $val !== '') {
+                    $intVal = max(0, (int) $val);
+                    $filtered[(string) $size] = $intVal;
+                    $totalStok += $intVal;
+                }
+            }
+            if (! empty($filtered)) {
+                $validated['stok_ukuran'] = $filtered;
+                $validated['stok'] = $totalStok;
+                $validated['ukuran'] = implode(', ', array_keys($filtered));
+            } else {
+                $validated['stok_ukuran'] = null;
+            }
+        } else {
+            $validated['stok_ukuran'] = null;
+        }
+
+        $validated['stok'] = (int) ($validated['stok'] ?? $produk->stok);
 
         if ($validated['stok'] == 0) {
             $validated['status'] = 'Habis';

@@ -134,24 +134,39 @@
           },
 
           saveAddress() {
-              // Form modal selalu disimpan sebagai alamat BARU (bukan Utama),
-              // alamat lain tidak pernah diubah atau digeser statusnya.
-              if (!this.tempAddress.recipient.trim() || !this.tempAddress.phone.trim() || !this.tempAddress.address.trim() || !this.tempAddress.city.trim()) {
-                  this.showToast('Mohon lengkapi nama, nomor telepon, alamat, dan kota');
+              const recipient = (this.tempAddress.recipient || '').trim();
+              const phone = (this.tempAddress.phone || '').trim();
+              const address = (this.tempAddress.address || '').trim();
+              const city = (this.tempAddress.city || '').trim();
+              const label = (this.tempAddress.label || '').trim() || 'Alamat Baru';
+              const province = (this.tempAddress.province || '').trim();
+              const postalCode = (this.tempAddress.postalCode || '').trim();
+
+              if (!recipient || !phone || !address || !city) {
+                  this.showToast('Mohon lengkapi Nama Penerima, No HP, Kota, dan Alamat Lengkap');
                   return;
               }
+
+              if (phone.length < 10 || phone.length > 15) {
+                  this.showToast('Nomor WhatsApp / HP harus berupa 10 - 15 digit angka');
+                  return;
+              }
+
+              if (postalCode && postalCode.length !== 5) {
+                  this.showToast('Kode pos harus berupa 5 digit angka');
+                  return;
+              }
+
               const payload = {
-                  penerima: this.tempAddress.recipient.trim(),
-                  label_alamat: this.tempAddress.label.trim() || 'Alamat Baru',
-                  no_telepon: this.tempAddress.phone.trim(),
-                  alamat_lengkap: this.tempAddress.address.trim(),
-                  kota: this.tempAddress.city.trim(),
-                  provinsi: this.tempAddress.province.trim(),
-                  kode_pos: this.tempAddress.postalCode.trim(),
+                  penerima: recipient,
+                  label_alamat: label,
+                  no_telepon: phone,
+                  alamat_lengkap: address,
+                  kota: city,
+                  provinsi: province || null,
+                  kode_pos: postalCode || null,
                   is_utama: false
               };
-              this.applyPayloadToCheckout(payload, false);
-              this.editAddressModal = false;
 
               fetch('{{ route('alamat.store') }}', {
                   method: 'POST',
@@ -162,26 +177,33 @@
                   },
                   body: JSON.stringify(payload)
               })
-              .then(res => res.json())
-              .then(data => {
+              .then(async res => {
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok) {
+                      const msg = (data.errors ? Object.values(data.errors).flat()[0] : null) || data.message || 'Gagal menyimpan alamat. Periksa data Anda.';
+                      this.showToast(msg);
+                      return;
+                  }
                   if (data.success && data.alamat) {
-                          this.savedAddresses.push({
-                              id: data.alamat.id,
-                              label: data.alamat.label_alamat,
-                              penerima: data.alamat.penerima,
-                              phone: data.alamat.no_telepon,
-                              address: data.alamat.alamat_lengkap,
-                              city: data.alamat.kota,
-                              province: data.alamat.provinsi || '',
-                              postalCode: data.alamat.kode_pos || '',
-                              isUtama: !!data.alamat.is_utama
-                          });
+                      this.savedAddresses.push({
+                          id: data.alamat.id,
+                          label: data.alamat.label_alamat,
+                          penerima: data.alamat.penerima,
+                          phone: data.alamat.no_telepon,
+                          address: data.alamat.alamat_lengkap,
+                          city: data.alamat.kota,
+                          province: data.alamat.provinsi || '',
+                          postalCode: data.alamat.kode_pos || '',
+                          isUtama: !!data.alamat.is_utama
+                      });
+                      this.applyPayloadToCheckout(payload, false);
                       this.selectAddress(data.alamat.id);
-                      this.showToast('Alamat baru tersimpan & dipakai untuk pesanan ini!');
+                      this.editAddressModal = false;
+                      this.showToast('Alamat baru berhasil disimpan & digunakan!');
                   }
               })
               .catch(() => {
-                  this.showToast('Alamat dipakai untuk pesanan ini!');
+                  this.showToast('Terjadi kesalahan jaringan saat menyimpan alamat.');
               });
           },
 
@@ -194,6 +216,43 @@
               this.addressData.province = payload.provinsi || '';
               this.addressData.postalCode = payload.kode_pos || '';
               this.addressData.hasSavedAddress = isUtama;
+          },
+
+          deleteAddress(id) {
+              if (!confirm('Hapus alamat ini dari daftar tersimpan?')) return;
+              fetch('{{ url('/alamat') }}/' + id, {
+                  method: 'DELETE',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                      'Accept': 'application/json'
+                  }
+              })
+              .then(res => res.json())
+              .then(data => {
+                  if (data.success) {
+                      this.savedAddresses = this.savedAddresses.filter(a => a.id !== id);
+                      if (this.selectedAddressId === id) {
+                          if (this.savedAddresses.length > 0) {
+                              this.selectAddress(this.savedAddresses[0].id);
+                          } else {
+                              this.addressData.recipient = '';
+                              this.addressData.label = '';
+                              this.addressData.phone = '';
+                              this.addressData.address = '';
+                              this.addressData.city = '';
+                              this.addressData.province = '';
+                              this.addressData.postalCode = '';
+                              this.addressData.hasSavedAddress = false;
+                              this.selectedAddressId = null;
+                          }
+                      }
+                      this.showToast('Alamat berhasil dihapus.');
+                  }
+              })
+              .catch(() => {
+                  this.showToast('Gagal menghapus alamat.');
+              });
           },
 
           // Selected Items in Checkout
@@ -282,6 +341,12 @@
                   return;
               }
 
+              if (/[#@$%^&*+={}[\]|<>~]/.test(this.addressData.address) || /[#@$%^&*+={}[\]|<>~]/.test(this.addressData.recipient) || /[#@$%^&*+={}[\]|<>~]/.test(this.addressData.phone)) {
+                  this.showToast('Alamat yang dipilih masih mengandung simbol tidak valid. Silakan ubah alamat pengiriman Anda.');
+                  this.openEditAddress();
+                  return;
+              }
+
               // Metode Midtrans (VA, QRIS, Kartu Kredit) butuh user login
               const isMidtransMethod = this.selectedPayment !== 'manual_bca';
               const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
@@ -303,7 +368,7 @@
                       'Accept': 'application/json'
                   },
                   body: JSON.stringify({
-                      customer_name: this.addressData.recipient + (this.addressData.label ? ' (' + this.addressData.label + ')' : ''),
+                      customer_name: this.addressData.recipient,
                       phone: this.addressData.phone,
                       address: this.fullAddress,
                       shipping_option: shippingObj.name,
@@ -312,47 +377,49 @@
                       notes: this.sellerNotes
                   })
               })
-              .then(res => res.json())
-              .then(data => {
-                  if (data.success) {
-                      // Langsung buka popup bawaan Midtrans bila token tersedia.
-                      if (data.snap_token && typeof window.snap !== 'undefined' && !String(data.snap_token).startsWith('MOCK_SNAP_')) {
-                          window.snap.pay(data.snap_token, {
-                              onSuccess: () => {
-                                  window.location.href = '{{ route('midtrans.finish') }}?order_id=' + encodeURIComponent(data.order_code) + '&status=success';
-                              },
-                              onPending: () => {
-                                  this.showToast('Menunggu pembayaran Anda diselesaikan.');
-                                  setTimeout(() => {
-                                      window.location.href = '{{ route('pesanan.index') }}';
-                                  }, 1500);
-                              },
-                              onError: () => {
-                                  this.isSubmitting = false;
-                                  this.showToast('Pembayaran gagal. Lanjutkan dari halaman pembayaran.');
-                                  setTimeout(() => {
-                                      window.location.href = data.redirect_url || '{{ route('pesanan.index') }}';
-                                  }, 1500);
-                              },
-                              onClose: () => {
-                                  this.isSubmitting = false;
-                                  this.showToast('Popup Midtrans ditutup. Lanjutkan kapan saja dari halaman pembayaran.');
-                                  setTimeout(() => {
-                                      window.location.href = data.redirect_url || '{{ route('pesanan.index') }}';
-                                  }, 1500);
-                              }
-                          });
-                          return;
-                      }
-                      window.location.href = data.redirect_url || '{{ route('pesanan.index') }}';
-                  } else {
+              .then(async res => {
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok || !data.success) {
                       this.isSubmitting = false;
-                      this.showToast(data.message || 'Gagal memproses transaksi.');
+                      const errorMsg = (data.errors ? Object.values(data.errors).flat()[0] : null) || data.message || 'Gagal memproses transaksi.';
+                      this.showToast(errorMsg);
+                      return;
                   }
+
+                  // Langsung buka popup bawaan Midtrans bila token tersedia.
+                  if (data.snap_token && typeof window.snap !== 'undefined' && !String(data.snap_token).startsWith('MOCK_SNAP_')) {
+                      window.snap.pay(data.snap_token, {
+                          onSuccess: () => {
+                              window.location.href = '{{ route('midtrans.finish') }}?order_id=' + encodeURIComponent(data.order_code) + '&status=success';
+                          },
+                          onPending: () => {
+                              this.showToast('Menunggu pembayaran Anda diselesaikan.');
+                              setTimeout(() => {
+                                  window.location.href = '{{ route('pesanan.index') }}';
+                              }, 1500);
+                          },
+                          onError: () => {
+                              this.isSubmitting = false;
+                              this.showToast('Pembayaran gagal. Lanjutkan dari halaman pembayaran.');
+                              setTimeout(() => {
+                                  window.location.href = data.redirect_url || '{{ route('pesanan.index') }}';
+                              }, 1500);
+                          },
+                          onClose: () => {
+                              this.isSubmitting = false;
+                              this.showToast('Popup Midtrans ditutup. Lanjutkan kapan saja dari halaman pembayaran.');
+                              setTimeout(() => {
+                                  window.location.href = data.redirect_url || '{{ route('pesanan.index') }}';
+                              }, 1500);
+                          }
+                      });
+                      return;
+                  }
+                  window.location.href = data.redirect_url || '{{ route('pesanan.index') }}';
               })
               .catch(() => {
                   this.isSubmitting = false;
-                  window.location.href = '{{ route('pesanan.index') }}';
+                  this.showToast('Terjadi kendala koneksi saat menghubungi server.');
               });
           }
       }">
@@ -419,21 +486,26 @@
                         </p>
                         <div class="space-y-2 max-h-52 overflow-y-auto pr-0.5">
                             <template x-for="addr in savedAddresses" :key="addr.id">
-                                <button @click="selectAddress(addr.id); editAddressModal = false; showToast('Alamat pengiriman diganti!')" type="button"
-                                        :class="selectedAddressId === addr.id ? 'border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/30' : 'border-stone-200 hover:border-stone-300 bg-white'"
-                                        class="w-full text-left p-3 rounded-2xl border transition flex items-start gap-2.5">
-                                    <span class="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
-                                          :class="selectedAddressId === addr.id ? 'border-[#B58742] bg-[#B58742]' : 'border-stone-300'">
-                                        <span x-show="selectedAddressId === addr.id" class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                                    </span>
-                                    <span class="flex-1 min-w-0">
-                                        <span class="flex flex-wrap items-center gap-1.5">
-                                            <span class="font-bold text-xs text-stone-900" x-text="addr.label + ' — ' + addr.penerima"></span>
-                                            <span x-show="addr.isUtama" class="px-1.5 py-px rounded-full bg-[#201A17] text-white text-[9px] font-bold uppercase">Utama</span>
+                                <div class="flex items-center gap-2">
+                                    <button @click="selectAddress(addr.id); editAddressModal = false; showToast('Alamat pengiriman diganti!')" type="button"
+                                            :class="selectedAddressId === addr.id ? 'border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/30' : 'border-stone-200 hover:border-stone-300 bg-white'"
+                                            class="flex-1 text-left p-3 rounded-2xl border transition flex items-start gap-2.5">
+                                        <span class="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
+                                              :class="selectedAddressId === addr.id ? 'border-[#B58742] bg-[#B58742]' : 'border-stone-300'">
+                                            <span x-show="selectedAddressId === addr.id" class="w-1.5 h-1.5 rounded-full bg-white"></span>
                                         </span>
-                                        <span class="block text-[11px] text-stone-500 mt-0.5 truncate" x-text="addr.address + (addr.city ? ', ' + addr.city : '')"></span>
-                                    </span>
-                                </button>
+                                        <span class="flex-1 min-w-0">
+                                            <span class="flex flex-wrap items-center gap-1.5">
+                                                <span class="font-bold text-xs text-stone-900" x-text="addr.label + ' — ' + addr.penerima"></span>
+                                                <span x-show="addr.isUtama" class="px-1.5 py-px rounded-full bg-[#201A17] text-white text-[9px] font-bold uppercase">Utama</span>
+                                            </span>
+                                            <span class="block text-[11px] text-stone-500 mt-0.5 truncate" x-text="addr.address + (addr.city ? ', ' + addr.city : '')"></span>
+                                        </span>
+                                    </button>
+                                    <button @click="deleteAddress(addr.id)" type="button" title="Hapus alamat ini" class="p-2 text-stone-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
+                                </div>
                             </template>
                         </div>
                     </div>
@@ -449,6 +521,7 @@
                             </label>
                              <input type="text" 
                                     x-model="tempAddress.recipient"
+                                    @input="tempAddress.recipient = tempAddress.recipient.replace(/[^a-zA-Z\s\'.]/g, '')"
                                     placeholder="Nama lengkap penerima"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                         </div>
@@ -458,6 +531,7 @@
                             </label>
                             <input type="text" 
                                    x-model="tempAddress.label"
+                                   @input="tempAddress.label = tempAddress.label.replace(/[^a-zA-Z0-9\s]/g, '')"
                                    placeholder="Rumah Utama / Kantor"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                         </div>
@@ -467,9 +541,12 @@
                         <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
                             Nomor WhatsApp / HP <span class="text-rose-500">*</span>
                         </label>
-                             <input type="text" 
+                             <input type="tel" 
+                                    inputmode="numeric"
+                                    maxlength="15"
                                     x-model="tempAddress.phone"
-                                    placeholder="Nomor HP aktif penerima"
+                                    @input="tempAddress.phone = tempAddress.phone.replace(/[^0-9]/g, '')"
+                                    placeholder="Contoh: 081234567890 (10-15 digit)"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                      </div>
 
@@ -479,6 +556,7 @@
                          </label>
                          <input type="text"
                                 x-model="tempAddress.city"
+                                @input="tempAddress.city = tempAddress.city.replace(/[^a-zA-Z\s]/g, '')"
                                 placeholder="Kota tujuan pengiriman"
                                 class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                      </div>
@@ -490,6 +568,7 @@
                              </label>
                              <input type="text"
                                     x-model="tempAddress.province"
+                                    @input="tempAddress.province = tempAddress.province.replace(/[^a-zA-Z\s]/g, '')"
                                     placeholder="Provinsi"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                          </div>
@@ -498,8 +577,11 @@
                                  Kode Pos
                              </label>
                              <input type="text"
+                                    inputmode="numeric"
+                                    maxlength="5"
                                     x-model="tempAddress.postalCode"
-                                    placeholder="Contoh: 12190"
+                                    @input="tempAddress.postalCode = tempAddress.postalCode.replace(/[^0-9]/g, '')"
+                                    placeholder="Contoh: 12190 (5 digit)"
                                     class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                          </div>
                      </div>
@@ -509,6 +591,7 @@
                             Alamat Lengkap <span class="text-rose-500">*</span>
                         </label>
                         <textarea x-model="tempAddress.address"
+                                  @input="tempAddress.address = tempAddress.address.replace(/[^a-zA-Z0-9\s.,\/\-]/g, '')"
                                   rows="3"
                                   placeholder="Nama Jalan, Nomor Gedung/Rumah, RT/RW, Kelurahan, Kecamatan, Kota, Kode Pos"
                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40"></textarea>
@@ -840,7 +923,9 @@
                                 </span>
                                 <input type="text" 
                                        x-model="sellerNotes"
-                                       placeholder="Contoh: Mohon sertakan kartu ucapan kado & kemasan ramah lingkungan ekstra"
+                                       maxlength="250"
+                                       @input="sellerNotes = sellerNotes.replace(/[^a-zA-Z0-9\s.,\'\-()\/!?]/g, '')"
+                                       placeholder="Contoh: Mohon sertakan kartu ucapan kado (maksimal 250 karakter)"
                                        class="w-full pl-10 pr-4 py-3 rounded-2xl border border-stone-200 text-xs sm:text-sm text-stone-800 bg-[#FAF7F2]/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#B58742]/40 focus:border-[#B58742] transition placeholder-stone-400">
                             </div>
                         </div>

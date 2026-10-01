@@ -71,25 +71,107 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                Harga (Rp) <span class="text-rose-500">*</span>
+                    @php
+                        $currentStokUkuran = $produk->getStokUkuranArray();
+                        $hasSizes = !isset($currentStokUkuran['All Size']) && count($currentStokUkuran) > 0;
+                    @endphp
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                            Harga (Rp) <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="number" name="harga" value="{{ old('harga', $produk->harga) }}" min="0" max="1000000" required
+                               placeholder="Maks. 1.000.000"
+                               class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="text-[11px] text-gray-500 mt-1">Maks. Rp 1.000.000 (tidak boleh minus)</p>
+                    </div>
+
+                    <!-- Pengaturan Stok Produk (Per Ukuran atau Tunggal) -->
+                    <div x-data="{
+                        useSizeStock: {{ $hasSizes ? 'true' : 'false' }},
+                        sizes: {
+                            'S': '{{ old('stok_ukuran.S', $currentStokUkuran['S'] ?? 0) }}',
+                            'M': '{{ old('stok_ukuran.M', $currentStokUkuran['M'] ?? 0) }}',
+                            'L': '{{ old('stok_ukuran.L', $currentStokUkuran['L'] ?? 0) }}',
+                            'XL': '{{ old('stok_ukuran.XL', $currentStokUkuran['XL'] ?? 0) }}',
+                            'XXL': '{{ old('stok_ukuran.XXL', $currentStokUkuran['XXL'] ?? 0) }}'
+                        },
+                        singleStock: '{{ old('stok', $produk->stok) }}',
+                        get totalStock() {
+                            if (!this.useSizeStock) {
+                                return Math.min(1000, Math.max(0, parseInt(this.singleStock) || 0));
+                            }
+                            let sum = 0;
+                            for (let s in this.sizes) {
+                                sum += (parseInt(this.sizes[s]) || 0);
+                            }
+                            return Math.min(1000, Math.max(0, sum));
+                        }
+                    }" class="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-800 uppercase tracking-wider">
+                                    Pengaturan Stok Produk <span class="text-rose-500">*</span>
+                                </label>
+                                <p class="text-[11px] text-gray-500 mt-0.5">
+                                    Pilih opsi stok per ukuran pakaian atau stok tunggal (All Size / Non-Pakaian)
+                                </p>
+                            </div>
+                            <label class="inline-flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-gray-300 shadow-2xs hover:bg-gray-50 text-xs">
+                                <input type="checkbox" x-model="useSizeStock" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                <span class="font-semibold text-gray-700">Stok per Ukuran (S, M, L, XL, XXL)</span>
                             </label>
-                            <input type="number" name="harga" value="{{ old('harga', $produk->harga) }}" min="0" max="1000000" required
-                                   placeholder="Maks. 1.000.000"
-                                   class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            <p class="text-[11px] text-gray-500 mt-1">Maks. Rp 1.000.000 (tidak boleh minus)</p>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                Stok (Pcs) <span class="text-rose-500">*</span>
+                        <!-- Grid Stok per Ukuran -->
+                        <div x-show="useSizeStock" class="space-y-3">
+                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                <template x-for="sz in ['S', 'M', 'L', 'XL', 'XXL']" :key="sz">
+                                    <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-2xs text-center space-y-1.5">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-extrabold text-gray-700" x-text="'Size ' + sz"></span>
+                                            <span x-show="parseInt(sizes[sz]) === 0" class="text-[10px] font-bold text-rose-500 uppercase">Habis</span>
+                                        </div>
+                                        <input type="number" 
+                                               :name="'stok_ukuran[' + sz + ']'" 
+                                               x-model="sizes[sz]" 
+                                               :disabled="!useSizeStock"
+                                               min="0" max="1000" 
+                                               placeholder="0"
+                                               class="w-full text-center text-sm font-bold border border-gray-300 rounded-md py-1.5 px-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                        <span class="text-[10px] text-gray-400 block">Pcs</span>
+                                    </div>
+                                </template>
+                            </div>
+                            <p class="text-[11px] text-gray-500 italic">
+                                * Isi 0 jika ukuran tersebut sedang kosong/habis. Di sisi pembeli, ukuran dengan stok 0 otomatis abu-abu & tidak dapat dipilih.
+                            </p>
+                        </div>
+
+                        <!-- Input Stok Tunggal (Bila bukan per ukuran) -->
+                        <div x-show="!useSizeStock" x-cloak class="bg-white p-3.5 rounded-lg border border-gray-200 shadow-2xs space-y-2">
+                            <label class="block text-xs font-semibold text-gray-700">
+                                Jumlah Stok (All Size / Produk Tunggal)
                             </label>
-                            <input type="number" name="stok" value="{{ old('stok', $produk->stok) }}" min="0" max="1000" required
-                                   placeholder="Maks. 1000"
-                                   class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                            <p class="text-[11px] text-gray-500 mt-1">Maks. 1.000 unit (tidak boleh minus)</p>
+                            <input type="number" 
+                                   x-model="singleStock" 
+                                   :disabled="useSizeStock"
+                                   min="0" max="1000" 
+                                   placeholder="Contoh: 20"
+                                   class="w-full text-sm border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <p class="text-[11px] text-gray-500">Cocok untuk Kain Batik meteran, aksesoris, atau tas.</p>
+                        </div>
+
+                        <!-- Hidden Total Stock Input yang dikirimkan ke form -->
+                        <input type="hidden" name="stok" :value="totalStock">
+
+                        <!-- Footer Total Stok Real-time -->
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-200">
+                            <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">Total Stok Tersedia:</span>
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-base font-extrabold text-indigo-700" x-text="totalStock"></span>
+                                <span class="text-xs font-medium text-gray-500">pcs</span>
+                            </div>
                         </div>
                     </div>
 

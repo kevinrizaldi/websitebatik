@@ -239,7 +239,11 @@ class PaymentController extends Controller
             // Kembalikan stok produk yang sempat terpotong saat checkout.
             foreach ($order->items as $item) {
                 if ($item->produk) {
-                    $item->produk->increment('stok', $item->quantity);
+                    $extractedUkuran = null;
+                    if (preg_match('/\((S|M|L|XL|XXL|All Size)\)$/i', (string) $item->produk_name, $m)) {
+                        $extractedUkuran = strtoupper($m[1]);
+                    }
+                    $item->produk->incrementStokForUkuran($extractedUkuran, $item->quantity);
                 }
             }
 

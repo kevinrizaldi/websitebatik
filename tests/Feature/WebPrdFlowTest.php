@@ -105,6 +105,24 @@ class WebPrdFlowTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_admin_category_validation_rejects_symbols_and_numbers(): void
+    {
+        $admin = $this->admin();
+
+        // Reject symbol
+        $response = $this->actingAs($admin)->post(route('admin.kategori.store'), [
+            'nama_kategori' => 'Kategori @#$ 123',
+        ]);
+        $response->assertSessionHasErrors('nama_kategori');
+
+        // Accept valid letters and spaces
+        $response = $this->actingAs($admin)->post(route('admin.kategori.store'), [
+            'nama_kategori' => 'Kain Tradisional Sutra',
+        ]);
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('kategoris', ['nama_kategori' => 'Kain Tradisional Sutra']);
+    }
+
     public function test_produk_create_form_uses_dynamic_categories(): void
     {
         Kategori::create(['nama_kategori' => 'Seragam ASN', 'slug' => 'seragam-asn']);
@@ -150,6 +168,41 @@ class WebPrdFlowTest extends TestCase
         $response->assertRedirect(route('pesanan.index'));
         $this->assertDatabaseHas('orders', ['code' => 'ORD-TEST-002', 'status' => 'Selesai']);
         $this->assertDatabaseHas('pengirimans', ['order_id' => $order->id, 'status_pengiriman' => 'Diterima']);
+    }
+
+    public function test_admin_resi_validation_rejects_symbols(): void
+    {
+        $admin = $this->admin();
+        $user = $this->customer();
+        $order = Order::create([
+            'user_id' => $user->id,
+            'code' => 'ORD-RESI-001',
+            'customer_name' => $user->name,
+            'phone' => '081234567890',
+            'address' => 'Jl. Batik No. 1, Surakarta',
+            'total_price' => 100000,
+            'payment_method' => 'Midtrans',
+            'status' => 'Diproses',
+        ]);
+
+        // Simbol ditolak
+        $response = $this->actingAs($admin)->patch(route('admin.orders.update-status', $order), [
+            'status' => 'Dikirim',
+            'tracking_number' => 'RESI@#$!*123',
+        ]);
+        $response->assertSessionHasErrors('tracking_number');
+
+        // Huruf dan angka diterima dan disimpan huruf kapital
+        $responseValid = $this->actingAs($admin)->patch(route('admin.orders.update-status', $order), [
+            'status' => 'Dikirim',
+            'tracking_number' => 'jne987654321',
+        ]);
+        $responseValid->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'Dikirim',
+            'tracking_number' => 'JNE987654321',
+        ]);
     }
 
     public function test_profile_page_shows_prd_sections_without_poin_or_voucher(): void
@@ -489,6 +542,43 @@ class WebPrdFlowTest extends TestCase
         $response->assertSee('Pilih Alamat Tersimpan');
         $response->assertSee('Tambah Alamat Baru');
         $response->assertSee('Jl. Mawar No. 1');
+    }
+
+    public function test_customer_address_validation_rejects_symbols(): void
+    {
+        $user = $this->customer();
+
+        // Testing rejection of symbols like "##" from the user request
+        $response = $this->actingAs($user)->postJson(route('alamat.store'), [
+            'penerima' => 'kevin rizaldi',
+            'label_alamat' => 'da##',
+            'no_telepon' => '##',
+            'kota' => '##',
+            'provinsi' => '##',
+            'kode_pos' => '##',
+            'alamat_lengkap' => '##',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['label_alamat', 'no_telepon', 'kota', 'provinsi', 'kode_pos', 'alamat_lengkap']);
+
+        // Testing acceptance of valid address
+        $validResponse = $this->actingAs($user)->postJson(route('alamat.store'), [
+            'penerima' => 'Kevin Rizaldi',
+            'label_alamat' => 'Rumah Utama',
+            'no_telepon' => '081234567890',
+            'kota' => 'Kota Pekalongan',
+            'provinsi' => 'Jawa Tengah',
+            'kode_pos' => '51111',
+            'alamat_lengkap' => 'Jl. Urip Sumoharjo No. 10, RT 02/RW 03',
+        ]);
+
+        $validResponse->assertOk()->assertJson(['success' => true]);
+        $this->assertDatabaseHas('alamats', [
+            'user_id' => $user->id,
+            'penerima' => 'Kevin Rizaldi',
+            'kota' => 'Kota Pekalongan',
+        ]);
     }
 
     public function test_diproses_order_shows_sedang_diproses_tab_and_label(): void

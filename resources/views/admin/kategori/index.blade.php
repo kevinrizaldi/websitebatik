@@ -41,7 +41,7 @@
                             @csrf
                             <div>
                                 <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-700">Nama Kategori <span class="text-rose-500">*</span></label>
-                                <input type="text" name="nama_kategori" value="{{ old('nama_kategori') }}" required placeholder="Contoh: Seragam ASN" class="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <input type="text" name="nama_kategori" value="{{ old('nama_kategori') }}" required pattern="[a-zA-Z\s]+" title="Nama kategori hanya boleh berupa huruf dan spasi" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" placeholder="Contoh: Seragam ASN" class="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             </div>
                             <div>
                                 <label class="mb-2 block text-xs font-bold uppercase tracking-wider text-gray-700">Deskripsi</label>
@@ -82,7 +82,7 @@
                                                         <form action="{{ route('admin.kategori.update', $kategori) }}" method="POST" class="absolute right-0 z-10 mt-2 w-72 space-y-2 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
                                                             @csrf
                                                             @method('PUT')
-                                                            <input type="text" name="nama_kategori" value="{{ $kategori->nama_kategori }}" required class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
+                                                            <input type="text" name="nama_kategori" value="{{ $kategori->nama_kategori }}" required pattern="[a-zA-Z\s]+" title="Nama kategori hanya boleh berupa huruf dan spasi" oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
                                                             <textarea name="deskripsi" rows="2" class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">{{ $kategori->deskripsi }}</textarea>
                                                             <button type="submit" class="w-full rounded-md bg-gray-900 py-2 text-xs font-bold text-white hover:bg-black">Simpan</button>
                                                         </form>

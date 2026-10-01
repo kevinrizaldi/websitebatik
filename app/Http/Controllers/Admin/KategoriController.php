@@ -27,10 +27,11 @@ class KategoriController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'nama_kategori' => 'required|string|max:255|unique:kategoris,nama_kategori',
+            'nama_kategori' => ['required', 'string', 'max:255', 'regex:/^[\pL\s]+$/u', 'unique:kategoris,nama_kategori'],
             'deskripsi' => 'nullable|string|max:1000',
         ], [
             'nama_kategori.required' => 'Nama kategori wajib diisi.',
+            'nama_kategori.regex' => 'Nama kategori hanya boleh berupa huruf dan spasi tanpa angka atau simbol.',
             'nama_kategori.unique' => 'Kategori dengan nama tersebut sudah ada.',
         ]);
 
@@ -49,8 +50,12 @@ class KategoriController extends Controller
     public function update(Request $request, Kategori $kategori): RedirectResponse
     {
         $validated = $request->validate([
-            'nama_kategori' => 'required|string|max:255|unique:kategoris,nama_kategori,'.$kategori->id,
+            'nama_kategori' => ['required', 'string', 'max:255', 'regex:/^[\pL\s]+$/u', 'unique:kategoris,nama_kategori,'.$kategori->id],
             'deskripsi' => 'nullable|string|max:1000',
+        ], [
+            'nama_kategori.required' => 'Nama kategori wajib diisi.',
+            'nama_kategori.regex' => 'Nama kategori hanya boleh berupa huruf dan spasi tanpa angka atau simbol.',
+            'nama_kategori.unique' => 'Kategori dengan nama tersebut sudah ada.',
         ]);
 
         $kategori->update([

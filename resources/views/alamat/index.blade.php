@@ -265,34 +265,34 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Nama Penerima <span class="text-rose-500">*</span></label>
-                            <input type="text" x-model="addrForm.penerima" placeholder="Masukkan nama penerima" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <input type="text" x-model="addrForm.penerima" @input="addrForm.penerima = addrForm.penerima.replace(/[^a-zA-Z\s\'.]/g, '')" placeholder="Masukkan nama penerima" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
                         <div>
                             <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Nomor Telepon <span class="text-rose-500">*</span></label>
-                            <input type="text" x-model="addrForm.phone" placeholder="Contoh: 08123456789" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <input type="tel" inputmode="numeric" maxlength="15" x-model="addrForm.phone" @input="addrForm.phone = addrForm.phone.replace(/[^0-9]/g, '')" placeholder="Contoh: 08123456789 (10-15 digit)" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
                     </div>
                     <div>
                         <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Label Alamat</label>
-                        <input type="text" x-model="addrForm.label" placeholder="Contoh: Rumah, Kantor" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                        <input type="text" x-model="addrForm.label" @input="addrForm.label = addrForm.label.replace(/[^a-zA-Z0-9\s]/g, '')" placeholder="Contoh: Rumah, Kantor" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Provinsi</label>
-                            <input type="text" x-model="addrForm.provinsi" placeholder="Provinsi" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <input type="text" x-model="addrForm.provinsi" @input="addrForm.provinsi = addrForm.provinsi.replace(/[^a-zA-Z\s]/g, '')" placeholder="Provinsi" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
                         <div>
                             <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Kabupaten/Kota <span class="text-rose-500">*</span></label>
-                            <input type="text" x-model="addrForm.kota" placeholder="Kabupaten/Kota" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <input type="text" x-model="addrForm.kota" @input="addrForm.kota = addrForm.kota.replace(/[^a-zA-Z\s]/g, '')" placeholder="Kabupaten/Kota" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
                     </div>
                     <div>
                         <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Kode Pos</label>
-                        <input type="text" x-model="addrForm.kodepos" placeholder="Contoh: 12190" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                        <input type="text" inputmode="numeric" maxlength="5" x-model="addrForm.kodepos" @input="addrForm.kodepos = addrForm.kodepos.replace(/[^0-9]/g, '')" placeholder="Contoh: 12190 (5 digit)" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                     </div>
                     <div>
                         <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Alamat Lengkap <span class="text-rose-500">*</span></label>
-                        <textarea x-model="addrForm.lengkap" rows="3" placeholder="Nama jalan, Gedung, No. Rumah, RT/RW, dan patokan" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none"></textarea>
+                        <textarea x-model="addrForm.lengkap" @input="addrForm.lengkap = addrForm.lengkap.replace(/[^a-zA-Z0-9\s.,\/\-]/g, '')" rows="3" placeholder="Nama jalan, Gedung, No. Rumah, RT/RW, dan patokan" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none"></textarea>
                     </div>
                     <label class="flex items-center gap-2 text-xs text-stone-600">
                         <input type="checkbox" x-model="addrForm.utama" class="h-4 w-4 rounded border-stone-300">
