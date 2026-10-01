@@ -11,6 +11,8 @@ class Produk extends Model
 {
     use HasFactory;
 
+    public const LOW_STOCK_THRESHOLD = 10;
+
     protected $table = 'produks';
 
     protected $fillable = [
@@ -33,6 +35,15 @@ class Produk extends Model
         'harga' => 'decimal:2',
         'stok' => 'integer',
     ];
+
+    public static function statusForStock(int $stock): string
+    {
+        return match (true) {
+            $stock <= 0 => 'Habis',
+            $stock <= self::LOW_STOCK_THRESHOLD => 'Stok Menipis',
+            default => 'Tersedia',
+        };
+    }
 
     /**
      * Relasi ke Kategori

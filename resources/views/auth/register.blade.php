@@ -25,6 +25,11 @@
                             name="password"
                             required autocomplete="new-password" />
 
+            <label for="show_password" class="flex items-center mt-2 text-sm text-gray-600 cursor-pointer">
+                <input id="show_password" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                <span class="ms-2">Tampilkan password</span>
+            </label>
+
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
@@ -49,4 +54,12 @@
             </x-primary-button>
         </div>
     </form>
+
+    <script>
+        document.getElementById('show_password').addEventListener('change', (event) => {
+            const inputType = event.target.checked ? 'text' : 'password';
+            document.getElementById('password').type = inputType;
+            document.getElementById('password_confirmation').type = inputType;
+        });
+    </script>
 </x-guest-layout>

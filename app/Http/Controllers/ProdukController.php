@@ -4,20 +4,45 @@ namespace App\Http\Controllers;
 
 use App\Models\Kategori;
 use App\Models\Produk;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class ProdukController extends Controller
 {
     /**
      * Menampilkan semua produk
      */
-    public function index()
+    public function index(Request $request): View
     {
-        $produks = Produk::latest()->paginate(5);
+        $validated = $request->validate([
+            'search' => 'nullable|string|max:100',
+            'stok_menipis' => 'nullable|in:1',
+            'stok_habis' => 'nullable|in:1',
+        ]);
+        $search = trim($validated['search'] ?? '');
+        $lowStockOnly = $request->boolean('stok_menipis');
+        $outOfStockOnly = $request->boolean('stok_habis');
 
-        return view('produk.index', compact('produks'));
+        $produks = Produk::query()
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $query) use ($search): void {
+                    foreach (['nama', 'sku', 'kategori', 'jenis_produk', 'deskripsi', 'material', 'ukuran', 'status'] as $column) {
+                        $query->orWhere($column, 'like', '%'.$search.'%');
+                    }
+                });
+            })
+            ->when($lowStockOnly, fn (Builder $query): Builder => $query->whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD]))
+            ->when($outOfStockOnly, fn (Builder $query): Builder => $query->where('stok', '<=', 0))
+            ->latest()
+            ->paginate(5)
+            ->withQueryString();
+        $lowStockCount = Produk::whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD])->count();
+        $outOfStockCount = Produk::where('stok', '<=', 0)->count();
+
+        return view('produk.index', compact('produks', 'search', 'lowStockOnly', 'lowStockCount', 'outOfStockOnly', 'outOfStockCount'));
     }
 
     /**
@@ -58,13 +83,7 @@ class ProdukController extends Controller
             'stok.max' => 'Stok produk maksimal adalah 1.000 unit.',
         ]);
 
-        if ($validated['stok'] == 0) {
-            $validated['status'] = 'Habis';
-        } elseif ($validated['stok'] <= 15) {
-            $validated['status'] = 'Stok Menipis';
-        } else {
-            $validated['status'] = 'Tersedia';
-        }
+        $validated['status'] = Produk::statusForStock((int) $validated['stok']);
 
         if ($request->hasFile('gambar')) {
             $validated['gambar'] =
@@ -136,13 +155,7 @@ class ProdukController extends Controller
             'stok.max' => 'Stok produk maksimal adalah 1.000 unit.',
         ]);
 
-        if ($validated['stok'] == 0) {
-            $validated['status'] = 'Habis';
-        } elseif ($validated['stok'] <= 15) {
-            $validated['status'] = 'Stok Menipis';
-        } else {
-            $validated['status'] = 'Tersedia';
-        }
+        $validated['status'] = Produk::statusForStock((int) $validated['stok']);
 
         if ($request->hasFile('gambar')) {
 

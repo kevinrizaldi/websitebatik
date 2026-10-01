@@ -59,6 +59,57 @@ class ProdukValidationTest extends TestCase
         ]);
     }
 
+    public function test_product_status_becomes_low_stock_at_ten_and_available_at_eleven(): void
+    {
+        $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Batik Batas Menipis',
+            'sku' => 'BTK-LOW-010',
+            'kategori' => 'Kain Batik',
+            'harga' => 200000,
+            'stok' => 10,
+        ])->assertRedirect(route('produk.index'));
+
+        $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Batik Batas Aman',
+            'sku' => 'BTK-LOW-011',
+            'kategori' => 'Kain Batik',
+            'harga' => 200000,
+            'stok' => 11,
+        ])->assertRedirect(route('produk.index'));
+
+        $this->assertDatabaseHas('produks', ['sku' => 'BTK-LOW-010', 'status' => 'Stok Menipis']);
+        $this->assertDatabaseHas('produks', ['sku' => 'BTK-LOW-011', 'status' => 'Tersedia']);
+    }
+
+    public function test_product_status_updates_when_stock_crosses_the_low_stock_threshold(): void
+    {
+        $product = Produk::create([
+            'nama' => 'Batik Ubah Stok',
+            'sku' => 'BTK-LOW-EDIT',
+            'kategori' => 'Kain Batik',
+            'harga' => 200000,
+            'stok' => 11,
+            'status' => 'Tersedia',
+        ]);
+        $productDetails = [
+            'nama' => $product->nama,
+            'sku' => $product->sku,
+            'kategori' => $product->kategori,
+            'harga' => $product->harga,
+        ];
+
+        $this->actingAs($this->admin)
+            ->put(route('produk.update', $product), $productDetails + ['stok' => 10])
+            ->assertRedirect(route('produk.index'));
+
+        $this->assertDatabaseHas('produks', ['id' => $product->id, 'status' => 'Stok Menipis']);
+
+        $this->put(route('produk.update', $product), $productDetails + ['stok' => 11])
+            ->assertRedirect(route('produk.index'));
+
+        $this->assertDatabaseHas('produks', ['id' => $product->id, 'status' => 'Tersedia']);
+    }
+
     public function test_create_fails_when_price_exceeds_one_million(): void
     {
         $response = $this->actingAs($this->admin)->post(route('produk.store'), [
@@ -197,5 +248,92 @@ class ProdukValidationTest extends TestCase
             'harga' => 1000000,
             'stok' => 1000,
         ]);
+    }
+
+    public function test_product_index_searches_by_product_keywords(): void
+    {
+        $matchedProduct = Produk::create([
+            'nama' => 'Batik Motif Parang',
+            'sku' => 'SKU-CARI-PARANG',
+            'kategori' => 'Kain Batik',
+            'harga' => 250000,
+            'stok' => 24,
+            'status' => 'Tersedia',
+            'material' => 'Katun',
+        ]);
+        Produk::create([
+            'nama' => 'Batik Motif Kawung',
+            'sku' => 'SKU-CARI-KAWUNG',
+            'kategori' => 'Kain Batik',
+            'harga' => 250000,
+            'stok' => 24,
+            'status' => 'Tersedia',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('produk.index', ['search' => 'SKU-CARI-PARANG']));
+
+        $response->assertOk()
+            ->assertSee($matchedProduct->nama)
+            ->assertSee($matchedProduct->sku)
+            ->assertDontSee('Batik Motif Kawung');
+    }
+
+    public function test_low_stock_notification_filters_products_with_stock_from_one_to_ten(): void
+    {
+        foreach ([
+            ['Batik Stok Rendah', 'SKU-LOW-001', 1],
+            ['Batik Stok Batas', 'SKU-LOW-010', 10],
+            ['Batik Habis', 'SKU-LOW-000', 0],
+            ['Batik Aman', 'SKU-LOW-011', 11],
+        ] as [$name, $sku, $stock]) {
+            Produk::create([
+                'nama' => $name,
+                'sku' => $sku,
+                'kategori' => 'Kain Batik',
+                'harga' => 250000,
+                'stok' => $stock,
+                'status' => Produk::statusForStock($stock),
+            ]);
+        }
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('produk.index', ['stok_menipis' => 1]));
+
+        $response->assertOk()
+            ->assertSee('aria-label="Lihat 2 produk dengan stok menipis"', false)
+            ->assertSee('Batik Stok Rendah')
+            ->assertSee('Batik Stok Batas')
+            ->assertDontSee('Batik Habis')
+            ->assertDontSee('Batik Aman')
+            ->assertSee('Reset')
+            ->assertDontSee('Tampilkan semua produk');
+    }
+
+    public function test_out_of_stock_notification_filters_products_with_zero_stock(): void
+    {
+        foreach ([
+            ['Batik Habis', 'SKU-OUT-000', 0],
+            ['Batik Tersedia', 'SKU-OUT-011', 11],
+        ] as [$name, $sku, $stock]) {
+            Produk::create([
+                'nama' => $name,
+                'sku' => $sku,
+                'kategori' => 'Kain Batik',
+                'harga' => 250000,
+                'stok' => $stock,
+                'status' => Produk::statusForStock($stock),
+            ]);
+        }
+
+        $response = $this->actingAs($this->admin)
+            ->get(route('produk.index', ['stok_habis' => 1]));
+
+        $response->assertOk()
+            ->assertSee('aria-label="Lihat 1 produk dengan stok habis"', false)
+            ->assertSee('Batik Habis')
+            ->assertDontSee('Batik Tersedia')
+            ->assertSee('Reset')
+            ->assertDontSee('Tampilkan semua produk');
     }
 }

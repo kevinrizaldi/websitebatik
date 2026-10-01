@@ -18,6 +18,7 @@ class Ulasan extends Model
         'customer_name',
         'rating',
         'comment',
+        'image_path',
         'status',
     ];
 

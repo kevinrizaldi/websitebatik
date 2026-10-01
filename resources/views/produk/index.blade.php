@@ -39,11 +39,68 @@
             {{-- Kartu Putih Utama --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200">
 
-                {{-- Toolbar Atas --}}
-                <div class="p-4 sm:p-5 border-b border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                {{-- Pencarian dan notifikasi stok --}}
+                <div class="p-4 sm:p-5 border-b border-gray-100 bg-white flex flex-col xl:flex-row xl:items-center gap-3">
+                    <form action="{{ route('produk.index') }}" method="GET" class="flex flex-1 flex-col sm:flex-row gap-2">
+                        <div class="relative flex-1">
+                            <label for="search" class="sr-only">Cari produk</label>
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="11" cy="11" r="7" stroke-width="2" />
+                                    <path stroke-linecap="round" stroke-width="2" d="m16 16 4 4" />
+                                </svg>
+                            </div>
+                            <input type="search" name="search" id="search" value="{{ $search }}"
+                                   placeholder="Cari nama, SKU, kategori, bahan..."
+                                   class="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        @if ($lowStockOnly)
+                            <input type="hidden" name="stok_menipis" value="1">
+                        @endif
+                        @if ($outOfStockOnly)
+                            <input type="hidden" name="stok_habis" value="1">
+                        @endif
+                        <button type="submit" class="inline-flex h-[42px] items-center justify-center gap-2 rounded-md bg-gray-900 px-4 text-xs font-semibold text-white transition hover:bg-black">
+                            Cari Produk
+                        </button>
+                        @if ($search !== '' || $lowStockOnly || $outOfStockOnly)
+                            <a href="{{ route('produk.index') }}" class="inline-flex h-[42px] items-center justify-center rounded-md border border-gray-300 px-4 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+                                Reset
+                            </a>
+                        @endif
+                    </form>
 
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <a href="{{ route('produk.index', ['stok_menipis' => 1]) }}"
+                           aria-label="Lihat {{ $lowStockCount }} produk dengan stok menipis"
+                           @class([
+                               'inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md border px-3.5 py-2 text-xs font-semibold transition',
+                               'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' => ! $lowStockOnly,
+                               'border-amber-500 bg-amber-100 text-amber-950 ring-1 ring-amber-300' => $lowStockOnly,
+                           ])>
+                            <svg class="h-4 w-4 shrink-0 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z" />
+                            </svg>
+                            <span>Stok menipis</span>
+                            <span class="rounded bg-white px-2 py-0.5 text-amber-900">{{ $lowStockCount }}</span>
+                        </a>
 
-                    <div class="text-xs text-gray-500">
+                        <a href="{{ route('produk.index', ['stok_habis' => 1]) }}"
+                           aria-label="Lihat {{ $outOfStockCount }} produk dengan stok habis"
+                           @class([
+                               'inline-flex min-h-[42px] items-center justify-center gap-2 rounded-md border px-3.5 py-2 text-xs font-semibold transition',
+                               'border-rose-300 bg-rose-50 text-rose-900 hover:bg-rose-100' => ! $outOfStockOnly,
+                               'border-rose-500 bg-rose-100 text-rose-950 ring-1 ring-rose-300' => $outOfStockOnly,
+                           ])>
+                            <svg class="h-4 w-4 shrink-0 text-rose-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 4h.01M10.3 3.9 2.8 17a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3l-7.5-13.1a2 2 0 0 0-3.4 0Z" />
+                            </svg>
+                            <span>Stok habis</span>
+                            <span class="rounded bg-white px-2 py-0.5 text-rose-900">{{ $outOfStockCount }}</span>
+                        </a>
+                    </div>
+
+                    <div class="text-xs text-gray-500 xl:ml-auto">
                         Menampilkan <span class="font-medium text-gray-900">{{ $produks->firstItem() ?? 0 }}</span> – <span class="font-medium text-gray-900">{{ $produks->lastItem() ?? 0 }}</span> dari <span class="font-medium text-gray-900">{{ $produks->total() }}</span> produk
                     </div>
                 </div>
@@ -127,7 +184,7 @@
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                                 0 pcs
                                             </span>
-                                        @elseif($produk->stok <= 5)
+                                        @elseif($produk->stok <= \App\Models\Produk::LOW_STOCK_THRESHOLD)
                                             <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                                                 {{ $produk->stok }} pcs (Menipis)
                                             </span>
@@ -140,12 +197,13 @@
 
                                     {{-- STATUS --}}
                                     <td class="px-6 py-4 whitespace-nowrap align-top">
-                                        @if($produk->status === 'Tersedia')
+                                        @php($productStatus = \App\Models\Produk::statusForStock($produk->stok))
+                                        @if($productStatus === 'Tersedia')
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                                 Tersedia
                                             </span>
-                                        @elseif($produk->status === 'Stok Menipis')
+                                        @elseif($productStatus === 'Stok Menipis')
                                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                                 Stok Menipis
@@ -160,7 +218,7 @@
 
                                     {{-- DESKRIPSI & MATERIAL --}}
                                     <td class="px-6 py-4 align-top">
-                                        <div class="text-xs text-gray-600 max-w-xs space-y-1">
+                                        <div class="text-xs text-gray-600 max-w-[10rem] space-y-1">
                                             @if($produk->deskripsi)
                                                 <p class="truncate" title="{{ $produk->deskripsi }}">{{ $produk->deskripsi }}</p>
                                             @endif

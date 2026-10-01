@@ -11,31 +11,13 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    @if(Auth::user()->isAdmin())
-                        <x-nav-link :href="route('produk.index')" :active="request()->routeIs('produk.*')">
-                            {{ __('Kelola Produk') }}
+                @unless(Auth::user()->isAdmin())
+                    <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                            {{ __('Dashboard') }}
                         </x-nav-link>
-                        <x-nav-link :href="route('admin.orders.index')" :active="request()->routeIs('admin.orders.*')">
-                            {{ __('Kelola Pesanan') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.ulasans.index')" :active="request()->routeIs('admin.ulasans.*')">
-                            {{ __('Kelola Ulasan') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.laporan.index')" :active="request()->routeIs('admin.laporan.*')">
-                            {{ __('Laporan Penjualan') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.kategori.index')" :active="request()->routeIs('admin.kategori.*')">
-                            {{ __('Kategori') }}
-                        </x-nav-link>
-                        <x-nav-link :href="route('admin.pengaturan.index')" :active="request()->routeIs('admin.pengaturan.*')">
-                            {{ __('Pengaturan') }}
-                        </x-nav-link>
-                    @endif
-                </div>
+                    </div>
+                @endunless
             </div>
 
             <!-- Settings Dropdown -->

@@ -49,7 +49,7 @@
           sizeGuideModal: false,
           imageZoomModal: false,
           toastMessage: '',
-          
+
           showToast(msg) {
               this.toastMessage = msg;
               setTimeout(() => { this.toastMessage = ''; }, 3000);
@@ -100,7 +100,7 @@
       }">
 
     <!-- Toast Notification -->
-    <div x-cloak x-show="toastMessage" 
+    <div x-cloak x-show="toastMessage"
          x-transition:enter="transition ease-out duration-300 transform"
          x-transition:enter-start="opacity-0 translate-y-4"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -176,7 +176,7 @@
                     @if (Route::has('login'))
                         <div class="relative" x-data="{ userMenu: false }">
                             @auth
-                                <button @click="userMenu = !userMenu" 
+                                <button @click="userMenu = !userMenu"
                                         @click.away="userMenu = false"
                                         class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white/70 transition">
                                     <div class="w-7 h-7 rounded-full bg-[#201A17] text-[#E5C38E] flex items-center justify-center font-bold text-xs uppercase">
@@ -190,7 +190,7 @@
                                     </svg>
                                 </button>
 
-                                <div x-cloak x-show="userMenu" 
+                                <div x-cloak x-show="userMenu"
                                      x-transition:enter="transition ease-out duration-100"
                                      x-transition:enter-start="transform opacity-0 scale-95"
                                      x-transition:enter-end="transform opacity-100 scale-100"
@@ -223,7 +223,7 @@
                                 </div>
                             @else
                                 <div class="flex items-center gap-2">
-                                    <a href="{{ route('login') }}" 
+                                    <a href="{{ route('login') }}"
                                        class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-stone-300 hover:border-stone-500 text-xs font-semibold text-stone-800 bg-white/60 hover:bg-white transition">
                                         <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -246,7 +246,7 @@
             </div>
 
             <!-- Mobile Navigation Menu -->
-            <div x-cloak x-show="mobileMenuOpen" 
+            <div x-cloak x-show="mobileMenuOpen"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 -translate-y-4"
                  x-transition:enter-end="opacity-100 translate-y-0"
@@ -267,7 +267,7 @@
     <!-- ================= MAIN PRODUCT DETAIL SECTION ================= -->
     <main class="py-6 sm:py-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
+
             <!-- Breadcrumb matching screenshot -->
             <nav class="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-stone-400 mb-8">
                 <a href="{{ url('/') }}" class="hover:text-stone-700 transition">BERANDA</a>
@@ -281,13 +281,13 @@
 
             <!-- Product Showcase Grid (2 Columns) -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-                
+
                 <!-- Left Column: Gallery (Main Image + Thumbnails) -->
                 <div class="lg:col-span-6 space-y-4">
                     <!-- Main Image with Zoom Button -->
                     <div class="relative aspect-[4/5] rounded-3xl overflow-hidden bg-stone-100 border border-[#EDE6DB] shadow-md group">
-                        <img :src="activeImage" 
-                             alt="{{ $namaProduk }}" 
+                        <img :src="activeImage"
+                             alt="{{ $namaProduk }}"
                              class="w-full h-full object-cover transition-all duration-500 group-hover:scale-103 cursor-pointer"
                              @click="imageZoomModal = true">
 
@@ -335,7 +335,7 @@
 
                 <!-- Right Column: Product Information & Purchase Controls -->
                 <div class="lg:col-span-6 space-y-6">
-                    
+
                     <!-- Sub-category tag -->
                     <div>
                         <span class="text-xs font-bold uppercase tracking-widest text-[#B58742] block mb-1">
@@ -465,11 +465,11 @@
 
                     <!-- Accordion: Deskripsi Produk -->
                     <div class="border border-[#EDE6DB] rounded-2xl bg-white overflow-hidden shadow-2xs mt-6">
-                        <button @click="descOpen = !descOpen" 
+                        <button @click="descOpen = !descOpen"
                                 class="w-full p-4 sm:p-5 flex items-center justify-between font-bold text-stone-900 text-sm sm:text-base hover:bg-stone-50 transition">
                             <span>Deskripsi Produk</span>
-                            <svg class="w-4 h-4 text-stone-500 transition-transform duration-200" 
-                                 :class="descOpen ? 'rotate-180' : ''" 
+                            <svg class="w-4 h-4 text-stone-500 transition-transform duration-200"
+                                 :class="descOpen ? 'rotate-180' : ''"
                                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                             </svg>
@@ -508,7 +508,7 @@
 
                 <!-- Rating Breakdown Card (data ulasan asli) -->
                 <div class="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE6DB] shadow-sm grid grid-cols-1 md:grid-cols-12 gap-8 items-center mb-10">
-                    
+
                     <!-- Left Score -->
                     <div class="md:col-span-4 text-center md:border-r border-stone-200 md:pr-8">
                         <span class="text-5xl sm:text-6xl font-extrabold text-stone-900 block font-serif-title">
@@ -571,6 +571,9 @@
                                 <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
                                     "{{ $u->comment }}"
                                 </p>
+                                @if ($u->image_path)
+                                    <img src="{{ asset('storage/'.$u->image_path) }}" alt="Foto dari ulasan {{ $u->customer_name }}" class="mb-4 max-h-56 w-full rounded-xl border border-stone-200 object-cover object-center">
+                                @endif
                             </div>
                         </div>
                     @empty
@@ -611,8 +614,8 @@
                                 <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-[#201A17] text-white">
                                     {{ $rel->kategori }}
                                 </span>
-                                <img src="{{ $rel->gambar_url }}" 
-                                     alt="{{ $rel->nama }}" 
+                                <img src="{{ $rel->gambar_url }}"
+                                     alt="{{ $rel->nama }}"
                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             </div>
                             <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
@@ -645,7 +648,7 @@
     <footer id="kontak" class="bg-[#FAF7F2] border-t border-[#ECE4D8] pt-16 pb-12 text-stone-700 mt-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-12">
-                
+
                 <!-- Col 1: Brand Info -->
                 <div class="lg:col-span-4">
                     <div class="flex items-center gap-2.5 mb-4">
