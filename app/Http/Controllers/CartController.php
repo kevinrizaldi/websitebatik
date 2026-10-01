@@ -13,9 +13,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Throwable;
 
 class CartController extends Controller
 {
@@ -56,7 +57,18 @@ class CartController extends Controller
         ]);
 
         $produk = Produk::findOrFail($validated['produk_id']);
-        $qty = $validated['qty'] ?? 1;
+
+        // Produk habis tidak boleh masuk keranjang sama sekali.
+        if ($produk->stok <= 0) {
+            $message = "Stok {$produk->nama} habis dan tidak dapat ditambahkan ke keranjang.";
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+
+            return redirect()->back()->with('error', $message);
+        }
+
+        $qty = min($validated['qty'] ?? 1, $produk->stok);
         $ukuran = $validated['ukuran'] ?? null;
         $varian = $validated['varian'] ?? null;
 
@@ -77,10 +89,7 @@ class CartController extends Controller
 
         $item = null;
         if ($existing) {
-            $newQty = $existing->qty + $qty;
-            if ($produk->stok > 0 && $newQty > $produk->stok) {
-                $newQty = $produk->stok;
-            }
+            $newQty = min($existing->qty + $qty, $produk->stok);
             $existing->update([
                 'qty' => $newQty,
                 'selected' => true,
@@ -93,7 +102,7 @@ class CartController extends Controller
                 'produk_id' => $produk->id,
                 'ukuran' => $ukuran,
                 'varian' => $varian ?: ($ukuran ? 'Ukuran: '.$ukuran : null),
-                'qty' => min($qty, max(1, $produk->stok)),
+                'qty' => $qty,
                 'selected' => true,
             ]);
         }
@@ -129,9 +138,23 @@ class CartController extends Controller
         ]);
 
         if (isset($validated['qty'])) {
-            $maxStock = $cartItem->produk ? $cartItem->produk->stok : 999;
-            $qty = min($validated['qty'], max(1, $maxStock));
-            $cartItem->qty = $qty;
+            $maxStock = $cartItem->produk ? (int) $cartItem->produk->stok : 0;
+
+            if ($maxStock <= 0) {
+                $cartItem->delete();
+                $cartCount = CartItem::forCurrentVisitor()->sum('qty');
+
+                return response()->json([
+                    'success' => false,
+                    'removed' => true,
+                    'message' => 'Produk sudah habis dan dihapus dari keranjang.',
+                    'qty' => 0,
+                    'selected' => false,
+                    'cartCount' => $cartCount,
+                ], 422);
+            }
+
+            $cartItem->qty = min($validated['qty'], $maxStock);
         }
 
         if (isset($validated['selected'])) {
@@ -265,6 +288,24 @@ class CartController extends Controller
             return redirect()->route('keranjang.index')->with('error', 'Keranjang belanja Anda kosong.');
         }
 
+        // Tolak item yang stoknya tidak mencukupi (termasuk yang sudah habis).
+        $unavailable = [];
+        foreach ($cartItems as $item) {
+            $stock = $item->produk ? (int) $item->produk->stok : 0;
+            if ($stock < $item->qty) {
+                $unavailable[] = ($item->produk ? $item->produk->nama : 'Produk')." (sisa {$stock})";
+            }
+        }
+
+        if (! empty($unavailable)) {
+            $message = 'Stok tidak mencukupi untuk: '.implode(', ', $unavailable).'. Silakan sesuaikan jumlah di keranjang.';
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $message], 422);
+            }
+
+            return redirect()->route('keranjang.index')->with('error', $message);
+        }
+
         $totalPrice = 0;
         foreach ($cartItems as $item) {
             $price = $item->produk ? (float) $item->produk->harga : 0;
@@ -333,27 +374,21 @@ class CartController extends Controller
             return $order;
         });
 
-        // Redirect ke halaman pembayaran Midtrans jika bukan transfer manual & user login
-        $paymentMethod = $validated['payment_method'] ?? '';
-        $isMidtransMethod = Auth::check() && ! str_contains(strtolower($paymentMethod), 'transfer bank manual');
-
-        if ($isMidtransMethod) {
-            $payUrl = Route::has('orders.pay')
-                ? route('orders.pay', $order->id)
-                : route('pembayaran', ['id' => $order->code]);
-
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran.',
-                    'order_code' => $order->code,
-                    'order_id' => $order->id,
-                    'redirect_url' => $payUrl,
-                ]);
-            }
-
-            return redirect($payUrl)->with('success', "Pesanan #{$order->code} berhasil dibuat! Silakan selesaikan pembayaran.");
+        // Buat Snap token agar popup bawaan Midtrans bisa langsung terbuka.
+        // Gagal membuat token tidak menggagalkan pesanan: customer tetap
+        // bisa membayar lewat halaman pembayaran.
+        $snapToken = null;
+        try {
+            $snapData = $this->midtransService->createSnapTransaction($order);
+            $snapToken = $snapData['token'] ?? null;
+        } catch (Throwable $e) {
+            Log::warning('Midtrans Snap token gagal dibuat saat checkout', [
+                'order_code' => $order->code,
+                'error' => $e->getMessage(),
+            ]);
         }
+
+        $payUrl = route('pembayaran', ['id' => $order->code]);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -361,12 +396,13 @@ class CartController extends Controller
                 'message' => 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran.',
                 'order_code' => $order->code,
                 'order_id' => $order->id,
-                'redirect_url' => route('pesanan.index'),
+                'snap_token' => $snapToken,
+                'client_key' => config('midtrans.client_key'),
+                'redirect_url' => $payUrl,
             ]);
         }
 
-        return redirect()->route('pesanan.index')
-            ->with('success', "Pesanan #{$order->code} berhasil dibuat!");
+        return redirect($payUrl)->with('success', "Pesanan #{$order->code} berhasil dibuat! Silakan selesaikan pembayaran.");
     }
 
     /**

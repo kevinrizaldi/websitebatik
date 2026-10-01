@@ -26,7 +26,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div>
                         @if($produk->gambar)
-                            <img src="{{ asset('storage/' . $produk->gambar) }}" alt="{{ $produk->nama }}" class="w-full aspect-square object-cover rounded-xl border border-gray-200 shadow-sm">
+                            <img src="{{ $produk->gambar_url }}" alt="{{ $produk->nama }}" class="w-full aspect-square object-cover rounded-xl border border-gray-200 shadow-sm">
                         @else
                             <div class="w-full aspect-square rounded-xl bg-gray-100 border border-gray-200 flex flex-col items-center justify-center text-gray-400">
                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

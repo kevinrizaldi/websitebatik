@@ -47,7 +47,7 @@
                       $statusRaw = strtolower(trim($ord->status));
                       $statusKey = match($statusRaw) {
                           'belum dibayar', 'menunggu pembayaran' => 'menunggu_pembayaran',
-                          'menunggu verifikasi' => 'diproses',
+                          'menunggu verifikasi', 'sudah dibayar' => 'diproses',
                           'diproses', 'sedang diproses' => 'diproses',
                           'dikirim', 'sedang dikirim' => 'dikirim',
                           'selesai' => 'selesai',
@@ -80,6 +80,7 @@
                   @endphp
                   {
                       id: '{{ $ord->code }}',
+                      dbId: {{ $ord->id }},
                       tanggal: '{{ $ord->created_at->format('d M Y, H:i') }} WIB',
                       status: '{{ $statusKey }}',
                       statusLabel: '{{ $statusLabel }}',
@@ -102,7 +103,7 @@
                               varian: 'Kuantitas: {{ $it->quantity }} pcs',
                               harga: {{ (float) $it->price }},
                               qty: {{ $it->quantity }},
-                              gambar: '{{ $it->produk && $it->produk->gambar ? asset('storage/' . $it->produk->gambar) : asset('images/beranda/folded-shirts.jpg') }}'
+                              gambar: '{{ $it->produk ? $it->produk->gambar_url : asset('images/beranda/folded-shirts.jpg') }}'
                           }@if(!$loop->last),@endif
                           @endforeach
                       ]
@@ -184,18 +185,42 @@
           },
 
           confirmReceived(order) {
-              order.status = 'selesai';
-              order.statusLabel = 'Selesai';
-              order.statusBadgeClass = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-              this.showToast('Terima kasih! Pesanan ' + order.id + ' telah ditandai Selesai.');
+              if (confirm('Konfirmasi bahwa pesanan ' + order.id + ' sudah Anda terima?')) {
+                  const form = document.createElement('form');
+                  form.method = 'POST';
+                  form.action = '/pesanan/' + order.dbId + '/terima';
+                  const token = document.createElement('input');
+                  token.type = 'hidden';
+                  token.name = '_token';
+                  token.value = '{{ csrf_token() }}';
+                  const method = document.createElement('input');
+                  method.type = 'hidden';
+                  method.name = '_method';
+                  method.value = 'PATCH';
+                  form.appendChild(token);
+                  form.appendChild(method);
+                  document.body.appendChild(form);
+                  form.submit();
+              }
           },
 
           cancelOrder(order) {
               if (confirm('Apakah Anda yakin ingin membatalkan pesanan ' + order.id + '?')) {
-                  order.status = 'dibatalkan';
-                  order.statusLabel = 'Dibatalkan';
-                  order.statusBadgeClass = 'bg-rose-100 text-rose-900 border-rose-300';
-                  this.showToast('Pesanan ' + order.id + ' telah dibatalkan.');
+                  const form = document.createElement('form');
+                  form.method = 'POST';
+                  form.action = '/pesanan/' + order.dbId + '/batal';
+                  const token = document.createElement('input');
+                  token.type = 'hidden';
+                  token.name = '_token';
+                  token.value = '{{ csrf_token() }}';
+                  const method = document.createElement('input');
+                  method.type = 'hidden';
+                  method.name = '_method';
+                  method.value = 'PATCH';
+                  form.appendChild(token);
+                  form.appendChild(method);
+                  document.body.appendChild(form);
+                  form.submit();
               }
           },
 
@@ -217,7 +242,8 @@
                   menunggu_pembayaran: this.orders.filter(o => o.status === 'menunggu_pembayaran').length,
                   diproses: this.orders.filter(o => o.status === 'diproses').length,
                   dikirim: this.orders.filter(o => o.status === 'dikirim').length,
-                  selesai: this.orders.filter(o => o.status === 'selesai').length
+                  selesai: this.orders.filter(o => o.status === 'selesai').length,
+                  dibatalkan: this.orders.filter(o => o.status === 'dibatalkan').length
               };
           }
       }">
@@ -462,6 +488,13 @@
                         <span :class="activeTab === 'menunggu_pembayaran' ? 'bg-amber-900 text-white' : 'bg-amber-100 text-amber-800'" class="text-xs px-2 py-0.5 rounded-full" x-text="counts.menunggu_pembayaran"></span>
                     </button>
 
+                    <button @click="activeTab = 'diproses'"
+                            :class="activeTab === 'diproses' ? 'bg-blue-800 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200/70 font-medium'"
+                            class="px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap">
+                        <span>Sedang Diproses</span>
+                        <span :class="activeTab === 'diproses' ? 'bg-blue-900 text-white' : 'bg-blue-100 text-blue-800'" class="text-xs px-2 py-0.5 rounded-full" x-text="counts.diproses"></span>
+                    </button>
+
                     <button @click="activeTab = 'dikirim'"
                             :class="activeTab === 'dikirim' ? 'bg-indigo-900 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200/70 font-medium'"
                             class="px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap">
@@ -474,6 +507,13 @@
                             class="px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap">
                         <span>Selesai</span>
                         <span :class="activeTab === 'selesai' ? 'bg-emerald-900 text-white' : 'bg-emerald-100 text-emerald-800'" class="text-xs px-2 py-0.5 rounded-full" x-text="counts.selesai"></span>
+                    </button>
+
+                    <button @click="activeTab = 'dibatalkan'"
+                            :class="activeTab === 'dibatalkan' ? 'bg-rose-800 text-white font-semibold shadow-xs' : 'bg-stone-100 text-stone-600 hover:bg-stone-200/70 font-medium'"
+                            class="px-4 py-2 rounded-xl transition flex items-center gap-2 whitespace-nowrap">
+                        <span>Dibatalkan</span>
+                        <span :class="activeTab === 'dibatalkan' ? 'bg-rose-900 text-white' : 'bg-rose-100 text-rose-800'" class="text-xs px-2 py-0.5 rounded-full" x-text="counts.dibatalkan"></span>
                     </button>
                 </div>
             </div>
@@ -545,6 +585,13 @@
                                     <div class="flex items-center gap-2 text-amber-800 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200/80">
                                         <svg class="w-4 h-4 shrink-0 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                         <span>Batas Pembayaran: <strong x-text="order.batasBayar"></strong> (<span x-text="order.metodePembayaran"></span>)</span>
+                                    </div>
+                                </template>
+
+                                <template x-if="order.status === 'diproses'">
+                                    <div class="flex items-center gap-2 text-blue-900 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200/80">
+                                        <svg class="w-4 h-4 shrink-0 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                        <span>Pembayaran diterima • Pesanan sedang <strong>dikemas</strong> dan segera dikirim</span>
                                     </div>
                                 </template>
 

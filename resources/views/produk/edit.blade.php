@@ -115,7 +115,7 @@
                         </label>
                         @if($produk->gambar)
                             <div class="mb-3 flex items-center gap-3">
-                                <img src="{{ asset('storage/' . $produk->gambar) }}" alt="{{ $produk->nama }}" class="w-16 h-16 object-cover rounded-lg border border-gray-200">
+                                <img src="{{ $produk->gambar_url }}" alt="{{ $produk->nama }}" class="w-16 h-16 object-cover rounded-lg border border-gray-200">
                                 <span class="text-xs text-gray-500">Foto saat ini. Pilih file baru jika ingin mengganti.</span>
                             </div>
                         @endif

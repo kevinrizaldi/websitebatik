@@ -67,10 +67,54 @@ class Produk extends Model
     }
 
     /**
-     * Get average rating attribute
+     * Get average rating attribute (hanya ulasan berstatus Disetujui)
      */
     public function getAvgRatingAttribute(): float
     {
-        return (float) ($this->ulasans()->where('status', 'approved')->avg('rating') ?: 5.0);
+        return (float) ($this->ulasans()->where('status', 'Disetujui')->avg('rating') ?: 0.0);
+    }
+
+    /**
+     * URL gambar produk yang selalu valid: pakai file asli bila ada,
+     * jika tidak pakai foto katalog lokal sesuai jenis produk.
+     */
+    public function getGambarUrlAttribute(): string
+    {
+        $gambar = (string) ($this->gambar ?? '');
+
+        if (str_starts_with($gambar, 'http')) {
+            return $gambar;
+        }
+
+        if ($gambar !== '' && file_exists(public_path($gambar))) {
+            return asset($gambar);
+        }
+
+        if ($gambar !== '' && file_exists(storage_path('app/public/'.$gambar))) {
+            return asset('storage/'.$gambar);
+        }
+
+        $haystack = strtolower($this->kategori.' '.$this->nama);
+
+        if (str_contains($haystack, 'hampers') || str_contains($haystack, 'gift') || str_contains($haystack, 'box')) {
+            return asset('images/beranda/gift-box.jpg');
+        }
+
+        if (str_contains($haystack, 'tas') || str_contains($haystack, 'tote') || str_contains($haystack, 'pouch')
+            || str_contains($haystack, 'dompet') || str_contains($haystack, 'sling') || str_contains($haystack, 'passport')
+            || str_contains($haystack, 'olahan') || str_contains($haystack, 'sisa')) {
+            return asset('images/beranda/bags-accessories.jpg');
+        }
+
+        if (str_contains($haystack, 'blouse') || str_contains($haystack, 'dress') || str_contains($haystack, 'gamis')
+            || str_contains($haystack, 'daster') || str_contains($haystack, 'wanita')) {
+            return asset('images/beranda/woman-blouse.jpg');
+        }
+
+        if (str_contains($haystack, 'kain')) {
+            return asset('images/beranda/cloth-fabric.jpg');
+        }
+
+        return asset('images/beranda/folded-shirts.jpg');
     }
 }

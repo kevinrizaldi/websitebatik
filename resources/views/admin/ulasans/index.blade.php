@@ -240,7 +240,7 @@
                                         @if($ulasan->produk)
                                             <div class="flex items-start gap-3">
                                                 @if($ulasan->produk->gambar)
-                                                    <img src="{{ asset('storage/' . $ulasan->produk->gambar) }}" alt="{{ $ulasan->produk->nama }}" class="w-10 h-10 object-cover rounded-lg border border-gray-200 shrink-0">
+                                                    <img src="{{ $ulasan->produk->gambar_url }}" alt="{{ $ulasan->produk->nama }}" class="w-10 h-10 object-cover rounded-lg border border-gray-200 shrink-0">
                                                 @else
                                                     <div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 text-gray-400 flex items-center justify-center shrink-0">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

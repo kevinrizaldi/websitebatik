@@ -5,7 +5,7 @@
     $hargaFormatted = 'Rp ' . number_format($hargaProduk, 0, ',', '.');
     $materialProduk = $produk->material ?? 'Katun Primissima Halus (Furing Katun Nyaman)';
     $deskripsiProduk = $produk->deskripsi ?? 'Kemeja batik formal pria berdesain eksklusif dengan paduan motif nusantara yang berwibawa dan bernilai seni tinggi.';
-    $gambarProduk = $produk && $produk->gambar ? asset('storage/' . $produk->gambar) : asset('images/beranda/folded-shirts.jpg');
+    $gambarProduk = $produk ? $produk->gambar_url : asset('images/beranda/folded-shirts.jpg');
     $stokProduk = $produk->stok ?? 14;
 @endphp
 <!DOCTYPE html>
@@ -42,7 +42,8 @@
           activeImage: '{{ $gambarProduk }}',
           selectedSize: 'M',
           quantity: 1,
-          maxStock: {{ $stokProduk > 0 ? $stokProduk : 1 }},
+          maxStock: {{ max(0, (int) $stokProduk) }},
+          isOutOfStock: {{ $stokProduk > 0 ? 'false' : 'true' }},
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           descOpen: true,
           sizeGuideModal: false,
@@ -54,12 +55,17 @@
               setTimeout(() => { this.toastMessage = ''; }, 3000);
           },
           increaseQty() {
+              if (this.isOutOfStock) return;
               if (this.quantity < this.maxStock) this.quantity++;
           },
           decreaseQty() {
               if (this.quantity > 1) this.quantity--;
           },
           addToCart(redirect = false) {
+              if (this.isOutOfStock) {
+                  this.showToast('Stok produk ini habis.');
+                  return;
+              }
               fetch('{{ route('keranjang.store') }}', {
                   method: 'POST',
                   headers: {
@@ -349,7 +355,7 @@
                             <span class="ml-1 text-sm font-extrabold">5.0</span>
                         </div>
                         <span class="text-stone-300">|</span>
-                        <a href="#ulasan-section" class="hover:underline text-stone-700 font-medium">20 Ulasan Pelanggan</a>
+                        <a href="#ulasan-section" class="hover:underline text-stone-700 font-medium">{{ $ratingCount }} Ulasan Pelanggan</a>
                         <span class="text-stone-300">|</span>
                         <span class="text-emerald-700 font-semibold">{{ $stokProduk > 0 ? 'Tersedia ' . $stokProduk . ' pcs' : 'Stok Habis' }}</span>
                     </div>
@@ -420,20 +426,20 @@
                         <div class="flex items-center gap-3">
                             <!-- Stepper -->
                             <div class="inline-flex items-center rounded-xl bg-white border border-stone-300 p-1 shadow-2xs">
-                                <button @click="decreaseQty()" 
-                                        class="w-9 h-9 rounded-lg hover:bg-stone-100 flex items-center justify-center text-stone-600 font-bold transition">
+                                <button @click="decreaseQty()" :disabled="isOutOfStock"
+                                        class="w-9 h-9 rounded-lg hover:bg-stone-100 disabled:opacity-40 flex items-center justify-center text-stone-600 font-bold transition">
                                     -
                                 </button>
                                 <span class="w-10 text-center text-sm font-bold text-stone-900" x-text="quantity"></span>
-                                <button @click="increaseQty()" 
-                                        class="w-9 h-9 rounded-lg hover:bg-stone-100 flex items-center justify-center text-stone-600 font-bold transition">
+                                <button @click="increaseQty()" :disabled="isOutOfStock"
+                                        class="w-9 h-9 rounded-lg hover:bg-stone-100 disabled:opacity-40 flex items-center justify-center text-stone-600 font-bold transition">
                                     +
                                 </button>
                             </div>
 
                             <!-- Button Tambah ke Keranjang -->
-                            <button @click="addToCart(false)" 
-                                    class="flex-1 py-3 px-6 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white font-semibold text-xs sm:text-sm transition duration-200 shadow-md flex items-center justify-center gap-2">
+                            <button @click="addToCart(false)" :disabled="isOutOfStock"
+                                    class="flex-1 py-3 px-6 rounded-xl bg-[#201A17] hover:bg-stone-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-xs sm:text-sm transition duration-200 shadow-md flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                                 </svg>
@@ -443,8 +449,8 @@
 
                         <!-- Row 2 Buttons: Beli Sekarang & WhatsApp -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <button @click.prevent="addToCart(true)" 
-                               class="py-3 px-4 rounded-xl bg-white border border-stone-300 hover:border-stone-500 text-stone-900 font-bold text-xs sm:text-sm transition shadow-2xs text-center flex items-center justify-center">
+                            <button @click.prevent="addToCart(true)" :disabled="isOutOfStock"
+                               class="py-3 px-4 rounded-xl bg-white border border-stone-300 hover:border-stone-500 disabled:opacity-50 disabled:cursor-not-allowed text-stone-900 font-bold text-xs sm:text-sm transition shadow-2xs text-center flex items-center justify-center">
                                 Beli Sekarang
                             </button>
 
@@ -500,187 +506,89 @@
                     </div>
                 </div>
 
-                <!-- Rating Breakdown Card -->
+                <!-- Rating Breakdown Card (data ulasan asli) -->
                 <div class="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE6DB] shadow-sm grid grid-cols-1 md:grid-cols-12 gap-8 items-center mb-10">
                     
                     <!-- Left Score -->
                     <div class="md:col-span-4 text-center md:border-r border-stone-200 md:pr-8">
                         <span class="text-5xl sm:text-6xl font-extrabold text-stone-900 block font-serif-title">
-                            4.9
+                            {{ $ratingCount > 0 ? number_format($ratingAvg, 1) : '–' }}
                         </span>
                         <div class="flex items-center justify-center gap-1 text-amber-500 text-lg my-2">
-                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                            @for ($s = 1; $s <= 5; $s++)
+                                <span class="{{ $ratingCount > 0 && $s <= round($ratingAvg) ? '' : 'text-stone-300' }}">★</span>
+                            @endfor
                         </div>
-                        <span class="font-bold text-stone-800 text-sm block">Puas Sempurna</span>
-                        <span class="text-xs text-stone-400 mt-0.5 block">Berdasarkan 20 penilaian terverifikasi</span>
+                        <span class="font-bold text-stone-800 text-sm block">{{ $ratingCount > 0 ? ($ratingAvg >= 4.5 ? 'Puas Sempurna' : ($ratingAvg >= 3.5 ? 'Puas' : 'Cukup')) : 'Belum Ada Penilaian' }}</span>
+                        <span class="text-xs text-stone-400 mt-0.5 block">Berdasarkan {{ $ratingCount }} penilaian terverifikasi</span>
                     </div>
 
                     <!-- Right Rating Bars -->
                     <div class="md:col-span-8 space-y-2 text-xs font-semibold text-stone-600">
-                        <!-- 5 Star -->
-                        <div class="flex items-center gap-3">
-                            <span class="w-16">5 Bintang</span>
-                            <div class="flex-1 h-2.5 rounded-full bg-stone-100 overflow-hidden">
-                                <div class="h-full bg-stone-900 rounded-full" style="width: 85%;"></div>
+                        @foreach ([5, 4, 3, 2, 1] as $star)
+                            <div class="flex items-center gap-3">
+                                <span class="w-16">{{ $star }} Bintang</span>
+                                <div class="flex-1 h-2.5 rounded-full bg-stone-100 overflow-hidden">
+                                    <div class="h-full {{ $star >= 4 ? 'bg-stone-900' : ($star === 3 ? 'bg-stone-500' : 'bg-stone-300') }} rounded-full" style="width: {{ $ratingCount > 0 ? round($ratingBars[$star] / $ratingCount * 100) : 0 }}%;"></div>
+                                </div>
+                                <span class="w-8 text-right text-stone-400">{{ $ratingBars[$star] }}</span>
                             </div>
-                            <span class="w-8 text-right text-stone-400">17</span>
-                        </div>
-                        <!-- 4 Star -->
-                        <div class="flex items-center gap-3">
-                            <span class="w-16">4 Bintang</span>
-                            <div class="flex-1 h-2.5 rounded-full bg-stone-100 overflow-hidden">
-                                <div class="h-full bg-stone-700 rounded-full" style="width: 10%;"></div>
-                            </div>
-                            <span class="w-8 text-right text-stone-400">2</span>
-                        </div>
-                        <!-- 3 Star -->
-                        <div class="flex items-center gap-3">
-                            <span class="w-16">3 Bintang</span>
-                            <div class="flex-1 h-2.5 rounded-full bg-stone-100 overflow-hidden">
-                                <div class="h-full bg-stone-500 rounded-full" style="width: 5%;"></div>
-                            </div>
-                            <span class="w-8 text-right text-stone-400">1</span>
-                        </div>
-                        <!-- 2 Star -->
-                        <div class="flex items-center gap-3">
-                            <span class="w-16">2 Bintang</span>
-                            <div class="flex-1 h-2.5 rounded-full bg-stone-100 overflow-hidden">
-                                <div class="h-full bg-stone-300 rounded-full" style="width: 0%;"></div>
-                            </div>
-                            <span class="w-8 text-right text-stone-400">0</span>
-                        </div>
-                        <!-- 1 Star -->
-                        <div class="flex items-center gap-3">
-                            <span class="w-16">1 Bintang</span>
-                            <div class="flex-1 h-2.5 rounded-full bg-stone-100 overflow-hidden">
-                                <div class="h-full bg-stone-300 rounded-full" style="width: 0%;"></div>
-                            </div>
-                            <span class="w-8 text-right text-stone-400">0</span>
-                        </div>
+                        @endforeach
                     </div>
 
                 </div>
 
-                <!-- 3 Review Cards Grid -->
+                <!-- Review Cards Grid (data ulasan asli) -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    
-                    <!-- Review 1 -->
-                    <div class="bg-white rounded-2xl p-5 sm:p-6 border border-[#EDE6DB] shadow-sm flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-stone-900 text-[#E5C38E] font-bold text-xs flex items-center justify-center">
-                                        HW
+                    @forelse($ulasans as $u)
+                        @php
+                            $words = preg_split('/\s+/', trim($u->customer_name));
+                            $initials = strtoupper(mb_substr($words[0] ?? '', 0, 1).mb_substr($words[1] ?? '', 0, 1));
+                        @endphp
+                        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-[#EDE6DB] shadow-sm flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-9 h-9 rounded-full bg-stone-900 text-[#E5C38E] font-bold text-xs flex items-center justify-center">
+                                            {{ $initials }}
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-sm text-stone-900">{{ $u->customer_name }}</h4>
+                                            <span class="text-[10px] text-emerald-700 font-semibold block flex items-center gap-1">
+                                                <span>✓</span> Pembeli Terverifikasi
+                                            </span>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 class="font-bold text-sm text-stone-900">Hendra W.</h4>
-                                        <span class="text-[10px] text-emerald-700 font-semibold block flex items-center gap-1">
-                                            <span>✓</span> Pembeli Terverifikasi
-                                        </span>
-                                    </div>
+                                    <span class="text-[11px] text-stone-400">{{ $u->created_at->format('d M Y') }}</span>
                                 </div>
-                                <span class="text-[11px] text-stone-400">1 hari lalu</span>
-                            </div>
 
-                            <div class="flex text-amber-500 text-xs mb-2.5">
-                                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                            </div>
-
-                            <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-                                "Kualitas kain benar-benar premium, furing sangat adem dan motif parang presisi. Potongannya sangat pas di dada. Paling disukai jahitan kancing rapi tidak terlihat saat dipakai."
-                            </p>
-                        </div>
-
-                        <!-- Attachments -->
-                        <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
-                            <div class="w-12 h-12 rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
-                                <img src="{{ asset('images/beranda/folded-shirts.jpg') }}" alt="Ulasan Hendra" class="w-full h-full object-cover">
-                            </div>
-                            <div class="w-12 h-12 rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
-                                <img src="{{ asset('images/beranda/cloth-fabric.jpg') }}" alt="Ulasan Hendra" class="w-full h-full object-cover">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Review 2 -->
-                    <div class="bg-white rounded-2xl p-5 sm:p-6 border border-[#EDE6DB] shadow-sm flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-stone-900 text-[#E5C38E] font-bold text-xs flex items-center justify-center">
-                                        SR
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-sm text-stone-900">Sari Rahmawati</h4>
-                                        <span class="text-[10px] text-emerald-700 font-semibold block flex items-center gap-1">
-                                            <span>✓</span> Pembeli Terverifikasi
-                                        </span>
-                                    </div>
+                                <div class="flex text-xs mb-2.5">
+                                    @for ($s = 1; $s <= 5; $s++)
+                                        <span class="{{ $s <= $u->rating ? 'text-amber-500' : 'text-stone-300' }}">★</span>
+                                    @endfor
                                 </div>
-                                <span class="text-[11px] text-stone-400">3 hari lalu</span>
-                            </div>
 
-                            <div class="flex text-amber-500 text-xs mb-2.5">
-                                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                            </div>
-
-                            <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-                                "Belikan batik untuk kado suami, responnya sangat puas! Warnanya soft dan elegan. Suami suka sekali karena motif tidak pasaran dan bahan nyaman untuk meeting seharian."
-                            </p>
-                        </div>
-
-                        <!-- Attachment -->
-                        <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
-                            <div class="w-12 h-12 rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
-                                <img src="{{ asset('images/beranda/gift-box.jpg') }}" alt="Packaging Gift" class="w-full h-full object-cover">
+                                <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
+                                    "{{ $u->comment }}"
+                                </p>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Review 3 -->
-                    <div class="bg-white rounded-2xl p-5 sm:p-6 border border-[#EDE6DB] shadow-sm flex flex-col justify-between">
-                        <div>
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-stone-900 text-[#E5C38E] font-bold text-xs flex items-center justify-center">
-                                        DA
-                                    </div>
-                                    <div>
-                                        <h4 class="font-bold text-sm text-stone-900">Dimas Aditya</h4>
-                                        <span class="text-[10px] text-emerald-700 font-semibold block flex items-center gap-1">
-                                            <span>✓</span> Pembeli Terverifikasi
-                                        </span>
-                                    </div>
-                                </div>
-                                <span class="text-[11px] text-stone-400">1 minggu lalu</span>
-                            </div>
-
-                            <div class="flex text-amber-500 text-xs mb-2.5">
-                                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
-                            </div>
-
-                            <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-4">
-                                "Pengiriman cepat dan packaging sangat rapi dan beraroma wangi rempah. Pas dicoba ukurannya sesuai dengan tabel panduan ukuran, mantap untuk acara pernikahan saudara nanti."
-                            </p>
+                    @empty
+                        <div class="md:col-span-3 bg-white rounded-2xl p-8 border border-dashed border-stone-300 text-center">
+                            <p class="font-bold text-stone-900 text-sm">Belum ada ulasan untuk produk ini</p>
+                            <p class="text-xs text-stone-500 mt-1">Ulasan hanya dapat diberikan setelah pesanan berstatus Selesai, melalui halaman Pesanan Saya.</p>
                         </div>
-
-                        <!-- Attachment -->
-                        <div class="flex items-center gap-2 pt-2 border-t border-stone-100">
-                            <div class="w-12 h-12 rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
-                                <img src="{{ asset('images/beranda/hero-couple.jpg') }}" alt="Model Pakai Dimas" class="w-full h-full object-cover object-top">
-                            </div>
-                        </div>
-                    </div>
-
+                    @endforelse
                 </div>
 
                 <!-- Load More Reviews Button -->
-                <div class="text-center mt-8">
-                    <button @click="showToast('Menampilkan seluruh ulasan')" 
-                            class="px-6 py-2.5 rounded-full bg-white border border-[#EDE6DB] hover:border-stone-400 text-stone-800 text-xs sm:text-sm font-semibold transition shadow-2xs">
-                        Lihat 17 Ulasan Lainnya
-                    </button>
-                </div>
+                @if($ratingCount > $ulasans->count())
+                    <div class="text-center mt-8">
+                        <span class="inline-block px-6 py-2.5 rounded-full bg-white border border-[#EDE6DB] text-stone-800 text-xs sm:text-sm font-semibold shadow-2xs">
+                            + {{ $ratingCount - $ulasans->count() }} Ulasan Lainnya
+                        </span>
+                    </div>
+                @endif
             </section>
 
             <!-- ================= SECTION: PRODUK TERKAIT ================= -->
@@ -703,7 +611,7 @@
                                 <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-[#201A17] text-white">
                                     {{ $rel->kategori }}
                                 </span>
-                                <img src="{{ $rel->gambar ? asset('storage/' . $rel->gambar) : asset('images/beranda/folded-shirts.jpg') }}" 
+                                <img src="{{ $rel->gambar_url }}" 
                                      alt="{{ $rel->nama }}" 
                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                             </div>

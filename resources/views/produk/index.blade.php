@@ -85,7 +85,7 @@
                                     <td class="px-6 py-4 align-top">
                                         <div class="flex items-start gap-3">
                                             @if($produk->gambar)
-                                                <img src="{{ asset('storage/' . $produk->gambar) }}" alt="{{ $produk->nama }}" class="w-12 h-12 object-cover rounded-lg border border-gray-200 shrink-0">
+                                                <img src="{{ $produk->gambar_url }}" alt="{{ $produk->nama }}" class="w-12 h-12 object-cover rounded-lg border border-gray-200 shrink-0">
                                             @else
                                                 <div class="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 text-gray-400 flex items-center justify-center shrink-0">
                                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

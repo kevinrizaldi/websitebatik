@@ -48,6 +48,10 @@
           },
           addToCart(prod) {
               if (!prod || !prod.id) return;
+              if ((prod.stok ?? 1) <= 0) {
+                  this.showToast('Stok ' + (prod.nama || 'produk') + ' habis.');
+                  return;
+              }
               fetch('{{ route('keranjang.store') }}', {
                   method: 'POST',
                   headers: {
@@ -93,17 +97,18 @@
                   id: {{ $p->id }},
                   nama: '{{ addslashes($p->nama) }}',
                   fullName: '{{ addslashes($p->nama) }}',
-                  kategori: '{{ addslashes($p->kategori) }}',
-                  subkategori: '{{ strtoupper(addslashes($p->kategori)) }}',
+                  kategori: '{{ addslashes($p->category_name) }}',
+                  subkategori: '{{ strtoupper(addslashes($p->category_name)) }}',
                   badge: '{{ $p->status === 'Stok Menipis' ? 'Stok Terbatas' : ($p->status === 'Habis' ? 'Habis' : 'Ready Stock') }}',
                   badgeColor: '{{ $p->status === 'Stok Menipis' ? 'bg-[#5C3D28] text-white' : ($p->status === 'Habis' ? 'bg-rose-700 text-white' : 'bg-white/95 text-stone-800 border-stone-200') }}',
                   harga: {{ (float) $p->harga }},
+                  stok: {{ (int) $p->stok }},
                   hargaFormatted: 'Rp {{ number_format($p->harga, 0, ',', '.') }}',
                   rating: '5.0',
                   reviews: {{ 10 + (($p->id * 7) % 35) }},
                   material: '{{ addslashes($p->material ?? 'Katun Primissima Halus') }}',
                   deskripsi: '{{ addslashes($p->deskripsi ?? 'Batik autentik nusantara karya pengrajin pilihan.') }}',
-                  gambar: '{{ $p->gambar ? asset('storage/' . $p->gambar) : asset('images/beranda/folded-shirts.jpg') }}',
+                  gambar: '{{ $p->gambar_url }}',
                   detailUrl: '{{ route('produk.detail', ['id' => $p->id]) }}'
               }@if(!$loop->last),@endif
               @endforeach
@@ -442,28 +447,22 @@
                 <!-- Bottom Row: Category Pills & Products Count -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
                     
-                    <!-- Category Pills -->
+                    <!-- Category Pills (dari database) -->
                     <div class="flex flex-wrap items-center gap-2">
                         <button @click="activeCategory = 'Semua Produk'" 
                                 :class="activeCategory === 'Semua Produk' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                 class="px-5 py-2 rounded-full text-xs font-semibold transition">
                             Semua Produk
                         </button>
-                        <button @click="activeCategory = 'Baju Batik'" 
-                                :class="activeCategory === 'Baju Batik' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                                class="px-5 py-2 rounded-full text-xs font-semibold transition">
-                            Baju Batik
-                        </button>
-                        <button @click="activeCategory = 'Kain Batik'" 
-                                :class="activeCategory === 'Kain Batik' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                                class="px-5 py-2 rounded-full text-xs font-semibold transition">
-                            Kain Batik
-                        </button>
-                        <button @click="activeCategory = 'Olahan Kain Sisa'" 
-                                :class="activeCategory === 'Olahan Kain Sisa' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                                class="px-5 py-2 rounded-full text-xs font-semibold transition">
-                            Olahan Kain Sisa
-                        </button>
+                        @forelse(($kategoris ?? collect()) as $kat)
+                            <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'" 
+                                    :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    class="px-5 py-2 rounded-full text-xs font-semibold transition">
+                                {{ $kat->nama_kategori }} ({{ $kat->produks_count }})
+                            </button>
+                        @empty
+                            <span class="text-xs text-stone-400">Belum ada kategori.</span>
+                        @endforelse
                     </div>
 
                     <!-- Count Text -->
@@ -727,6 +726,9 @@
                                 </div>
                                 <h3 class="font-serif-title font-bold text-xl sm:text-2xl text-stone-900 mb-2" x-text="selectedProduct.fullName || selectedProduct.nama"></h3>
                                 <p class="text-2xl font-extrabold text-[#B58742] mb-4" x-text="selectedProduct.hargaFormatted"></p>
+                                <p class="text-xs mb-4" :class="(selectedProduct.stok ?? 1) > 0 ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-bold'">
+                                    <span x-text="(selectedProduct.stok ?? 1) > 0 ? ('Stok tersedia: ' + selectedProduct.stok + ' pcs') : 'Stok Habis'"></span>
+                                </p>
                                 
                                 <div class="border-t border-b border-stone-100 py-3 mb-4 space-y-1.5 text-xs text-stone-600">
                                     <p><strong class="text-stone-900">Material:</strong> <span x-text="selectedProduct.material"></span></p>
@@ -747,10 +749,13 @@
                                     <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
                                     Pesan via WhatsApp
                                 </a>
-                                <button @click="quickViewModal = false; addToCart(selectedProduct)"
+                                <button x-show="(selectedProduct.stok ?? 1) > 0" @click="quickViewModal = false; addToCart(selectedProduct)"
                                         class="w-full py-2.5 px-4 rounded-xl border border-stone-300 hover:bg-stone-50 text-stone-800 font-semibold text-sm transition">
                                     + Tambah ke Keranjang
                                 </button>
+                                <div x-show="!((selectedProduct.stok ?? 1) > 0)" class="w-full py-2.5 px-4 rounded-xl bg-stone-100 text-stone-500 font-semibold text-sm text-center">
+                                    Stok Habis
+                                </div>
                             </div>
                         </div>
                     </div>

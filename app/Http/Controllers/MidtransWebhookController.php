@@ -52,7 +52,15 @@ class MidtransWebhookController extends Controller
         // -- 3. Lookup payment attempt by midtrans_order_id (unlocked read) ----
         $payment = Payment::where('midtrans_order_id', $payload['order_id'])->first();
         if (! $payment) {
-            return response()->json(['message' => 'Payment attempt not found.'], 404);
+            // Fallback alur toko (Snap order_id = kode pesanan, tercatat di pembayarans).
+            $legacyService = app(\App\Services\MidtransService::class);
+            $order = $legacyService->handleNotification($payload);
+
+            if (! $order) {
+                return response()->json(['message' => 'Payment attempt not found.'], 404);
+            }
+
+            return response()->json(['message' => 'OK', 'order_code' => $order->code]);
         }
 
         // -- 4. Delegate transition logic to PaymentAttemptProcessor -----------

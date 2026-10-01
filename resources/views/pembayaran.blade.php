@@ -341,7 +341,7 @@
                         @foreach($order->items ?? [] as $item)
                         <div class="flex gap-3 items-center">
                             <div class="w-12 h-12 rounded-lg bg-stone-100 border border-stone-200 shrink-0 overflow-hidden">
-                                <img src="{{ $item->produk && $item->produk->gambar ? (str_starts_with($item->produk->gambar, 'http') ? $item->produk->gambar : asset('storage/' . $item->produk->gambar)) : asset('images/batik-placeholder.jpg') }}" 
+                                <img src="{{ $item->produk ? $item->produk->gambar_url : asset('images/beranda/folded-shirts.jpg') }}" 
                                      alt="{{ $item->produk_name ?? 'Produk' }}" 
                                      class="w-full h-full object-cover">
                             </div>

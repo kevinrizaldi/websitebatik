@@ -55,7 +55,7 @@
                       harga: {{ (float) ($ci->produk->harga ?? 0) }},
                       qty: {{ $ci->qty }},
                       maxStock: {{ (int) ($ci->produk->stok ?? 99) }},
-                      gambar: '{{ $ci->produk && $ci->produk->gambar ? asset('storage/' . $ci->produk->gambar) : asset('images/beranda/folded-shirts.jpg') }}'
+                      gambar: '{{ $ci->produk ? $ci->produk->gambar_url : asset('images/beranda/folded-shirts.jpg') }}'
                   }@if(!$loop->last),@endif
                   @endforeach
               @endif
@@ -70,7 +70,7 @@
                       badge: '{{ strtoupper(addslashes($pr->kategori)) }}',
                       deskripsi: '{{ addslashes($pr->material ?? 'Bahan Tradisional Nusantara') }}',
                       harga: {{ (float) $pr->harga }},
-                      gambar: '{{ $pr->gambar ? asset('storage/' . $pr->gambar) : asset('images/beranda/folded-shirts.jpg') }}'
+                      gambar: '{{ $pr->gambar_url }}'
                   }@if(!$loop->last),@endif
                   @endforeach
               @else

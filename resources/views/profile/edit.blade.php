@@ -16,7 +16,7 @@
     </style>
 </head>
 <body class="min-h-screen bg-[#FAF7F2] text-[#26211D] antialiased selection:bg-[#B58742] selection:text-white"
-      x-data="{ mobileMenuOpen: false, cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }}, toastMessage: '{{ session('success') ?? (session('status') === 'profile-updated' ? 'Profil berhasil diperbarui.' : (session('status') === 'password-updated' ? 'Kata sandi berhasil diperbarui.' : '')) }}' }"
+      x-data="{ mobileMenuOpen: false, cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }}, toastMessage: '{{ session('success') ?? (session('status') === 'profile-updated' ? 'Profil berhasil diperbarui.' : '') }}' }"
       x-init="if (toastMessage) { setTimeout(() => { toastMessage = ''; }, 3500); }">
 
     <div x-cloak x-show="toastMessage" class="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-stone-700 bg-[#1F1916] px-5 py-3 text-white shadow-xl">
@@ -184,63 +184,6 @@
                             </div>
                         </form>
                     </details>
-                </div>
-
-                {{-- Kata sandi --}}
-                <div class="rounded-3xl border border-[#ECE4D8] bg-white p-6 shadow-sm">
-                    <h3 class="font-bold text-stone-900">Keamanan Akun</h3>
-                    <p class="mt-1 text-xs text-stone-500">Perbarui kata sandi secara berkala untuk menjaga keamanan akun.</p>
-                    <form method="POST" action="{{ route('password.update') }}" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        @csrf
-                        @method('PUT')
-                        <div>
-                            <label for="current_password" class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Sandi Saat Ini</label>
-                            <input id="current_password" type="password" name="current_password" class="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
-                            @error('current_password', 'updatePassword')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                        </div>
-                        <div>
-                            <label for="password" class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Sandi Baru</label>
-                            <input id="password" type="password" name="password" class="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
-                            @error('password', 'updatePassword')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                        </div>
-                        <div>
-                            <label for="password_confirmation" class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Konfirmasi Sandi</label>
-                            <input id="password_confirmation" type="password" name="password_confirmation" class="w-full rounded-xl border border-stone-200 px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
-                        </div>
-                        <div class="sm:col-span-3">
-                            <button type="submit" class="rounded-xl border border-stone-300 bg-white px-5 py-2.5 text-xs font-bold text-stone-800 transition hover:bg-stone-100">Perbarui Kata Sandi</button>
-                            @if (session('status') === 'password-updated')
-                                <span class="ml-2 text-xs font-semibold text-emerald-700">Tersimpan.</span>
-                            @endif
-                        </div>
-                    </form>
-                </div>
-
-                {{-- Alamat utama --}}
-                <div class="rounded-3xl border border-[#ECE4D8] bg-white p-6 shadow-sm">
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <h3 class="font-bold text-stone-900">Alamat Utama</h3>
-                            <p class="mt-1 text-xs text-stone-500">Tujuan default pengiriman paket pesanan Anda.</p>
-                        </div>
-                        <a href="{{ route('alamat.index') }}" class="rounded-full bg-[#F5EDE1] px-4 py-2 text-xs font-bold text-stone-800 transition hover:bg-[#EFE3D2]">Kelola Semua Alamat ({{ $alamats->count() }} Alamat) →</a>
-                    </div>
-                    @if ($alamatUtama)
-                        <div class="mt-4 rounded-2xl bg-[#FBF3EA] p-4">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="font-bold text-stone-900">{{ $alamatUtama->label_alamat }}</span>
-                                <span class="rounded bg-[#201A17] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Utama</span>
-                            </div>
-                            <p class="mt-1 text-sm font-semibold text-stone-800">{{ $alamatUtama->penerima }} • ({{ $alamatUtama->no_telepon }})</p>
-                            <p class="mt-1 text-sm leading-relaxed text-stone-600">{{ $alamatUtama->alamat_lengkap }}{{ $alamatUtama->kota ? ', '.$alamatUtama->kota : '' }}{{ $alamatUtama->provinsi ? ', '.$alamatUtama->provinsi : '' }}{{ $alamatUtama->kode_pos ? ' '.$alamatUtama->kode_pos : '' }}</p>
-                        </div>
-                    @else
-                        <div class="mt-4 rounded-2xl border border-dashed border-stone-300 p-5 text-center">
-                            <p class="text-sm font-semibold text-stone-700">Belum ada alamat tersimpan</p>
-                            <p class="mt-1 text-xs text-stone-500">Tambahkan alamat agar checkout lebih cepat.</p>
-                            <a href="{{ route('alamat.index') }}" class="mt-3 inline-block rounded-xl bg-[#201A17] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-stone-800">Tambah Alamat</a>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>

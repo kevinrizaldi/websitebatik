@@ -16,8 +16,10 @@ use App\Http\Controllers\PaymentSyncController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UlasanController as CustomerUlasanController;
+use App\Models\Kategori;
 use App\Models\Order;
 use App\Models\Produk;
+use App\Models\Ulasan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -37,20 +39,29 @@ Route::get('/', function () {
 
 Route::get('/koleksi', function () {
     $produks = collect();
+    $kategoris = collect();
     try {
         if (Schema::hasTable('produks')) {
             $produks = Produk::latest()->get();
         }
+        if (Schema::hasTable('kategoris')) {
+            $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
+        }
     } catch (Throwable $e) {
         $produks = collect();
+        $kategoris = collect();
     }
 
-    return view('koleksi', compact('produks'));
+    return view('koleksi', compact('produks', 'kategoris'));
 })->name('koleksi.index');
 
 Route::get('/produk-detail/{id?}', function ($id = null) {
     $produk = null;
     $produksTerkait = collect();
+    $ulasans = collect();
+    $ratingAvg = 0;
+    $ratingCount = 0;
+    $ratingBars = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
     try {
         if (Schema::hasTable('produks')) {
             if ($id) {
@@ -61,12 +72,22 @@ Route::get('/produk-detail/{id?}', function ($id = null) {
             }
             $produksTerkait = Produk::latest()->take(4)->get();
         }
+        if ($produk && Schema::hasTable('ulasans')) {
+            $approved = Ulasan::where('produk_id', $produk->id)->where('status', 'Disetujui');
+            $ulasans = (clone $approved)->latest()->take(6)->get();
+            $ratingCount = (clone $approved)->count();
+            $ratingAvg = $ratingCount > 0 ? round((float) (clone $approved)->avg('rating'), 1) : 0;
+            foreach ([5, 4, 3, 2, 1] as $star) {
+                $ratingBars[$star] = (clone $approved)->where('rating', $star)->count();
+            }
+        }
     } catch (Throwable $e) {
         $produk = null;
         $produksTerkait = collect();
+        $ulasans = collect();
     }
 
-    return view('produk-detail', compact('produk', 'produksTerkait'));
+    return view('produk-detail', compact('produk', 'produksTerkait', 'ulasans', 'ratingAvg', 'ratingCount', 'ratingBars'));
 })->name('produk.detail');
 
 Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang.index');

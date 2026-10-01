@@ -16,7 +16,87 @@
     </style>
 </head>
 <body class="min-h-screen bg-[#FAF7F2] text-[#26211D] antialiased selection:bg-[#B58742] selection:text-white"
-      x-data="{ mobileMenuOpen: false, cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }}, toastMessage: '{{ session('success') ?? '' }}' }"
+      x-data="{
+          mobileMenuOpen: false,
+          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
+          toastMessage: '{{ session('success') ?? '' }}',
+          addressModalOpen: false,
+          modalMode: 'add',
+          editingId: null,
+          saving: false,
+          formErrors: [],
+          addrForm: { label: '', penerima: '', phone: '', provinsi: '', kota: '', kodepos: '', lengkap: '', utama: false },
+          addressList: [
+              @foreach($alamats as $alamat)
+              {
+                  id: {{ $alamat->id }},
+                  label: '{{ addslashes($alamat->label_alamat) }}',
+                  penerima: '{{ addslashes($alamat->penerima) }}',
+                  phone: '{{ addslashes($alamat->no_telepon) }}',
+                  provinsi: '{{ addslashes($alamat->provinsi ?? '') }}',
+                  kota: '{{ addslashes($alamat->kota) }}',
+                  kodepos: '{{ addslashes($alamat->kode_pos ?? '') }}',
+                  lengkap: '{{ addslashes($alamat->alamat_lengkap) }}',
+                  utama: {{ $alamat->is_utama ? 'true' : 'false' }}
+              }@if(!$loop->last),@endif
+              @endforeach
+          ],
+          openAdd() {
+              this.modalMode = 'add';
+              this.editingId = null;
+              this.formErrors = [];
+              this.addrForm = { label: '', penerima: '', phone: '', provinsi: '', kota: '', kodepos: '', lengkap: '', utama: this.addressList.length === 0 };
+              this.addressModalOpen = true;
+          },
+          openEdit(id) {
+              const found = this.addressList.find(a => a.id === id);
+              if (!found) return;
+              this.modalMode = 'edit';
+              this.editingId = id;
+              this.formErrors = [];
+              this.addrForm = { label: found.label, penerima: found.penerima, phone: found.phone, provinsi: found.provinsi, kota: found.kota, kodepos: found.kodepos, lengkap: found.lengkap, utama: found.utama };
+              this.addressModalOpen = true;
+          },
+          submitModalForm() {
+              this.saving = true;
+              this.formErrors = [];
+              const isAdd = this.modalMode === 'add';
+              const url = isAdd ? '{{ route('alamat.store') }}' : '{{ url('/alamat') }}/' + this.editingId;
+              fetch(url, {
+                  method: isAdd ? 'POST' : 'PUT',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                      'Accept': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      label_alamat: this.addrForm.label,
+                      penerima: this.addrForm.penerima,
+                      no_telepon: this.addrForm.phone,
+                      provinsi: this.addrForm.provinsi,
+                      kota: this.addrForm.kota,
+                      kode_pos: this.addrForm.kodepos,
+                      alamat_lengkap: this.addrForm.lengkap,
+                      is_utama: !!this.addrForm.utama
+                  })
+              })
+              .then(async res => {
+                  const data = await res.json().catch(() => ({}));
+                  this.saving = false;
+                  if (res.ok && data.success) {
+                      window.location.reload();
+                  } else if (data.errors) {
+                      this.formErrors = Object.values(data.errors).flat();
+                  } else {
+                      this.formErrors = [data.message || 'Gagal menyimpan alamat.'];
+                  }
+              })
+              .catch(() => {
+                  this.saving = false;
+                  this.formErrors = ['Gagal menghubungi server.'];
+              });
+          }
+      }"
       x-init="if (toastMessage) { setTimeout(() => { toastMessage = ''; }, 3500); }">
 
     <div x-cloak x-show="toastMessage" class="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-stone-700 bg-[#1F1916] px-5 py-3 text-white shadow-xl">
@@ -72,7 +152,7 @@
         </p>
         <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
             <h1 class="font-serif-title text-3xl font-extrabold text-stone-900 sm:text-4xl">Daftar Alamat Saya</h1>
-            <a href="#tambah-alamat" class="rounded-full bg-[#201A17] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-stone-800">+ Isi Alamat Baru</a>
+            <button @click="openAdd()" type="button" class="rounded-full bg-[#201A17] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-stone-800">+ Isi Alamat Baru</button>
         </div>
 
         <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -98,8 +178,8 @@
                 </nav>
             </div>
 
-            {{-- Kolom tengah: alamat tersimpan --}}
-            <div class="space-y-4 lg:col-span-5">
+            {{-- Daftar alamat tersimpan --}}
+            <div class="space-y-4 lg:col-span-9">
                 <h2 class="flex items-center gap-2 font-bold text-stone-900">Alamat Tersimpan ({{ $alamats->count() }} Alamat)</h2>
                 @forelse ($alamats as $alamat)
                     <div class="rounded-3xl border {{ $alamat->is_utama ? 'border-[#201A17] bg-[#FBF3EA]' : 'border-[#ECE4D8] bg-white' }} p-5 shadow-sm">
@@ -113,21 +193,7 @@
                         <p class="text-sm text-stone-600">{{ $alamat->no_telepon }}</p>
                         <p class="mt-1 text-sm leading-relaxed text-stone-600">{{ $alamat->alamat_lengkap }}{{ $alamat->kota ? ', '.$alamat->kota : '' }}{{ $alamat->provinsi ? ', '.$alamat->provinsi : '' }}{{ $alamat->kode_pos ? ' '.$alamat->kode_pos : '' }}</p>
                         <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-stone-200/70 pt-3">
-                            <details class="relative">
-                                <summary class="cursor-pointer list-none rounded-xl bg-[#F5EDE1] px-4 py-2 text-xs font-bold text-stone-800 transition hover:bg-[#EFE3D2]">Ubah</summary>
-                                <form action="{{ route('alamat.update', $alamat) }}" method="POST" class="absolute left-0 z-10 mt-2 w-72 space-y-2 rounded-2xl border border-[#ECE4D8] bg-white p-4 shadow-xl">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="text" name="label_alamat" value="{{ $alamat->label_alamat }}" placeholder="Label" class="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-stone-400 focus:outline-none">
-                                    <input type="text" name="penerima" value="{{ $alamat->penerima }}" required placeholder="Nama penerima" class="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-stone-400 focus:outline-none">
-                                    <input type="text" name="no_telepon" value="{{ $alamat->no_telepon }}" required placeholder="No. telepon" class="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-stone-400 focus:outline-none">
-                                    <input type="text" name="provinsi" value="{{ $alamat->provinsi }}" placeholder="Provinsi" class="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-stone-400 focus:outline-none">
-                                    <input type="text" name="kota" value="{{ $alamat->kota }}" required placeholder="Kabupaten/Kota" class="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-stone-400 focus:outline-none">
-                                    <input type="text" name="kode_pos" value="{{ $alamat->kode_pos }}" placeholder="Kode pos" class="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-stone-400 focus:outline-none">
-                                    <textarea name="alamat_lengkap" rows="2" required placeholder="Alamat lengkap" class="w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-stone-400 focus:outline-none">{{ $alamat->alamat_lengkap }}</textarea>
-                                    <button type="submit" class="w-full rounded-xl bg-[#201A17] py-2 text-xs font-bold text-white hover:bg-stone-800">Simpan</button>
-                                </form>
-                            </details>
+                            <button @click="openEdit({{ $alamat->id }})" type="button" class="rounded-xl bg-[#F5EDE1] px-4 py-2 text-xs font-bold text-stone-800 transition hover:bg-[#EFE3D2]">Ubah</button>
                             <form action="{{ route('alamat.destroy', $alamat) }}" method="POST" onsubmit="return confirm('Hapus alamat ini?')">
                                 @csrf
                                 @method('DELETE')
@@ -145,64 +211,104 @@
                 @empty
                     <div class="rounded-3xl border border-dashed border-stone-300 bg-white p-8 text-center">
                         <p class="font-bold text-stone-900">Belum ada alamat tersimpan</p>
-                        <p class="mt-1 text-xs text-stone-500">Tambahkan alamat pertama lewat formulir di samping.</p>
+                        <p class="mt-1 text-xs text-stone-500">Tambahkan alamat pertama lewat tombol + Isi Alamat Baru.</p>
+                        <button @click="openAdd()" type="button" class="mt-4 rounded-xl bg-[#201A17] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-stone-800">+ Tambah Alamat</button>
                     </div>
                 @endforelse
             </div>
+        </div>
+    </main>
 
-            {{-- Kolom kanan: tambah alamat (field sesuai PRD) --}}
-            <div class="lg:col-span-4" id="tambah-alamat">
-                <div class="rounded-3xl border border-[#ECE4D8] bg-white p-6 shadow-sm">
-                    <h2 class="font-bold text-stone-900">Tambah Alamat Baru</h2>
-                    @if ($errors->any())
-                        <div class="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
-                            @foreach ($errors->all() as $error)
-                                <p>• {{ $error }}</p>
-                            @endforeach
-                        </div>
-                    @endif
-                    <form action="{{ route('alamat.store') }}" method="POST" class="mt-4 space-y-3">
-                        @csrf
+    <!-- ================= MODAL TAMBAH / UBAH ALAMAT ================= -->
+    <div x-cloak x-show="addressModalOpen"
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div x-show="addressModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="addressModalOpen = false"
+                 class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
+                 aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div x-show="addressModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-stone-200">
+
+                <div class="px-6 py-5 bg-[#FAF7F2] border-b border-[#ECE4D8] flex items-center justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-stone-900" x-text="modalMode === 'add' ? 'Tambah Alamat Baru' : 'Ubah Alamat'">Tambah Alamat Baru</h3>
+                        <p class="text-xs text-stone-500 mt-0.5">Field sesuai data alamat (nama, telepon, kota, alamat lengkap).</p>
+                    </div>
+                    <button @click="addressModalOpen = false" class="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200/50">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-3 max-h-[70vh] overflow-y-auto">
+                    <div x-show="formErrors.length > 0" class="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                        <template x-for="(err, i) in formErrors" :key="i">
+                            <p x-text="'• ' + err"></p>
+                        </template>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500" for="penerima_baru">Nama Penerima</label>
-                            <input id="penerima_baru" type="text" name="penerima" value="{{ old('penerima', $user->name) }}" required placeholder="Masukkan nama penerima" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Nama Penerima <span class="text-rose-500">*</span></label>
+                            <input type="text" x-model="addrForm.penerima" placeholder="Masukkan nama penerima" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
                         <div>
-                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500" for="telepon_baru">Nomor Telepon</label>
-                            <input id="telepon_baru" type="text" name="no_telepon" value="{{ old('no_telepon', $user->phone) }}" required placeholder="Contoh: 08123456789" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Nomor Telepon <span class="text-rose-500">*</span></label>
+                            <input type="text" x-model="addrForm.phone" placeholder="Contoh: 08123456789" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Label Alamat</label>
+                        <input type="text" x-model="addrForm.label" placeholder="Contoh: Rumah, Kantor" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Provinsi</label>
+                            <input type="text" x-model="addrForm.provinsi" placeholder="Provinsi" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
                         <div>
-                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500" for="label_baru">Label Alamat</label>
-                            <input id="label_baru" type="text" name="label_alamat" value="{{ old('label_alamat') }}" placeholder="Contoh: Rumah, Kantor" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Kabupaten/Kota <span class="text-rose-500">*</span></label>
+                            <input type="text" x-model="addrForm.kota" placeholder="Kabupaten/Kota" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500" for="provinsi_baru">Provinsi</label>
-                                <input id="provinsi_baru" type="text" name="provinsi" value="{{ old('provinsi') }}" placeholder="Pilih Provinsi" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
-                            </div>
-                            <div>
-                                <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500" for="kota_baru">Kabupaten/Kota</label>
-                                <input id="kota_baru" type="text" name="kota" value="{{ old('kota') }}" required placeholder="Pilih Kabupaten/Kota" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500" for="kodepos_baru">Kode Pos</label>
-                            <input id="kodepos_baru" type="text" name="kode_pos" value="{{ old('kode_pos') }}" placeholder="Contoh: 12190" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500" for="lengkap_baru">Alamat Lengkap</label>
-                            <textarea id="lengkap_baru" name="alamat_lengkap" rows="3" required placeholder="Nama jalan, Gedung, No. Rumah, RT/RW, dan patokan" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">{{ old('alamat_lengkap') }}</textarea>
-                        </div>
-                        <label class="flex items-center gap-2 text-xs text-stone-600">
-                            <input type="checkbox" name="is_utama" value="1" class="h-4 w-4 rounded border-stone-300">
-                            <span>Jadikan ini sebagai Alamat Utama</span>
-                        </label>
-                        <button type="submit" class="w-full rounded-xl bg-[#201A17] py-3 text-sm font-bold text-white transition hover:bg-stone-800">Simpan Alamat Baru</button>
-                    </form>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Kode Pos</label>
+                        <input type="text" x-model="addrForm.kodepos" placeholder="Contoh: 12190" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Alamat Lengkap <span class="text-rose-500">*</span></label>
+                        <textarea x-model="addrForm.lengkap" rows="3" placeholder="Nama jalan, Gedung, No. Rumah, RT/RW, dan patokan" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none"></textarea>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-stone-600">
+                        <input type="checkbox" x-model="addrForm.utama" class="h-4 w-4 rounded border-stone-300">
+                        <span>Jadikan ini sebagai Alamat Utama</span>
+                    </label>
+                </div>
+
+                <div class="px-6 py-4 bg-stone-50 border-t border-stone-200 flex items-center justify-between">
+                    <button @click="addressModalOpen = false" type="button" class="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900 transition">Batal</button>
+                    <button @click="submitModalForm()" type="button" :disabled="saving" class="px-6 py-2.5 text-xs font-bold text-white bg-[#201A17] hover:bg-stone-800 disabled:opacity-50 rounded-xl transition shadow-md">
+                        <span x-text="saving ? 'Menyimpan...' : (modalMode === 'add' ? 'Simpan Alamat Baru' : 'Simpan Perubahan')"></span>
+                    </button>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <footer class="border-t border-[#ECE4D8] bg-[#FAF7F2] py-8 text-xs text-stone-600">
         <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">

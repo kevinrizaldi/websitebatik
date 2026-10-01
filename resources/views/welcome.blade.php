@@ -483,7 +483,7 @@
                             <span class="absolute bottom-3 left-3 z-10 bg-[#201A17]/80 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded uppercase tracking-wider">
                                 {{ $p->kategori }}
                             </span>
-                            <img src="{{ $p->gambar ? asset('storage/' . $p->gambar) : asset('images/beranda/folded-shirts.jpg') }}" 
+                            <img src="{{ $p->gambar_url }}" 
                                  alt="{{ $p->nama }}" 
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                         </a>

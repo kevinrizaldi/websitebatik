@@ -178,6 +178,7 @@
                             <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-900 text-xs font-semibold flex items-center gap-2">
                                 <span>❌</span> Pesanan ini telah dibatalkan.
                             </div>
+                        @endif
                     </div>
 
                     <!-- Kartu Daftar Produk Dipesan -->
@@ -194,8 +195,8 @@
                             @foreach ($order->items as $item)
                                 <div class="py-3 flex gap-4 items-center">
                                     <div class="w-14 h-14 bg-amber-100 rounded-xl overflow-hidden flex-shrink-0 border border-amber-200/50">
-                                        @if ($item->produk && $item->produk->gambar)
-                                            <img src="{{ str_starts_with($item->produk->gambar, 'http') ? $item->produk->gambar : asset('storage/'.$item->produk->gambar) }}" class="h-full w-full object-cover" alt="{{ $item->produk_name }}">
+                                        @if ($item->produk)
+                                            <img src="{{ $item->produk->gambar_url }}" class="h-full w-full object-cover" alt="{{ $item->produk_name }}">
                                         @else
                                             <div class="flex h-full w-full items-center justify-center text-xs font-bold text-amber-800">Batik</div>
                                         @endif

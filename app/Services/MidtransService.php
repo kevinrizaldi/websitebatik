@@ -229,4 +229,39 @@ class MidtransService
 
         return $order;
     }
+
+    /**
+     * Tarik status terbaru dari Midtrans GET-status API lalu terapkan
+     * pemetaan yang sama seperti webhook. Dipakai saat webhook tidak bisa
+     * menjangkau server (mis. localhost) — dipanggil saat membuka halaman
+     * pembayaran dan saat kembali dari popup Snap.
+     */
+    public function refreshFromMidtrans(Order $order): ?Order
+    {
+        if (empty($this->serverKey) || str_contains($this->serverKey, 'demo-key') || str_contains($this->serverKey, 'YOUR_KEY')) {
+            return null;
+        }
+
+        if (! in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'], true)) {
+            return $order;
+        }
+
+        try {
+            $base = $this->isProduction ? 'https://api.midtrans.com' : 'https://api.sandbox.midtrans.com';
+            $response = Http::withBasicAuth($this->serverKey, '')
+                ->withHeaders(['Accept' => 'application/json'])
+                ->timeout(10)
+                ->get($base.'/v2/'.urlencode($order->code).'/status');
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            return $this->handleNotification($response->json() ?? []);
+        } catch (Exception $e) {
+            Log::warning("Midtrans status refresh failed for order {$order->code}: ".$e->getMessage());
+
+            return null;
+        }
+    }
 }
