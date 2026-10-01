@@ -257,7 +257,7 @@ class CartController extends Controller
         $orderCode = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(4));
         $shippingOption = $validated['shipping_option'] ?? 'JNE Reguler';
 
-        $order = DB::transaction(function () use ($validated, $cartItems, $grandTotal, $orderCode, $shippingOption) {
+        $order = DB::transaction(function () use ($validated, $cartItems, $grandTotal, $orderCode, $shippingOption, $shipping) {
             $notesText = ! empty($validated['notes']) ? ' (Catatan: '.$validated['notes'].')' : '';
             $fullAddress = $validated['address'].$notesText.' [Kurir: '.$shippingOption.']';
 
@@ -268,8 +268,10 @@ class CartController extends Controller
                 'phone' => $validated['phone'],
                 'address' => $fullAddress,
                 'total_price' => $grandTotal,
+                'shipping_cost' => $shipping,
                 'payment_method' => $validated['payment_method'] ?? 'Transfer Bank Manual (BCA)',
-                'status' => 'Belum Dibayar',
+                'status' => Order::STATUS_UNPAID,
+                'payment_status' => Order::PAYMENT_PENDING,
             ]);
 
             foreach ($cartItems as $item) {
@@ -295,6 +297,26 @@ class CartController extends Controller
 
             return $order;
         });
+
+        // Redirect ke halaman pay Midtrans jika bukan transfer manual & user login
+        $paymentMethod = $validated['payment_method'] ?? '';
+        $isMidtransMethod = Auth::check() && ! str_contains(strtolower($paymentMethod), 'transfer bank manual');
+
+        if ($isMidtransMethod) {
+            $payUrl = route('orders.pay', $order->id);
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran.',
+                    'order_code' => $order->code,
+                    'order_id' => $order->id,
+                    'redirect_url' => $payUrl,
+                ]);
+            }
+
+            return redirect($payUrl)->with('success', "Pesanan #{$order->code} berhasil dibuat! Silakan selesaikan pembayaran.");
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

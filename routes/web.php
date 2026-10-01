@@ -4,6 +4,12 @@ use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\MidtransWebhookController;
+use App\Http\Controllers\OrderPayController;
+use App\Http\Controllers\PaymentChangeMethodController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentQrController;
+use App\Http\Controllers\PaymentSyncController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Order;
@@ -95,7 +101,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // ── Midtrans Payment ─────────────────────────────────────────────────────
+    // Snap token endpoint (called by JS after order is created)
+    Route::post('/payment/token', [PaymentController::class, 'token'])->name('payment.token');
+
+    // Midtrans finish callback (GET, after user pays)
+    Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
+
+    // Halaman pembayaran per-order
+    Route::get('/orders/{order}/pay', [OrderPayController::class, 'show'])->name('orders.pay');
+
+    // Sync status dari Midtrans secara manual
+    Route::post('/orders/{order}/payment/sync', [PaymentSyncController::class, 'sync'])->name('orders.payment.sync');
+
+    // Ganti metode pembayaran
+    Route::post('/orders/{order}/payment/change-method', [PaymentChangeMethodController::class, 'store'])
+        ->name('orders.payment.change-method');
+
+    // QR code proxy untuk QRIS
+    Route::get('/orders/{order}/payment/qr', [PaymentQrController::class, 'download'])->name('payment.qr');
 });
+
+// Midtrans webhook (tidak perlu auth, diverifikasi via signature)
+Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
+    ->name('midtrans.webhook')
+    ->withoutMiddleware(['App\Http\Middleware\PreventRequestForgery']);
 
 // Route Khusus Admin: Kelola Produk, Kelola Pesanan, & Kelola Ulasan
 Route::middleware(['auth', 'admin'])->group(function () {
