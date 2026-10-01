@@ -1,14 +1,12 @@
 <?php
 
 return [
-    'merchant_id' => env('MIDTRANS_MERCHANT_ID', ''),
-    'client_key' => env('MIDTRANS_CLIENT_KEY', ''),
-    'server_key' => env('MIDTRANS_SERVER_KEY', ''),
+    'merchant_id' => env('MIDTRANS_MERCHANT_ID'),
+    'server_key' => env('MIDTRANS_SERVER_KEY', 'SB-Mid-server-sandbox-demo-key'),
+    'client_key' => env('MIDTRANS_CLIENT_KEY', 'SB-Mid-client-sandbox-demo-key'),
     'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
-    'is_sanitized' => (bool) env('MIDTRANS_IS_SANITIZED', true),
-    'is_3ds' => (bool) env('MIDTRANS_IS_3DS', true),
-    'expiry_hours' => (int) env('MIDTRANS_EXPIRY_HOURS', 24),
-    'payment_deadline_hours' => (int) env('MIDTRANS_PAYMENT_DEADLINE_HOURS', 24),
+    'is_sanitized' => true,
+    'is_3ds' => true,
 
     'snap_url' => env('MIDTRANS_IS_PRODUCTION', false)
         ? 'https://app.midtrans.com/snap/v1/transactions'
