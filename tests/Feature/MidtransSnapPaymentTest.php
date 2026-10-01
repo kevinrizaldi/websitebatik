@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\User;
 use App\Services\Midtrans\MidtransService;
+use App\Services\Midtrans\PaymentAttemptProcessor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -1479,12 +1480,15 @@ class MidtransSnapPaymentTest extends TestCase
             'order_id' => $order->id,
             'status' => Payment::STATUS_PENDING,
             'midtrans_order_id' => 'ORD-SYNC-TEST',
+            'gross_amount' => 200000,
         ]);
 
         $this->mockGetTransactionStatus([
+            'order_id' => 'ORD-SYNC-TEST',
             'transaction_status' => 'pending',
             'payment_type' => 'bank_transfer',
             'transaction_id' => 'TRX-SYNC-001',
+            'gross_amount' => '200000.00',
             'va_numbers' => [['bank' => 'bca', 'va_number' => '1234567890']],
             'expiry_time' => '2026-12-31 23:59:59',
         ]);
@@ -1499,6 +1503,208 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame('bank_transfer', $payment->payment_type);
         $this->assertSame('TRX-SYNC-001', $payment->transaction_id);
         $this->assertNotEmpty($payment->payment_details);
+    }
+
+    /** COMMIT 2d: settlement via sync marks attempt paid, order paid, status 'Sudah Dibayar'. */
+    public function test_sync_settlement_marks_attempt_and_order_paid(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0); // gross = 200000
+        $payment = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-SYNC-SETTLE',
+            'gross_amount' => 200000,
+        ]);
+
+        $this->mockGetTransactionStatus([
+            'order_id' => 'ORD-SYNC-SETTLE',
+            'transaction_status' => 'settlement',
+            'payment_type' => 'bank_transfer',
+            'transaction_id' => 'TXN-SYNC-SETTLE',
+            'gross_amount' => '200000.00',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertOk()
+            ->assertJsonPath('message', 'Sinkronisasi berhasil.');
+
+        $payment->refresh();
+        $this->assertSame(Payment::STATUS_PAID, $payment->status);
+
+        $order->refresh();
+        $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
+        $this->assertSame(Order::STATUS_PAID, $order->status);
+    }
+
+    /** COMMIT 2d: expire via sync marks attempt expired, order untouched. */
+    public function test_sync_expire_marks_attempt_expired_order_untouched(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $payment = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-SYNC-EXPIRE',
+            'gross_amount' => 200000,
+        ]);
+
+        $this->mockGetTransactionStatus([
+            'order_id' => 'ORD-SYNC-EXPIRE',
+            'transaction_status' => 'expire',
+            'gross_amount' => '200000.00',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertOk();
+
+        $payment->refresh();
+        $this->assertSame(Payment::STATUS_EXPIRED, $payment->status);
+
+        $order->refresh();
+        $this->assertSame(Order::PAYMENT_PENDING, $order->payment_status);
+        $this->assertSame(Order::STATUS_UNPAID, $order->status);
+    }
+
+    /** COMMIT 2d: pending with va_numbers → payment_details stored. */
+    public function test_sync_pending_with_va_numbers_stores_payment_details(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $payment = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-SYNC-VA',
+            'gross_amount' => 200000,
+        ]);
+
+        $this->mockGetTransactionStatus([
+            'order_id' => 'ORD-SYNC-VA',
+            'transaction_status' => 'pending',
+            'gross_amount' => '200000.00',
+            'payment_type' => 'bank_transfer',
+            'va_numbers' => [['bank' => 'bca', 'va_number' => '9998887770']],
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertOk();
+
+        $details = $payment->fresh()->payment_details;
+        $this->assertIsArray($details);
+        $this->assertArrayHasKey('va_numbers', $details);
+        $this->assertSame('bca', $details['va_numbers'][0]['bank']);
+    }
+
+    /** COMMIT 2d: null status response → unchanged. */
+    public function test_sync_null_status_leaves_payment_unchanged(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $payment = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-SYNC-NULL',
+            'payment_type' => null,
+        ]);
+
+        $this->mockGetTransactionStatus(null);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertOk()
+            ->assertJsonPath('message', 'Transaksi belum dibuat di Midtrans.');
+
+        $this->assertNull($payment->fresh()->payment_type);
+    }
+
+    /** COMMIT 2d: order_id mismatch in status response → ignored. */
+    public function test_sync_order_id_mismatch_is_ignored(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $payment = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-MY-ID',
+            'payment_type' => null,
+            'gross_amount' => 200000,
+        ]);
+
+        // order_id in response does NOT match the attempt's midtrans_order_id
+        $this->mockGetTransactionStatus([
+            'order_id' => 'DIFFERENT-ID',
+            'transaction_status' => 'settlement',
+            'gross_amount' => '200000.00',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertOk()
+            ->assertJsonPath('message', 'Sinkronisasi berhasil.');
+
+        // Status must remain pending since the response was from a different order
+        $this->assertSame(Payment::STATUS_PENDING, $payment->fresh()->status);
+        $this->assertSame(Order::PAYMENT_PENDING, $order->fresh()->payment_status);
+    }
+
+    /** COMMIT 2d: gross_amount mismatch → no change. */
+    public function test_sync_gross_amount_mismatch_makes_no_change(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $payment = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-SYNC-MISM',
+            'gross_amount' => 200000,
+        ]);
+
+        $this->mockGetTransactionStatus([
+            'order_id' => 'ORD-SYNC-MISM',
+            'transaction_status' => 'settlement',
+            'gross_amount' => '999.00', // wrong amount
+        ]);
+
+        $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id])
+            ->assertOk(); // sync itself still returns 200 (no error raised to client)
+
+        // But the attempt must remain pending
+        $this->assertSame(Payment::STATUS_PENDING, $payment->fresh()->status);
+    }
+
+    /** COMMIT 2d: Midtrans failure → 502 with generic message, no exception text. */
+    public function test_sync_midtrans_failure_returns_502_without_exception_text(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-SYNC-FAIL',
+        ]);
+
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['getTransactionStatus'])
+            ->getMock();
+        $mock->method('getTransactionStatus')
+            ->willThrowException(new \Exception('Internal Midtrans connection error details'));
+        $this->app->instance(MidtransService::class, $mock);
+
+        $response = $this->actingAs($user)
+            ->postJson('/payment/sync', ['order_id' => $order->id]);
+
+        $response->assertStatus(502);
+        $body = $response->getContent();
+        $this->assertStringNotContainsString('Internal Midtrans connection error details', $body);
+        $this->assertStringNotContainsString('Exception', $body);
     }
 
     public function test_sync_returns_404_when_no_active_attempt(): void
@@ -1541,22 +1747,34 @@ class MidtransSnapPaymentTest extends TestCase
             ->assertJsonPath('message', 'Transaksi belum dibuat di Midtrans.');
     }
 
-    public function test_sync_payment_attempt_ignores_non_pending_attempt(): void
+    /**
+     * COMMIT 2d (renamed from syncPaymentAttempt test):
+     * PaymentAttemptProcessor::apply() on an already-paid attempt is a no-op
+     * (returns 200 but does not change payment_type).
+     *
+     * Changed: old test called $svc->syncPaymentAttempt() directly, which is removed.
+     * New test drives the same intent through PaymentAttemptProcessor::apply().
+     */
+    public function test_processor_apply_on_already_paid_attempt_is_a_noop(): void
     {
         $user = User::factory()->create(['role' => 'customer']);
         $order = $this->makePayableOrder($user);
-        $payment = Payment::factory()->create([
+        $payment = Payment::factory()->paid()->create([
             'order_id' => $order->id,
-            'status' => Payment::STATUS_PAID,
             'payment_type' => null,
+            'gross_amount' => 200000,
         ]);
 
-        $svc = app(MidtransService::class);
-        $svc->syncPaymentAttempt($payment, [
+        /** @var PaymentAttemptProcessor $processor */
+        $processor = app(PaymentAttemptProcessor::class);
+        $result = $processor->apply($payment, [
+            'transaction_status' => 'settlement',
+            'gross_amount' => '200000.00',
             'payment_type' => 'bank_transfer',
-            'transaction_id' => 'should-not-apply',
         ]);
 
+        $this->assertSame(200, $result['code']);
+        $this->assertSame('OK (already paid)', $result['message']);
         $this->assertNull($payment->fresh()->payment_type);
     }
 
@@ -1589,20 +1807,34 @@ class MidtransSnapPaymentTest extends TestCase
         $this->app->instance(MidtransService::class, $mock);
     }
 
+    /** COMMIT 2d: null status and attempt reusable → same token, cancel never called. */
     public function test_change_method_reuses_token_when_buyer_has_not_chosen_method(): void
     {
         config(['midtrans.client_key' => 'test-client-key']);
         $user = User::factory()->create(['role' => 'customer']);
         $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
         $existing = Payment::factory()->create([
             'order_id' => $order->id,
             'status' => Payment::STATUS_PENDING,
             'snap_token' => 'existing-snap-token',
             'payment_type' => null, // no method chosen yet
+            'expires_at' => now()->addHours(1), // still reusable
         ]);
 
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
         // getTransactionStatus returns null → buyer never chose method
-        $this->mockChangeMethod('new-snap-token', null);
+        $mock->method('getTransactionStatus')->willReturn(null);
+        // cancelTransaction must never be called
+        $mock->expects($this->never())->method('cancelTransaction');
+        $mock->method('requestSnapToken')->willReturn('should-not-be-used');
+
+        $this->app->instance(MidtransService::class, $mock);
 
         $this->actingAs($user)
             ->postJson('/payment/change-method', ['order_id' => $order->id])
@@ -1613,6 +1845,7 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Payment::STATUS_PENDING, $existing->fresh()->status);
     }
 
+    /** COMMIT 2d: pending → cancel called once, old replaced, new attempt, order untouched. */
     public function test_change_method_cancels_old_attempt_and_creates_new_one(): void
     {
         config(['midtrans.client_key' => 'test-client-key', 'midtrans.payment_deadline_hours' => 24]);
@@ -1629,8 +1862,15 @@ class MidtransSnapPaymentTest extends TestCase
             'gross_amount' => 200000,
         ]);
 
-        // getTransactionStatus returns non-null → buyer already interacted
-        $this->mockChangeMethod('brand-new-token', ['transaction_status' => 'pending']);
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        $mock->method('getTransactionStatus')->willReturn(['transaction_status' => 'pending', 'gross_amount' => '200000.00']);
+        $mock->expects($this->once())->method('cancelTransaction');
+        $mock->method('requestSnapToken')->willReturn('brand-new-token');
+
+        $this->app->instance(MidtransService::class, $mock);
 
         $response = $this->actingAs($user)
             ->postJson('/payment/change-method', ['order_id' => $order->id])
@@ -1647,8 +1887,170 @@ class MidtransSnapPaymentTest extends TestCase
             'status' => Payment::STATUS_PENDING,
             'snap_token' => 'brand-new-token',
         ]);
+
+        // Order must be untouched
+        $this->assertSame(Order::PAYMENT_PENDING, $order->fresh()->payment_status);
     }
 
+    /** COMMIT 2d: settlement → attempt and order paid PERSISTED, 409, cancel not called, no new attempt. */
+    public function test_change_method_settlement_returns_409_and_persists_paid_state(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0); // gross = 200000
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'snap_token' => 'settled-token',
+            'gross_amount' => 200000,
+        ]);
+
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        $mock->method('getTransactionStatus')->willReturn([
+            'transaction_status' => 'settlement',
+            'gross_amount' => '200000.00',
+        ]);
+        $mock->expects($this->never())->method('cancelTransaction');
+        $mock->expects($this->never())->method('requestSnapToken');
+
+        $this->app->instance(MidtransService::class, $mock);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Pesanan ini sudah dibayar.');
+
+        // Paid state must be committed (not rolled back)
+        $this->assertSame(Payment::STATUS_PAID, $existing->fresh()->status);
+        $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
+
+        // No new attempt created
+        $this->assertDatabaseCount('payments', 1);
+    }
+
+    /** COMMIT 2d: expired/denied → cancel NOT called, old marked accordingly, new attempt created. */
+    public function test_change_method_dead_status_does_not_cancel_and_creates_new_attempt(): void
+    {
+        config(['midtrans.payment_deadline_hours' => 24]);
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'snap_token' => 'old-dead-token',
+            'gross_amount' => 200000,
+        ]);
+
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        $mock->method('getTransactionStatus')->willReturn([
+            'transaction_status' => 'expire',
+            'gross_amount' => '200000.00',
+        ]);
+        // Cancel must NOT be called for a dead/expired attempt
+        $mock->expects($this->never())->method('cancelTransaction');
+        $mock->method('requestSnapToken')->willReturn('new-after-dead-token');
+
+        $this->app->instance(MidtransService::class, $mock);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertOk()
+            ->assertJsonPath('snap_token', 'new-after-dead-token');
+
+        $this->assertSame(Payment::STATUS_EXPIRED, $existing->fresh()->status);
+        $this->assertDatabaseHas('payments', ['status' => Payment::STATUS_PENDING, 'snap_token' => 'new-after-dead-token']);
+    }
+
+    /** COMMIT 2d: 412 then expire → new attempt. */
+    public function test_change_method_412_then_expire_creates_new_attempt(): void
+    {
+        config(['midtrans.payment_deadline_hours' => 24]);
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-412-EXPIRE',
+            'gross_amount' => 200000,
+        ]);
+
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        // First getTransactionStatus → pending; cancel → 412; retry → expire
+        $mock->method('getTransactionStatus')->willReturnOnConsecutiveCalls(
+            ['transaction_status' => 'pending', 'gross_amount' => '200000.00'],
+            ['transaction_status' => 'expire', 'gross_amount' => '200000.00']
+        );
+        $mock->method('cancelTransaction')->willThrowException(new \Exception('412 cannot cancel', 412));
+        $mock->method('requestSnapToken')->willReturn('token-after-412-expire');
+
+        $this->app->instance(MidtransService::class, $mock);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertOk()
+            ->assertJsonPath('snap_token', 'token-after-412-expire');
+
+        $this->assertDatabaseHas('payments', ['status' => Payment::STATUS_PENDING, 'snap_token' => 'token-after-412-expire']);
+    }
+
+    /** COMMIT 2d: 412 then settlement → paid persisted, 409. */
+    public function test_change_method_412_then_settlement_returns_409_and_persists_paid(): void
+    {
+        $this->setTestServerKey();
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'midtrans_order_id' => 'ORD-412-SETTLE',
+            'gross_amount' => 200000,
+        ]);
+
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        $mock->method('getTransactionStatus')->willReturnOnConsecutiveCalls(
+            ['transaction_status' => 'pending', 'gross_amount' => '200000.00'],
+            ['transaction_status' => 'settlement', 'gross_amount' => '200000.00']
+        );
+        $mock->method('cancelTransaction')->willThrowException(new \Exception('412 cannot cancel', 412));
+        $mock->expects($this->never())->method('requestSnapToken');
+
+        $this->app->instance(MidtransService::class, $mock);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertStatus(409)
+            ->assertJsonPath('message', 'Pesanan ini sudah dibayar.');
+
+        // Paid state must be committed
+        $this->assertSame(Payment::STATUS_PAID, $existing->fresh()->status);
+        $this->assertSame(Order::PAYMENT_PAID, $order->fresh()->payment_status);
+    }
+
+    /** COMMIT 2d: another cancel error (non-412) → 502, old attempt still pending. */
     public function test_change_method_cancel_api_failure_returns_502_and_keeps_old_attempt(): void
     {
         $user = User::factory()->create(['role' => 'customer']);
@@ -1672,6 +2074,147 @@ class MidtransSnapPaymentTest extends TestCase
 
         // Old attempt must remain pending
         $this->assertSame(Payment::STATUS_PENDING, $existing->fresh()->status);
+    }
+
+    /** COMMIT 2d: GET status throws → 502 and nothing changed. */
+    public function test_change_method_get_status_throws_returns_502_and_nothing_changed(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'gross_amount' => 200000,
+        ]);
+
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        $mock->method('getTransactionStatus')
+            ->willThrowException(new \Exception('Network error from Midtrans'));
+        $mock->expects($this->never())->method('cancelTransaction');
+        $mock->expects($this->never())->method('requestSnapToken');
+
+        $this->app->instance(MidtransService::class, $mock);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertStatus(502);
+
+        $this->assertSame(Payment::STATUS_PENDING, $existing->fresh()->status);
+    }
+
+    /** COMMIT 2d: requestSnapToken throws after successful cancel → 502, old stays replaced. */
+    public function test_change_method_snap_token_throws_after_cancel_old_stays_replaced(): void
+    {
+        config(['midtrans.payment_deadline_hours' => 24]);
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'gross_amount' => 200000,
+        ]);
+
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        $mock->method('getTransactionStatus')->willReturn(['transaction_status' => 'pending', 'gross_amount' => '200000.00']);
+        // Cancel succeeds
+        $mock->method('cancelTransaction'); // void, no exception
+        // Snap token fails
+        $mock->method('requestSnapToken')->willThrowException(new \Exception('Snap API down'));
+
+        $this->app->instance(MidtransService::class, $mock);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertStatus(502);
+
+        // Old attempt must be `replaced` (Phase A was committed before Phase B failed)
+        $this->assertSame(Payment::STATUS_REPLACED, $existing->fresh()->status);
+    }
+
+    /** COMMIT 2d: two consecutive calls → exactly one extra attempt and cancel called once. */
+    public function test_change_method_two_consecutive_calls_one_extra_attempt_cancel_once(): void
+    {
+        config(['midtrans.payment_deadline_hours' => 24]);
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user, 100000, 2, 0);
+        $order->payment_deadline = now()->addHours(24);
+        $order->save();
+
+        $existing = Payment::factory()->create([
+            'order_id' => $order->id,
+            'status' => Payment::STATUS_PENDING,
+            'gross_amount' => 200000,
+        ]);
+
+        $cancelCount = 0;
+        $snapCount = 0;
+
+        $mock = $this->getMockBuilder(MidtransService::class)
+            ->onlyMethods(['requestSnapToken', 'cancelTransaction', 'getTransactionStatus'])
+            ->getMock();
+
+        // First call: pending → cancel, then new token created
+        // Second call: new attempt is reusable (null status or same_token)
+        $mock->method('getTransactionStatus')->willReturnCallback(function () use (&$cancelCount) {
+            // After the first cancel, the first attempt is replaced; subsequent calls
+            // see the new attempt which is reusable (null = no transaction at Midtrans yet).
+            return $cancelCount === 0
+                ? ['transaction_status' => 'pending', 'gross_amount' => '200000.00']
+                : null;
+        });
+
+        $mock->method('cancelTransaction')->willReturnCallback(function () use (&$cancelCount) {
+            $cancelCount++;
+        });
+
+        $mock->method('requestSnapToken')->willReturnCallback(function () use (&$snapCount) {
+            $snapCount++;
+
+            return 'snap-call-'.$snapCount;
+        });
+
+        $this->app->instance(MidtransService::class, $mock);
+
+        // First call — cancels old, creates new
+        $r1 = $this->actingAs($user)->postJson('/payment/change-method', ['order_id' => $order->id]);
+        $r1->assertOk();
+
+        // Second call — should reuse the new token (it's reusable)
+        $r2 = $this->actingAs($user)->postJson('/payment/change-method', ['order_id' => $order->id]);
+        $r2->assertOk();
+
+        // Old attempt replaced, exactly one new attempt created
+        $this->assertSame(Payment::STATUS_REPLACED, $existing->fresh()->status);
+        $this->assertSame(1, $cancelCount);
+        $this->assertSame(1, $snapCount);
+    }
+
+    /** COMMIT 2d: past deadline → 422. */
+    public function test_change_method_past_deadline_returns_422(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = $this->makePayableOrder($user);
+        $order->payment_deadline = now()->subMinutes(5); // past deadline
+        $order->save();
+
+        $mock = $this->createStub(MidtransService::class);
+        $this->app->instance(MidtransService::class, $mock);
+
+        $this->actingAs($user)
+            ->postJson('/payment/change-method', ['order_id' => $order->id])
+            ->assertStatus(422);
     }
 
     public function test_change_method_returns_422_when_order_is_already_paid(): void

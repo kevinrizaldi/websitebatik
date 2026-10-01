@@ -375,6 +375,38 @@ class MidtransService
     }
 
     /**
+     * Classify a Midtrans GET-status response into a coarse category used by
+     * PaymentMethodChanger and PaymentSyncController.
+     *
+     * settlement           -> 'paid'
+     * capture/accept|null  -> 'paid'
+     * capture/challenge    -> 'pending'
+     * pending, authorize   -> 'pending'
+     * deny, cancel, expire, failure -> 'dead'
+     * anything else        -> 'unknown'
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public function classifyTransactionStatus(array $payload): string
+    {
+        $status = (string) ($payload['transaction_status'] ?? '');
+        $fraud = isset($payload['fraud_status']) && is_string($payload['fraud_status'])
+            ? $payload['fraud_status']
+            : null;
+
+        return match ($status) {
+            'settlement' => 'paid',
+            'capture' => match ($fraud) {
+                'challenge' => 'pending',
+                default => 'paid',   // 'accept' or null
+            },
+            'pending', 'authorize' => 'pending',
+            'deny', 'cancel', 'expire', 'failure' => 'dead',
+            default => 'unknown',
+        };
+    }
+
+    /**
      * Deep-convert an SDK response (which may be a stdClass or contain nested
      * stdClass objects) to a plain PHP array.
      *

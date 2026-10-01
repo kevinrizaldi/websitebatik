@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\Midtrans\MidtransService;
+use App\Services\Midtrans\PaymentAttemptProcessor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class PaymentSyncController extends Controller
 {
-    public function __construct(private readonly MidtransService $midtransService) {}
+    public function __construct(
+        private readonly MidtransService $midtransService,
+        private readonly PaymentAttemptProcessor $processor,
+    ) {}
 
     /**
      * Sync the status and payment instructions from Midtrans GET-status API
@@ -63,7 +67,21 @@ class PaymentSyncController extends Controller
             ]);
         }
 
-        $this->midtransService->syncPaymentAttempt($payment, $statusResponse);
+        // Verify the status response belongs to our attempt (not a stale/different order id).
+        if (($statusResponse['order_id'] ?? null) !== $payment->midtrans_order_id) {
+            // Mismatch: ignore the response and return current state.
+            $payment->refresh();
+
+            return response()->json([
+                'message' => 'Sinkronisasi berhasil.',
+                'payment_details' => $payment->payment_details,
+                'payment_type' => $payment->payment_type,
+                'expires_at' => $payment->expires_at?->toIso8601String(),
+            ]);
+        }
+
+        // Apply the status response (no signature check — data came from our own authenticated API call).
+        $this->processor->apply($payment, $statusResponse);
         $payment->refresh();
 
         return response()->json([
