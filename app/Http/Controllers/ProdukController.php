@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Kategori;
 use App\Models\Produk;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class ProdukController extends Controller
@@ -23,7 +25,9 @@ class ProdukController extends Controller
      */
     public function create()
     {
-        return view('produk.create');
+        $kategoris = Schema::hasTable('kategoris') ? Kategori::orderBy('nama_kategori')->get() : collect();
+
+        return view('produk.create', compact('kategoris'));
     }
 
     /**
@@ -35,6 +39,7 @@ class ProdukController extends Controller
             'nama' => 'required|string|max:255|unique:produks,nama|regex:/^[a-zA-Z0-9\s]+$/',
             'sku' => 'required|string|max:50|unique:produks,sku',
             'kategori' => 'required|string|max:100',
+            'kategori_id' => 'nullable|exists:kategoris,id',
             'harga' => 'required|numeric|min:0|max:1000000',
             'stok' => 'required|integer|min:0|max:1000',
             'deskripsi' => 'nullable|string|max:255',
@@ -66,6 +71,18 @@ class ProdukController extends Controller
                 $request->file('gambar')->store('produk', 'public');
         }
 
+        if (! empty($validated['kategori_id']) && Schema::hasTable('kategoris')) {
+            $kategori = Kategori::find($validated['kategori_id']);
+            if ($kategori) {
+                $validated['kategori'] = $kategori->nama_kategori;
+            }
+        } elseif (Schema::hasTable('kategoris')) {
+            $kategori = Kategori::where('nama_kategori', $validated['kategori'])->first();
+            if ($kategori) {
+                $validated['kategori_id'] = $kategori->id;
+            }
+        }
+
         Produk::create($validated);
 
         return redirect()
@@ -86,7 +103,9 @@ class ProdukController extends Controller
      */
     public function edit(Produk $produk)
     {
-        return view('produk.edit', compact('produk'));
+        $kategoris = Schema::hasTable('kategoris') ? Kategori::orderBy('nama_kategori')->get() : collect();
+
+        return view('produk.edit', compact('produk', 'kategoris'));
     }
 
     /**
@@ -98,6 +117,7 @@ class ProdukController extends Controller
             'nama' => 'required|string|max:255|unique:produks,nama,'.$produk->id.'|regex:/^[a-zA-Z0-9\s]+$/',
             'sku' => 'required|string|max:50|unique:produks,sku,'.$produk->id,
             'kategori' => 'required|string|max:100',
+            'kategori_id' => 'nullable|exists:kategoris,id',
             'harga' => 'required|numeric|min:0|max:1000000',
             'stok' => 'required|integer|min:0|max:1000',
             'deskripsi' => 'nullable|string|max:255',
@@ -132,6 +152,18 @@ class ProdukController extends Controller
 
             $validated['gambar'] =
                 $request->file('gambar')->store('produk', 'public');
+        }
+
+        if (! empty($validated['kategori_id']) && Schema::hasTable('kategoris')) {
+            $kategori = Kategori::find($validated['kategori_id']);
+            if ($kategori) {
+                $validated['kategori'] = $kategori->nama_kategori;
+            }
+        } elseif (Schema::hasTable('kategoris')) {
+            $kategori = Kategori::where('nama_kategori', $validated['kategori'])->first();
+            if ($kategori) {
+                $validated['kategori_id'] = $kategori->id;
+            }
         }
 
         $produk->update($validated);

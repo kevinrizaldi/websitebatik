@@ -34,7 +34,10 @@
           toastMessage: '',
           trackingModalOpen: false,
           detailModalOpen: false,
+          reviewModalOpen: false,
           selectedOrder: null,
+          reviewOrder: null,
+          reviewDrafts: {},
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
 
           orders: [
@@ -44,27 +47,34 @@
                       $statusRaw = strtolower(trim($ord->status));
                       $statusKey = match($statusRaw) {
                           'belum dibayar', 'menunggu pembayaran' => 'menunggu_pembayaran',
+                          'menunggu verifikasi' => 'diproses',
                           'diproses', 'sedang diproses' => 'diproses',
                           'dikirim', 'sedang dikirim' => 'dikirim',
                           'selesai' => 'selesai',
                           'dibatalkan' => 'dibatalkan',
                           default => 'menunggu_pembayaran'
                       };
-                      $badgeClass = match($statusKey) {
-                          'menunggu_pembayaran' => 'bg-amber-100 text-amber-900 border-amber-300',
-                          'diproses' => 'bg-blue-100 text-blue-900 border-blue-300',
-                          'dikirim' => 'bg-indigo-100 text-indigo-900 border-indigo-300',
-                          'selesai' => 'bg-emerald-100 text-emerald-900 border-emerald-300',
-                          'dibatalkan' => 'bg-rose-100 text-rose-900 border-rose-300',
-                          default => 'bg-stone-100 text-stone-900 border-stone-300'
+                      $badgeClass = match($statusRaw) {
+                          'menunggu verifikasi' => 'bg-amber-50 text-amber-800 border-amber-300',
+                          default => match($statusKey) {
+                              'menunggu_pembayaran' => 'bg-amber-100 text-amber-900 border-amber-300',
+                              'diproses' => 'bg-blue-100 text-blue-900 border-blue-300',
+                              'dikirim' => 'bg-indigo-100 text-indigo-900 border-indigo-300',
+                              'selesai' => 'bg-emerald-100 text-emerald-900 border-emerald-300',
+                              'dibatalkan' => 'bg-rose-100 text-rose-900 border-rose-300',
+                              default => 'bg-stone-100 text-stone-900 border-stone-300'
+                          }
                       };
-                      $statusLabel = match($statusKey) {
-                          'menunggu_pembayaran' => 'Menunggu Pembayaran',
-                          'diproses' => 'Sedang Diproses',
-                          'dikirim' => 'Sedang Dikirim',
-                          'selesai' => 'Selesai',
-                          'dibatalkan' => 'Dibatalkan',
-                          default => $ord->status
+                      $statusLabel = match($statusRaw) {
+                          'menunggu verifikasi' => 'Menunggu Verifikasi',
+                          default => match($statusKey) {
+                              'menunggu_pembayaran' => 'Menunggu Pembayaran',
+                              'diproses' => 'Sedang Diproses',
+                              'dikirim' => 'Sedang Dikirim',
+                              'selesai' => 'Selesai',
+                              'dibatalkan' => 'Dibatalkan',
+                              default => $ord->status
+                          }
                       };
                       $trackingNo = $ord->tracking_number ?: 'HS-RESI-' . substr(md5($ord->id), 0, 8);
                   @endphp
@@ -86,6 +96,7 @@
                       items: [
                           @foreach($ord->items as $it)
                           {
+                              produk_id: {{ $it->produk_id }},
                               nama: '{{ addslashes($it->produk_name) }}',
                               kategori: 'BATIK AUTENTIK',
                               varian: 'Kuantitas: {{ $it->quantity }} pcs',
@@ -97,33 +108,6 @@
                       ]
                   }@if(!$loop->last),@endif
                   @endforeach
-              @else
-                  {
-                      id: 'HS-20260929-8901',
-                      tanggal: '29 Sep 2026, 11:20 WIB',
-                      status: 'menunggu_pembayaran',
-                      statusLabel: 'Menunggu Pembayaran',
-                      statusBadgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
-                      metodePembayaran: 'BCA Virtual Account (8077708123456789)',
-                      batasBayar: '30 Sep 2026, 11:20 WIB',
-                      kurir: 'JNE Regular',
-                      noResi: '-',
-                      ongkir: 20000,
-                      diskon: 50000,
-                      subtotal: 385000,
-                      total: 355000,
-                      alamat: 'Kevin Rizaldi (0812-3456-7890) • Jl. Malioboro No. 45, Danurejan, Kota Yogyakarta, DI Yogyakarta 55213',
-                      items: [
-                          {
-                              nama: 'Kemeja Batik Parang Seling Premium',
-                              kategori: 'TULIS • ATASAN PRIA',
-                              varian: 'Ukuran: L • Lengan Panjang',
-                              harga: 385000,
-                              qty: 1,
-                              gambar: '{{ asset('images/beranda/folded-shirts.jpg') }}'
-                          }
-                      ]
-                  }
               @endif
           ],
 
@@ -149,6 +133,54 @@
           openDetail(order) {
               this.selectedOrder = order;
               this.detailModalOpen = true;
+          },
+
+          openReview(order) {
+              this.reviewOrder = order;
+              this.reviewDrafts = {};
+              order.items.forEach((item, idx) => {
+                  this.reviewDrafts[idx] = { rating: 5, comment: '', sending: false, done: false };
+              });
+              this.reviewModalOpen = true;
+          },
+
+          submitItemReview(order, idx) {
+              const item = order.items[idx];
+              const draft = this.reviewDrafts[idx];
+              if (!draft || draft.sending || draft.done) return;
+              if (!draft.comment || draft.comment.trim().length < 3) {
+                  this.showToast('Tulis ulasan minimal 3 karakter.');
+                  return;
+              }
+              draft.sending = true;
+              fetch('{{ route('ulasan.store') }}', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                      'Accept': 'application/json'
+                  },
+                  body: JSON.stringify({
+                      produk_id: item.produk_id,
+                      order_code: order.id,
+                      rating: draft.rating,
+                      comment: draft.comment.trim()
+                  })
+              })
+              .then(async res => {
+                  const data = await res.json().catch(() => ({}));
+                  draft.sending = false;
+                  if (res.ok && data.success) {
+                      draft.done = true;
+                      this.showToast('Terima kasih! Ulasan untuk ' + item.nama + ' tersimpan.');
+                  } else {
+                      this.showToast(data.message || 'Ulasan gagal dikirim.');
+                  }
+              })
+              .catch(() => {
+                  draft.sending = false;
+                  this.showToast('Gagal menghubungi server.');
+              });
           },
 
           confirmReceived(order) {
@@ -297,14 +329,9 @@
                                         </a>
                                     @endif
 
-                                    <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                                        Dashboard
-                                    </a>
-
-                                    <a href="{{ route('pesanan.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-900 font-semibold bg-stone-100">
-                                        <svg class="w-4 h-4 text-stone-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                        Pesanan Saya
+                                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                        Profile
                                     </a>
 
                                     <div class="border-t border-stone-100 my-1"></div>
@@ -562,7 +589,7 @@
                                                     class="px-3 py-2 text-xs font-semibold text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition">
                                                 Batalkan
                                             </button>
-                                            <a href="{{ route('keranjang.index') }}" 
+                                            <a :href="'{{ url('/pembayaran') }}/' + order.id" 
                                                class="px-4 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl shadow-xs transition flex items-center gap-1.5">
                                                 <span>Bayar Sekarang</span>
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -586,7 +613,7 @@
 
                                     <template x-if="order.status === 'selesai'">
                                         <div class="flex items-center gap-2">
-                                            <button @click="showToast('Terima kasih! Formulir ulasan produk dibuka.')"
+                                            <button @click="openReview(order)"
                                                     class="px-3.5 py-2 text-xs font-semibold text-stone-700 hover:text-stone-900 border border-stone-300 hover:border-stone-500 rounded-xl bg-white transition">
                                                 Beri Ulasan
                                             </button>
@@ -872,6 +899,96 @@
                         <span>Cetak / Unduh Invoice</span>
                     </button>
                     <button @click="detailModalOpen = false" 
+                            class="px-5 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl transition shadow-xs">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= REVIEW MODAL (hanya pesanan Selesai) ================= -->
+    <div x-cloak x-show="reviewModalOpen"
+         class="fixed inset-0 z-50 overflow-y-auto"
+         aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+
+            <div x-show="reviewModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="reviewModalOpen = false"
+                 class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
+                 aria-hidden="true"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div x-show="reviewModalOpen"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-stone-200">
+
+                <div class="px-6 py-5 bg-[#FAF7F2] border-b border-[#ECE4D8] flex items-center justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-stone-900">
+                            Beri Ulasan Produk
+                        </h3>
+                        <p class="text-xs text-stone-500 font-mono mt-0.5" x-text="reviewOrder ? reviewOrder.id : ''"></p>
+                    </div>
+                    <button @click="reviewModalOpen = false" class="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200/50">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <div class="p-6 max-h-[70vh] overflow-y-auto space-y-4">
+                    <p class="text-xs text-stone-500 leading-relaxed">
+                        Ulasan hanya dapat diberikan untuk produk pada pesanan yang telah selesai (diterima).
+                    </p>
+                    <template x-if="reviewOrder">
+                        <div class="space-y-4">
+                            <template x-for="(item, idx) in reviewOrder.items" :key="idx">
+                                <div class="p-4 rounded-2xl border border-stone-200 bg-[#FAF7F2]/40 space-y-3">
+                                    <div class="flex items-center gap-3">
+                                        <img :src="item.gambar" class="w-12 h-12 rounded-xl object-cover border border-stone-200 shrink-0">
+                                        <div class="flex-1 min-w-0">
+                                            <h5 class="text-xs sm:text-sm font-bold text-stone-900 truncate" x-text="item.nama"></h5>
+                                            <p class="text-[11px] text-stone-500" x-text="item.varian"></p>
+                                        </div>
+                                        <span x-show="reviewDrafts[idx] && reviewDrafts[idx].done" class="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full shrink-0">
+                                            Terkirim
+                                        </span>
+                                    </div>
+                                    <template x-if="reviewDrafts[idx] && !reviewDrafts[idx].done">
+                                        <div class="space-y-2.5">
+                                            <div class="flex items-center gap-1.5 text-xl cursor-pointer">
+                                                <template x-for="star in [1, 2, 3, 4, 5]" :key="star">
+                                                    <span @click="reviewDrafts[idx].rating = star" :class="star <= reviewDrafts[idx].rating ? 'text-amber-500' : 'text-stone-300'">★</span>
+                                                </template>
+                                                <span class="text-[11px] text-stone-500 ml-1" x-text="reviewDrafts[idx].rating + ' / 5'"></span>
+                                            </div>
+                                            <textarea x-model="reviewDrafts[idx].comment" rows="2" placeholder="Ceritakan kualitas bahan, jahitan, atau kesesuaian ukuran..."
+                                                      class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-white"></textarea>
+                                            <button @click="submitItemReview(reviewOrder, idx)" :disabled="reviewDrafts[idx].sending"
+                                                    class="px-5 py-2 text-xs font-bold text-white bg-[#201A17] hover:bg-stone-800 disabled:opacity-50 rounded-xl transition shadow-xs">
+                                                <span x-text="reviewDrafts[idx].sending ? 'Mengirim...' : 'Kirim Ulasan'"></span>
+                                            </button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="px-6 py-4 bg-stone-50 border-t border-stone-200 flex items-center justify-end">
+                    <button @click="reviewModalOpen = false"
                             class="px-5 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl transition shadow-xs">
                         Tutup
                     </button>

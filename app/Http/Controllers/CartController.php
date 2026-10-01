@@ -5,17 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Pengiriman;
 use App\Models\Produk;
+use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CartController extends Controller
 {
+    public function __construct(
+        protected MidtransService $midtransService
+    ) {}
+
     /**
      * Display the shopping cart page with database items.
      */
@@ -177,9 +184,16 @@ class CartController extends Controller
 
     /**
      * Display the checkout page with selected items from database cart.
+     * PRD FR-02: Must be logged in to proceed to checkout.
      */
     public function checkoutPage(): View|RedirectResponse
     {
+        if (! Auth::check()) {
+            session()->put('url.intended', route('checkout.index'));
+
+            return redirect()->route('login')->with('info', 'Silakan masuk atau daftar akun terlebih dahulu untuk melanjutkan checkout.');
+        }
+
         $this->consolidateGuestCart();
 
         $cartItems = CartItem::with('produk')
@@ -205,8 +219,9 @@ class CartController extends Controller
         }
 
         $user = Auth::user();
+        $alamats = $user->alamats()->latest()->get();
 
-        return view('checkout', compact('cartItems', 'user'));
+        return view('checkout', compact('cartItems', 'user', 'alamats'));
     }
 
     /**
@@ -214,6 +229,19 @@ class CartController extends Controller
      */
     public function checkout(Request $request): JsonResponse|RedirectResponse
     {
+        if (! Auth::check()) {
+            session()->put('url.intended', route('checkout.index'));
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan login terlebih dahulu untuk menyelesaikan transaksi.',
+                    'redirect_url' => route('login'),
+                ], 401);
+            }
+
+            return redirect()->route('login')->with('info', 'Silakan login terlebih dahulu.');
+        }
+
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
             'phone' => 'required|string|max:30',
@@ -243,7 +271,7 @@ class CartController extends Controller
             $totalPrice += ($price * $item->qty);
         }
 
-        // Apply voucher discount if applicable (e.g. SIRKULAR50K or LESTARI50K: min 200k, hemat 50k)
+        // Apply voucher discount if applicable
         $discount = 0;
         $voucherInput = strtoupper((string) $request->input('voucher'));
         if (in_array($voucherInput, ['SIRKULAR50K', 'LESTARI50K', 'LESTARICAPSULE']) && $totalPrice >= 200000) {
@@ -269,8 +297,8 @@ class CartController extends Controller
                 'address' => $fullAddress,
                 'total_price' => $grandTotal,
                 'shipping_cost' => $shipping,
-                'payment_method' => $validated['payment_method'] ?? 'Transfer Bank Manual (BCA)',
-                'status' => Order::STATUS_UNPAID,
+                'payment_method' => $validated['payment_method'] ?? 'Midtrans Gateway',
+                'status' => 'Menunggu Pembayaran',
                 'payment_status' => Order::PAYMENT_PENDING,
             ]);
 
@@ -295,15 +323,24 @@ class CartController extends Controller
                 $item->delete();
             }
 
+            // Create initial Pengiriman record
+            Pengiriman::create([
+                'order_id' => $order->id,
+                'ekspedisi' => $shippingOption,
+                'status_pengiriman' => 'Menunggu Pengiriman',
+            ]);
+
             return $order;
         });
 
-        // Redirect ke halaman pay Midtrans jika bukan transfer manual & user login
+        // Redirect ke halaman pembayaran Midtrans jika bukan transfer manual & user login
         $paymentMethod = $validated['payment_method'] ?? '';
         $isMidtransMethod = Auth::check() && ! str_contains(strtolower($paymentMethod), 'transfer bank manual');
 
         if ($isMidtransMethod) {
-            $payUrl = route('orders.pay', $order->id);
+            $payUrl = Route::has('orders.pay')
+                ? route('orders.pay', $order->id)
+                : route('pembayaran', ['id' => $order->code]);
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -321,13 +358,15 @@ class CartController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Pesanan berhasil dibuat!',
+                'message' => 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran.',
                 'order_code' => $order->code,
+                'order_id' => $order->id,
                 'redirect_url' => route('pesanan.index'),
             ]);
         }
 
-        return redirect()->route('pesanan.index')->with('success', "Pesanan #{$order->code} berhasil dibuat!");
+        return redirect()->route('pesanan.index')
+            ->with('success', "Pesanan #{$order->code} berhasil dibuat!");
     }
 
     /**

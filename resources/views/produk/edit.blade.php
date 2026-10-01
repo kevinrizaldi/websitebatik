@@ -57,10 +57,16 @@
                             </label>
                             <select name="kategori" required
                                     class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="Baju Batik" {{ old('kategori', $produk->kategori) == 'Baju Batik' ? 'selected' : '' }}>Baju Batik</option>
-                                <option value="Olahan Kain" {{ old('kategori', $produk->kategori) == 'Olahan Kain' ? 'selected' : '' }}>Olahan Kain</option>
-                                <option value="Kain Batik" {{ old('kategori', $produk->kategori) == 'Kain Batik' ? 'selected' : '' }}>Kain Batik</option>
-                                <option value="Wanita" {{ old('kategori', $produk->kategori) == 'Wanita' ? 'selected' : '' }}>Wanita</option>
+                                @if (isset($kategoris) && $kategoris->isNotEmpty())
+                                    @foreach ($kategoris as $kategori)
+                                        <option value="{{ $kategori->nama_kategori }}" {{ old('kategori', $produk->kategori) == $kategori->nama_kategori ? 'selected' : '' }}>{{ $kategori->nama_kategori }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="Baju Batik" {{ old('kategori', $produk->kategori) == 'Baju Batik' ? 'selected' : '' }}>Baju Batik</option>
+                                    <option value="Olahan Kain" {{ old('kategori', $produk->kategori) == 'Olahan Kain' ? 'selected' : '' }}>Olahan Kain</option>
+                                    <option value="Kain Batik" {{ old('kategori', $produk->kategori) == 'Kain Batik' ? 'selected' : '' }}>Kain Batik</option>
+                                    <option value="Wanita" {{ old('kategori', $produk->kategori) == 'Wanita' ? 'selected' : '' }}>Wanita</option>
+                                @endif
                             </select>
                         </div>
                     </div>

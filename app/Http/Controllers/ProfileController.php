@@ -12,12 +12,31 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile form.
+     * Display the user's profile page (storefront style, PRD scope).
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        $alamats = $user->alamats()->latest()->get();
+        $alamatUtama = $alamats->firstWhere('is_utama', true) ?: $alamats->first();
+
+        $orderQuery = $user->orders();
+        $stats = [
+            'selesai' => (clone $orderQuery)->where('status', 'Selesai')->count(),
+            'diproses' => (clone $orderQuery)->whereIn('status', ['Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi'])->count(),
+            'menunggu' => (clone $orderQuery)->whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'])->count(),
+            'dikirim' => (clone $orderQuery)->where('status', 'Dikirim')->count(),
+        ];
+        $ulasanCount = $user->ulasans()->count();
+        $pesananAktif = $stats['menunggu'] + $stats['diproses'] + $stats['dikirim'];
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'alamats' => $alamats,
+            'alamatUtama' => $alamatUtama,
+            'stats' => $stats,
+            'ulasanCount' => $ulasanCount,
+            'pesananAktif' => $pesananAktif,
         ]);
     }
 

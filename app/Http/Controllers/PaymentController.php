@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateSnapTokenRequest;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Pembayaran;
 use App\Services\Midtrans\MidtransService;
+use Exception;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -14,7 +17,9 @@ use InvalidArgumentException;
 
 class PaymentController extends Controller
 {
-    public function __construct(private readonly MidtransService $midtransService) {}
+    public function __construct(
+        private readonly MidtransService $midtransService
+    ) {}
 
     /**
      * Return a Snap token for the authenticated user's order.
@@ -44,7 +49,7 @@ class PaymentController extends Controller
             return response()->json([
                 'message' => 'Pesanan ini tidak dapat dibayar saat ini.',
             ], 422);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Midtrans Snap token request failed', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),
@@ -57,6 +62,70 @@ class PaymentController extends Controller
 
         return response()->json([
             'snap_token' => $snapToken,
+            'client_key' => config('midtrans.client_key'),
+        ]);
+    }
+
+    /**
+     * Show the payment page for an order.
+     * PRD: hanya pemilik pesanan (atau admin) yang boleh membuka halaman ini.
+     */
+    public function show(string $id): View|RedirectResponse
+    {
+        $order = Order::with(['items.produk', 'pembayaran', 'pengiriman', 'user'])
+            ->where('code', $id)
+            ->first();
+
+        if (! $order) {
+            return redirect()->route('pesanan.index')->with('error', "Pesanan #{$id} tidak ditemukan.");
+        }
+
+        if (! auth()->check()) {
+            session()->put('url.intended', route('pembayaran', ['id' => $id]));
+
+            return redirect()->route('login')->with('info', 'Silakan masuk terlebih dahulu untuk melanjutkan pembayaran.');
+        }
+
+        if ($order->user_id !== auth()->id() && ! auth()->user()->isAdmin()) {
+            abort(403, 'Anda tidak memiliki akses ke pesanan ini.');
+        }
+
+        // Get Snap Token
+        $legacyService = app(\App\Services\MidtransService::class);
+        $snapData = $legacyService->createSnapTransaction($order);
+
+        return view('pembayaran', [
+            'order' => $order,
+            'snapToken' => $snapData['token'],
+            'snapRedirectUrl' => $snapData['redirect_url'],
+            'clientKey' => config('midtrans.client_key'),
+            'snapJsUrl' => config('midtrans.snap_js_url'),
+        ]);
+    }
+
+    /**
+     * API to obtain/refresh Snap Token via AJAX.
+     * Menerima kode pesanan (ORD-...) agar konsisten dengan route /pembayaran/{id}.
+     */
+    public function getSnapToken(Request $request, string $id): JsonResponse
+    {
+        $order = Order::where('code', $id)->first();
+
+        if (! $order) {
+            return response()->json(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
+        }
+
+        if (! $request->user() || ($order->user_id !== $request->user()->id && ! $request->user()->isAdmin())) {
+            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
+        }
+
+        $legacyService = app(\App\Services\MidtransService::class);
+        $snapData = $legacyService->createSnapTransaction($order);
+
+        return response()->json([
+            'success' => true,
+            'snap_token' => $snapData['token'],
+            'redirect_url' => $snapData['redirect_url'],
             'client_key' => config('midtrans.client_key'),
         ]);
     }
@@ -79,11 +148,55 @@ class PaymentController extends Controller
                 ->with('order')
                 ->first();
 
-            if ($payment && $payment->order && $payment->order->user_id === $request->user()->id) {
+            if ($payment && $payment->order && $request->user() && $payment->order->user_id === $request->user()->id) {
                 $order = $payment->order;
+            } elseif (! $payment) {
+                $foundOrder = Order::where('code', $midtransOrderId)->first();
+                if ($foundOrder && $request->user() && $foundOrder->user_id === $request->user()->id) {
+                    $order = $foundOrder;
+                }
             }
         }
 
         return view('pesanan.finish', compact('order'));
+    }
+
+    /**
+     * Customer confirms order received — marks order as Selesai.
+     */
+    public function confirmReceived(Request $request, Order $order): RedirectResponse
+    {
+        if ($order->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        if ($order->status !== 'Dikirim') {
+            return back()->with('error', 'Pesanan tidak dapat dikonfirmasi pada status saat ini.');
+        }
+
+        $order->update(['status' => 'Selesai']);
+        $order->getOrInitPengiriman()->update(['status_pengiriman' => 'Diterima']);
+
+        return redirect()->route('pesanan.index')
+            ->with('success', "Pesanan #{$order->code} telah dikonfirmasi diterima. Terima kasih!");
+    }
+
+    /**
+     * Customer cancels their own order.
+     */
+    public function cancelOrder(Request $request, Order $order): RedirectResponse
+    {
+        if ($order->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        if (! in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar'])) {
+            return back()->with('error', 'Pesanan tidak dapat dibatalkan pada status ini.');
+        }
+
+        $order->update(['status' => 'Dibatalkan']);
+
+        return redirect()->route('pesanan.index')
+            ->with('success', "Pesanan #{$order->code} berhasil dibatalkan.");
     }
 }
