@@ -1790,4 +1790,78 @@ class MidtransSnapPaymentTest extends TestCase
             ->get("/orders/{$order->id}/payment/qr")
             ->assertStatus(404);
     }
+
+    // ── COMMIT 1c: normalizeSdkResponse and extractPaymentDetails with real-SDK objects ──
+
+    public function test_normalize_sdk_response_converts_nested_std_class_to_arrays(): void
+    {
+        $service = new MidtransService;
+
+        // Simulate what Transaction::status() returns: a stdClass with nested objects
+        $raw = (object) [
+            'transaction_status' => 'pending',
+            'payment_type' => 'qris',
+            'va_numbers' => [
+                (object) ['bank' => 'bca', 'va_number' => '1234567890'],
+            ],
+            'actions' => [
+                (object) [
+                    'name' => 'generate-qr-code',
+                    'method' => 'GET',
+                    'url' => 'https://api.sandbox.midtrans.com/v2/qris/abc/qr-code',
+                ],
+            ],
+        ];
+
+        $result = $service->normalizeSdkResponse($raw);
+
+        $this->assertIsArray($result);
+        $this->assertSame('pending', $result['transaction_status']);
+
+        // Nested va_numbers must be plain arrays, not stdClass
+        $this->assertIsArray($result['va_numbers']);
+        $this->assertIsArray($result['va_numbers'][0]);
+        $this->assertSame('bca', $result['va_numbers'][0]['bank']);
+        $this->assertSame('1234567890', $result['va_numbers'][0]['va_number']);
+
+        // Nested actions must be plain arrays
+        $this->assertIsArray($result['actions']);
+        $this->assertIsArray($result['actions'][0]);
+        $this->assertSame('generate-qr-code', $result['actions'][0]['name']);
+    }
+
+    public function test_extract_payment_details_keeps_va_number_and_qr_action_from_normalized_response(): void
+    {
+        $service = new MidtransService;
+
+        // Simulate a normalized (deep-array) response as returned by normalizeSdkResponse
+        $normalized = [
+            'transaction_status' => 'pending',
+            'payment_type' => 'qris',
+            'va_numbers' => [
+                ['bank' => 'bca', 'va_number' => '9876543210'],
+            ],
+            'actions' => [
+                [
+                    'name' => 'generate-qr-code',
+                    'method' => 'GET',
+                    'url' => 'https://api.sandbox.midtrans.com/v2/qris/xyz/qr-code',
+                ],
+            ],
+        ];
+
+        $details = $service->extractPaymentDetails($normalized);
+
+        // VA number must survive extraction
+        $this->assertArrayHasKey('va_numbers', $details);
+        $this->assertSame([['bank' => 'bca', 'va_number' => '9876543210']], $details['va_numbers']);
+
+        // QR action must survive extraction
+        $this->assertArrayHasKey('actions', $details);
+        $this->assertCount(1, $details['actions']);
+        $this->assertSame(
+            'https://api.sandbox.midtrans.com/v2/qris/xyz/qr-code',
+            $details['actions'][0]['url']
+        );
+    }
 }

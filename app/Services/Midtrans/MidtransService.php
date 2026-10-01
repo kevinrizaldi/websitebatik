@@ -375,6 +375,23 @@ class MidtransService
     }
 
     /**
+     * Deep-convert an SDK response (which may be a stdClass or contain nested
+     * stdClass objects) to a plain PHP array.
+     *
+     * json_decode(json_encode()) recursively converts all stdClass objects to
+     * associative arrays, so extractPaymentDetails() can safely use is_array().
+     * Returns [] if the result is not an array (e.g. the input was a scalar).
+     *
+     * @return array<string, mixed>
+     */
+    public function normalizeSdkResponse(mixed $response): array
+    {
+        $decoded = json_decode(json_encode($response), true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
      * The ONLY method that calls the real Midtrans GET-status API.
      * Returns the raw response array, or null when Midtrans returns 404 (no transaction yet).
      * Kept as a separate public method so tests can mock it.
@@ -390,9 +407,9 @@ class MidtransService
         try {
             $response = Transaction::status($midtransOrderId);
 
-            return (array) $response;
+            return $this->normalizeSdkResponse($response);
         } catch (\Exception $e) {
-            if ($e->getCode() === 404) {
+            if ((int) $e->getCode() === 404) {
                 return null; // transaction not yet created at Midtrans
             }
             throw $e;
