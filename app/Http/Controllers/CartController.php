@@ -13,7 +13,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -285,7 +284,7 @@ class CartController extends Controller
         $orderCode = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(4));
         $shippingOption = $validated['shipping_option'] ?? 'JNE Reguler';
 
-        $order = DB::transaction(function () use ($validated, $cartItems, $grandTotal, $orderCode, $shippingOption, $shipping) {
+        $order = DB::transaction(function () use ($validated, $cartItems, $grandTotal, $orderCode, $shippingOption) {
             $notesText = ! empty($validated['notes']) ? ' (Catatan: '.$validated['notes'].')' : '';
             $fullAddress = $validated['address'].$notesText.' [Kurir: '.$shippingOption.']';
 
@@ -296,10 +295,8 @@ class CartController extends Controller
                 'phone' => $validated['phone'],
                 'address' => $fullAddress,
                 'total_price' => $grandTotal,
-                'shipping_cost' => $shipping,
                 'payment_method' => $validated['payment_method'] ?? 'Midtrans Gateway',
                 'status' => 'Menunggu Pembayaran',
-                'payment_status' => Order::PAYMENT_PENDING,
             ]);
 
             foreach ($cartItems as $item) {
@@ -333,40 +330,21 @@ class CartController extends Controller
             return $order;
         });
 
-        // Redirect ke halaman pembayaran Midtrans jika bukan transfer manual & user login
-        $paymentMethod = $validated['payment_method'] ?? '';
-        $isMidtransMethod = Auth::check() && ! str_contains(strtolower($paymentMethod), 'transfer bank manual');
-
-        if ($isMidtransMethod) {
-            $payUrl = Route::has('orders.pay')
-                ? route('orders.pay', $order->id)
-                : route('pembayaran', ['id' => $order->code]);
-
-            if ($request->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran.',
-                    'order_code' => $order->code,
-                    'order_id' => $order->id,
-                    'redirect_url' => $payUrl,
-                ]);
-            }
-
-            return redirect($payUrl)->with('success', "Pesanan #{$order->code} berhasil dibuat! Silakan selesaikan pembayaran.");
-        }
+        // Generate Snap Token via Midtrans Service
+        $snapData = $this->midtransService->createSnapTransaction($order);
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran.',
+                'message' => 'Pesanan berhasil dibuat! Lanjutkan pembayaran melalui Midtrans.',
                 'order_code' => $order->code,
-                'order_id' => $order->id,
-                'redirect_url' => route('pesanan.index'),
+                'snap_token' => $snapData['token'],
+                'redirect_url' => route('pembayaran', ['id' => $order->code]),
             ]);
         }
 
-        return redirect()->route('pesanan.index')
-            ->with('success', "Pesanan #{$order->code} berhasil dibuat!");
+        return redirect()->route('pembayaran', ['id' => $order->code])
+            ->with('success', "Pesanan #{$order->code} berhasil dibuat! Silakan selesaikan pembayaran via Midtrans.");
     }
 
     /**

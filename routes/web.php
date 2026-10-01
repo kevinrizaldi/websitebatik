@@ -7,12 +7,7 @@ use App\Http\Controllers\Admin\StoreSettingController;
 use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\AlamatController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\MidtransWebhookController;
-use App\Http\Controllers\OrderPayController;
-use App\Http\Controllers\PaymentChangeMethodController;
 use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\PaymentQrController;
-use App\Http\Controllers\PaymentSyncController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UlasanController as CustomerUlasanController;
@@ -82,12 +77,8 @@ Route::get('/pesanan', function () {
     $orders = collect();
     try {
         if (Schema::hasTable('orders')) {
-            $query = Order::with('items.produk')->latest();
             if (Auth::check()) {
-                $userOrders = (clone $query)->where('user_id', Auth::id())->get();
-                $orders = $userOrders->isNotEmpty() ? $userOrders : $query->take(5)->get();
-            } else {
-                $orders = $query->take(5)->get();
+                $orders = Order::with('items.produk')->where('user_id', Auth::id())->latest()->get();
             }
         }
     } catch (Throwable $e) {
@@ -99,16 +90,8 @@ Route::get('/pesanan', function () {
 
 Route::get('/pembayaran/{id}', [PaymentController::class, 'show'])->name('pembayaran');
 Route::get('/pembayaran/{id}/snap-token', [PaymentController::class, 'getSnapToken'])->name('pembayaran.snap-token');
+Route::post('/midtrans/notification', [PaymentController::class, 'notification'])->name('midtrans.notification');
 Route::get('/midtrans/finish', [PaymentController::class, 'finish'])->name('midtrans.finish');
-
-// Midtrans webhook / notification (tidak perlu auth, diverifikasi via signature)
-Route::post('/midtrans/notification', [MidtransWebhookController::class, 'handle'])
-    ->name('midtrans.notification')
-    ->withoutMiddleware(['App\Http\Middleware\PreventRequestForgery']);
-
-Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
-    ->name('midtrans.webhook')
-    ->withoutMiddleware(['App\Http\Middleware\PreventRequestForgery']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function () {
@@ -118,30 +101,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // ── Midtrans Payment ─────────────────────────────────────────────────────
-    // Snap token endpoint (called by JS after order is created)
-    Route::post('/payment/token', [PaymentController::class, 'token'])
-        ->middleware('throttle:10,1')
-        ->name('payment.token');
-
-    // Midtrans finish callback (GET, after user pays)
-    Route::get('/payment/finish', [PaymentController::class, 'finish'])->name('payment.finish');
-
-    // Halaman pembayaran per-order
-    Route::get('/orders/{order}/pay', [OrderPayController::class, 'show'])->name('orders.pay');
-
-    // Sync status dari Midtrans secara manual
-    Route::post('/payment/sync', [PaymentSyncController::class, 'sync'])->name('payment.sync');
-    Route::post('/orders/{order}/payment/sync', [PaymentSyncController::class, 'sync'])->name('orders.payment.sync');
-
-    // Ganti metode pembayaran
-    Route::post('/payment/change-method', [PaymentChangeMethodController::class, 'change'])->name('payment.change-method');
-    Route::post('/orders/{order}/payment/change-method', [PaymentChangeMethodController::class, 'change'])
-        ->name('orders.payment.change-method');
-
-    // QR code proxy untuk QRIS
-    Route::get('/orders/{order}/payment/qr', [PaymentQrController::class, 'download'])->name('payment.qr');
 
     // Alamat pelanggan
     Route::get('/alamat', [AlamatController::class, 'index'])->name('alamat.index');
@@ -172,7 +131,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/ulasans', [UlasanController::class, 'index'])->name('ulasans.index');
         Route::patch('/ulasans/{ulasan}/status', [UlasanController::class, 'updateStatus'])->name('ulasans.update-status');
         Route::delete('/ulasans/{ulasan}', [UlasanController::class, 'destroy'])->name('ulasans.destroy');
-
         // Kelola Laporan
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/print', [LaporanController::class, 'print'])->name('laporan.print');
@@ -188,5 +146,4 @@ Route::middleware(['auth', 'admin'])->group(function () {
         Route::patch('/pengaturan', [StoreSettingController::class, 'update'])->name('pengaturan.update');
     });
 });
-
 require __DIR__.'/auth.php';

@@ -2,69 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateSnapTokenRequest;
 use App\Models\Order;
-use App\Models\Payment;
 use App\Models\Pembayaran;
-use App\Services\Midtrans\MidtransService;
-use Exception;
+use App\Services\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
-use InvalidArgumentException;
 
 class PaymentController extends Controller
 {
     public function __construct(
-        private readonly MidtransService $midtransService
+        protected MidtransService $midtransService
     ) {}
-
-    /**
-     * Return a Snap token for the authenticated user's order.
-     *
-     * POST /payment/token
-     */
-    public function token(CreateSnapTokenRequest $request): JsonResponse
-    {
-        $order = Order::find($request->validated('order_id'));
-
-        if (! $order) {
-            return response()->json(['message' => 'Pesanan tidak ditemukan.'], 404);
-        }
-
-        if ($order->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'Anda tidak memiliki akses ke pesanan ini.'], 403);
-        }
-
-        try {
-            $snapToken = $this->midtransService->getOrCreateSnapToken($order);
-        } catch (InvalidArgumentException $e) {
-            Log::warning('Midtrans token: order not payable', [
-                'order_id' => $order->id,
-                'reason' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => 'Pesanan ini tidak dapat dibayar saat ini.',
-            ], 422);
-        } catch (Exception $e) {
-            Log::error('Midtrans Snap token request failed', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => 'Gagal menghubungi gateway pembayaran. Silakan coba lagi nanti.',
-            ], 502);
-        }
-
-        return response()->json([
-            'snap_token' => $snapToken,
-            'client_key' => config('midtrans.client_key'),
-        ]);
-    }
 
     /**
      * Show the payment page for an order.
@@ -91,8 +41,7 @@ class PaymentController extends Controller
         }
 
         // Get Snap Token
-        $legacyService = app(\App\Services\MidtransService::class);
-        $snapData = $legacyService->createSnapTransaction($order);
+        $snapData = $this->midtransService->createSnapTransaction($order);
 
         return view('pembayaran', [
             'order' => $order,
@@ -119,8 +68,7 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
         }
 
-        $legacyService = app(\App\Services\MidtransService::class);
-        $snapData = $legacyService->createSnapTransaction($order);
+        $snapData = $this->midtransService->createSnapTransaction($order);
 
         return response()->json([
             'success' => true,
@@ -131,34 +79,56 @@ class PaymentController extends Controller
     }
 
     /**
-     * Payment finish callback page.
-     *
-     * GET /payment/finish
-     * Does NOT change any order status — status is always read from the database.
-     * Midtrans may pass order_id, transaction_status, etc. as query params.
+     * Midtrans Webhook Notification Callback.
      */
-    public function finish(Request $request): View
+    public function notification(Request $request): JsonResponse
     {
-        // Midtrans passes the *Midtrans* order_id (midtrans_order_id) as `order_id` query param.
-        $midtransOrderId = $request->query('order_id');
+        $payload = $request->all();
+        $order = $this->midtransService->handleNotification($payload);
 
-        $order = null;
-        if ($midtransOrderId) {
-            $payment = Payment::where('midtrans_order_id', $midtransOrderId)
-                ->with('order')
-                ->first();
+        if (! $order) {
+            return response()->json(['message' => 'Order not found or invalid signature'], 400);
+        }
 
-            if ($payment && $payment->order && $request->user() && $payment->order->user_id === $request->user()->id) {
-                $order = $payment->order;
-            } elseif (! $payment) {
-                $foundOrder = Order::where('code', $midtransOrderId)->first();
-                if ($foundOrder && $request->user() && $foundOrder->user_id === $request->user()->id) {
-                    $order = $foundOrder;
-                }
+        return response()->json(['status' => 'success', 'order_code' => $order->code]);
+    }
+
+    /**
+     * Callback when user finishes payment in Midtrans Snap.
+     */
+    public function finish(Request $request): RedirectResponse
+    {
+        $orderId = $request->query('order_id') ?? $request->input('order_id');
+        $isMock = $request->query('mock');
+
+        if ($orderId) {
+            $order = Order::where('code', $orderId)->first();
+            if ($order) {
+                // If in mock mode or returned from successful payment
+                $order->update([
+                    'status' => 'Diproses',
+                    'payment_method' => $order->payment_method ?: 'Midtrans (QRIS / VA)',
+                ]);
+
+                Pembayaran::updateOrCreate(
+                    ['order_id' => $order->id],
+                    [
+                        'metode_pembayaran' => $order->payment_method ?: 'Midtrans (QRIS / VA)',
+                        'status_pembayaran' => 'Berhasil',
+                        'jumlah_bayar' => $order->total_price,
+                        'tanggal_bayar' => now(),
+                    ]
+                );
+
+                $order->getOrInitPengiriman();
+
+                return redirect()->route('pesanan.index')
+                    ->with('success', "Pembayaran untuk pesanan #{$order->code} berhasil dikonfirmasi secara otomatis via Midtrans! Pesanan Anda kini sedang diproses.");
             }
         }
 
-        return view('pesanan.finish', compact('order'));
+        return redirect()->route('pesanan.index')
+            ->with('info', 'Status transaksi Anda sedang diverifikasi secara otomatis.');
     }
 
     /**
