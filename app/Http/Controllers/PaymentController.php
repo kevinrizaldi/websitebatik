@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateSnapTokenRequest;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Services\Midtrans\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 use InvalidArgumentException;
 
 class PaymentController extends Controller
@@ -61,13 +62,28 @@ class PaymentController extends Controller
     }
 
     /**
-     * Payment finish callback page (placeholder — real page in next step).
+     * Payment finish callback page.
      *
      * GET /payment/finish
-     * Does NOT change any order status.
+     * Does NOT change any order status — status is always read from the database.
+     * Midtrans may pass order_id, transaction_status, etc. as query params.
      */
-    public function finish(Request $request): Response
+    public function finish(Request $request): View
     {
-        return response('Pembayaran selesai. Halaman ini akan dikembangkan lebih lanjut.');
+        // Midtrans passes the *Midtrans* order_id (midtrans_order_id) as `order_id` query param.
+        $midtransOrderId = $request->query('order_id');
+
+        $order = null;
+        if ($midtransOrderId) {
+            $payment = Payment::where('midtrans_order_id', $midtransOrderId)
+                ->with('order')
+                ->first();
+
+            if ($payment && $payment->order && $payment->order->user_id === $request->user()->id) {
+                $order = $payment->order;
+            }
+        }
+
+        return view('pesanan.finish', compact('order'));
     }
 }
