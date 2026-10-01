@@ -22,7 +22,7 @@ return new class extends Migration
             $table->enum('status', [
                 'Tersedia',
                 'Stok Menipis',
-                'Habis'
+                'Habis',
             ])->default('Tersedia');
 
             $table->string('deskripsi')->nullable();

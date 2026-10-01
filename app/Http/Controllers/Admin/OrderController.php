@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -21,27 +22,27 @@ class OrderController extends Controller
      * - Batal          → (final, tidak bisa diubah)
      */
     protected array $allowedTransitions = [
-        'Belum Dibayar'       => ['Sudah Dibayar', 'Batal'],
+        'Belum Dibayar' => ['Sudah Dibayar', 'Batal'],
         'Menunggu Konfirmasi' => ['Sudah Dibayar', 'Batal'],
-        'Sudah Dibayar'       => ['Diproses', 'Batal'],
-        'Diproses'            => ['Dikirim', 'Batal'],
-        'Dikirim'             => ['Selesai'],
-        'Selesai'             => [],
-        'Batal'               => [],
-        'Dibatalkan'          => [],
+        'Sudah Dibayar' => ['Diproses', 'Batal'],
+        'Diproses' => ['Dikirim', 'Batal'],
+        'Dikirim' => ['Selesai'],
+        'Selesai' => [],
+        'Batal' => [],
+        'Dibatalkan' => [],
     ];
 
     public function index(Request $request)
     {
         // Hitung jumlah pesanan per status untuk badge Tab Navigation
         $counts = [
-            'all'           => Order::count(),
+            'all' => Order::count(),
             'belum_dibayar' => Order::whereIn('status', ['Belum Dibayar', 'Menunggu Konfirmasi'])->count(),
             'sudah_dibayar' => Order::where('status', 'Sudah Dibayar')->count(),
-            'diproses'      => Order::where('status', 'Diproses')->count(),
-            'dikirim'       => Order::where('status', 'Dikirim')->count(),
-            'selesai'       => Order::where('status', 'Selesai')->count(),
-            'batal'         => Order::whereIn('status', ['Batal', 'Dibatalkan'])->count(),
+            'diproses' => Order::where('status', 'Diproses')->count(),
+            'dikirim' => Order::where('status', 'Dikirim')->count(),
+            'selesai' => Order::where('status', 'Selesai')->count(),
+            'batal' => Order::whereIn('status', ['Batal', 'Dibatalkan'])->count(),
         ];
 
         $query = Order::with('items.produk')->latest();
@@ -61,8 +62,8 @@ class OrderController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('code', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -77,6 +78,7 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         $order->load('items.produk', 'user');
+
         return view('admin.orders.show', compact('order'));
     }
 
@@ -84,31 +86,33 @@ class OrderController extends Controller
     {
         try {
             // Pengecekan jika status belum dipilih / kosong
-            if (!$request->filled('status') || empty(trim($request->status))) {
+            if (! $request->filled('status') || empty(trim($request->status))) {
                 return redirect()->back()->withErrors([
                     'status' => "Silakan pilih status tujuan terlebih dahulu untuk pesanan #{$order->code} sebelum menekan tombol Ubah!",
                 ]);
             }
 
             $request->validate([
-                'status'          => 'required|string',
+                'status' => 'required|string',
                 'tracking_number' => 'nullable|string|max:100',
             ], [
                 'status.required' => "Silakan pilih status tujuan terlebih dahulu untuk pesanan #{$order->code} sebelum menekan tombol Ubah!",
             ]);
 
-            $newStatus     = $request->status;
+            $newStatus = $request->status;
             $currentStatus = $order->status;
 
             // Jika hanya ingin memperbarui nomor resi tanpa mengubah status
             if ($newStatus === $currentStatus) {
                 if ($request->filled('tracking_number')) {
                     $order->update(['tracking_number' => trim($request->tracking_number)]);
+
                     return redirect()->back()->with(
                         'success',
                         "✓ Nomor resi untuk pesanan #{$order->code} berhasil diperbarui."
                     );
                 }
+
                 return redirect()->back()->withErrors([
                     'status' => "Pesanan #{$order->code} saat ini sudah berstatus \"{$currentStatus}\". Silakan pilih status yang berbeda untuk mengubahnya.",
                 ]);
@@ -125,8 +129,9 @@ class OrderController extends Controller
             }
 
             // Status tujuan tidak diizinkan
-            if (!in_array($newStatus, $allowed)) {
+            if (! in_array($newStatus, $allowed)) {
                 $allowedList = implode(', ', $allowed);
+
                 return redirect()->back()->withErrors([
                     'status' => "Pesanan #{$order->code}: status \"{$currentStatus}\" hanya boleh diubah ke → {$allowedList}. Tidak bisa langsung ke \"{$newStatus}\".",
                 ]);
@@ -150,11 +155,11 @@ class OrderController extends Controller
                 'success',
                 "✓ Status pesanan #{$order->code} berhasil diubah: \"{$currentStatus}\" → \"{$newStatus}\"."
             );
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
-                'status' => "Gagal mengubah status pesanan #{$order->code}: " . $e->getMessage(),
+                'status' => "Gagal mengubah status pesanan #{$order->code}: ".$e->getMessage(),
             ]);
         }
     }
@@ -164,7 +169,7 @@ class OrderController extends Controller
         try {
             $allowed = $this->allowedTransitions[$order->status] ?? [];
 
-            if (!in_array('Batal', $allowed)) {
+            if (! in_array('Batal', $allowed)) {
                 return redirect()->back()->withErrors([
                     'status' => "Pesanan #{$order->code} berstatus \"{$order->status}\" dan tidak dapat dibatalkan.",
                 ]);
@@ -175,7 +180,7 @@ class OrderController extends Controller
             return redirect()->back()->with('success', "✓ Pesanan #{$order->code} berhasil dibatalkan.");
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
-                'status' => "Gagal membatalkan pesanan #{$order->code}: " . $e->getMessage(),
+                'status' => "Gagal membatalkan pesanan #{$order->code}: ".$e->getMessage(),
             ]);
         }
     }

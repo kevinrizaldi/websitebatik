@@ -26,7 +26,7 @@ class OrderSeeder extends Seeder
                 ['nama' => 'Blouse Batik Megamendung Modern',  'sku' => 'BTK-MGM-002', 'kategori' => 'Wanita', 'harga' => 220000, 'stok' => 15, 'status' => 'Tersedia', 'material' => 'Sutra Crepe',         'deskripsi' => 'Motif megamendung warna pastel.'],
                 ['nama' => 'Kain Batik Tulis Motif Kawung',    'sku' => 'BTK-KWG-003', 'kategori' => 'Kain',   'harga' => 450000, 'stok' => 10, 'status' => 'Tersedia', 'material' => 'Katun Mori Halus',    'deskripsi' => 'Kain batik tulis tradisional halus 2m.'],
                 ['nama' => 'Dress Batik Tulis Truntum',        'sku' => 'BTK-TRN-004', 'kategori' => 'Wanita', 'harga' => 380000, 'stok' => 12, 'status' => 'Tersedia', 'material' => 'Katun Rayon Premium', 'deskripsi' => 'Dress formal santai motif truntum.'],
-                ['nama' => 'Outer Batik Tenun Etnik Nusantara','sku' => 'BTK-TNN-005', 'kategori' => 'Unisex', 'harga' => 320000, 'stok' => 18, 'status' => 'Tersedia', 'material' => 'Tenun Troso',         'deskripsi' => 'Outer etnik kombinasi batik dan tenun.'],
+                ['nama' => 'Outer Batik Tenun Etnik Nusantara', 'sku' => 'BTK-TNN-005', 'kategori' => 'Unisex', 'harga' => 320000, 'stok' => 18, 'status' => 'Tersedia', 'material' => 'Tenun Troso',         'deskripsi' => 'Outer etnik kombinasi batik dan tenun.'],
                 ['nama' => 'Sarung Batik Sido Mulyo',          'sku' => 'BTK-SDM-006', 'kategori' => 'Pria',   'harga' => 175000, 'stok' => 25, 'status' => 'Tersedia', 'material' => 'Katun Tapis',         'deskripsi' => 'Sarung batik motif sido mulyo premium.'],
             ];
             foreach ($produks as $p) {
@@ -62,22 +62,22 @@ class OrderSeeder extends Seeder
 
             // Buat 1–3 item untuk tiap pesanan
             foreach ($orders as $order) {
-                $itemCount   = rand(1, 3);
+                $itemCount = rand(1, 3);
                 $selectedProducts = $allProduks->random(min($itemCount, $allProduks->count()));
-                $totalPrice  = 0;
+                $totalPrice = 0;
 
                 foreach ($selectedProducts as $produk) {
-                    $qty      = rand(1, 3);
+                    $qty = rand(1, 3);
                     $subtotal = $produk->harga * $qty;
                     $totalPrice += $subtotal;
 
                     OrderItem::create([
-                        'order_id'    => $order->id,
-                        'produk_id'   => $produk->id,
+                        'order_id' => $order->id,
+                        'produk_id' => $produk->id,
                         'produk_name' => $produk->nama,
-                        'price'       => $produk->harga,
-                        'quantity'    => $qty,
-                        'subtotal'    => $subtotal,
+                        'price' => $produk->harga,
+                        'quantity' => $qty,
+                        'subtotal' => $subtotal,
                     ]);
                 }
 

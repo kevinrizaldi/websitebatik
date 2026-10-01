@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Ulasan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class UlasanController extends Controller
@@ -32,10 +33,10 @@ class UlasanController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('customer_name', 'like', "%{$search}%")
-                  ->orWhere('comment', 'like', "%{$search}%")
-                  ->orWhereHas('produk', function ($p) use ($search) {
-                      $p->where('nama', 'like', "%{$search}%");
-                  });
+                    ->orWhere('comment', 'like', "%{$search}%")
+                    ->orWhereHas('produk', function ($p) use ($search) {
+                        $p->where('nama', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -81,10 +82,10 @@ class UlasanController extends Controller
             ]);
 
             return back()->with('success', "Status ulasan dari {$ulasan->customer_name} berhasil diubah menjadi {$validated['status']}.");
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return back()->withErrors($e->errors());
         } catch (\Throwable $e) {
-            return back()->withErrors(['error' => 'Gagal memperbarui status ulasan: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal memperbarui status ulasan: '.$e->getMessage()]);
         }
     }
 
@@ -99,7 +100,7 @@ class UlasanController extends Controller
 
             return back()->with('success', "Ulasan dari {$customerName} berhasil dihapus.");
         } catch (\Throwable $e) {
-            return back()->withErrors(['error' => 'Gagal menghapus ulasan: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Gagal menghapus ulasan: '.$e->getMessage()]);
         }
     }
 }

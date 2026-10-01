@@ -60,7 +60,7 @@ class OrderFactory extends Factory
         if (in_array($status, ['Dikirim', 'Selesai'])) {
             $ekspedisi = $this->faker->randomElement($this->ekspedisi);
             $trackingNumber = strtoupper(str_replace('&', '', $ekspedisi))
-                . $this->faker->numerify('##########');
+                .$this->faker->numerify('##########');
         }
 
         // Bukti bayar ada jika sudah melewati tahap Belum Dibayar
@@ -69,20 +69,20 @@ class OrderFactory extends Factory
             : null;
 
         return [
-            'user_id'         => $userId,
-            'code'            => 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(5)),
-            'customer_name'   => $this->faker->randomElement($this->namaCustomer),
-            'address'         => $this->faker->randomElement($this->alamat),
-            'phone'           => '08' . $this->faker->numerify('##########'),
-            'total_price'     => $this->faker->randomElement([
+            'user_id' => $userId,
+            'code' => 'ORD-'.now()->format('Ymd').'-'.strtoupper(Str::random(5)),
+            'customer_name' => $this->faker->randomElement($this->namaCustomer),
+            'address' => $this->faker->randomElement($this->alamat),
+            'phone' => '08'.$this->faker->numerify('##########'),
+            'total_price' => $this->faker->randomElement([
                 175000, 250000, 320000, 450000, 580000,
                 750000, 890000, 1150000, 1500000, 2250000,
             ]),
-            'payment_method'  => $this->faker->randomElement($this->metodePembayaran),
-            'payment_proof'   => $paymentProof,
-            'status'          => $status,
+            'payment_method' => $this->faker->randomElement($this->metodePembayaran),
+            'payment_proof' => $paymentProof,
+            'status' => $status,
             'tracking_number' => $trackingNumber,
-            'created_at'      => $this->faker->dateTimeBetween('-3 months', 'now'),
+            'created_at' => $this->faker->dateTimeBetween('-3 months', 'now'),
         ];
     }
 
@@ -91,8 +91,8 @@ class OrderFactory extends Factory
     public function belumDibayar(): static
     {
         return $this->state([
-            'status'          => 'Belum Dibayar',
-            'payment_proof'   => null,
+            'status' => 'Belum Dibayar',
+            'payment_proof' => null,
             'tracking_number' => null,
         ]);
     }
@@ -100,7 +100,7 @@ class OrderFactory extends Factory
     public function menungguKonfirmasi(): static
     {
         return $this->state([
-            'status'          => 'Menunggu Konfirmasi',
+            'status' => 'Menunggu Konfirmasi',
             'tracking_number' => null,
         ]);
     }
@@ -108,7 +108,7 @@ class OrderFactory extends Factory
     public function diproses(): static
     {
         return $this->state([
-            'status'          => 'Diproses',
+            'status' => 'Diproses',
             'tracking_number' => null,
         ]);
     }
@@ -117,10 +117,11 @@ class OrderFactory extends Factory
     {
         return $this->state(function () {
             $ekspedisi = $this->faker->randomElement($this->ekspedisi);
+
             return [
-                'status'          => 'Dikirim',
+                'status' => 'Dikirim',
                 'tracking_number' => strtoupper(str_replace('&', '', $ekspedisi))
-                    . $this->faker->numerify('##########'),
+                    .$this->faker->numerify('##########'),
             ];
         });
     }
@@ -129,10 +130,11 @@ class OrderFactory extends Factory
     {
         return $this->state(function () {
             $ekspedisi = $this->faker->randomElement($this->ekspedisi);
+
             return [
-                'status'          => 'Selesai',
+                'status' => 'Selesai',
                 'tracking_number' => strtoupper(str_replace('&', '', $ekspedisi))
-                    . $this->faker->numerify('##########'),
+                    .$this->faker->numerify('##########'),
             ];
         });
     }
@@ -140,8 +142,8 @@ class OrderFactory extends Factory
     public function dibatalkan(): static
     {
         return $this->state([
-            'status'          => 'Dibatalkan',
-            'payment_proof'   => null,
+            'status' => 'Dibatalkan',
+            'payment_proof' => null,
             'tracking_number' => null,
         ]);
     }
