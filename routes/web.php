@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\OrderController;
@@ -132,9 +133,7 @@ Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
     ->withoutMiddleware(['App\Http\Middleware\PreventRequestForgery']);
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -196,6 +195,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
         // Kelola Laporan
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+        Route::get('/laporan/export/{format}', [LaporanController::class, 'export'])
+            ->whereIn('format', ['pdf', 'excel', 'csv'])
+            ->name('laporan.export');
         Route::get('/laporan/print', [LaporanController::class, 'print'])->name('laporan.print');
 
         // Kelola Kategori (halaman tunggal + modal, tanpa create/edit/show terpisah)

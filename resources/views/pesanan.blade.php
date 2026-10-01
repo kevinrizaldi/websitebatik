@@ -140,8 +140,9 @@
               this.reviewOrder = order;
               this.reviewDrafts = {};
               order.items.forEach((item, idx) => {
-                  this.reviewDrafts[idx] = { rating: 5, comment: '', sending: false, done: false };
+                  this.reviewDrafts[idx] = { rating: 5, comment: '', image: null, sending: false, done: false };
               });
+              document.querySelectorAll('.review-image-input').forEach(input => { input.value = ''; });
               this.reviewModalOpen = true;
           },
 
@@ -149,24 +150,31 @@
               const item = order.items[idx];
               const draft = this.reviewDrafts[idx];
               if (!draft || draft.sending || draft.done) return;
+              if (!draft.image) {
+                  this.showToast('Foto ulasan wajib diunggah sebelum ulasan dikirim.');
+                  return;
+              }
               if (!draft.comment || draft.comment.trim().length < 3) {
                   this.showToast('Tulis ulasan minimal 3 karakter.');
                   return;
               }
               draft.sending = true;
+              const formData = new FormData();
+              formData.append('produk_id', item.produk_id);
+              formData.append('order_code', order.id);
+              formData.append('rating', draft.rating);
+              formData.append('comment', draft.comment.trim());
+              if (draft.image) {
+                  formData.append('image', draft.image);
+              }
+
               fetch('{{ route('ulasan.store') }}', {
                   method: 'POST',
                   headers: {
-                      'Content-Type': 'application/json',
                       'X-CSRF-TOKEN': '{{ csrf_token() }}',
                       'Accept': 'application/json'
                   },
-                  body: JSON.stringify({
-                      produk_id: item.produk_id,
-                      order_code: order.id,
-                      rating: draft.rating,
-                      comment: draft.comment.trim()
-                  })
+                  body: formData
               })
               .then(async res => {
                   const data = await res.json().catch(() => ({}));
@@ -175,7 +183,11 @@
                       draft.done = true;
                       this.showToast('Terima kasih! Ulasan untuk ' + item.nama + ' tersimpan.');
                   } else {
-                      this.showToast(data.message || 'Ulasan gagal dikirim.');
+                      const validationMessage = data.errors ? Object.values(data.errors).flat()[0] : null;
+                      const message = res.status >= 500
+                          ? 'Ulasan belum berhasil dikirim. Silakan coba lagi beberapa saat.'
+                          : validationMessage || data.message || 'Ulasan gagal dikirim.';
+                      this.showToast(message);
                   }
               })
               .catch(() => {
@@ -229,7 +241,7 @@
                   const matchTab = (this.activeTab === 'semua') || (order.status === this.activeTab);
                   const q = this.searchQuery.trim().toLowerCase();
                   if (!q) return matchTab;
-                  
+
                   const matchId = order.id.toLowerCase().includes(q);
                   const matchItem = order.items.some(it => it.nama.toLowerCase().includes(q) || it.varian.toLowerCase().includes(q));
                   return matchTab && (matchId || matchItem);
@@ -249,7 +261,7 @@
       }">
 
     <!-- Toast Notification -->
-    <div x-cloak x-show="toastMessage" 
+    <div x-cloak x-show="toastMessage"
          x-transition:enter="transition ease-out duration-300 transform"
          x-transition:enter-start="opacity-0 translate-y-4"
          x-transition:enter-end="opacity-100 translate-y-0"
@@ -324,7 +336,7 @@
                     @if (Route::has('login'))
                         <div class="relative" x-data="{ userMenu: false }">
                             @auth
-                                <button @click="userMenu = !userMenu" 
+                                <button @click="userMenu = !userMenu"
                                         @click.away="userMenu = false"
                                         class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white/70 transition">
                                     <div class="w-7 h-7 rounded-full bg-[#201A17] text-[#E5C38E] flex items-center justify-center font-bold text-xs uppercase">
@@ -338,7 +350,7 @@
                                     </svg>
                                 </button>
 
-                                <div x-cloak x-show="userMenu" 
+                                <div x-cloak x-show="userMenu"
                                      x-transition:enter="transition ease-out duration-100"
                                      x-transition:enter-start="transform opacity-0 scale-95"
                                      x-transition:enter-end="transform opacity-100 scale-100"
@@ -371,7 +383,7 @@
                                 </div>
                             @else
                                 <div class="flex items-center gap-2">
-                                    <a href="{{ route('login') }}" 
+                                    <a href="{{ route('login') }}"
                                        class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-stone-300 hover:border-stone-500 text-xs font-semibold text-stone-800 bg-white/60 hover:bg-white transition">
                                         <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -394,7 +406,7 @@
             </div>
 
             <!-- Mobile Navigation Menu -->
-            <div x-cloak x-show="mobileMenuOpen" 
+            <div x-cloak x-show="mobileMenuOpen"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 -translate-y-4"
                  x-transition:enter-end="opacity-100 translate-y-0"
@@ -415,7 +427,7 @@
     <!-- ================= MAIN CONTENT ================= -->
     <main class="py-8 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
+
             <!-- Breadcrumbs -->
             <nav class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-stone-400 mb-6">
                 <a href="{{ url('/') }}" class="hover:text-stone-700 transition">BERANDA</a>
@@ -444,7 +456,7 @@
             <!-- Search & Filters Container -->
             <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-[#ECE4D8] mb-8 space-y-4">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    
+
                     <!-- Search Input -->
                     <div class="relative flex-1">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
@@ -456,8 +468,8 @@
                                x-model="searchQuery"
                                placeholder="Cari berdasarkan No. Pesanan atau Nama Produk..."
                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:border-transparent bg-[#FAF7F2]/40 transition">
-                        <button x-show="searchQuery" 
-                                @click="searchQuery = ''" 
+                        <button x-show="searchQuery"
+                                @click="searchQuery = ''"
                                 class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-600">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
@@ -522,13 +534,13 @@
             <div class="space-y-6">
                 <template x-for="order in filteredOrders" :key="order.id">
                     <div class="bg-white rounded-2xl border border-[#ECE4D8] overflow-hidden shadow-xs hover:shadow-md transition">
-                        
+
                         <!-- Order Card Header -->
                         <div class="px-5 py-4 bg-[#FAF7F2]/60 border-b border-[#ECE4D8] flex flex-wrap items-center justify-between gap-3">
                             <div class="flex flex-wrap items-center gap-3 sm:gap-4">
                                 <div class="flex items-center gap-1.5">
                                     <span class="text-xs text-stone-500">No. Pesanan:</span>
-                                    <button @click="copyText(order.id)" 
+                                    <button @click="copyText(order.id)"
                                             class="font-mono text-xs sm:text-sm font-bold text-stone-900 hover:text-amber-800 flex items-center gap-1 transition"
                                             title="Salin No. Pesanan">
                                         <span x-text="order.id"></span>
@@ -543,7 +555,7 @@
 
                             <!-- Status Badge -->
                             <div class="flex items-center gap-2">
-                                <span :class="order.statusBadgeClass" 
+                                <span :class="order.statusBadgeClass"
                                       class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border">
                                     <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
                                     <span x-text="order.statusLabel"></span>
@@ -556,8 +568,8 @@
                             <template x-for="(item, idx) in order.items" :key="idx">
                                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
                                     <div class="flex items-center gap-4">
-                                        <img :src="item.gambar" 
-                                             :alt="item.nama" 
+                                        <img :src="item.gambar"
+                                             :alt="item.nama"
                                              class="w-20 h-20 sm:w-22 sm:h-22 rounded-xl object-cover border border-[#ECE4D8] shrink-0 bg-stone-100">
                                         <div>
                                             <div class="text-[10px] font-bold tracking-wider uppercase text-amber-800 mb-0.5" x-text="item.kategori"></div>
@@ -578,7 +590,7 @@
 
                         <!-- Order Card Footer & Context Notice -->
                         <div class="px-5 py-4 bg-[#FAF7F2]/40 border-t border-[#ECE4D8] flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            
+
                             <!-- Context info / deadline / tracking number -->
                             <div class="text-xs text-stone-600 space-y-1">
                                 <template x-if="order.status === 'menunggu_pembayaran'">
@@ -632,11 +644,11 @@
                                     <!-- Status-specific primary buttons -->
                                     <template x-if="order.status === 'menunggu_pembayaran'">
                                         <div class="flex items-center gap-2">
-                                            <button @click="cancelOrder(order)" 
+                                            <button @click="cancelOrder(order)"
                                                     class="px-3 py-2 text-xs font-semibold text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-xl transition">
                                                 Batalkan
                                             </button>
-                                            <a :href="'{{ url('/pembayaran') }}/' + order.id" 
+                                            <a :href="'{{ url('/pembayaran') }}/' + order.id"
                                                class="px-4 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl shadow-xs transition flex items-center gap-1.5">
                                                 <span>Bayar Sekarang</span>
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -664,7 +676,7 @@
                                                     class="px-3.5 py-2 text-xs font-semibold text-stone-700 hover:text-stone-900 border border-stone-300 hover:border-stone-500 rounded-xl bg-white transition">
                                                 Beri Ulasan
                                             </button>
-                                            <a href="{{ route('koleksi.index') }}" 
+                                            <a href="{{ route('koleksi.index') }}"
                                                class="px-4 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl shadow-xs transition">
                                                 Beli Lagi
                                             </a>
@@ -678,7 +690,7 @@
                 </template>
 
                 <!-- Empty State -->
-                <div x-cloak x-show="filteredOrders.length === 0" 
+                <div x-cloak x-show="filteredOrders.length === 0"
                      class="text-center py-16 px-4 bg-white rounded-2xl border border-[#ECE4D8] shadow-xs">
                     <div class="w-16 h-16 rounded-full bg-[#FAF7F2] border border-[#ECE4D8] flex items-center justify-center mx-auto mb-4 text-stone-400">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
@@ -690,11 +702,11 @@
                         Tidak ada riwayat transaksi yang cocok dengan tab status atau kata kunci yang Anda masukkan.
                     </p>
                     <div class="flex items-center justify-center gap-3">
-                        <button @click="searchQuery = ''; activeTab = 'semua'" 
+                        <button @click="searchQuery = ''; activeTab = 'semua'"
                                 class="px-4 py-2 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition">
                             Reset Filter
                         </button>
-                        <a href="{{ route('koleksi.index') }}" 
+                        <a href="{{ route('koleksi.index') }}"
                            class="px-5 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl transition shadow-xs">
                             Mulai Belanja Batik
                         </a>
@@ -718,7 +730,7 @@
                         </p>
                     </div>
                     <div class="flex flex-col sm:flex-row md:flex-col gap-3 justify-center md:items-end">
-                        <a href="https://wa.me/6281234567890?text=Halo%20Admin%20Hamzah%20Style,%20saya%20ingin%20menanyakan%20status%20pesanan%20saya" 
+                        <a href="https://wa.me/6281234567890?text=Halo%20Admin%20Hamzah%20Style,%20saya%20ingin%20menanyakan%20status%20pesanan%20saya"
                            target="_blank"
                            class="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full bg-[#B58742] text-white hover:bg-[#9d7335] text-xs sm:text-sm font-semibold transition shadow-md">
                             <svg class="w-4 h-4 fill-currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
@@ -735,12 +747,12 @@
     </main>
 
     <!-- ================= MODAL: TRACKING / LACAK PENGIRIMAN ================= -->
-    <div x-cloak x-show="trackingModalOpen" 
+    <div x-cloak x-show="trackingModalOpen"
          class="fixed inset-0 z-50 overflow-y-auto"
          aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            
-            <div x-show="trackingModalOpen" 
+
+            <div x-show="trackingModalOpen"
                  x-transition:enter="ease-out duration-300"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
@@ -748,12 +760,12 @@
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
                  @click="trackingModalOpen = false"
-                 class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity" 
+                 class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
                  aria-hidden="true"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-            <div x-show="trackingModalOpen" 
+            <div x-show="trackingModalOpen"
                  x-transition:enter="ease-out duration-300"
                  x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -761,7 +773,7 @@
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-stone-200">
-                
+
                 <div class="px-6 py-5 bg-[#FAF7F2] border-b border-[#ECE4D8] flex items-center justify-between">
                     <div>
                         <h3 class="text-base font-bold text-stone-900">
@@ -817,7 +829,7 @@
                 </div>
 
                 <div class="px-6 py-4 bg-stone-50 border-t border-stone-200 text-right">
-                    <button @click="trackingModalOpen = false" 
+                    <button @click="trackingModalOpen = false"
                             class="px-5 py-2 text-xs font-semibold text-stone-700 bg-white border border-stone-300 rounded-xl hover:bg-stone-100 transition">
                         Tutup
                     </button>
@@ -827,12 +839,12 @@
     </div>
 
     <!-- ================= MODAL: DETAIL PESANAN ================= -->
-    <div x-cloak x-show="detailModalOpen" 
+    <div x-cloak x-show="detailModalOpen"
          class="fixed inset-0 z-50 overflow-y-auto"
          aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            
-            <div x-show="detailModalOpen" 
+
+            <div x-show="detailModalOpen"
                  x-transition:enter="ease-out duration-300"
                  x-transition:enter-start="opacity-0"
                  x-transition:enter-end="opacity-100"
@@ -840,12 +852,12 @@
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0"
                  @click="detailModalOpen = false"
-                 class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity" 
+                 class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
                  aria-hidden="true"></div>
 
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-            <div x-show="detailModalOpen" 
+            <div x-show="detailModalOpen"
                  x-transition:enter="ease-out duration-300"
                  x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
@@ -853,7 +865,7 @@
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                  class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-stone-200">
-                
+
                 <div class="px-6 py-5 bg-[#FAF7F2] border-b border-[#ECE4D8] flex items-center justify-between">
                     <div>
                         <h3 class="text-base font-bold text-stone-900">
@@ -945,7 +957,7 @@
                         <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         <span>Cetak / Unduh Invoice</span>
                     </button>
-                    <button @click="detailModalOpen = false" 
+                    <button @click="detailModalOpen = false"
                             class="px-5 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl transition shadow-xs">
                         Tutup
                     </button>
@@ -1022,6 +1034,13 @@
                                             </div>
                                             <textarea x-model="reviewDrafts[idx].comment" rows="2" placeholder="Ceritakan kualitas bahan, jahitan, atau kesesuaian ukuran..."
                                                       class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-white"></textarea>
+                                            <div>
+                                                <label :for="'review-image-' + idx" class="block text-xs font-semibold text-stone-700 mb-1.5">Foto ulasan (wajib)</label>
+                                                <input :id="'review-image-' + idx" type="file" accept="image/*" required
+                                                       @change="reviewDrafts[idx].image = $event.target.files[0] || null"
+                                                       class="review-image-input block w-full text-xs text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-stone-700 hover:file:bg-stone-200">
+                                                <p class="mt-1 text-[11px] text-stone-500">JPG, PNG, GIF, atau WebP. Maksimal 5 MB.</p>
+                                            </div>
                                             <button @click="submitItemReview(reviewOrder, idx)" :disabled="reviewDrafts[idx].sending"
                                                     class="px-5 py-2 text-xs font-bold text-white bg-[#201A17] hover:bg-stone-800 disabled:opacity-50 rounded-xl transition shadow-xs">
                                                 <span x-text="reviewDrafts[idx].sending ? 'Mengirim...' : 'Kirim Ulasan'"></span>
@@ -1048,7 +1067,7 @@
     <footer id="kontak" class="bg-[#FAF7F2] border-t border-[#ECE4D8] pt-16 pb-12 text-stone-700 mt-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-12">
-                
+
                 <!-- Col 1: Brand Info -->
                 <div class="lg:col-span-4">
                     <div class="flex items-center gap-2.5 mb-4">

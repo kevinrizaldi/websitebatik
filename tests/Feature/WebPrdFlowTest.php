@@ -9,7 +9,9 @@ use App\Models\Produk;
 use App\Models\User;
 use App\Services\MidtransService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class WebPrdFlowTest extends TestCase
@@ -304,16 +306,25 @@ class WebPrdFlowTest extends TestCase
         ]);
     }
 
+    private function fakeReviewImage(): UploadedFile
+    {
+        return UploadedFile::fake()->createWithContent(
+            'batik.gif',
+            base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')
+        );
+    }
+
     public function test_review_rejected_without_completed_purchase(): void
     {
         $user = $this->customer();
         $produk = $this->sampleProduk('A');
 
-        $response = $this->actingAs($user)->postJson(route('ulasan.store'), [
+        $response = $this->actingAs($user)->post(route('ulasan.store'), [
             'produk_id' => $produk->id,
             'rating' => 5,
             'comment' => 'Bagus sekali bahannya.',
-        ]);
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json']);
 
         $response->assertStatus(422)->assertJson(['success' => false]);
         $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
@@ -325,12 +336,13 @@ class WebPrdFlowTest extends TestCase
         $produk = $this->sampleProduk('B');
         $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-001', 'Diproses');
 
-        $response = $this->actingAs($user)->postJson(route('ulasan.store'), [
+        $response = $this->actingAs($user)->post(route('ulasan.store'), [
             'produk_id' => $produk->id,
             'order_code' => $order->code,
             'rating' => 5,
             'comment' => 'Bagus sekali bahannya.',
-        ]);
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json']);
 
         $response->assertStatus(422)->assertJson(['success' => false]);
         $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
@@ -338,16 +350,18 @@ class WebPrdFlowTest extends TestCase
 
     public function test_review_accepted_after_completed_purchase(): void
     {
+        Storage::fake('public');
         $user = $this->customer();
         $produk = $this->sampleProduk('C');
         $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-002', 'Selesai');
 
-        $response = $this->actingAs($user)->postJson(route('ulasan.store'), [
+        $response = $this->actingAs($user)->post(route('ulasan.store'), [
             'produk_id' => $produk->id,
             'order_code' => $order->code,
             'rating' => 5,
             'comment' => 'Kain nyaman dan jahitan rapi.',
-        ]);
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json']);
 
         $response->assertOk()->assertJson(['success' => true]);
         $this->assertDatabaseHas('ulasans', [
@@ -357,6 +371,69 @@ class WebPrdFlowTest extends TestCase
         ]);
     }
 
+    public function test_customer_can_attach_an_image_to_a_review(): void
+    {
+        Storage::fake('public');
+        $user = $this->customer();
+        $produk = $this->sampleProduk('IMAGE');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-IMAGE', 'Selesai');
+
+        $response = $this->actingAs($user)->post(route('ulasan.store'), [
+            'produk_id' => $produk->id,
+            'order_code' => $order->code,
+            'rating' => 5,
+            'comment' => 'Kain nyaman dan jahitan rapi.',
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertOk()->assertJson(['success' => true]);
+        $imagePath = $response->json('ulasan.image_path');
+
+        $this->assertNotEmpty($imagePath);
+        Storage::disk('public')->assertExists($imagePath);
+        $this->assertDatabaseHas('ulasans', [
+            'produk_id' => $produk->id,
+            'image_path' => $imagePath,
+        ]);
+    }
+
+    public function test_review_requires_an_image_and_returns_an_indonesian_message(): void
+    {
+        $user = $this->customer();
+        $produk = $this->sampleProduk('NOIMAGE');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-NOIMAGE', 'Selesai');
+
+        $response = $this->actingAs($user)->postJson(route('ulasan.store'), [
+            'produk_id' => $produk->id,
+            'order_code' => $order->code,
+            'rating' => 5,
+            'comment' => 'Kain nyaman dan jahitan rapi.',
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonPath('errors.image.0', 'Foto ulasan wajib diunggah sebelum ulasan dikirim.');
+        $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
+    }
+
+    public function test_customer_cannot_attach_a_non_image_to_a_review(): void
+    {
+        $user = $this->customer();
+        $produk = $this->sampleProduk('NONIMAGE');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-NONIMAGE', 'Selesai');
+
+        $response = $this->actingAs($user)->post(route('ulasan.store'), [
+            'produk_id' => $produk->id,
+            'order_code' => $order->code,
+            'rating' => 5,
+            'comment' => 'Kain nyaman dan jahitan rapi.',
+            'image' => UploadedFile::fake()->create('dokumen.txt', 10, 'text/plain'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertUnprocessable()
+            ->assertJsonPath('errors.image.0', 'File ulasan harus berupa gambar.');
+        $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
+    }
+
     public function test_review_rejected_for_other_users_order(): void
     {
         $owner = $this->customer();
@@ -364,12 +441,13 @@ class WebPrdFlowTest extends TestCase
         $produk = $this->sampleProduk('D');
         $order = $this->createOrderWithProduct($owner, $produk, 'ORD-ULAS-003', 'Selesai');
 
-        $response = $this->actingAs($intruder)->postJson(route('ulasan.store'), [
+        $response = $this->actingAs($intruder)->post(route('ulasan.store'), [
             'produk_id' => $produk->id,
             'order_code' => $order->code,
             'rating' => 1,
             'comment' => 'Jelek sekali.',
-        ]);
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json']);
 
         $response->assertStatus(403);
         $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
@@ -671,12 +749,15 @@ class WebPrdFlowTest extends TestCase
         $produk = $this->sampleProduk('R');
         $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-010', 'Selesai');
 
-        $this->actingAs($user)->postJson(route('ulasan.store'), [
+        Storage::fake('public');
+
+        $this->actingAs($user)->post(route('ulasan.store'), [
             'produk_id' => $produk->id,
             'order_code' => $order->code,
             'rating' => 5,
             'comment' => 'Kainnya adem dan jahitannya rapi.',
-        ])->assertOk();
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json'])->assertOk();
 
         $response = $this->get(route('produk.detail', ['id' => $produk->id]));
 

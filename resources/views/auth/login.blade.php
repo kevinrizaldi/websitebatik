@@ -89,6 +89,24 @@
             box-shadow: 0 0 0 1px #ef4444;
         }
 
+        .show-password {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            color: #4b5563;
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .show-password input {
+            width: 16px;
+            height: 16px;
+            accent-color: #111827;
+            cursor: pointer;
+        }
+
         .error-message {
             margin-top: 5px;
             font-size: 12px;
@@ -240,6 +258,10 @@
                         autocomplete="current-password"
                         placeholder="••••••••"
                     >
+                    <label for="login_show_password" class="show-password">
+                        <input id="login_show_password" type="checkbox">
+                        <span>Tampilkan password</span>
+                    </label>
                     @error('password')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
@@ -331,6 +353,10 @@
                         autocomplete="new-password"
                         placeholder="Minimal 8 karakter"
                     >
+                    <label for="register_show_password" class="show-password">
+                        <input id="register_show_password" type="checkbox">
+                        <span>Tampilkan password</span>
+                    </label>
                     @error('password')
                         <div class="error-message">{{ $message }}</div>
                     @enderror
@@ -388,6 +414,16 @@
                 if (emailInput) emailInput.focus();
             }
         }
+
+        document.getElementById('login_show_password').addEventListener('change', (event) => {
+            document.getElementById('login_password').type = event.target.checked ? 'text' : 'password';
+        });
+
+        document.getElementById('register_show_password').addEventListener('change', (event) => {
+            const inputType = event.target.checked ? 'text' : 'password';
+            document.getElementById('reg_password').type = inputType;
+            document.getElementById('reg_password_confirmation').type = inputType;
+        });
 
         // Deteksi apakah saat load perlu membuka form register (misal ada error register atau hash #register)
         window.addEventListener('DOMContentLoaded', () => {

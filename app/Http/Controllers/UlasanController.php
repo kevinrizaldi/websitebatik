@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Ulasan;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UlasanController extends Controller
 {
@@ -23,6 +25,12 @@ class UlasanController extends Controller
             'order_code' => 'nullable|string|exists:orders,code',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|min:3|max:1000',
+            'image' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:5120',
+        ], [
+            'image.required' => 'Foto ulasan wajib diunggah sebelum ulasan dikirim.',
+            'image.image' => 'File ulasan harus berupa gambar.',
+            'image.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WebP.',
+            'image.max' => 'Ukuran gambar maksimal 5 MB.',
         ]);
 
         $user = Auth::user();
@@ -67,14 +75,38 @@ class UlasanController extends Controller
             }
         }
 
-        $ulasan = Ulasan::create([
-            'produk_id' => $validated['produk_id'],
-            'user_id' => $user->id,
-            'customer_name' => $user->name ?? 'Pelanggan Batik',
-            'rating' => (int) $validated['rating'],
-            'comment' => $validated['comment'],
-            'status' => 'Disetujui',
-        ]);
+        $imagePath = isset($validated['image'])
+            ? $validated['image']->store('ulasan', 'public')
+            : null;
+
+        try {
+            $ulasan = Ulasan::create([
+                'produk_id' => $validated['produk_id'],
+                'user_id' => $user->id,
+                'customer_name' => $user->name ?? 'Pelanggan Batik',
+                'rating' => (int) $validated['rating'],
+                'comment' => $validated['comment'],
+                'image_path' => $imagePath,
+                'status' => 'Disetujui',
+            ]);
+        } catch (QueryException $exception) {
+            report($exception);
+
+            if ($imagePath) {
+                Storage::disk('public')->delete($imagePath);
+            }
+
+            $errorMessage = 'Ulasan belum berhasil dikirim. Silakan coba lagi beberapa saat.';
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                ], 500);
+            }
+
+            return back()->with('error', $errorMessage);
+        }
 
         if ($request->wantsJson()) {
             return response()->json([
