@@ -317,7 +317,7 @@
         <script>
             const ORDER_ID = {{ $order->id }};
             const TOKEN_URL = "{{ route('payment.token') }}";
-            const CHANGE_URL = "{{ route('payment.change-method') }}";
+            const CHANGE_URL = "{{ route('orders.payment.change-method', $order) }}";
             const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 
             @if ($activePayment && $activePayment->isReusable())
