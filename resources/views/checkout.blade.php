@@ -205,6 +205,16 @@
                   return;
               }
 
+              // Metode Midtrans (VA, QRIS, Kartu Kredit) butuh user login
+              const isMidtransMethod = this.selectedPayment !== 'manual_bca';
+              const isLoggedIn = {{ Auth::check() ? 'true' : 'false' }};
+
+              if (isMidtransMethod && !isLoggedIn) {
+                  this.showToast('Silakan login terlebih dahulu untuk menggunakan metode pembayaran ini.');
+                  setTimeout(() => { window.location.href = '{{ route('login') }}'; }, 1800);
+                  return;
+              }
+
               this.isSubmitting = true;
               const shippingObj = this.shippingOptions[this.selectedShipping];
 
@@ -229,14 +239,14 @@
               .then(data => {
                   this.isSubmitting = false;
                   if (data.success) {
+                      // Server menentukan redirect: /orders/{id}/pay (Midtrans) atau /pesanan (manual)
                       window.location.href = data.redirect_url || '{{ route('pesanan.index') }}';
                   } else {
                       this.showToast(data.message || 'Gagal memproses transaksi.');
                   }
               })
-              .catch(err => {
+              .catch(() => {
                   this.isSubmitting = false;
-                  // If direct redirect happened or JSON failed, fallback to pesanan page
                   window.location.href = '{{ route('pesanan.index') }}';
               });
           }
