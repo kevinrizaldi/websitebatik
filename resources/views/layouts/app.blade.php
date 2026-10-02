@@ -28,7 +28,6 @@
                             ['label' => 'Kelola Ulasan', 'route' => 'admin.ulasans.index', 'active' => 'admin.ulasans.*'],
                             ['label' => 'Laporan Penjualan', 'route' => 'admin.laporan.index', 'active' => 'admin.laporan.*'],
                             ['label' => 'Kategori', 'route' => 'admin.kategori.index', 'active' => 'admin.kategori.*'],
-                            ['label' => 'Pengaturan', 'route' => 'admin.pengaturan.index', 'active' => 'admin.pengaturan.*'],
                         ];
                     @endphp
 

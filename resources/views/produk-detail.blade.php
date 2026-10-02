@@ -322,23 +322,22 @@
                         </button>
                     </div>
 
-                    <!-- Thumbnails Gallery: gambar utama + maks. 3 gambar tambahan = 4 total -->
-                    @php $extraGambars = array_slice($gambarLainnya, 0, 3); @endphp
+                    <!-- Thumbnails Gallery: gambar utama + maks. 9 gambar tambahan = 10 total -->
+                    @php $extraGambars = array_slice($gambarLainnya, 0, 9); @endphp
                     @if(count($extraGambars) > 0)
-                    @php $totalThumbs = count($extraGambars) + 1; @endphp
-                    <div class="grid gap-3 sm:gap-4" style="grid-template-columns: repeat({{ $totalThumbs }}, minmax(0, 1fr))">
+                    <div class="grid grid-cols-5 gap-2 sm:gap-3">
                         {{-- Thumb utama --}}
                         <button @click="activeImage = '{{ $gambarProduk }}'"
                                 :class="activeImage === '{{ $gambarProduk }}' ? 'ring-2 ring-stone-900 border-transparent' : 'border-[#EDE6DB] opacity-70 hover:opacity-100'"
-                                class="aspect-square rounded-2xl overflow-hidden bg-stone-100 border transition shadow-2xs">
+                                class="aspect-square rounded-xl overflow-hidden bg-stone-100 border transition shadow-2xs">
                             <img src="{{ $gambarProduk }}" alt="{{ $namaProduk }}" class="w-full h-full object-cover">
                         </button>
 
-                        {{-- Thumb gambar_lainnya (maks 3) --}}
+                        {{-- Thumb gambar_lainnya (maks 9) --}}
                         @foreach($extraGambars as $extraImg)
                         <button @click="activeImage = '{{ asset('storage/' . $extraImg) }}'"
                                 :class="activeImage === '{{ asset('storage/' . $extraImg) }}' ? 'ring-2 ring-stone-900 border-transparent' : 'border-[#EDE6DB] opacity-70 hover:opacity-100'"
-                                class="aspect-square rounded-2xl overflow-hidden bg-stone-100 border transition shadow-2xs">
+                                class="aspect-square rounded-xl overflow-hidden bg-stone-100 border transition shadow-2xs">
                             <img src="{{ asset('storage/' . $extraImg) }}" alt="{{ $namaProduk }}" class="w-full h-full object-cover">
                         </button>
                         @endforeach

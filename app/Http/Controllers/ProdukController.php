@@ -72,7 +72,7 @@ class ProdukController extends Controller
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'gambar_lainnya' => 'nullable|array|max:3',
+            'gambar_lainnya' => 'nullable|array|max:9',
             'gambar_lainnya.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'nama.unique' => 'Nama produk sudah digunakan, tidak boleh sama.',
@@ -174,7 +174,7 @@ class ProdukController extends Controller
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'gambar_lainnya' => 'nullable|array|max:3',
+            'gambar_lainnya' => 'nullable|array|max:9',
             'gambar_lainnya.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'hapus_gambar' => 'nullable|array',
             'hapus_gambar.*' => 'nullable|string',
