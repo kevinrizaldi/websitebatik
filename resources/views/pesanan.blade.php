@@ -96,14 +96,17 @@
                       alamat: '{{ addslashes($ord->customer_name) }} ({{ addslashes($ord->phone) }}) • {{ addslashes($ord->address) }}',
                       items: [
                           @foreach($ord->items as $it)
-                          @php $rv = ($reviewMap[$ord->id] ?? [])[$it->produk_id] ?? null; @endphp
+                          @php
+                              $rv = ($reviewMap[$ord->id] ?? [])[$it->produk_id] ?? null;
+                              $rvComment = str_replace(["\r", "\n"], ' ', (string) ($rv['comment'] ?? ''));
+                          @endphp
                           {
                               produk_id: {{ $it->produk_id }},
                               nama: '{{ addslashes($it->produk_name) }}',
                               reviewed: {{ in_array($it->produk_id, ($reviewedPairs[$ord->id] ?? [])) ? 'true' : 'false' }},
                               reviewId: {{ $rv['id'] ?? 'null' }},
                               reviewRating: {{ $rv['rating'] ?? 5 }},
-                              reviewComment: {!! json_encode($rv['comment'] ?? '', JSON_UNESCAPED_UNICODE) !!},
+                              reviewComment: '{{ addslashes($rvComment) }}',
                               kategori: 'BATIK AUTENTIK',
                               varian: 'Kuantitas: {{ $it->quantity }} pcs',
                               harga: {{ (float) $it->price }},

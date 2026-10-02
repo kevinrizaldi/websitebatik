@@ -429,6 +429,29 @@ class WebPrdFlowTest extends TestCase
         $response->assertSee('Sudah diulas');
     }
 
+    public function test_review_comment_with_quotes_does_not_break_orders_page(): void
+    {
+        $user = $this->customer();
+        $produk = $this->sampleProduk('Q2');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-040', 'Selesai');
+        Ulasan::create([
+            'order_id' => $order->id,
+            'produk_id' => $produk->id,
+            'user_id' => $user->id,
+            'customer_name' => $user->name,
+            'rating' => 5,
+            'comment' => 'Bagus "banget"'."\nMantap pol.",
+            'status' => 'Menunggu',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('pesanan.index'));
+
+        $response->assertOk();
+        $response->assertSee($order->code);
+        $response->assertDontSee('reviewComment: "');
+        $response->assertSee('banget');
+    }
+
     public function test_profile_lists_my_reviews(): void
     {
         Storage::fake('public');
