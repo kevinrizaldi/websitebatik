@@ -36,11 +36,12 @@
           priceDropdownOpen: false,
           sortDropdownOpen: false,
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
-          wishlist: [],
+
           quickViewModal: false,
           selectedProduct: null,
           toastMessage: '',
           currentPage: 1,
+          perPage: 12,
           
           showToast(msg) {
               this.toastMessage = msg;
@@ -77,15 +78,7 @@
                   this.showToast('Gagal menghubungi server');
               });
           },
-          toggleWishlist(prodName) {
-              if (this.wishlist.includes(prodName)) {
-                  this.wishlist = this.wishlist.filter(item => item !== prodName);
-                  this.showToast('Dihapus dari daftar favorit');
-              } else {
-                  this.wishlist.push(prodName);
-                  this.showToast('Ditambahkan ke daftar favorit');
-              }
-          },
+
           openQuickView(prod) {
               this.selectedProduct = prod;
               this.quickViewModal = true;
@@ -116,18 +109,13 @@
 
           get filteredProducts() {
               return this.products.filter(item => {
-                  // Category filter
                   const matchCategory = this.activeCategory === 'Semua Produk' || item.kategori === this.activeCategory;
-                  
-                  // Search query filter
                   const q = this.searchQuery.toLowerCase().trim();
                   const matchSearch = !q || 
                       item.nama.toLowerCase().includes(q) || 
                       (item.fullName && item.fullName.toLowerCase().includes(q)) || 
                       item.kategori.toLowerCase().includes(q) ||
                       item.material.toLowerCase().includes(q);
-
-                  // Price filter
                   let matchPrice = true;
                   if (this.priceRange === 'Dibawah 200rb') {
                       matchPrice = item.harga < 200000;
@@ -136,19 +124,33 @@
                   } else if (this.priceRange === 'Diatas 400rb') {
                       matchPrice = item.harga > 400000;
                   }
-
                   return matchCategory && matchSearch && matchPrice;
               }).sort((a, b) => {
-                  if (this.sortBy === 'termurah') {
-                      return a.harga - b.harga;
-                  } else if (this.sortBy === 'termahal') {
-                      return b.harga - a.harga;
-                  } else if (this.sortBy === 'rating') {
-                      return parseFloat(b.rating) - parseFloat(a.rating);
-                  }
+                  if (this.sortBy === 'termurah') return a.harga - b.harga;
+                  if (this.sortBy === 'termahal') return b.harga - a.harga;
+                  if (this.sortBy === 'rating') return parseFloat(b.rating) - parseFloat(a.rating);
                   return a.id - b.id;
               });
-          }
+          },
+          get totalPages() {
+              return Math.ceil(this.filteredProducts.length / this.perPage) || 1;
+          },
+          get pagedProducts() {
+              const start = (this.currentPage - 1) * this.perPage;
+              return this.filteredProducts.slice(start, start + this.perPage);
+          },
+          get pageNumbers() {
+              const total = this.totalPages;
+              if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+              const cur = this.currentPage;
+              if (cur <= 3) return [1, 2, 3, 4, '...', total];
+              if (cur >= total - 2) return [1, '...', total - 3, total - 2, total - 1, total];
+              return [1, '...', cur - 1, cur, cur + 1, '...', total];
+          },
+          resetPage() { this.currentPage = 1; },
+          goToPage(p) { if (p !== '...' && p >= 1 && p <= this.totalPages) this.currentPage = p; },
+          get startItem() { return this.filteredProducts.length === 0 ? 0 : (this.currentPage - 1) * this.perPage + 1; },
+          get endItem() { return Math.min(this.currentPage * this.perPage, this.filteredProducts.length); }
       }">
 
     <!-- Toast Notification -->
@@ -358,7 +360,7 @@
                                placeholder="Cari busana, jenis motif, atau olahan kriya..."
                                class="w-full bg-[#FAF4EC] border border-[#EFE8DE] rounded-xl pl-11 pr-10 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:bg-white transition">
                         <button x-show="searchQuery" 
-                                @click="searchQuery = ''" 
+                                @click="searchQuery = ''; resetPage()" 
                                 class="absolute right-3.5 top-3.5 text-stone-400 hover:text-stone-600">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
@@ -381,22 +383,22 @@
                         <div x-cloak x-show="priceOpen" 
                              x-transition
                              class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-30 text-xs">
-                            <button @click="priceRange = 'Semua'; priceOpen = false" 
+                            <button @click="priceRange = 'Semua'; priceOpen = false; resetPage()" 
                                     :class="priceRange === 'Semua' ? 'bg-stone-100 font-bold' : ''"
                                     class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
                                 Semua Harga
                             </button>
-                            <button @click="priceRange = 'Dibawah 200rb'; priceOpen = false" 
+                            <button @click="priceRange = 'Dibawah 200rb'; priceOpen = false; resetPage()" 
                                     :class="priceRange === 'Dibawah 200rb' ? 'bg-stone-100 font-bold' : ''"
                                     class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
                                 &lt; Rp 200.000
                             </button>
-                            <button @click="priceRange = '200rb - 400rb'; priceOpen = false" 
+                            <button @click="priceRange = '200rb - 400rb'; priceOpen = false; resetPage()" 
                                     :class="priceRange === '200rb - 400rb' ? 'bg-stone-100 font-bold' : ''"
                                     class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
                                 Rp 200.000 - Rp 400.000
                             </button>
-                            <button @click="priceRange = 'Diatas 400rb'; priceOpen = false" 
+                            <button @click="priceRange = 'Diatas 400rb'; priceOpen = false; resetPage()" 
                                     :class="priceRange === 'Diatas 400rb' ? 'bg-stone-100 font-bold' : ''"
                                     class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
                                 &gt; Rp 400.000
@@ -419,22 +421,22 @@
                         <div x-cloak x-show="sortOpen" 
                              x-transition
                              class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-30 text-xs">
-                            <button @click="sortBy = 'paling-sesuai'; sortOpen = false" 
+                            <button @click="sortBy = 'paling-sesuai'; sortOpen = false; resetPage()" 
                                     :class="sortBy === 'paling-sesuai' ? 'bg-stone-100 font-bold' : ''"
                                     class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
                                 Paling Sesuai
                             </button>
-                            <button @click="sortBy = 'termurah'; sortOpen = false" 
+                            <button @click="sortBy = 'termurah'; sortOpen = false; resetPage()" 
                                     :class="sortBy === 'termurah' ? 'bg-stone-100 font-bold' : ''"
                                     class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
                                 Harga: Terendah
                             </button>
-                            <button @click="sortBy = 'termahal'; sortOpen = false" 
+                            <button @click="sortBy = 'termahal'; sortOpen = false; resetPage()" 
                                     :class="sortBy === 'termahal' ? 'bg-stone-100 font-bold' : ''"
                                     class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
                                 Harga: Tertinggi
                             </button>
-                            <button @click="sortBy = 'rating'; sortOpen = false" 
+                            <button @click="sortBy = 'rating'; sortOpen = false; resetPage()" 
                                     :class="sortBy === 'rating' ? 'bg-stone-100 font-bold' : ''"
                                     class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
                                 Rating Tertinggi
@@ -449,13 +451,13 @@
                     
                     <!-- Category Pills (dari database) -->
                     <div class="flex flex-wrap items-center gap-2">
-                        <button @click="activeCategory = 'Semua Produk'" 
+                        <button @click="activeCategory = 'Semua Produk'; resetPage()" 
                                 :class="activeCategory === 'Semua Produk' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                 class="px-5 py-2 rounded-full text-xs font-semibold transition">
                             Semua Produk
                         </button>
                         @forelse(($kategoris ?? collect()) as $kat)
-                            <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'" 
+                            <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'; resetPage()" 
                                     :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                     class="px-5 py-2 rounded-full text-xs font-semibold transition">
                                 {{ $kat->nama_kategori }} ({{ $kat->produks_count }})
@@ -467,7 +469,7 @@
 
                     <!-- Count Text -->
                     <div class="text-xs text-stone-500 font-medium">
-                        Menampilkan <span class="font-bold text-stone-800" x-text="filteredProducts.length"></span> dari {{ $produks->count() }} produk
+                        Menampilkan <span class="font-bold text-stone-800" x-text="startItem + '-' + endItem"></span> dari <span class="font-bold text-stone-800" x-text="filteredProducts.length"></span> produk
                     </div>
 
                 </div>
@@ -477,7 +479,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
                 <!-- Loop through client-side catalog items -->
-                <template x-for="item in filteredProducts" :key="item.id">
+                <template x-for="item in pagedProducts" :key="item.id">
                     <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
                         
                         <!-- Image Container -->
@@ -515,22 +517,11 @@
                                 <p class="text-base font-extrabold text-stone-900 mb-4" x-text="item.hargaFormatted"></p>
                             </div>
 
-                            <!-- Action Buttons Row: Lihat Produk + Wishlist/Share Button -->
-                            <div class="flex items-center gap-2">
-                                <a :href="item.detailUrl" 
-                                   class="flex-1 py-2.5 px-4 rounded-full bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition duration-200 shadow-xs flex items-center justify-center gap-1.5">
-                                    Lihat Produk
-                                </a>
-                                
-                                <button @click="toggleWishlist(item.nama)" 
-                                        class="w-9 h-9 rounded-full border border-stone-200 hover:border-stone-400 bg-white flex items-center justify-center text-stone-600 hover:text-rose-600 transition shadow-2xs shrink-0"
-                                        :class="wishlist.includes(item.nama) ? 'text-rose-600 border-rose-300 bg-rose-50' : ''"
-                                        title="Simpan Favorit">
-                                    <svg class="w-4 h-4" :fill="wishlist.includes(item.nama) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-                                    </svg>
-                                </button>
-                            </div>
+                            <!-- Action Button: Lihat Produk -->
+                            <a :href="item.detailUrl" 
+                               class="w-full py-2.5 px-4 rounded-full bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition duration-200 shadow-xs flex items-center justify-center gap-1.5">
+                                Lihat Produk
+                            </a>
                         </div>
 
                     </div>
@@ -544,35 +535,50 @@
                 </div>
                 <h3 class="font-bold text-lg text-stone-800">Tidak ada produk yang cocok</h3>
                 <p class="text-stone-500 text-sm mt-1">Coba kata kunci lain atau reset filter pencarian Anda.</p>
-                <button @click="searchQuery = ''; activeCategory = 'Semua Produk'; priceRange = 'Semua'" 
+                <button @click="searchQuery = ''; activeCategory = 'Semua Produk'; priceRange = 'Semua'; resetPage()" 
                         class="mt-4 px-5 py-2.5 rounded-full bg-[#201A17] text-white text-xs font-semibold hover:bg-stone-800 transition">
                     Reset Filter
                 </button>
             </div>
 
             <!-- ================= PAGINATION CONTROLS ================= -->
-            <div class="mt-12 pt-6 border-t border-[#EDE6DB] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div x-show="totalPages > 0" class="mt-12 pt-6 border-t border-[#EDE6DB] flex flex-col sm:flex-row items-center justify-between gap-4">
                 <!-- Info count -->
                 <div class="text-xs text-stone-500 font-medium">
-                    Menampilkan 1-12 dari total 48 Produk
+                    Menampilkan
+                    <span class="font-bold text-stone-800" x-text="startItem"></span>–<span class="font-bold text-stone-800" x-text="endItem"></span>
+                    dari total <span class="font-bold text-stone-800" x-text="filteredProducts.length"></span> Produk
                 </div>
 
-                <!-- Page navigation buttons matching screenshot -->
-                <div class="flex items-center gap-1.5 text-xs font-semibold text-stone-700">
-                    <button class="px-3.5 py-2 rounded-xl bg-white border border-[#EDE6DB] text-stone-400 hover:text-stone-700 hover:border-stone-400 transition cursor-not-allowed" disabled>
+                <!-- Page navigation -->
+                <div x-show="totalPages > 1" class="flex items-center gap-1.5 text-xs font-semibold text-stone-700">
+                    <!-- Sebelumnya -->
+                    <button @click="goToPage(currentPage - 1)"
+                            :disabled="currentPage === 1"
+                            :class="currentPage === 1 ? 'text-stone-300 border-[#EDE6DB] cursor-not-allowed' : 'hover:text-stone-900 hover:border-stone-400'"
+                            class="px-3.5 py-2 rounded-xl bg-white border border-[#EDE6DB] transition">
                         Sebelumnya
                     </button>
-                    <button class="w-9 h-9 rounded-xl bg-[#201A17] text-white flex items-center justify-center shadow-xs">
-                        1
-                    </button>
-                    <button @click="showToast('Menampilkan halaman 2')" class="w-9 h-9 rounded-xl bg-white border border-[#EDE6DB] hover:border-stone-400 flex items-center justify-center transition">
-                        2
-                    </button>
-                    <button @click="showToast('Menampilkan halaman 3')" class="w-9 h-9 rounded-xl bg-white border border-[#EDE6DB] hover:border-stone-400 flex items-center justify-center transition">
-                        &gt;
-                    </button>
-                    <span class="px-1 text-stone-400">...</span>
-                    <button @click="showToast('Menampilkan halaman berikutnya')" class="px-3.5 py-2 rounded-xl bg-white border border-[#EDE6DB] hover:border-stone-400 hover:text-stone-900 transition">
+
+                    <!-- Page Numbers -->
+                    <template x-for="(page, index) in pageNumbers" :key="index">
+                        <span x-show="page === '...'"
+                              class="px-1 text-stone-400">...</span>
+                        <button x-show="page !== '...'"
+                                @click="goToPage(page)"
+                                :class="page === currentPage
+                                    ? 'bg-[#201A17] text-white shadow-xs'
+                                    : 'bg-white border border-[#EDE6DB] hover:border-stone-400 text-stone-700'"
+                                class="w-9 h-9 rounded-xl flex items-center justify-center transition"
+                                x-text="page">
+                        </button>
+                    </template>
+
+                    <!-- Selanjutnya -->
+                    <button @click="goToPage(currentPage + 1)"
+                            :disabled="currentPage === totalPages"
+                            :class="currentPage === totalPages ? 'text-stone-300 border-[#EDE6DB] cursor-not-allowed' : 'hover:text-stone-900 hover:border-stone-400'"
+                            class="px-3.5 py-2 rounded-xl bg-white border border-[#EDE6DB] transition">
                         Selanjutnya
                     </button>
                 </div>
