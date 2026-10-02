@@ -191,18 +191,94 @@
                                   class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">{{ old('deskripsi', $produk->deskripsi) }}</textarea>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                            Foto Produk
-                        </label>
-                        @if($produk->gambar)
-                            <div class="mb-3 flex items-center gap-3">
-                                <img src="{{ $produk->gambar_url }}" alt="{{ $produk->nama }}" class="w-16 h-16 object-cover rounded-lg border border-gray-200">
-                                <span class="text-xs text-gray-500">Foto saat ini. Pilih file baru jika ingin mengganti.</span>
+                    <div x-data="{
+                        mainPreview: null,
+                        otherPreviews: [],
+                        handleMain(e) {
+                            const file = e.target.files[0];
+                            if (!file) { this.mainPreview = null; return; }
+                            const reader = new FileReader();
+                            reader.onload = ev => this.mainPreview = ev.target.result;
+                            reader.readAsDataURL(file);
+                        },
+                        handleOthers(e) {
+                            const files = Array.from(e.target.files);
+                            files.forEach(file => {
+                                const reader = new FileReader();
+                                reader.onload = ev => this.otherPreviews.push({ src: ev.target.result });
+                                reader.readAsDataURL(file);
+                            });
+                        }
+                    }" class="space-y-5">
+
+                        {{-- Gambar Utama --}}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Foto Utama Produk
+                            </label>
+                            <div class="flex items-start gap-4">
+                                @if($produk->gambar)
+                                    <div class="relative shrink-0">
+                                        <img src="{{ $produk->gambar_url }}" alt="{{ $produk->nama }}"
+                                             class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+                                        <span class="absolute -bottom-1 left-0 right-0 text-center text-[9px] text-gray-500">Saat ini</span>
+                                    </div>
+                                @endif
+                                <template x-if="mainPreview">
+                                    <div class="relative shrink-0">
+                                        <img :src="mainPreview" class="w-20 h-20 object-cover rounded-lg border-2 border-indigo-400">
+                                        <span class="absolute -bottom-1 left-0 right-0 text-center text-[9px] text-indigo-600 font-bold">Baru</span>
+                                    </div>
+                                </template>
+                                <div class="flex-1">
+                                    <input type="file" name="gambar" accept="image/jpg,image/jpeg,image/png,image/webp"
+                                           @change="handleMain($event)"
+                                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                                    <p class="text-[11px] text-gray-400 mt-1">Pilih file baru untuk mengganti foto utama. JPG, PNG, WEBP. Maks 2MB.</p>
+                                </div>
                             </div>
+                        </div>
+
+                        {{-- Gambar Tambahan yang sudah ada --}}
+                        @if($produk->gambar_lainnya && count($produk->gambar_lainnya) > 0)
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Foto Tambahan Saat Ini
+                                <span class="font-normal text-gray-400">(centang untuk dihapus)</span>
+                            </label>
+                            <div class="flex flex-wrap gap-3">
+                                @foreach($produk->gambar_lainnya as $idx => $path)
+                                <label class="relative cursor-pointer group" title="Centang untuk hapus">
+                                    <input type="checkbox" name="hapus_gambar[]" value="{{ $path }}"
+                                           class="sr-only peer">
+                                    <img src="{{ asset('storage/' . $path) }}" alt="Foto {{ $idx + 1 }}"
+                                         class="w-16 h-16 object-cover rounded-lg border-2 border-gray-200 peer-checked:border-rose-500 peer-checked:opacity-50 group-hover:border-gray-400 transition">
+                                    <span class="absolute inset-0 flex items-center justify-center opacity-0 peer-checked:opacity-100">
+                                        <span class="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Hapus</span>
+                                    </span>
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
                         @endif
-                        <input type="file" name="gambar" accept="image/*"
-                               class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+
+                        {{-- Upload Gambar Tambahan Baru --}}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Tambah Foto Baru <span class="font-normal text-gray-400">(opsional, maks. 3 foto total)</span>
+                            </label>
+
+                            <div x-show="otherPreviews.length > 0" class="flex flex-wrap gap-3 mb-3">
+                                <template x-for="(img, i) in otherPreviews" :key="i">
+                                    <img :src="img.src" class="w-16 h-16 object-cover rounded-lg border-2 border-indigo-400">
+                                </template>
+                            </div>
+
+                            <input type="file" name="gambar_lainnya[]" accept="image/jpg,image/jpeg,image/png,image/webp"
+                                   multiple @change="handleOthers($event)"
+                                   class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            <p class="text-[11px] text-gray-400 mt-1">Pilih beberapa foto sekaligus (tahan Ctrl/Cmd). JPG, PNG, WEBP. Maks. 3 foto, 2MB per foto.</p>
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Pengiriman;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
@@ -96,9 +97,18 @@ class OrderController extends Controller
 
             $request->validate([
                 'status' => 'required|string',
-                'tracking_number' => ['nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9\-]+$/'],
+                'tracking_number' => [
+                    'nullable',
+                    'string',
+                    'max:50',
+                    'regex:/^[A-Za-z0-9\-]+$/',
+                    Rule::unique('orders', 'tracking_number')
+                        ->ignore($order->id)
+                        ->whereNotNull('tracking_number'),
+                ],
             ], [
                 'tracking_number.regex' => 'Nomor resi hanya boleh berisi huruf dan angka tanpa simbol khusus.',
+                'tracking_number.unique' => 'Nomor resi ini sudah digunakan oleh pesanan lain.',
             ]);
 
             $newStatus = $this->normalizeStatus($request->status);
@@ -190,13 +200,22 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'ekspedisi' => 'required|string|max:100',
-            'no_resi' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9\-]+$/'],
+            'no_resi' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[A-Za-z0-9\-]+$/',
+                Rule::unique('orders', 'tracking_number')
+                    ->ignore($order->id)
+                    ->whereNotNull('tracking_number'),
+            ],
             'tanggal_kirim' => 'nullable|date',
             'status_pengiriman' => 'required|string|in:Menunggu Pengiriman,Diproses,Dikirim,Diterima',
             'catatan' => 'nullable|string|max:500',
         ], [
             'no_resi.required' => 'Nomor resi wajib diisi.',
             'no_resi.regex' => 'Nomor resi hanya boleh berisi huruf dan angka tanpa simbol khusus.',
+            'no_resi.unique' => 'Nomor resi ini sudah digunakan oleh pesanan lain.',
         ]);
 
         $cleanResi = strtoupper(trim((string) $validated['no_resi']));

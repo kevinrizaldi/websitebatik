@@ -186,12 +186,69 @@
                                   class="w-full text-sm border border-gray-300 rounded-md py-2.5 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">{{ old('deskripsi') }}</textarea>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                            Foto Produk
-                        </label>
-                        <input type="file" name="gambar" accept="image/*"
-                               class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                    <div x-data="{
+                        mainPreview: null,
+                        otherPreviews: [],
+                        handleMain(e) {
+                            const file = e.target.files[0];
+                            if (!file) { this.mainPreview = null; return; }
+                            const reader = new FileReader();
+                            reader.onload = ev => this.mainPreview = ev.target.result;
+                            reader.readAsDataURL(file);
+                        },
+                        handleOthers(e) {
+                            const files = Array.from(e.target.files);
+                            files.forEach(file => {
+                                const reader = new FileReader();
+                                reader.onload = ev => this.otherPreviews.push({ src: ev.target.result, name: file.name });
+                                reader.readAsDataURL(file);
+                            });
+                        },
+                        removeOther(index) {
+                            this.otherPreviews.splice(index, 1);
+                        }
+                    }" class="space-y-4">
+
+                        {{-- Gambar Utama --}}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Foto Utama Produk
+                            </label>
+                            <div class="flex items-start gap-4">
+                                <template x-if="mainPreview">
+                                    <img :src="mainPreview" class="w-20 h-20 object-cover rounded-lg border border-gray-200 shrink-0">
+                                </template>
+                                <div class="flex-1">
+                                    <input type="file" name="gambar" accept="image/jpg,image/jpeg,image/png,image/webp"
+                                           @change="handleMain($event)"
+                                           class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                                    <p class="text-[11px] text-gray-400 mt-1">JPG, PNG, WEBP. Maks 2MB.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Gambar Tambahan --}}
+                        <div>
+                            <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                Foto Tambahan <span class="font-normal text-gray-400">(opsional, maks. 3 foto)</span>
+                            </label>
+
+                            {{-- Preview gambar tambahan --}}
+                            <div x-show="otherPreviews.length > 0" class="flex flex-wrap gap-3 mb-3">
+                                <template x-for="(img, i) in otherPreviews" :key="i">
+                                    <div class="relative">
+                                        <img :src="img.src" class="w-16 h-16 object-cover rounded-lg border border-gray-200">
+                                        <button type="button" @click="removeOther(i)"
+                                                class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center hover:bg-rose-600 transition leading-none">✕</button>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <input type="file" name="gambar_lainnya[]" accept="image/jpg,image/jpeg,image/png,image/webp"
+                                   multiple @change="handleOthers($event)"
+                                   class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            <p class="text-[11px] text-gray-400 mt-1">Pilih beberapa foto sekaligus (tahan Ctrl/Cmd). JPG, PNG, WEBP. Maks. 3 foto, 2MB per foto.</p>
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">

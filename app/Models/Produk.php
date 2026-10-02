@@ -30,12 +30,14 @@ class Produk extends Model
         'ukuran',
         'stok_ukuran',
         'gambar',
+        'gambar_lainnya',
     ];
 
     protected $casts = [
         'harga' => 'decimal:2',
         'stok' => 'integer',
         'stok_ukuran' => 'array',
+        'gambar_lainnya' => 'array',
     ];
 
     public static function statusForStock(int $stock): string

@@ -6,6 +6,7 @@
     $materialProduk = $produk->material ?? 'Katun Primissima Halus (Furing Katun Nyaman)';
     $deskripsiProduk = $produk->deskripsi ?? 'Kemeja batik formal pria berdesain eksklusif dengan paduan motif nusantara yang berwibawa dan bernilai seni tinggi.';
     $gambarProduk = $produk ? $produk->gambar_url : asset('images/beranda/folded-shirts.jpg');
+    $gambarLainnya = ($produk && $produk->gambar_lainnya) ? $produk->gambar_lainnya : [];
     $stokProduk = $produk->stok ?? 14;
     $stokUkuranArray = $produk ? $produk->getStokUkuranArray() : ['S' => 2, 'M' => 4, 'L' => 4, 'XL' => 3, 'XXL' => 1];
     $firstAvailableSize = collect($stokUkuranArray)->filter(fn($qty) => $qty > 0)->keys()->first() ?? (array_key_first($stokUkuranArray) ?? 'M');
@@ -321,36 +322,28 @@
                         </button>
                     </div>
 
-                    <!-- 4 Thumbnails Gallery -->
-                    <div class="grid grid-cols-4 gap-3 sm:gap-4">
-                        <!-- Thumb 1 -->
+                    <!-- Thumbnails Gallery: gambar utama + maks. 3 gambar tambahan = 4 total -->
+                    @php $extraGambars = array_slice($gambarLainnya, 0, 3); @endphp
+                    @if(count($extraGambars) > 0)
+                    @php $totalThumbs = count($extraGambars) + 1; @endphp
+                    <div class="grid gap-3 sm:gap-4" style="grid-template-columns: repeat({{ $totalThumbs }}, minmax(0, 1fr))">
+                        {{-- Thumb utama --}}
                         <button @click="activeImage = '{{ $gambarProduk }}'"
                                 :class="activeImage === '{{ $gambarProduk }}' ? 'ring-2 ring-stone-900 border-transparent' : 'border-[#EDE6DB] opacity-70 hover:opacity-100'"
                                 class="aspect-square rounded-2xl overflow-hidden bg-stone-100 border transition shadow-2xs">
                             <img src="{{ $gambarProduk }}" alt="{{ $namaProduk }}" class="w-full h-full object-cover">
                         </button>
 
-                        <!-- Thumb 2 -->
-                        <button @click="activeImage = '{{ asset('images/beranda/hero-couple.jpg') }}'"
-                                :class="activeImage === '{{ asset('images/beranda/hero-couple.jpg') }}' ? 'ring-2 ring-stone-900 border-transparent' : 'border-[#EDE6DB] opacity-70 hover:opacity-100'"
+                        {{-- Thumb gambar_lainnya (maks 3) --}}
+                        @foreach($extraGambars as $extraImg)
+                        <button @click="activeImage = '{{ asset('storage/' . $extraImg) }}'"
+                                :class="activeImage === '{{ asset('storage/' . $extraImg) }}' ? 'ring-2 ring-stone-900 border-transparent' : 'border-[#EDE6DB] opacity-70 hover:opacity-100'"
                                 class="aspect-square rounded-2xl overflow-hidden bg-stone-100 border transition shadow-2xs">
-                            <img src="{{ asset('images/beranda/hero-couple.jpg') }}" alt="Model Pakai" class="w-full h-full object-cover object-top">
+                            <img src="{{ asset('storage/' . $extraImg) }}" alt="{{ $namaProduk }}" class="w-full h-full object-cover">
                         </button>
-
-                        <!-- Thumb 3 -->
-                        <button @click="activeImage = '{{ asset('images/beranda/cloth-fabric.jpg') }}'"
-                                :class="activeImage === '{{ asset('images/beranda/cloth-fabric.jpg') }}' ? 'ring-2 ring-stone-900 border-transparent' : 'border-[#EDE6DB] opacity-70 hover:opacity-100'"
-                                class="aspect-square rounded-2xl overflow-hidden bg-stone-100 border transition shadow-2xs">
-                            <img src="{{ asset('images/beranda/cloth-fabric.jpg') }}" alt="Detail Motif" class="w-full h-full object-cover">
-                        </button>
-
-                        <!-- Thumb 4 -->
-                        <button @click="activeImage = '{{ asset('images/beranda/gift-box.jpg') }}'"
-                                :class="activeImage === '{{ asset('images/beranda/gift-box.jpg') }}' ? 'ring-2 ring-stone-900 border-transparent' : 'border-[#EDE6DB] opacity-70 hover:opacity-100'"
-                                class="aspect-square rounded-2xl overflow-hidden bg-stone-100 border transition shadow-2xs">
-                            <img src="{{ asset('images/beranda/gift-box.jpg') }}" alt="Packaging Box" class="w-full h-full object-cover">
-                        </button>
+                        @endforeach
                     </div>
+                    @endif
                 </div>
 
                 <!-- Right Column: Product Information & Purchase Controls -->

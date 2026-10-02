@@ -72,6 +72,8 @@ class ProdukController extends Controller
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'gambar_lainnya' => 'nullable|array|max:3',
+            'gambar_lainnya.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'nama.unique' => 'Nama produk sudah digunakan, tidak boleh sama.',
             'nama.regex' => 'Nama produk tidak boleh menggunakan simbol.',
@@ -107,6 +109,15 @@ class ProdukController extends Controller
         if ($request->hasFile('gambar')) {
             $validated['gambar'] =
                 $request->file('gambar')->store('produk', 'public');
+        }
+
+        // Handle gambar tambahan (multiple)
+        if ($request->hasFile('gambar_lainnya')) {
+            $paths = [];
+            foreach ($request->file('gambar_lainnya') as $file) {
+                $paths[] = $file->store('produk', 'public');
+            }
+            $validated['gambar_lainnya'] = $paths;
         }
 
         if (! empty($validated['kategori_id']) && Schema::hasTable('kategoris')) {
@@ -163,6 +174,10 @@ class ProdukController extends Controller
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'gambar_lainnya' => 'nullable|array|max:3',
+            'gambar_lainnya.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'hapus_gambar' => 'nullable|array',
+            'hapus_gambar.*' => 'nullable|string',
         ], [
             'nama.unique' => 'Nama produk sudah digunakan, tidak boleh sama.',
             'nama.regex' => 'Nama produk tidak boleh menggunakan simbol.',
@@ -208,6 +223,27 @@ class ProdukController extends Controller
             $validated['gambar'] =
                 $request->file('gambar')->store('produk', 'public');
         }
+
+        // Handle hapus gambar tambahan yang dipilih
+        $existingOthers = $produk->gambar_lainnya ?? [];
+        if ($request->filled('hapus_gambar')) {
+            foreach ($request->input('hapus_gambar') as $pathToDelete) {
+                Storage::disk('public')->delete($pathToDelete);
+                $existingOthers = array_values(array_filter(
+                    $existingOthers,
+                    fn ($p) => $p !== $pathToDelete
+                ));
+            }
+        }
+
+        // Handle upload gambar tambahan baru
+        if ($request->hasFile('gambar_lainnya')) {
+            foreach ($request->file('gambar_lainnya') as $file) {
+                $existingOthers[] = $file->store('produk', 'public');
+            }
+        }
+
+        $validated['gambar_lainnya'] = ! empty($existingOthers) ? $existingOthers : null;
 
         if (! empty($validated['kategori_id']) && Schema::hasTable('kategoris')) {
             $kategori = Kategori::find($validated['kategori_id']);
