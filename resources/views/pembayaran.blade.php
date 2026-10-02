@@ -158,7 +158,7 @@
                 <div class="text-2xl sm:text-3xl font-extrabold text-[#201A17]">
                     Rp {{ number_format($order->total_price ?? 0, 0, ',', '.') }}
                 </div>
-                <div class="text-[11px] text-stone-500 mt-0.5">Termasuk PPN & Biaya Layanan</div>
+                <div class="text-[11px] text-stone-500 mt-0.5">Sudah termasuk PPN</div>
             </div>
         </div>
     </div>

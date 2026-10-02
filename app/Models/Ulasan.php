@@ -13,6 +13,7 @@ class Ulasan extends Model
     protected $table = 'ulasans';
 
     protected $fillable = [
+        'order_id',
         'produk_id',
         'user_id',
         'customer_name',
@@ -32,6 +33,14 @@ class Ulasan extends Model
     public function produk(): BelongsTo
     {
         return $this->belongsTo(Produk::class, 'produk_id');
+    }
+
+    /**
+     * Relasi ke Pesanan tempat produk dibeli
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     /**

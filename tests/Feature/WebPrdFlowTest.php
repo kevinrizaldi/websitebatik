@@ -6,6 +6,7 @@ use App\Models\CartItem;
 use App\Models\Kategori;
 use App\Models\Order;
 use App\Models\Produk;
+use App\Models\Ulasan;
 use App\Models\User;
 use App\Services\MidtransService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -221,6 +222,17 @@ class WebPrdFlowTest extends TestCase
         $response->assertDontSee('Voucher');
     }
 
+    public function test_admin_profile_uses_dashboard_layout(): void
+    {
+        $response = $this->actingAs($this->admin())->get(route('profile.edit'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Profile Admin');
+        $response->assertSee('Profile Information');
+        $response->assertSee('Update Password');
+        $response->assertDontSee('Profil Saya');
+    }
+
     public function test_profile_update_persists_phone(): void
     {
         $user = $this->customer();
@@ -368,7 +380,152 @@ class WebPrdFlowTest extends TestCase
             'produk_id' => $produk->id,
             'user_id' => $user->id,
             'rating' => 5,
+            'status' => 'Menunggu',
         ]);
+    }
+
+    public function test_second_review_for_same_product_is_rejected(): void
+    {
+        Storage::fake('public');
+        $user = $this->customer();
+        $produk = $this->sampleProduk('C2');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-012', 'Selesai');
+
+        $payload = [
+            'produk_id' => $produk->id,
+            'order_code' => $order->code,
+            'rating' => 5,
+            'comment' => 'Kain nyaman dan jahitan rapi.',
+            'image' => $this->fakeReviewImage(),
+        ];
+
+        $this->actingAs($user)->post(route('ulasan.store'), $payload, ['Accept' => 'application/json'])->assertOk();
+
+        $response = $this->actingAs($user)->post(route('ulasan.store'), $payload, ['Accept' => 'application/json']);
+
+        $response->assertStatus(422)->assertJson(['success' => false]);
+        $response->assertJsonPath('message', 'Anda sudah memberi ulasan untuk produk ini pada pesanan #'.$order->code.'.');
+        $this->assertSame(1, Ulasan::where('user_id', $user->id)->where('produk_id', $produk->id)->count());
+    }
+
+    public function test_reviewed_product_shows_sudah_diulas_badge(): void
+    {
+        Storage::fake('public');
+        $user = $this->customer();
+        $produk = $this->sampleProduk('C3');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-013', 'Selesai');
+
+        $this->actingAs($user)->post(route('ulasan.store'), [
+            'produk_id' => $produk->id,
+            'order_code' => $order->code,
+            'rating' => 4,
+            'comment' => 'Cukup bagus dan nyaman.',
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $response = $this->actingAs($user)->get(route('pesanan.index'));
+
+        $response->assertOk();
+        $response->assertSee('Sudah diulas');
+    }
+
+    public function test_profile_lists_my_reviews(): void
+    {
+        Storage::fake('public');
+        $user = $this->customer();
+        $produk = $this->sampleProduk('C7');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-030', 'Selesai');
+
+        $this->actingAs($user)->post(route('ulasan.store'), [
+            'produk_id' => $produk->id,
+            'order_code' => $order->code,
+            'rating' => 5,
+            'comment' => 'Ulasan tampil di halaman ulasan saya.',
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        $response = $this->actingAs($user)->get(route('ulasan.index'));
+
+        $response->assertOk();
+        $response->assertSee('Ulasan Saya (1)');
+        $response->assertSee('Ulasan tampil di halaman ulasan saya.');
+        $response->assertSee($produk->nama);
+    }
+
+    public function test_two_different_products_each_get_one_review(): void
+    {
+        Storage::fake('public');
+        $user = $this->customer();
+        $produkA = $this->sampleProduk('C4');
+        $produkB = $this->sampleProduk('C5');
+        $order = Order::create([
+            'user_id' => $user->id,
+            'code' => 'ORD-ULAS-014',
+            'customer_name' => $user->name,
+            'phone' => '081234567890',
+            'address' => 'Jl. Mawar No. 1, Surakarta',
+            'total_price' => 200000,
+            'payment_method' => 'Midtrans (QRIS)',
+            'status' => 'Selesai',
+        ]);
+        foreach ([$produkA, $produkB] as $produk) {
+            $order->items()->create([
+                'produk_id' => $produk->id,
+                'produk_name' => $produk->nama,
+                'price' => 100000,
+                'quantity' => 1,
+                'subtotal' => 100000,
+            ]);
+        }
+
+        foreach ([$produkA, $produkB] as $i => $produk) {
+            $response = $this->actingAs($user)->post(route('ulasan.store'), [
+                'produk_id' => $produk->id,
+                'order_code' => $order->code,
+                'rating' => 5,
+                'comment' => 'Ulasan produk ke-'.($i + 1).' sangat memuaskan.',
+                'image' => $this->fakeReviewImage(),
+            ], ['Accept' => 'application/json']);
+
+            $response->assertOk()->assertJson(['success' => true]);
+        }
+
+        // Ulasan kedua untuk produk yang sama tetap ditolak.
+        $repeat = $this->actingAs($user)->post(route('ulasan.store'), [
+            'produk_id' => $produkA->id,
+            'order_code' => $order->code,
+            'rating' => 4,
+            'comment' => 'Coba ulas lagi produk pertama.',
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json']);
+
+        $repeat->assertStatus(422)->assertJson(['success' => false]);
+        $this->assertSame(1, Ulasan::where('user_id', $user->id)->where('produk_id', $produkA->id)->count());
+        $this->assertSame(1, Ulasan::where('user_id', $user->id)->where('produk_id', $produkB->id)->count());
+    }
+
+    public function test_same_product_rebought_can_be_reviewed_again(): void
+    {
+        Storage::fake('public');
+        $user = $this->customer();
+        $produk = $this->sampleProduk('C6');
+        $order1 = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-020', 'Selesai');
+        $order2 = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-021', 'Selesai');
+
+        $payloadFor = fn (Order $order, string $comment) => [
+            'produk_id' => $produk->id,
+            'order_code' => $order->code,
+            'rating' => 5,
+            'comment' => $comment,
+            'image' => $this->fakeReviewImage(),
+        ];
+
+        $this->actingAs($user)->post(route('ulasan.store'), $payloadFor($order1, 'Pembelian pertama sangat memuaskan.'), ['Accept' => 'application/json'])->assertOk();
+
+        $response = $this->actingAs($user)->post(route('ulasan.store'), $payloadFor($order2, 'Beli lagi dan tetap memuaskan.'), ['Accept' => 'application/json']);
+
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertSame(2, Ulasan::where('user_id', $user->id)->where('produk_id', $produk->id)->count());
     }
 
     public function test_customer_can_attach_an_image_to_a_review(): void
@@ -397,7 +554,7 @@ class WebPrdFlowTest extends TestCase
         ]);
     }
 
-    public function test_review_requires_an_image_and_returns_an_indonesian_message(): void
+    public function test_review_accepted_without_image_as_it_is_optional(): void
     {
         $user = $this->customer();
         $produk = $this->sampleProduk('NOIMAGE');
@@ -410,9 +567,12 @@ class WebPrdFlowTest extends TestCase
             'comment' => 'Kain nyaman dan jahitan rapi.',
         ]);
 
-        $response->assertUnprocessable()
-            ->assertJsonPath('errors.image.0', 'Foto ulasan wajib diunggah sebelum ulasan dikirim.');
-        $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertDatabaseHas('ulasans', [
+            'produk_id' => $produk->id,
+            'user_id' => $user->id,
+            'image_path' => null,
+        ]);
     }
 
     public function test_customer_cannot_attach_a_non_image_to_a_review(): void
@@ -432,6 +592,104 @@ class WebPrdFlowTest extends TestCase
         $response->assertUnprocessable()
             ->assertJsonPath('errors.image.0', 'File ulasan harus berupa gambar.');
         $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
+    }
+
+    private function createPendingReview(User $user, Produk $produk, Order $order): Ulasan
+    {
+        Storage::fake('public');
+
+        $this->actingAs($user)->post(route('ulasan.store'), [
+            'produk_id' => $produk->id,
+            'order_code' => $order->code,
+            'rating' => 4,
+            'comment' => 'Awalnya cukup bagus.',
+            'image' => $this->fakeReviewImage(),
+        ], ['Accept' => 'application/json'])->assertOk();
+
+        return Ulasan::where('user_id', $user->id)->where('produk_id', $produk->id)->firstOrFail();
+    }
+
+    public function test_customer_can_update_own_pending_review(): void
+    {
+        $user = $this->customer();
+        $produk = $this->sampleProduk('EDIT');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-EDIT', 'Selesai');
+        $ulasan = $this->createPendingReview($user, $produk, $order);
+
+        $response = $this->actingAs($user)->put(route('ulasan.update', $ulasan), [
+            'rating' => 5,
+            'comment' => 'Setelah dicuci ternyata sangat bagus.',
+        ], ['Accept' => 'application/json']);
+
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertSame('Setelah dicuci ternyata sangat bagus.', $ulasan->refresh()->comment);
+        $this->assertSame(5, $ulasan->refresh()->rating);
+    }
+
+    public function test_customer_cannot_update_approved_review(): void
+    {
+        $user = $this->customer();
+        $admin = $this->admin();
+        $produk = $this->sampleProduk('EDIT2');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-EDIT2', 'Selesai');
+        $ulasan = $this->createPendingReview($user, $produk, $order);
+        $this->actingAs($admin)->patch(route('admin.ulasans.update-status', $ulasan), ['status' => 'Disetujui']);
+
+        $response = $this->actingAs($user)->put(route('ulasan.update', $ulasan), [
+            'rating' => 1,
+            'comment' => 'Berubah pikiran total.',
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(422)->assertJson(['success' => false]);
+        $this->assertSame(4, $ulasan->refresh()->rating);
+    }
+
+    public function test_customer_cannot_update_other_users_review(): void
+    {
+        $owner = $this->customer();
+        $intruder = $this->customer();
+        $produk = $this->sampleProduk('EDIT3');
+        $order = $this->createOrderWithProduct($owner, $produk, 'ORD-ULAS-EDIT3', 'Selesai');
+        $ulasan = $this->createPendingReview($owner, $produk, $order);
+
+        $response = $this->actingAs($intruder)->put(route('ulasan.update', $ulasan), [
+            'rating' => 1,
+            'comment' => 'Ulasan jahat dari orang lain.',
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(403);
+    }
+
+    public function test_customer_can_delete_own_pending_review(): void
+    {
+        Storage::fake('public');
+        $user = $this->customer();
+        $produk = $this->sampleProduk('DEL');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-DEL', 'Selesai');
+        $ulasan = $this->createPendingReview($user, $produk, $order);
+        $imagePath = $ulasan->image_path;
+        $this->assertNotEmpty($imagePath);
+
+        $response = $this->actingAs($user)->delete(route('ulasan.destroy', $ulasan), [], ['Accept' => 'application/json']);
+
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertDatabaseMissing('ulasans', ['id' => $ulasan->id]);
+        Storage::disk('public')->assertMissing($imagePath);
+    }
+
+    public function test_customer_cannot_delete_approved_review(): void
+    {
+        $user = $this->customer();
+        $admin = $this->admin();
+        $produk = $this->sampleProduk('DEL2');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-DEL2', 'Selesai');
+        $ulasan = $this->createPendingReview($user, $produk, $order);
+        $this->actingAs($admin)->patch(route('admin.ulasans.update-status', $ulasan), ['status' => 'Disetujui']);
+
+        $response = $this->actingAs($user)->delete(route('ulasan.destroy', $ulasan), [], ['Accept' => 'application/json']);
+
+        $response->assertStatus(422)->assertJson(['success' => false]);
+        $this->assertDatabaseHas('ulasans', ['id' => $ulasan->id]);
     }
 
     public function test_review_rejected_for_other_users_order(): void
@@ -746,6 +1004,7 @@ class WebPrdFlowTest extends TestCase
     public function test_produk_detail_shows_approved_reviews_from_database(): void
     {
         $user = $this->customer();
+        $admin = $this->admin();
         $produk = $this->sampleProduk('R');
         $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-010', 'Selesai');
 
@@ -758,6 +1017,15 @@ class WebPrdFlowTest extends TestCase
             'comment' => 'Kainnya adem dan jahitannya rapi.',
             'image' => $this->fakeReviewImage(),
         ], ['Accept' => 'application/json'])->assertOk();
+
+        // Sebelum disetujui admin, ulasan belum tampil.
+        $this->get(route('produk.detail', ['id' => $produk->id]))
+            ->assertOk()
+            ->assertDontSee('Kainnya adem dan jahitannya rapi.');
+
+        $ulasan = Ulasan::where('user_id', $user->id)->where('produk_id', $produk->id)->first();
+        $this->actingAs($admin)->patch(route('admin.ulasans.update-status', $ulasan), ['status' => 'Disetujui'])
+            ->assertRedirect();
 
         $response = $this->get(route('produk.detail', ['id' => $produk->id]));
 
@@ -776,5 +1044,31 @@ class WebPrdFlowTest extends TestCase
         $response->assertOk();
         $response->assertSee('Belum ada ulasan untuk produk ini');
         $response->assertDontSee('Hendra W.');
+    }
+
+    public function test_admin_cannot_cancel_paid_order(): void
+    {
+        $admin = $this->admin();
+        $user = $this->customer();
+        $produk = $this->sampleProduk('V');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ADM-002', 'Diproses');
+
+        $response = $this->actingAs($admin)->patch(route('admin.orders.cancel', $order));
+
+        $response->assertSessionHasErrors('status');
+        $this->assertSame('Diproses', $order->refresh()->status);
+    }
+
+    public function test_admin_can_still_cancel_unpaid_order(): void
+    {
+        $admin = $this->admin();
+        $user = $this->customer();
+        $produk = $this->sampleProduk('W');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ADM-003', 'Menunggu Pembayaran');
+
+        $response = $this->actingAs($admin)->patch(route('admin.orders.cancel', $order));
+
+        $response->assertSessionHasNoErrors();
+        $this->assertSame('Dibatalkan', $order->refresh()->status);
     }
 }

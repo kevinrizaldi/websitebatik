@@ -76,7 +76,7 @@ class MidtransService
                 'id' => 'FEES',
                 'price' => $diff,
                 'quantity' => 1,
-                'name' => 'Ongkos Kirim & Layanan',
+                'name' => 'Ongkos Kirim',
             ];
         }
 

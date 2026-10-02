@@ -279,6 +279,11 @@
                                         <p class="text-xs text-gray-700 leading-relaxed italic bg-gray-50/80 p-2.5 rounded-lg border border-gray-100">
                                             "{{ $ulasan->comment }}"
                                         </p>
+                                        @if($ulasan->image_path)
+                                            <a href="{{ asset('storage/'.$ulasan->image_path) }}" target="_blank" class="mt-2 inline-block">
+                                                <img src="{{ asset('storage/'.$ulasan->image_path) }}" alt="Foto ulasan {{ $ulasan->customer_name }}" class="h-16 w-16 object-cover rounded-lg border border-gray-200 hover:border-indigo-400 transition">
+                                            </a>
+                                        @endif
                                     </td>
 
                                     {{-- STATUS --}}

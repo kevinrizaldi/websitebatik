@@ -172,14 +172,8 @@
                     </a>
                 </nav>
 
-                <!-- Action Buttons: Search, Cart, User -->
+                <!-- Action Buttons: Cart, User -->
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('koleksi.index') }}" class="p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition" title="Cari Produk">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-                        </svg>
-                    </a>
-
                     <!-- Cart Button with badge -->
                     <a href="{{ route('keranjang.index') }}"
                        class="relative p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"
@@ -622,7 +616,7 @@
                     @empty
                         <div class="md:col-span-3 bg-white rounded-2xl p-8 border border-dashed border-stone-300 text-center">
                             <p class="font-bold text-stone-900 text-sm">Belum ada ulasan untuk produk ini</p>
-                            <p class="text-xs text-stone-500 mt-1">Ulasan hanya dapat diberikan setelah pesanan berstatus Selesai, melalui halaman Pesanan Saya.</p>
+                            <p class="text-xs text-stone-500 mt-1">Ulasan hanya dapat diberikan setelah pesanan berstatus Selesai, melalui halaman Pesanan Saya, dan tampil setelah disetujui admin.</p>
                         </div>
                     @endforelse
                 </div>

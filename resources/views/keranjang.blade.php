@@ -29,10 +29,7 @@
 <body class="antialiased bg-[#FAF7F2] text-[#26211D] min-h-screen selection:bg-[#B58742] selection:text-white"
       x-data="{
           mobileMenuOpen: false,
-          searchOpen: false,
           toastMessage: '',
-          shippingCost: 20000,
-          freeShippingThreshold: 955000,
           
           checkoutModalOpen: false,
           customerName: '{{ Auth::user()->name ?? '' }}',
@@ -184,26 +181,9 @@
               return this.selectedItems.reduce((acc, curr) => acc + (curr.harga * curr.qty), 0);
           },
 
-          get effectiveShipping() {
-              if (this.rawSubtotal >= this.freeShippingThreshold || this.selectedItems.length === 0) {
-                  return 0;
-              }
-              return this.shippingCost;
-          },
-
           get grandTotal() {
               if (this.selectedItems.length === 0) return 0;
-              return Math.max(0, this.rawSubtotal + this.effectiveShipping);
-          },
-
-          get shippingShortage() {
-              return Math.max(0, this.freeShippingThreshold - this.rawSubtotal);
-          },
-
-          get shippingProgressPercent() {
-              if (this.freeShippingThreshold === 0) return 100;
-              const pct = Math.min(100, Math.round((this.rawSubtotal / this.freeShippingThreshold) * 100));
-              return pct;
+              return Math.max(0, this.rawSubtotal);
           },
 
 
@@ -451,14 +431,8 @@
                     </a>
                 </nav>
 
-                <!-- Action Buttons: Search, Cart, User -->
+                <!-- Action Buttons: Cart, User -->
                 <div class="flex items-center gap-4">
-                    <a href="{{ route('koleksi.index') }}" class="p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition" title="Cari Produk">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-                        </svg>
-                    </a>
-
                     <!-- Cart Button with badge -->
                     <a href="{{ route('keranjang.index') }}"
                        class="relative p-2 text-stone-900 bg-stone-200/60 rounded-full hover:bg-stone-200 transition"
@@ -598,44 +572,6 @@
                 </a>
             </div>
 
-            <!-- Free Shipping Progress Banner -->
-            <div class="bg-[#F5EDE1]/70 border border-[#EADBCC] rounded-2xl p-4 sm:p-5 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
-                <div class="flex items-center gap-3.5">
-                    <div class="w-10 h-10 rounded-full bg-[#EADCC8] text-stone-800 flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75a1.125 1.125 0 00-1.125-1.125H3.375A1.125 1.125 0 002.25 3.75v10.5m12 0h-12"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-stone-900 text-sm">Bebas Ongkir se-Jawa</span>
-                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#B58742] text-white">
-                                Capsule Offer
-                            </span>
-                        </div>
-                        <p class="text-xs text-stone-600 mt-0.5">
-                            <template x-if="shippingShortage > 0">
-                                <span>Tersisa <strong class="text-stone-900 font-bold" x-text="formatRupiah(shippingShortage)"></strong> lagi untuk mendapatkan <strong>Bebas Ongkir se-Jawa</strong></span>
-                            </template>
-                            <template x-if="shippingShortage === 0">
-                                <span class="text-emerald-700 font-bold">Selamat! Anda berhak mendapatkan Bebas Ongkir se-Jawa 🎉</span>
-                            </template>
-                        </p>
-                    </div>
-                </div>
-
-                <div class="w-full md:w-64 flex flex-col gap-1.5">
-                    <div class="flex items-center justify-between text-xs text-stone-600 font-medium">
-                        <span>Progress Pengiriman</span>
-                        <span class="font-bold text-stone-900" x-text="shippingProgressPercent + '%'"></span>
-                    </div>
-                    <div class="w-full h-2.5 bg-stone-200/80 rounded-full overflow-hidden">
-                        <div class="h-full bg-stone-900 rounded-full transition-all duration-500" 
-                             :style="'width: ' + shippingProgressPercent + '%'"></div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Main Layout: 2 Columns (Cart Items + Order Summary) -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
                 
@@ -765,9 +701,6 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z"/>
                             </svg>
                         </div>
-                        <p>
-                            Setiap pembelian produk Hamzah Style turut melestarikan pembatik lokal dan mendanai pengolahan kain perca menjadi aksesori fungsional bernilai tinggi.
-                        </p>
                     </div>
 
                 </div>
@@ -791,19 +724,6 @@
                                 <span x-text="'Total Harga (' + totalSelectedQty + ' barang)'"></span>
                                 <span class="font-bold text-stone-900" x-text="formatRupiah(rawSubtotal)"></span>
                             </div>
-
-
-                            <div class="flex items-center justify-between">
-                                <span class="flex items-center gap-1">
-                                    <span>Estimasi Ongkos Kirim</span>
-                                    <button @click="showToast('Bebas ongkir berlaku otomatis jika belanja minimal Rp 700.000')" class="text-stone-400 hover:text-stone-600">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    </button>
-                                </span>
-                                <span class="font-bold text-stone-900" 
-                                      :class="effectiveShipping === 0 && rawSubtotal > 0 ? 'text-emerald-700' : ''"
-                                      x-text="effectiveShipping === 0 && rawSubtotal > 0 ? 'Gratis' : formatRupiah(effectiveShipping)"></span>
-                            </div>
                         </div>
 
                         <!-- Divider & Total Tagihan -->
@@ -814,7 +734,7 @@
                                       x-text="formatRupiah(grandTotal)"></span>
                             </div>
                             <p class="text-[11px] text-stone-400 mt-1">
-                                Termasuk PPN & Kemasan Ramah Lingkungan
+                                Termasuk PPN & Kemasan Ramah Lingkungan. Belum termasuk ongkos kirim.
                             </p>
                         </div>
 

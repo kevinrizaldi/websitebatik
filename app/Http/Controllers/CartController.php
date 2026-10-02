@@ -338,8 +338,7 @@ class CartController extends Controller
         }
 
         $shipping = isset($validated['shipping_cost']) ? (float) $validated['shipping_cost'] : (($totalPrice >= 955000) ? 0 : 20000);
-        $serviceFee = 1000;
-        $grandTotal = max(0, $totalPrice - $discount + $shipping + $serviceFee);
+        $grandTotal = max(0, $totalPrice - $discount + $shipping);
 
         $orderCode = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(4));
         $shippingOption = $validated['shipping_option'] ?? 'JNE Reguler';

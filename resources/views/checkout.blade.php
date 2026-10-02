@@ -324,10 +324,8 @@
           },
 
 
-          serviceFee: 1000,
-
           get grandTotal() {
-              return Math.max(0, this.rawSubtotal + this.shippingCost + this.serviceFee);
+              return Math.max(0, this.rawSubtotal + this.shippingCost);
           },
 
           formatRupiah(amount) {
@@ -651,17 +649,8 @@
                     </a>
                 </nav>
 
-                <!-- Action Utilities: Search, Cart Icon, User Profile -->
+                <!-- Action Utilities: Cart Icon, User Profile -->
                 <div class="flex items-center gap-4">
-                    <!-- Search Button -->
-                    <a href="{{ route('koleksi.index') }}" 
-                       class="p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"
-                       title="Cari Koleksi Batik">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                    </a>
-
                     <!-- Cart Icon with Badge -->
                     <a href="{{ route('keranjang.index') }}" 
                        class="relative p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"
@@ -1151,12 +1140,6 @@
                                     <svg class="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 </span>
                                 <span class="font-bold text-stone-900" x-text="formatRupiah(shippingCost)">Rp 20.000</span>
-                            </div>
-
-
-                            <div class="flex items-center justify-between">
-                                <span>Biaya Layanan & Asuransi Kurir</span>
-                                <span class="font-bold text-stone-900">Rp 1.000</span>
                             </div>
 
                         </div>

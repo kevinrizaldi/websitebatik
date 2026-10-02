@@ -14,14 +14,15 @@ class OrderController extends Controller
     /**
      * State machine transisi status pesanan (PRD: Menunggu Pembayaran, Diproses, Dikirim, Selesai, Dibatalkan).
      * Status lama (Belum Dibayar/Sudah Dibayar/dll) tetap ditoleransi sebagai alias.
+     * Pesanan yang sudah dibayar TIDAK dapat dibatalkan (belum ada alur refund).
      */
     protected array $allowedTransitions = [
-        'Menunggu Pembayaran' => ['Diproses', 'Dibatalkan'],
+        'Menunggu Pembayaran' => ['Diproses', 'Sudah Dibayar', 'Dibatalkan'],
         'Belum Dibayar' => ['Menunggu Pembayaran', 'Diproses', 'Dibatalkan'],
         'Menunggu Konfirmasi' => ['Menunggu Pembayaran', 'Diproses', 'Dibatalkan'],
-        'Menunggu Verifikasi' => ['Diproses', 'Dibatalkan'],
-        'Sudah Dibayar' => ['Diproses', 'Dibatalkan'],
-        'Diproses' => ['Dikirim', 'Dibatalkan'],
+        'Menunggu Verifikasi' => ['Diproses', 'Sudah Dibayar'],
+        'Sudah Dibayar' => ['Diproses'],
+        'Diproses' => ['Dikirim'],
         'Dikirim' => ['Selesai'],
         'Selesai' => [],
         'Batal' => [],

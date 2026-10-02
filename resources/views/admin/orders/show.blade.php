@@ -132,7 +132,7 @@
                                 </form>
                             </div>
                         @elseif (in_array($order->status, ['Menunggu Verifikasi', 'Sudah Dibayar']))
-                            {{-- Alias status lama yang berarti pembayaran Midtrans sudah berhasil --}}
+                            {{-- Alias status lama yang berarti pembayaran Midtrans sudah berhasil (tak bisa dibatalkan) --}}
                             <div class="flex gap-3 pt-2">
                                 <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="flex-1">
                                     @csrf
@@ -142,28 +142,14 @@
                                         <span>⚙️</span> Mulai Proses & Kemas Pesanan
                                     </button>
                                 </form>
-                                <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMBATALKAN pesanan ini?')">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-4 py-2.5 rounded-xl transition">
-                                        🚫 Batalkan
-                                    </button>
-                                </form>
                             </div>
                         @elseif ($order->status === 'Diproses')
-                            {{-- Step 3: Sedang Diproses -> Silakan input nomor resi di kartu sebelah kanan untuk mengirim --}}
+                            {{-- Step 3: Sedang Diproses (tak bisa dibatalkan karena sudah dibayar) --}}
                             <div class="flex items-center justify-between p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 text-xs">
                                 <div>
                                     <span class="font-bold">⚙️ Pesanan Sedang Dikemas.</span>
                                     <p class="text-[11px] text-indigo-700 mt-0.5">Input nomor resi di kartu Pengiriman (kolom kanan) untuk mengubah status ke <strong>Dikirim</strong>.</p>
                                 </div>
-                                <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMBATALKAN pesanan ini?')">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 font-bold px-3 py-1.5 rounded-lg text-xs transition">
-                                        🚫 Batal
-                                    </button>
-                                </form>
                             </div>
                         @elseif ($order->status === 'Dikirim')
                             <div class="p-3 bg-purple-50 border border-purple-100 rounded-xl text-purple-900 text-xs">

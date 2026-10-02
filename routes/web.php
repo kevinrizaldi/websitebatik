@@ -102,12 +102,31 @@ Route::post('/checkout', [CartController::class, 'checkout'])->name('checkout.st
 
 Route::get('/pesanan', function () {
     $orders = collect();
+    $reviewedIds = [];
+    $reviewedPairs = [];
+    $reviewMap = [];
     try {
         if (Schema::hasTable('orders')) {
             $query = Order::with('items.produk')->latest();
             if (Auth::check()) {
                 $userOrders = (clone $query)->where('user_id', Auth::id())->get();
                 $orders = $userOrders->isNotEmpty() ? $userOrders : $query->take(5)->get();
+                if (Schema::hasTable('ulasans')) {
+                    $myReviews = Ulasan::where('user_id', Auth::id())->get(['id', 'order_id', 'produk_id', 'rating', 'comment']);
+                    $reviewedIds = $myReviews->pluck('produk_id')->all();
+                    $reviewedPairs = $myReviews->whereNotNull('order_id')->groupBy('order_id')
+                        ->map(fn ($rows) => $rows->pluck('produk_id')->all())
+                        ->all();
+                    foreach ($myReviews as $review) {
+                        if ($review->order_id) {
+                            $reviewMap[$review->order_id][$review->produk_id] = [
+                                'id' => $review->id,
+                                'rating' => $review->rating,
+                                'comment' => $review->comment,
+                            ];
+                        }
+                    }
+                }
             } else {
                 $orders = $query->take(5)->get();
             }
@@ -116,7 +135,7 @@ Route::get('/pesanan', function () {
         $orders = collect();
     }
 
-    return view('pesanan', compact('orders'));
+    return view('pesanan', compact('orders', 'reviewedIds', 'reviewedPairs', 'reviewMap'));
 })->name('pesanan.index');
 
 Route::get('/pembayaran/{id}', [PaymentController::class, 'show'])->name('pembayaran');
@@ -171,7 +190,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/alamat/{alamat}', [AlamatController::class, 'destroy'])->name('alamat.destroy');
 
     // Ulasan pelanggan
+    Route::get('/ulasan-saya', [CustomerUlasanController::class, 'index'])->name('ulasan.index');
     Route::post('/ulasan', [CustomerUlasanController::class, 'store'])->name('ulasan.store');
+    Route::put('/ulasan/{ulasan}', [CustomerUlasanController::class, 'update'])->name('ulasan.update');
+    Route::delete('/ulasan/{ulasan}', [CustomerUlasanController::class, 'destroy'])->name('ulasan.destroy');
 
     // Konfirmasi / batalkan pesanan oleh pelanggan
     Route::patch('/pesanan/{order}/terima', [PaymentController::class, 'confirmReceived'])->name('pesanan.terima');

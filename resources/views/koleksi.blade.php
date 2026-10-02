@@ -204,17 +204,8 @@
                     </a>
                 </nav>
 
-                <!-- Action Buttons: Search, Cart, User -->
+                <!-- Action Buttons: Cart, User -->
                 <div class="flex items-center gap-4">
-                    <!-- Search Icon Button -->
-                    <button @click="document.getElementById('catalog-search-input').focus()" 
-                            class="p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition" 
-                            title="Cari Produk">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-                        </svg>
-                    </button>
-
                     <!-- Cart Button with badge -->
                     <a href="{{ route('keranjang.index') }}"
                        class="relative p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"

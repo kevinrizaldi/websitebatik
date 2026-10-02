@@ -30,8 +30,6 @@
       x-data="{
           mobileMenuOpen: false,
           activeCategory: 'Semua',
-          searchOpen: false,
-          searchQuery: '',
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           quickViewModal: false,
           selectedProduct: null,
@@ -97,17 +95,8 @@
                     </a>
                 </nav>
 
-                <!-- Action Buttons: Search, Cart, User -->
+                <!-- Action Buttons: Cart, User -->
                 <div class="flex items-center gap-4">
-                    <!-- Search Button -->
-                    <button @click="searchOpen = !searchOpen" 
-                            class="p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition" 
-                            title="Cari Produk">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-                        </svg>
-                    </button>
-
                     <!-- Cart Button with badge -->
                     <a href="{{ route('keranjang.index') }}" 
                        class="relative p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"
@@ -196,26 +185,6 @@
                             <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                             <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Expandable Search Bar -->
-            <div x-cloak x-show="searchOpen" 
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 -translate-y-2"
-                 x-transition:enter-end="opacity-100 translate-y-0"
-                 class="pb-4 pt-1">
-                <div class="relative">
-                    <input type="text" 
-                           x-model="searchQuery" 
-                           placeholder="Cari motif batik, kemeja pria, gamis, aksesoris..." 
-                           class="w-full bg-white border border-stone-300 rounded-full pl-11 pr-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:border-[#B58742]">
-                    <div class="absolute left-4 top-3 text-stone-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                    </div>
-                    <button @click="searchOpen = false" class="absolute right-4 top-3 text-stone-400 hover:text-stone-600">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
             </div>

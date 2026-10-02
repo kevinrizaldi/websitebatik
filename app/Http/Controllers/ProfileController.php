@@ -12,11 +12,16 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     /**
-     * Display the user's profile page (storefront style, PRD scope).
+     * Display the user's profile page.
+     * Admin memakai halaman gaya dashboard, customer memakai storefront.
      */
     public function edit(Request $request): View
     {
         $user = $request->user();
+
+        if ($user->isAdmin()) {
+            return view('profile.edit-admin', ['user' => $user]);
+        }
         $alamats = $user->alamats()->latest()->get();
         $alamatUtama = $alamats->firstWhere('is_utama', true) ?: $alamats->first();
 
