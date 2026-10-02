@@ -15,8 +15,12 @@
         .font-serif-title { font-family: 'Playfair Display', serif; }
     </style>
 </head>
+@php
+    $toastMsg = session('success') ?? (session('status') === 'profile-updated' ? 'Profil berhasil diperbarui.' : '');
+    $cartQty = \App\Models\CartItem::forCurrentVisitor()->sum('qty');
+@endphp
 <body class="min-h-screen bg-[#FAF7F2] text-[#26211D] antialiased selection:bg-[#B58742] selection:text-white"
-      x-data="{ mobileMenuOpen: false, cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }}, toastMessage: '{{ session('success') ?? (session('status') === 'profile-updated' ? 'Profil berhasil diperbarui.' : '') }}' }"
+      x-data="{ mobileMenuOpen: false, cartCount: {{ $cartQty }}, toastMessage: '{{ $toastMsg }}' }"
       x-init="if (toastMessage) { setTimeout(() => { toastMessage = ''; }, 3500); }">
 
     <div x-cloak x-show="toastMessage" class="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-stone-700 bg-[#1F1916] px-5 py-3 text-white shadow-xl">
@@ -39,22 +43,56 @@
                 <a href="{{ url('/') }}" class="text-sm font-medium text-stone-600 transition hover:text-stone-900">Home</a>
                 <a href="{{ route('koleksi.index') }}" class="text-sm font-medium text-stone-600 transition hover:text-stone-900">Produk</a>
                 <a href="{{ route('pesanan.index') }}" class="text-sm font-medium text-stone-600 transition hover:text-stone-900">Pesanan</a>
-                <a href="{{ route('profile.edit') }}" class="border-b-2 border-stone-900 pb-0.5 text-sm font-medium text-stone-900">Akun</a>
             </nav>
-            <div class="flex items-center gap-2">
-                <a href="{{ route('keranjang.index') }}" class="relative rounded-full p-2 text-stone-600 transition hover:bg-stone-200/50 hover:text-stone-900" title="Keranjang Belanja">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
-                    <span class="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#B58742] text-[10px] font-bold text-white" x-text="cartCount">{{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }}</span>
+                        <div class="flex items-center gap-4">
+                <!-- Cart -->
+                <a href="{{ route('keranjang.index') }}" class="relative p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition" title="Keranjang Belanja">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                    <span class="absolute top-1 right-1 w-4 h-4 bg-[#B58742] text-white text-[10px] font-bold rounded-full flex items-center justify-center" x-text="cartCount">{{ $cartQty }}</span>
                 </a>
-                <button @click="mobileMenuOpen = !mobileMenuOpen" class="rounded-full p-2 text-stone-600 hover:bg-stone-200/50 md:hidden"><svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+                <!-- User Dropdown -->
+                <div class="relative" x-data="{ userMenu: false }">
+                    <button @click="userMenu = !userMenu" @click.away="userMenu = false" class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white/70 transition">
+                        <div class="w-7 h-7 rounded-full bg-[#201A17] text-[#E5C38E] flex items-center justify-center font-bold text-xs uppercase">{{ substr(Auth::user()->name, 0, 1) }}</div>
+                        <span class="text-xs font-semibold text-stone-800 max-w-[90px] truncate hidden sm:inline">{{ Auth::user()->name }}</span>
+                        <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    <div x-cloak x-show="userMenu" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" class="absolute right-0 mt-2 w-52 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-50 text-sm">
+                        <div class="px-4 py-2 border-b border-stone-100">
+                            <p class="text-xs text-stone-500">Masuk sebagai</p>
+                            <p class="font-semibold text-stone-800 truncate">{{ Auth::user()->name }}</p>
+                        </div>
+                        <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 bg-stone-50 text-stone-900 font-semibold">
+                            <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            Profile
+                        </a>
+                        <div class="border-t border-stone-100 my-1"></div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-600 hover:bg-rose-50 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                Keluar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Mobile Hamburger -->
+                <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-stone-700 hover:text-stone-900 rounded-lg hover:bg-stone-200/50">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
         </div>
+        <!-- Mobile Menu -->
         <div x-cloak x-show="mobileMenuOpen" class="border-t border-[#ECE4D8] bg-[#FAF7F2] px-4 py-3 md:hidden">
             <div class="flex flex-col gap-1 text-sm font-medium">
                 <a href="{{ url('/') }}" class="rounded-lg px-3 py-2 hover:bg-stone-200/50">Home</a>
                 <a href="{{ route('koleksi.index') }}" class="rounded-lg px-3 py-2 hover:bg-stone-200/50">Produk</a>
                 <a href="{{ route('pesanan.index') }}" class="rounded-lg px-3 py-2 hover:bg-stone-200/50">Pesanan</a>
-                <a href="{{ route('profile.edit') }}" class="rounded-lg bg-stone-900 px-3 py-2 text-white">Akun Saya</a>
+                <a href="{{ route('profile.edit') }}" class="rounded-lg bg-stone-900 px-3 py-2 text-white">Profil Saya</a>
+                <form method="POST" action="{{ route('logout') }}" class="mt-1">@csrf<button type="submit" class="w-full text-left rounded-lg px-3 py-2 text-rose-600 hover:bg-rose-50">Keluar</button></form>
             </div>
         </div>
     </header>
@@ -197,3 +235,5 @@
     </footer>
 </body>
 </html>
+
+

@@ -19,9 +19,11 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        // Admin menggunakan layout admin, bukan storefront customer
         if ($user->isAdmin()) {
-            return view('profile.edit-admin', ['user' => $user]);
+            return view('profile.admin', compact('user'));
         }
+
         $alamats = $user->alamats()->latest()->get();
         $alamatUtama = $alamats->firstWhere('is_utama', true) ?: $alamats->first();
 

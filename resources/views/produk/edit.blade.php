@@ -265,7 +265,7 @@
                         {{-- Upload Gambar Tambahan Baru --}}
                         <div>
                             <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                                Tambah Foto Baru <span class="font-normal text-gray-400">(opsional, maks. 3 foto total)</span>
+                                Tambah Foto Baru <span class="font-normal text-gray-400">(opsional, maks. 9 foto tambahan / 10 total)</span>
                             </label>
 
                             <div x-show="otherPreviews.length > 0" class="flex flex-wrap gap-3 mb-3">
@@ -277,7 +277,7 @@
                             <input type="file" name="gambar_lainnya[]" accept="image/jpg,image/jpeg,image/png,image/webp"
                                    multiple @change="handleOthers($event)"
                                    class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                            <p class="text-[11px] text-gray-400 mt-1">Pilih beberapa foto sekaligus (tahan Ctrl/Cmd). JPG, PNG, WEBP. Maks. 3 foto, 2MB per foto.</p>
+                            <p class="text-[11px] text-gray-400 mt-1">Pilih beberapa foto sekaligus (tahan Ctrl/Cmd). JPG, PNG, WEBP. Maks. 9 foto tambahan (10 total), 2MB per foto.</p>
                         </div>
                     </div>
 
