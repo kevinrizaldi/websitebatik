@@ -51,4 +51,13 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect('/');
     }
+
+    public function test_authenticated_customer_visiting_login_redirects_to_home(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+
+        $response = $this->actingAs($user)->get('/login');
+
+        $response->assertRedirect(route('home'));
+    }
 }

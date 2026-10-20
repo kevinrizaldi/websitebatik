@@ -159,7 +159,7 @@ class Produk extends Model
         if ($isClothing) {
             $total = (int) $this->stok;
             if ($total <= 0) {
-                return ['S' => 0, 'M' => 0, 'L' => 0, 'XL' => 0, 'XXL' => 0];
+                return ['S' => 0, 'M' => 0, 'L' => 0, 'XL' => 0, 'XXL' => 0, 'All Size' => 0];
             }
 
             // Distribusi seimbang antar ukuran default S, M, L, XL, XXL
@@ -172,6 +172,7 @@ class Produk extends Model
                 'L' => $base + ($remainder > 2 ? 1 : 0),
                 'XL' => $base + ($remainder > 3 ? 1 : 0),
                 'XXL' => $base,
+                'All Size' => $base,
             ];
         }
 

@@ -95,6 +95,7 @@
                             'L': '{{ old('stok_ukuran.L', $currentStokUkuran['L'] ?? 0) }}',
                             'XL': '{{ old('stok_ukuran.XL', $currentStokUkuran['XL'] ?? 0) }}',
                             'XXL': '{{ old('stok_ukuran.XXL', $currentStokUkuran['XXL'] ?? 0) }}'
+                            ''
                         },
                         singleStock: '{{ old('stok', $produk->stok) }}',
                         get totalStock() {
@@ -126,17 +127,17 @@
                         <!-- Grid Stok per Ukuran -->
                         <div x-show="useSizeStock" class="space-y-3">
                             <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                                <template x-for="sz in ['S', 'M', 'L', 'XL', 'XXL']" :key="sz">
+                                <template x-for="sz in ['S', 'M', 'L', 'XL', 'XXL' 'XXXL']" :key="sz">
                                     <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-2xs text-center space-y-1.5">
                                         <div class="flex items-center justify-between">
                                             <span class="text-xs font-extrabold text-gray-700" x-text="'Size ' + sz"></span>
                                             <span x-show="parseInt(sizes[sz]) === 0" class="text-[10px] font-bold text-rose-500 uppercase">Habis</span>
                                         </div>
-                                        <input type="number" 
-                                               :name="'stok_ukuran[' + sz + ']'" 
-                                               x-model="sizes[sz]" 
+                                        <input type="number"
+                                               :name="'stok_ukuran[' + sz + ']'"
+                                               x-model="sizes[sz]"
                                                :disabled="!useSizeStock"
-                                               min="0" max="1000" 
+                                               min="0" max="1000"
                                                placeholder="0"
                                                class="w-full text-center text-sm font-bold border border-gray-300 rounded-md py-1.5 px-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                                         <span class="text-[10px] text-gray-400 block">Pcs</span>
@@ -153,10 +154,10 @@
                             <label class="block text-xs font-semibold text-gray-700">
                                 Jumlah Stok (All Size / Produk Tunggal)
                             </label>
-                            <input type="number" 
-                                   x-model="singleStock" 
+                            <input type="number"
+                                   x-model="singleStock"
                                    :disabled="useSizeStock"
-                                   min="0" max="1000" 
+                                   min="0" max="1000"
                                    placeholder="Contoh: 20"
                                    class="w-full text-sm border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                             <p class="text-[11px] text-gray-500">Cocok untuk Kain Batik meteran, aksesoris, atau tas.</p>

@@ -3,23 +3,13 @@
         <div class="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                    @if ($isAdminDashboard ?? false)
-                        Dashboard Admin
-                    @else
-                        {{ __('Dashboard') }}
-                    @endif
+                    Dashboard Admin
                 </h2>
-                @if ($isAdminDashboard ?? false)
-                    <p class="mt-1 text-sm text-gray-500">Ringkasan kinerja toko dan aktivitas terbaru.</p>
-                @endif
+                <p class="mt-1 text-sm text-gray-500">Ringkasan kinerja toko dan aktivitas terbaru.</p>
             </div>
-            @if ($isAdminDashboard ?? false)
-                <p class="text-xs font-medium text-gray-500">{{ now()->translatedFormat('l, d F Y') }}</p>
-            @endif
+            <p class="text-xs font-medium text-gray-500">{{ now()->translatedFormat('l, d F Y') }}</p>
         </div>
     </x-slot>
-
-    @if ($isAdminDashboard ?? false)
         @php
             $chartMetricLabel = match ($metric) {
                 'transactions' => 'Jumlah transaksi',
@@ -210,18 +200,4 @@
                 </section>
             </div>
         </div>
-    @else
-        <div class="py-12">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="overflow-hidden rounded-lg bg-white shadow-sm sm:rounded-lg">
-                    <div class="p-6 text-gray-900">
-                        <p class="mb-4 text-gray-700">{{ __("Selamat datang di Batik Store! Anda login sebagai Pelanggan.") }}</p>
-                        <a href="{{ url('/') }}" class="inline-flex items-center px-4 py-2 bg-gray-900 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-black transition shadow-sm">
-                            {{ __('Mulai Belanja') }}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
 </x-app-layout>

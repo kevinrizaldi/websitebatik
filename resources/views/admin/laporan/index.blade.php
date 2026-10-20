@@ -29,7 +29,7 @@
                         </div>
                         <div>
                             <label for="end_date" class="block text-xs font-semibold text-gray-700 mb-1">Tanggal Akhir</label>
-                            <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" max="{{ date('Y-m-d') }}"
+                            <input type="date" name="end_date" id="end_date" value="{{ $endDate }}" min="{{ $startDate }}" max="{{ date('Y-m-d') }}"
                                    class="w-full text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm">
                         </div>
                         <div class="flex gap-2">
@@ -100,45 +100,16 @@
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const reportInput = document.getElementById('report');
             const startDateInput = document.getElementById('start_date');
             const endDateInput = document.getElementById('end_date');
 
-            if (!reportInput || !startDateInput || !endDateInput) {
+            if (!startDateInput || !endDateInput) {
                 return;
             }
-
-            const formatDate = date => {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-
-                return `${year}-${month}-${day}`;
-            };
-
-            const applyPeriodDates = () => {
-                const today = new Date();
-                const startDate = new Date(today);
-
-                if (reportInput.value === 'sales_weekly') {
-                    const daysSinceMonday = (today.getDay() + 6) % 7;
-                    startDate.setDate(today.getDate() - daysSinceMonday);
-                } else if (reportInput.value === 'sales_monthly') {
-                    startDate.setDate(1);
-                } else if (reportInput.value === 'sales_yearly') {
-                    startDate.setMonth(0, 1);
-                }
-
-                startDateInput.value = formatDate(startDate);
-                endDateInput.value = formatDate(today);
-                endDateInput.min = startDateInput.value;
-            };
 
             if (startDateInput.value) {
                 endDateInput.min = startDateInput.value;
             }
-
-            reportInput.addEventListener('change', applyPeriodDates);
 
             startDateInput.addEventListener('change', function() {
                 endDateInput.min = this.value;

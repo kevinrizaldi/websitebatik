@@ -27,15 +27,20 @@ use Illuminate\Support\Facades\Schema;
 
 Route::get('/', function () {
     $produks = collect();
+    $kategoris = collect();
     try {
         if (Schema::hasTable('produks')) {
             $produks = Produk::latest()->take(12)->get();
         }
+        if (Schema::hasTable('kategoris')) {
+            $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
+        }
     } catch (Throwable $e) {
         $produks = collect();
+        $kategoris = collect();
     }
 
-    return view('welcome', compact('produks'));
+    return view('welcome', compact('produks', 'kategoris'));
 })->name('home');
 
 Route::get('/koleksi', function () {

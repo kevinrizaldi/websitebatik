@@ -160,14 +160,11 @@ class DashboardTest extends TestCase
             ->assertViewHas('outOfStockProducts', 1);
     }
 
-    public function test_customer_dashboard_remains_the_customer_welcome_page(): void
+    public function test_customer_accessing_dashboard_is_redirected_to_home(): void
     {
         $response = $this->actingAs(User::factory()->create(['role' => 'customer']))
             ->get(route('dashboard'));
 
-        $response->assertOk()
-            ->assertSee('Anda login sebagai Pelanggan.')
-            ->assertDontSee('aria-label="Navigasi admin"', false)
-            ->assertDontSee('Dashboard Admin');
+        $response->assertRedirect(route('home'));
     }
 }

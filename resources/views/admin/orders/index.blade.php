@@ -362,6 +362,7 @@
                            id="modalTrackingNumber"
                            name="tracking_number"
                            required
+                           maxlength="15"
                            pattern="[A-Za-z0-9\-]+"
                            title="Nomor resi hanya boleh berupa kombinasi huruf dan angka"
                            oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '')"

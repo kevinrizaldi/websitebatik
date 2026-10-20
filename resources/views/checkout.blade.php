@@ -35,7 +35,10 @@
           userMenu: false,
           searchModal: false,
           editAddressModal: false,
-          showNewAddressForm: false,
+          modalView: 'list', // 'list' or 'form'
+          formMode: 'add',   // 'add' or 'edit'
+          editingAddressId: null,
+          modalSaving: false,
           toastMessage: '',
           isSubmitting: false,
 
@@ -50,32 +53,36 @@
         : null;
 @endphp
           // Customer & Shipping Address State
-          // Hanya memakai alamat yang diinput customer (tanpa data dummy).
           addressData: {
+              id: {{ $defaultAlamat ? $defaultAlamat->id : 'null' }},
               recipient: '{{ $defaultAlamat ? addslashes($defaultAlamat->penerima) : (Auth::check() ? addslashes(Auth::user()->name) : '') }}',
-              label: '{{ $defaultAlamat ? addslashes($defaultAlamat->label_alamat) : '' }}',
+              label: '{{ $defaultAlamat ? addslashes($defaultAlamat->label_alamat) : 'Rumah' }}',
               phone: '{{ $defaultAlamat ? addslashes($defaultAlamat->no_telepon) : (Auth::check() && Auth::user()->phone ? addslashes(Auth::user()->phone) : '') }}',
               address: '{{ $defaultAlamat ? addslashes($defaultAlamat->alamat_lengkap) : '' }}',
               city: '{{ $defaultAlamat ? addslashes($defaultAlamat->kota ?? '') : '' }}',
               province: '{{ $defaultAlamat ? addslashes($defaultAlamat->provinsi ?? '') : '' }}',
               postalCode: '{{ $defaultAlamat ? addslashes($defaultAlamat->kode_pos ?? '') : '' }}',
-              hasSavedAddress: {{ $defaultAlamat && $defaultAlamat->is_utama ? 'true' : 'false' }}
+              isUtama: {{ $defaultAlamat && $defaultAlamat->is_utama ? 'true' : 'false' }},
+              hasAddress: {{ $defaultAlamat ? 'true' : 'false' }}
           },
+
+          selectedAddressId: {{ $defaultAlamat ? $defaultAlamat->id : 'null' }},
 
           get fullAddress() {
               if (!this.addressData.address) return '';
-              let text = this.addressData.address;
-              const append = (part, sep) => {
-                  part = (part || '').trim();
-                  if (part && !text.toLowerCase().includes(part.toLowerCase())) text += sep + part;
-              };
-              append(this.addressData.city, ', ');
-              append(this.addressData.province, ', ');
-              append(this.addressData.postalCode, ' ');
-              return text;
+              let parts = [this.addressData.address];
+              const city = (this.addressData.city || '').trim();
+              const prov = (this.addressData.province || '').trim();
+              const post = (this.addressData.postalCode || '').trim();
+              
+              const lowerAddr = this.addressData.address.toLowerCase();
+              if (city && !lowerAddr.includes(city.toLowerCase())) parts.push(city);
+              if (prov && !lowerAddr.includes(prov.toLowerCase())) parts.push(prov);
+              if (post && !lowerAddr.includes(post.toLowerCase())) parts.push(post);
+              return parts.join(', ');
           },
 
-          // Alamat tersimpan customer untuk dipilih (memilih hanya mengisi pesanan ini)
+          // Alamat tersimpan customer untuk dipilih
           savedAddresses: [
               @if(isset($alamats) && $alamats->isNotEmpty())
                   @foreach($alamats as $alm)
@@ -93,43 +100,74 @@
                   @endforeach
               @endif
           ],
-          selectedAddressId: {{ $defaultAlamat ? $defaultAlamat->id : 'null' }},
 
           selectAddress(id) {
               const picked = this.savedAddresses.find(a => a.id === Number(id));
               if (!picked) return;
               this.selectedAddressId = picked.id;
+              this.addressData.id = picked.id;
               this.addressData.recipient = picked.penerima;
-              this.addressData.label = picked.label;
+              this.addressData.label = picked.label || 'Rumah';
               this.addressData.phone = picked.phone;
               this.addressData.address = picked.address;
               this.addressData.city = picked.city;
               this.addressData.province = picked.province || '';
               this.addressData.postalCode = picked.postalCode || '';
-              this.addressData.hasSavedAddress = picked.isUtama;
+              this.addressData.isUtama = picked.isUtama;
+              this.addressData.hasAddress = true;
           },
 
-          // Form fields inside address modal (sama dengan form Daftar Alamat)
           tempAddress: {
-              recipient: '',
               label: '',
+              recipient: '',
               phone: '',
-              address: '',
               city: '',
               province: '',
-              postalCode: ''
+              postalCode: '',
+              address: '',
+              isUtama: false
           },
 
           openEditAddress() {
-              // Satu pintu: pilih alamat tersimpan atau tambah baru lewat tombol di modal
-              this.showNewAddressForm = this.savedAddresses.length === 0;
-              this.tempAddress.recipient = this.addressData.recipient;
-              this.tempAddress.label = this.addressData.label;
-              this.tempAddress.phone = this.addressData.phone;
-              this.tempAddress.address = this.addressData.address;
-              this.tempAddress.city = this.addressData.city;
-              this.tempAddress.province = this.addressData.province;
-              this.tempAddress.postalCode = this.addressData.postalCode;
+              if (this.savedAddresses.length === 0) {
+                  this.openAddAddress();
+              } else {
+                  this.modalView = 'list';
+                  this.editAddressModal = true;
+              }
+          },
+
+          openAddAddress() {
+              this.modalView = 'form';
+              this.formMode = 'add';
+              this.editingAddressId = null;
+              this.tempAddress = {
+                  label: 'Rumah',
+                  recipient: '{{ Auth::check() ? addslashes(Auth::user()->name) : '' }}',
+                  phone: '{{ Auth::check() && Auth::user()->phone ? addslashes(Auth::user()->phone) : '' }}',
+                  city: '',
+                  province: '',
+                  postalCode: '',
+                  address: '',
+                  isUtama: this.savedAddresses.length === 0
+              };
+              this.editAddressModal = true;
+          },
+
+          openEditSingleAddress(addr) {
+              this.modalView = 'form';
+              this.formMode = 'edit';
+              this.editingAddressId = addr.id;
+              this.tempAddress = {
+                  label: addr.label || 'Rumah',
+                  recipient: addr.penerima,
+                  phone: addr.phone,
+                  city: addr.city,
+                  province: addr.province || '',
+                  postalCode: addr.postalCode || '',
+                  address: addr.address,
+                  isUtama: addr.isUtama
+              };
               this.editAddressModal = true;
           },
 
@@ -138,17 +176,18 @@
               const phone = (this.tempAddress.phone || '').trim();
               const address = (this.tempAddress.address || '').trim();
               const city = (this.tempAddress.city || '').trim();
-              const label = (this.tempAddress.label || '').trim() || 'Alamat Baru';
+              const label = (this.tempAddress.label || '').trim() || 'Rumah';
               const province = (this.tempAddress.province || '').trim();
               const postalCode = (this.tempAddress.postalCode || '').trim();
+              const isUtama = !!this.tempAddress.isUtama;
 
               if (!recipient || !phone || !address || !city) {
                   this.showToast('Mohon lengkapi Nama Penerima, No HP, Kota, dan Alamat Lengkap');
                   return;
               }
 
-              if (phone.length < 10 || phone.length > 15) {
-                  this.showToast('Nomor WhatsApp / HP harus berupa 10 - 15 digit angka');
+              if (phone.length < 10 || phone.length > 20) {
+                  this.showToast('Nomor WhatsApp / HP harus berupa 10 - 20 digit');
                   return;
               }
 
@@ -157,19 +196,24 @@
                   return;
               }
 
+              this.modalSaving = true;
+              const isEdit = this.formMode === 'edit' && this.editingAddressId;
+              const url = isEdit ? '{{ url('/alamat') }}/' + this.editingAddressId : '{{ route('alamat.store') }}';
+              const method = isEdit ? 'PUT' : 'POST';
+
               const payload = {
-                  penerima: recipient,
                   label_alamat: label,
+                  penerima: recipient,
                   no_telepon: phone,
-                  alamat_lengkap: address,
                   kota: city,
                   provinsi: province || null,
                   kode_pos: postalCode || null,
-                  is_utama: false
+                  alamat_lengkap: address,
+                  is_utama: isUtama
               };
 
-              fetch('{{ route('alamat.store') }}', {
-                  method: 'POST',
+              fetch(url, {
+                  method: method,
                   headers: {
                       'Content-Type': 'application/json',
                       'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -178,14 +222,16 @@
                   body: JSON.stringify(payload)
               })
               .then(async res => {
+                  this.modalSaving = false;
                   const data = await res.json().catch(() => ({}));
                   if (!res.ok) {
-                      const msg = (data.errors ? Object.values(data.errors).flat()[0] : null) || data.message || 'Gagal menyimpan alamat. Periksa data Anda.';
+                      const msg = (data.errors ? Object.values(data.errors).flat()[0] : null) || data.message || 'Gagal menyimpan alamat.';
                       this.showToast(msg);
                       return;
                   }
+
                   if (data.success && data.alamat) {
-                      this.savedAddresses.push({
+                      const savedObj = {
                           id: data.alamat.id,
                           label: data.alamat.label_alamat,
                           penerima: data.alamat.penerima,
@@ -195,27 +241,59 @@
                           province: data.alamat.provinsi || '',
                           postalCode: data.alamat.kode_pos || '',
                           isUtama: !!data.alamat.is_utama
-                      });
-                      this.applyPayloadToCheckout(payload, false);
-                      this.selectAddress(data.alamat.id);
+                      };
+
+                      if (isEdit) {
+                          const idx = this.savedAddresses.findIndex(a => a.id === savedObj.id);
+                          if (idx !== -1) {
+                              this.savedAddresses[idx] = savedObj;
+                          }
+                      } else {
+                          this.savedAddresses.unshift(savedObj);
+                      }
+
+                      if (savedObj.isUtama) {
+                          this.savedAddresses.forEach(a => {
+                              if (a.id !== savedObj.id) a.isUtama = false;
+                          });
+                      }
+
+                      this.selectAddress(savedObj.id);
                       this.editAddressModal = false;
-                      this.showToast('Alamat baru berhasil disimpan & digunakan!');
+                      this.modalView = 'list';
+                      this.showToast(isEdit ? 'Alamat pengiriman berhasil diperbarui!' : 'Alamat baru berhasil disimpan & digunakan!');
                   }
               })
               .catch(() => {
-                  this.showToast('Terjadi kesalahan jaringan saat menyimpan alamat.');
+                  this.modalSaving = false;
+                  this.showToast('Terjadi kendala jaringan saat menyimpan alamat.');
               });
           },
 
-          applyPayloadToCheckout(payload, isUtama) {
-              this.addressData.recipient = payload.penerima;
-              this.addressData.label = payload.label_alamat;
-              this.addressData.phone = payload.no_telepon;
-              this.addressData.address = payload.alamat_lengkap;
-              this.addressData.city = payload.kota;
-              this.addressData.province = payload.provinsi || '';
-              this.addressData.postalCode = payload.kode_pos || '';
-              this.addressData.hasSavedAddress = isUtama;
+          setPrimaryAddress(id) {
+              fetch('{{ url('/alamat') }}/' + id + '/default', {
+                  method: 'PATCH',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                      'Accept': 'application/json'
+                  }
+              })
+              .then(res => res.json())
+              .then(data => {
+                  if (data.success) {
+                      this.savedAddresses.forEach(a => {
+                          a.isUtama = (a.id === id);
+                      });
+                      if (this.selectedAddressId === id) {
+                          this.addressData.isUtama = true;
+                      }
+                      this.showToast('Alamat utama berhasil diubah.');
+                  }
+              })
+              .catch(() => {
+                  this.showToast('Gagal mengubah alamat utama.');
+              });
           },
 
           deleteAddress(id) {
@@ -236,14 +314,16 @@
                           if (this.savedAddresses.length > 0) {
                               this.selectAddress(this.savedAddresses[0].id);
                           } else {
-                              this.addressData.recipient = '';
+                              this.addressData.id = null;
+                              this.addressData.recipient = '{{ Auth::check() ? addslashes(Auth::user()->name) : '' }}';
                               this.addressData.label = '';
-                              this.addressData.phone = '';
+                              this.addressData.phone = '{{ Auth::check() && Auth::user()->phone ? addslashes(Auth::user()->phone) : '' }}';
                               this.addressData.address = '';
                               this.addressData.city = '';
                               this.addressData.province = '';
                               this.addressData.postalCode = '';
-                              this.addressData.hasSavedAddress = false;
+                              this.addressData.isUtama = false;
+                              this.addressData.hasAddress = false;
                               this.selectedAddressId = null;
                           }
                       }
@@ -335,12 +415,7 @@
           // Submit Order to Database
           submitOrder() {
               if (!this.addressData.recipient || !this.addressData.phone || !this.addressData.address) {
-                  this.showToast('Mohon periksa data alamat pengiriman Anda');
-                  return;
-              }
-
-              if (/[#@$%^&*+={}[\]|<>~]/.test(this.addressData.address) || /[#@$%^&*+={}[\]|<>~]/.test(this.addressData.recipient) || /[#@$%^&*+={}[\]|<>~]/.test(this.addressData.phone)) {
-                  this.showToast('Alamat yang dipilih masih mengandung simbol tidak valid. Silakan ubah alamat pengiriman Anda.');
+                  this.showToast('Mohon lengkapi alamat pengiriman terlebih dahulu.');
                   this.openEditAddress();
                   return;
               }
@@ -369,6 +444,10 @@
                       customer_name: this.addressData.recipient,
                       phone: this.addressData.phone,
                       address: this.fullAddress,
+                      city: this.addressData.city,
+                      province: this.addressData.province,
+                      postal_code: this.addressData.postalCode,
+                      alamat_id: this.selectedAddressId,
                       shipping_option: shippingObj.name,
                       shipping_cost: shippingObj.cost,
                       payment_method: this.paymentMethodName,
@@ -461,67 +540,132 @@
                  x-transition:leave="ease-in duration-200"
                  x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                  x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-stone-200">
+                 class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-stone-200">
                 
+                <!-- Modal Header -->
                 <div class="px-6 py-5 bg-[#FAF7F2] border-b border-[#ECE4D8] flex items-center justify-between">
-                    <div>
-                        <h3 class="text-base font-bold text-stone-900">
-                            Ubah Alamat Pengiriman
-                        </h3>
-                        <p class="text-xs text-stone-500 mt-0.5">
-                            Pilih alamat tersimpan atau isi alamat baru di bawah
-                        </p>
+                    <div class="flex items-center gap-2.5">
+                        <button x-show="modalView === 'form' && savedAddresses.length > 0" 
+                                @click="modalView = 'list'" 
+                                type="button" 
+                                class="p-1.5 -ml-1 text-stone-500 hover:text-stone-900 rounded-lg hover:bg-stone-200/50 transition flex items-center gap-1 text-xs font-semibold mr-1"
+                                title="Kembali ke daftar alamat">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            <span class="hidden sm:inline">Daftar</span>
+                        </button>
+                        <div>
+                            <h3 class="text-base font-bold text-stone-900 flex items-center gap-2">
+                                <span x-show="modalView === 'list'">Pilih Alamat Pengiriman</span>
+                                <span x-show="modalView === 'form'" x-text="formMode === 'edit' ? 'Ubah Alamat Pengiriman' : 'Tambah Alamat Baru'"></span>
+                            </h3>
+                            <p class="text-xs text-stone-500 mt-0.5">
+                                <span x-show="modalView === 'list'">Pilih alamat tersimpan atau tambahkan alamat baru</span>
+                                <span x-show="modalView === 'form'" x-text="formMode === 'edit' ? 'Perbarui informasi alamat pengiriman Anda' : 'Lengkapi data alamat untuk tujuan pesanan Anda'"></span>
+                            </p>
+                        </div>
                     </div>
-                    <button @click="editAddressModal = false" class="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200/50">
+                    <button @click="editAddressModal = false" class="p-1.5 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-200/50 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <div class="p-6 space-y-4">
-                    <div x-show="savedAddresses.length > 0" class="space-y-2">
-                        <p class="text-xs font-bold text-stone-800 uppercase tracking-wider">
+                <!-- ================= VIEW 1: DAFTAR ALAMAT TERSIMPAN ================= -->
+                <div x-show="modalView === 'list'" class="p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold text-stone-800 uppercase tracking-wider">
                             Pilih Alamat Tersimpan
-                        </p>
-                        <div class="space-y-2 max-h-52 overflow-y-auto pr-0.5">
-                            <template x-for="addr in savedAddresses" :key="addr.id">
-                                <div class="flex items-center gap-2">
-                                    <button @click="selectAddress(addr.id); editAddressModal = false; showToast('Alamat pengiriman diganti!')" type="button"
-                                            :class="selectedAddressId === addr.id ? 'border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/30' : 'border-stone-200 hover:border-stone-300 bg-white'"
-                                            class="flex-1 text-left p-3 rounded-2xl border transition flex items-start gap-2.5">
-                                        <span class="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0"
-                                              :class="selectedAddressId === addr.id ? 'border-[#B58742] bg-[#B58742]' : 'border-stone-300'">
-                                            <span x-show="selectedAddressId === addr.id" class="w-1.5 h-1.5 rounded-full bg-white"></span>
-                                        </span>
-                                        <span class="flex-1 min-w-0">
-                                            <span class="flex flex-wrap items-center gap-1.5">
-                                                <span class="font-bold text-xs text-stone-900" x-text="addr.label + ' — ' + addr.penerima"></span>
-                                                <span x-show="addr.isUtama" class="px-1.5 py-px rounded-full bg-[#201A17] text-white text-[9px] font-bold uppercase">Utama</span>
-                                            </span>
-                                            <span class="block text-[11px] text-stone-500 mt-0.5 truncate" x-text="addr.address + (addr.city ? ', ' + addr.city : '')"></span>
-                                        </span>
+                        </h4>
+                        <span class="text-[11px] font-semibold text-stone-500" x-text="savedAddresses.length + ' alamat tersedia'"></span>
+                    </div>
+
+                    <div x-show="savedAddresses.length > 0" class="space-y-3 max-h-80 overflow-y-auto pr-1">
+                        <template x-for="addr in savedAddresses" :key="addr.id">
+                            <div :class="selectedAddressId === addr.id ? 'border-[#B58742] bg-[#FAF7F2] ring-2 ring-[#B58742]/20 shadow-xs' : 'border-stone-200 hover:border-stone-300 bg-white'"
+                                 class="p-4 rounded-2xl border transition-all flex flex-col gap-2.5">
+                                <div class="flex items-start justify-between gap-3">
+                                    <button @click="selectAddress(addr.id); editAddressModal = false; showToast('Alamat pengiriman berhasil dipilih!')" 
+                                            type="button" 
+                                            class="flex-1 text-left flex items-start gap-3">
+                                        <!-- Radio Selector Circle -->
+                                        <div class="mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition"
+                                             :class="selectedAddressId === addr.id ? 'border-[#B58742] bg-[#B58742]' : 'border-stone-300'">
+                                            <div x-show="selectedAddressId === addr.id" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                                        </div>
+
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <span class="font-bold text-sm text-stone-900" x-text="addr.penerima"></span>
+                                                <span class="px-2 py-0.5 rounded-md bg-[#201A17] text-[#E5C38E] text-[10px] font-bold uppercase tracking-wider" x-text="addr.label || 'Rumah'"></span>
+                                                <span x-show="addr.isUtama" class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">Utama</span>
+                                            </div>
+                                            <p class="text-xs text-stone-500 font-medium mt-0.5" x-text="addr.phone"></p>
+                                            <p class="text-xs text-stone-700 leading-relaxed mt-1" x-text="addr.address + (addr.city ? ', ' + addr.city : '') + (addr.province ? ', ' + addr.province : '') + (addr.postalCode ? ' ' + addr.postalCode : '')"></p>
+                                        </div>
                                     </button>
-                                    <button @click="deleteAddress(addr.id)" type="button" title="Hapus alamat ini" class="p-2 text-stone-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition shrink-0">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+
+                                    <!-- Action Buttons -->
+                                    <div class="flex items-center gap-1.5 shrink-0 pt-0.5">
+                                        <button @click.stop="openEditSingleAddress(addr)" 
+                                                type="button" 
+                                                title="Ubah data alamat ini"
+                                                class="px-2.5 py-1 text-xs font-semibold text-stone-700 hover:text-stone-950 bg-white hover:bg-stone-100 rounded-lg transition border border-stone-200">
+                                            Ubah
+                                        </button>
+                                        <button @click.stop="deleteAddress(addr.id)" 
+                                                type="button" 
+                                                title="Hapus alamat ini" 
+                                                class="p-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Card Footer: Set Primary / Select -->
+                                <div class="flex items-center justify-between pt-2 border-t border-stone-100 text-xs">
+                                    <div>
+                                        <button x-show="!addr.isUtama" 
+                                                @click.stop="setPrimaryAddress(addr.id)" 
+                                                type="button" 
+                                                class="text-[11px] font-semibold text-stone-500 hover:text-[#B58742] transition underline">
+                                            Jadikan Alamat Utama
+                                        </button>
+                                        <span x-show="addr.isUtama" class="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                            Alamat Utama Anda
+                                        </span>
+                                    </div>
+
+                                    <button @click="selectAddress(addr.id); editAddressModal = false; showToast('Alamat pengiriman berhasil dipilih!')"
+                                            type="button"
+                                            :class="selectedAddressId === addr.id ? 'bg-[#201A17] text-white' : 'bg-white hover:bg-stone-100 text-stone-800 border border-stone-200'"
+                                            class="px-3.5 py-1 rounded-xl text-xs font-bold transition">
+                                        <span x-text="selectedAddressId === addr.id ? '✓ Dipilih' : 'Gunakan Alamat'"></span>
                                     </button>
                                 </div>
-                            </template>
-                        </div>
+                            </div>
+                        </template>
                     </div>
-                    <button x-show="!showNewAddressForm" @click="showNewAddressForm = true" type="button"
-                            class="w-full py-2.5 rounded-xl border border-dashed border-stone-300 hover:border-[#B58742] hover:bg-[#FAF7F2] text-stone-700 hover:text-stone-900 text-xs font-bold transition flex items-center justify-center gap-1.5">
-                        <span class="text-sm leading-none">+</span> Tambah Alamat Baru
+
+                    <!-- Button Tambah Alamat Baru -->
+                    <button @click="openAddAddress()" type="button"
+                            class="w-full py-3.5 rounded-2xl border-2 border-dashed border-stone-300 hover:border-[#B58742] hover:bg-[#FAF7F2] text-stone-700 hover:text-stone-900 text-xs font-bold transition flex items-center justify-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-amber-100 text-[#B58742] flex items-center justify-center font-bold text-sm leading-none">+</span>
+                        Tambah Alamat Baru
                     </button>
-                    <div x-show="showNewAddressForm" x-transition class="space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                </div>
+
+                <!-- ================= VIEW 2: FORM TAMBAH / UBAH ALAMAT ================= -->
+                <div x-show="modalView === 'form'" class="p-6 space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
                             <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
                                 Nama Penerima <span class="text-rose-500">*</span>
                             </label>
-                             <input type="text" 
-                                    x-model="tempAddress.recipient"
-                                    @input="tempAddress.recipient = tempAddress.recipient.replace(/[^a-zA-Z\s\'.]/g, '')"
-                                    placeholder="Nama lengkap penerima"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                            <input type="text" 
+                                   x-model="tempAddress.recipient"
+                                   @input="tempAddress.recipient = tempAddress.recipient.replace(/[^a-zA-Z\s\'.()\-]/g, '')"
+                                   placeholder="Nama lengkap penerima"
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
@@ -529,84 +673,108 @@
                             </label>
                             <input type="text" 
                                    x-model="tempAddress.label"
-                                   @input="tempAddress.label = tempAddress.label.replace(/[^a-zA-Z0-9\s]/g, '')"
-                                   placeholder="Rumah Utama / Kantor"
+                                   @input="tempAddress.label = tempAddress.label.replace(/[^a-zA-Z0-9\s.\-()]/g, '')"
+                                   placeholder="Contoh: Rumah, Kantor, Kos"
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                                Nomor WhatsApp / HP <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="tel" 
+                                   inputmode="numeric"
+                                   maxlength="20"
+                                   x-model="tempAddress.phone"
+                                   @input="tempAddress.phone = tempAddress.phone.replace(/[^0-9+\- ]/g, '')"
+                                   placeholder="Contoh: 081234567890 atau +62812..."
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                                Kabupaten / Kota <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text"
+                                   x-model="tempAddress.city"
+                                   @input="tempAddress.city = tempAddress.city.replace(/[^a-zA-Z\s.,\-()]/g, '')"
+                                   placeholder="Contoh: Kota Pekalongan, Kab. Bantul"
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                                Provinsi
+                            </label>
+                            <input type="text"
+                                   x-model="tempAddress.province"
+                                   @input="tempAddress.province = tempAddress.province.replace(/[^a-zA-Z\s.,\-()]/g, '')"
+                                   placeholder="Contoh: Jawa Tengah, D.I. Yogyakarta"
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                                Kode Pos
+                            </label>
+                            <input type="text"
+                                   inputmode="numeric"
+                                   maxlength="5"
+                                   x-model="tempAddress.postalCode"
+                                   @input="tempAddress.postalCode = tempAddress.postalCode.replace(/[^0-9]/g, '')"
+                                   placeholder="Contoh: 51111 (5 digit)"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                            Nomor WhatsApp / HP <span class="text-rose-500">*</span>
-                        </label>
-                             <input type="tel" 
-                                    inputmode="numeric"
-                                    maxlength="15"
-                                    x-model="tempAddress.phone"
-                                    @input="tempAddress.phone = tempAddress.phone.replace(/[^0-9]/g, '')"
-                                    placeholder="Contoh: 081234567890 (10-15 digit)"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                     </div>
-
-                     <div>
-                         <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                             Kabupaten / Kota <span class="text-rose-500">*</span>
-                         </label>
-                         <input type="text"
-                                x-model="tempAddress.city"
-                                @input="tempAddress.city = tempAddress.city.replace(/[^a-zA-Z\s]/g, '')"
-                                placeholder="Kota tujuan pengiriman"
-                                class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                     </div>
-
-                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                         <div>
-                             <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                 Provinsi
-                             </label>
-                             <input type="text"
-                                    x-model="tempAddress.province"
-                                    @input="tempAddress.province = tempAddress.province.replace(/[^a-zA-Z\s]/g, '')"
-                                    placeholder="Provinsi"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                         </div>
-                         <div>
-                             <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                 Kode Pos
-                             </label>
-                             <input type="text"
-                                    inputmode="numeric"
-                                    maxlength="5"
-                                    x-model="tempAddress.postalCode"
-                                    @input="tempAddress.postalCode = tempAddress.postalCode.replace(/[^0-9]/g, '')"
-                                    placeholder="Contoh: 12190 (5 digit)"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                         </div>
-                     </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
                             Alamat Lengkap <span class="text-rose-500">*</span>
                         </label>
                         <textarea x-model="tempAddress.address"
-                                  @input="tempAddress.address = tempAddress.address.replace(/[^a-zA-Z0-9\s.,\/\-]/g, '')"
+                                  @input="tempAddress.address = tempAddress.address.replace(/[^a-zA-Z0-9\s.,\/\-()\[\]#&\'\":;]/g, '')"
                                   rows="3"
-                                  placeholder="Nama Jalan, Nomor Gedung/Rumah, RT/RW, Kelurahan, Kecamatan, Kota, Kode Pos"
+                                  placeholder="Nama Jalan, Nomor Gedung/Rumah, RT/RW, Kelurahan, Kecamatan, Patokan"
                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40"></textarea>
                     </div>
+
+                    <div class="pt-1">
+                        <label class="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox" 
+                                   x-model="tempAddress.isUtama"
+                                   class="w-4 h-4 rounded text-[#B58742] focus:ring-[#B58742] border-stone-300">
+                            <span class="text-xs font-semibold text-stone-700">Jadikan sebagai alamat utama</span>
+                        </label>
                     </div>
                 </div>
 
+                <!-- Modal Footer -->
                 <div class="px-6 py-4 bg-stone-50 border-t border-stone-200 flex items-center justify-between">
-                    <button @click="editAddressModal = false" 
+                    <button x-show="modalView === 'list'" 
+                            @click="editAddressModal = false" 
+                            type="button"
+                            class="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900 transition">
+                        Tutup
+                    </button>
+                    <button x-show="modalView === 'form'" 
+                            @click="savedAddresses.length > 0 ? modalView = 'list' : editAddressModal = false" 
                             type="button"
                             class="px-4 py-2 text-xs font-semibold text-stone-600 hover:text-stone-900 transition">
                         Batal
                     </button>
-                    <button x-show="showNewAddressForm" @click="saveAddress()" 
+
+                    <button x-show="modalView === 'form'" 
+                            @click="saveAddress()" 
+                            :disabled="modalSaving"
                             type="button"
-                            class="px-6 py-2.5 text-xs font-bold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl transition shadow-md">
-                        Simpan & Gunakan
+                            class="px-6 py-2.5 text-xs font-bold text-white bg-[#201A17] hover:bg-stone-800 disabled:opacity-60 rounded-xl transition shadow-md flex items-center gap-2">
+                        <svg x-show="modalSaving" class="animate-spin -ml-1 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span x-text="modalSaving ? 'Menyimpan...' : 'Simpan & Gunakan'"></span>
                     </button>
                 </div>
             </div>
@@ -806,54 +974,67 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                                     </svg>
                                 </div>
-                                <h2 class="font-bold text-base sm:text-lg text-stone-900">
-                                    Alamat Pengiriman
-                                </h2>
+                                <div>
+                                    <h2 class="font-bold text-base sm:text-lg text-stone-900 leading-tight">
+                                        Alamat Pengiriman
+                                    </h2>
+                                    <p class="text-[11px] text-stone-500">Tujuan pengiriman pesanan Anda</p>
+                                </div>
                             </div>
 
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-2">
                                 <button @click="openEditAddress()" 
                                         type="button"
-                                        class="text-xs font-semibold text-stone-600 hover:text-stone-900 underline transition">
-                                    Ubah Alamat
+                                        class="px-3.5 py-1.5 rounded-full border border-stone-300 hover:border-[#B58742] hover:text-[#B58742] text-xs font-semibold text-stone-700 bg-white shadow-2xs transition flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-stone-400 group-hover:text-[#B58742]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    <span>Ubah Alamat</span>
                                 </button>
                             </div>
                         </div>
 
                         <!-- Address Info Box: data asli milik customer -->
-                        <div x-show="addressData.address" class="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-[#ECE4D8] space-y-2">
+                        <div x-show="addressData.address" class="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-[#ECE4D8] space-y-2.5">
                             <div class="flex flex-wrap items-center justify-between gap-2">
-                                <div class="flex items-center gap-2 font-bold text-stone-900 text-sm">
-                                    <span x-text="addressData.recipient + (addressData.label ? ' (' + addressData.label + ')' : '')"></span>
-                                    <span class="text-stone-400 font-normal">|</span>
-                                    <span x-text="addressData.phone" class="font-semibold text-stone-700"></span>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded-md bg-[#201A17] text-[#E5C38E] text-[10px] font-bold uppercase tracking-wider" x-text="addressData.label || 'Rumah'"></span>
+                                    <span class="font-bold text-stone-900 text-sm" x-text="addressData.recipient"></span>
+                                    <span class="text-stone-300 font-normal">|</span>
+                                    <span x-text="addressData.phone" class="font-semibold text-stone-700 text-xs"></span>
                                 </div>
 
-                                <span x-show="addressData.hasSavedAddress" class="px-2.5 py-0.5 rounded-full bg-[#201A17] text-white text-[10px] font-bold tracking-wide uppercase">
-                                    Alamat Utama
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span x-show="addressData.isUtama" class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">
+                                        Alamat Utama
+                                    </span>
+                                    <button @click="openAddAddress()" type="button" class="text-[11px] font-semibold text-[#B58742] hover:underline">
+                                        + Tambah Baru
+                                    </button>
+                                </div>
                             </div>
 
-                            <p class="text-xs sm:text-sm text-stone-600 leading-relaxed" x-text="fullAddress"></p>
+                            <p class="text-xs sm:text-sm text-stone-700 leading-relaxed font-normal" x-text="fullAddress"></p>
 
-                            <div class="pt-1">
-                                <a href="{{ route('alamat.index') }}" class="text-[11px] font-bold text-stone-700 hover:text-stone-950 underline transition">
+                            <div class="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-[#ECE4D8]/60 text-[11px] text-stone-500">
+                                <span>Pastikan nomor WhatsApp / HP aktif untuk konfirmasi kurir pengiriman.</span>
+                                <a href="{{ route('alamat.index') }}" class="font-bold text-stone-700 hover:text-stone-950 underline transition">
                                     Kelola alamat tersimpan →
                                 </a>
                             </div>
                         </div>
 
                         <!-- Empty state: customer belum punya alamat -->
-                        <div x-show="!addressData.address" class="p-5 rounded-2xl bg-amber-50/60 border border-dashed border-amber-300 text-center space-y-2">
-                            <p class="font-bold text-sm text-stone-900">Belum ada alamat pengiriman</p>
-                            <p class="text-xs text-stone-500">Isi alamat Anda atau pilih dari daftar alamat tersimpan.</p>
-                            <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
-                                <button @click="openEditAddress()" type="button" class="px-4 py-2 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs font-bold transition">
-                                    Isi Alamat
+                        <div x-show="!addressData.address" class="p-6 rounded-2xl bg-amber-50/50 border border-dashed border-amber-300 text-center space-y-3">
+                            <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-800 mx-auto flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </div>
+                            <div>
+                                <p class="font-bold text-sm text-stone-900">Belum Ada Alamat Pengiriman</p>
+                                <p class="text-xs text-stone-500 mt-0.5">Silakan isi alamat tujuan Anda agar pesanan dapat diproses dan dikirimkan.</p>
+                            </div>
+                            <div class="pt-1">
+                                <button @click="openAddAddress()" type="button" class="px-5 py-2.5 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs font-bold transition shadow-sm inline-flex items-center gap-1.5">
+                                    <span>+</span> Isi Alamat Pengiriman
                                 </button>
-                                <a href="{{ route('alamat.index') }}" class="px-4 py-2 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-800 text-xs font-bold transition">
-                                    Daftar Alamat Saya
-                                </a>
                             </div>
                         </div>
                     </div>

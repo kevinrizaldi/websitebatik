@@ -8,6 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Produk;
 use App\Models\Ulasan;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -28,12 +29,12 @@ class DashboardController extends Controller
 
     private const CANCELLED_STATUSES = ['Batal', 'Dibatalkan'];
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $user = $request->user();
 
         if (! $user?->isAdmin()) {
-            return view('dashboard');
+            return redirect()->route('home');
         }
 
         $validated = $request->validate([

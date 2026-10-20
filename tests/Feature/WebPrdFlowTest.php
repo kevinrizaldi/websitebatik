@@ -227,9 +227,9 @@ class WebPrdFlowTest extends TestCase
         $response = $this->actingAs($this->admin())->get(route('profile.edit'));
 
         $response->assertStatus(200);
-        $response->assertSee('Profile Admin');
-        $response->assertSee('Profile Information');
-        $response->assertSee('Update Password');
+        $response->assertSee('Profil Admin');
+        $response->assertSee('Informasi Akun');
+        $response->assertSee('Ubah Password');
         $response->assertDontSee('Profil Saya');
     }
 
