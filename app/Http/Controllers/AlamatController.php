@@ -76,8 +76,10 @@ class AlamatController extends Controller
 
         $user = Auth::user();
 
-        // If this is the user's first address, or marked as utama, adjust others
-        $isUtama = ! empty($validated['is_utama']) || $user->alamats()->count() === 0;
+        // If explicitly requested, respect the boolean flag; otherwise default to true only for first address
+        $isUtama = $request->has('is_utama')
+            ? $request->boolean('is_utama')
+            : ($user->alamats()->count() === 0);
 
         if ($isUtama) {
             $user->alamats()->update(['is_utama' => false]);

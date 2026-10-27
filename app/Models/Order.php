@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -36,7 +37,7 @@ class Order extends Model
 
     const STATUS_PAID = 'Sudah Dibayar';
 
-    const STATUS_CANCELLED = 'Batal';
+    const STATUS_CANCELLED = 'Dibatalkan';
 
     /** Hours a new payment deadline lasts (can be overridden in config). */
     const DEFAULT_DEADLINE_HOURS = 24;
@@ -112,6 +113,79 @@ class Order extends Model
     public function isPastDeadline(): bool
     {
         return $this->payment_deadline !== null && $this->payment_deadline->isPast();
+    }
+
+    /**
+     * Get the effective payment deadline for this order.
+     */
+    public function getEffectivePaymentDeadline(): Carbon
+    {
+        $activePayment = $this->payments()
+            ->whereNotNull('expires_at')
+            ->latest('id')
+            ->first();
+
+        if ($activePayment && $activePayment->expires_at !== null) {
+            return $activePayment->expires_at;
+        }
+
+        if ($this->payment_deadline !== null) {
+            return $this->payment_deadline;
+        }
+
+        $deadlineHours = max(1, (int) config('midtrans.payment_deadline_hours', self::DEFAULT_DEADLINE_HOURS));
+
+        return $this->created_at ? $this->created_at->copy()->addHours($deadlineHours) : now()->addHours($deadlineHours);
+    }
+
+    /**
+     * Whether the payment time for this order has expired.
+     */
+    public function isPaymentExpired(): bool
+    {
+        if ($this->payment_status === self::PAYMENT_EXPIRED) {
+            return true;
+        }
+
+        if (! in_array($this->status, [self::STATUS_UNPAID, self::STATUS_WAITING, 'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'], true)) {
+            return false;
+        }
+
+        return $this->getEffectivePaymentDeadline()->isPast();
+    }
+
+    /**
+     * Cancel this order due to payment expiration and restore inventory.
+     */
+    public function markAsExpired(): void
+    {
+        if (in_array($this->status, [self::STATUS_CANCELLED, 'Dibatalkan'], true)) {
+            return;
+        }
+
+        if (! in_array($this->status, [self::STATUS_UNPAID, self::STATUS_WAITING, 'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'], true)) {
+            return;
+        }
+
+        $this->status = 'Dibatalkan';
+        $this->payment_status = self::PAYMENT_EXPIRED;
+        $this->save();
+
+        // Expire pending payments
+        $this->payments()
+            ->where('status', Payment::STATUS_PENDING)
+            ->update(['status' => Payment::STATUS_EXPIRED]);
+
+        // Restore product stock
+        foreach ($this->items as $item) {
+            if ($item->produk) {
+                $extractedUkuran = null;
+                if (preg_match('/\((S|M|L|XL|XXL|All Size)\)$/i', (string) $item->produk_name, $m)) {
+                    $extractedUkuran = strtoupper($m[1]);
+                }
+                $item->produk->incrementStokForUkuran($extractedUkuran, $item->quantity);
+            }
+        }
     }
 
     /**

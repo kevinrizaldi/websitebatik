@@ -91,6 +91,18 @@ class PaymentController extends Controller
             abort(403, 'Anda tidak memiliki akses ke pesanan ini.');
         }
 
+        if ($order->isPaymentExpired()) {
+            $order->markAsExpired();
+
+            return redirect()->route('pesanan.index')
+                ->with('error', "Waktu pembayaran untuk pesanan #{$order->code} telah habis dan pesanan telah dibatalkan.");
+        }
+
+        if (in_array($order->status, ['Dibatalkan', 'Batal'], true)) {
+            return redirect()->route('pesanan.index')
+                ->with('error', "Pesanan #{$order->code} telah dibatalkan.");
+        }
+
         // Get Snap Token
         $legacyService = app(\App\Services\MidtransService::class);
 

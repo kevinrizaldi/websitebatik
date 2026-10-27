@@ -44,14 +44,16 @@
               @if(isset($orders) && $orders->isNotEmpty())
                   @foreach($orders as $ord)
                   @php
-                      $statusRaw = strtolower(trim($ord->status));
+                      $deadline = $ord->getEffectivePaymentDeadline();
+                      $isExpired = $ord->isPaymentExpired();
+                      $statusRaw = $isExpired ? 'dibatalkan' : strtolower(trim($ord->status));
                       $statusKey = match($statusRaw) {
                           'belum dibayar', 'menunggu pembayaran' => 'menunggu_pembayaran',
                           'menunggu verifikasi', 'sudah dibayar' => 'diproses',
                           'diproses', 'sedang diproses' => 'diproses',
                           'dikirim', 'sedang dikirim' => 'dikirim',
                           'selesai' => 'selesai',
-                          'dibatalkan' => 'dibatalkan',
+                          'batal', 'dibatalkan' => 'dibatalkan',
                           default => 'menunggu_pembayaran'
                       };
                       $badgeClass = match($statusRaw) {
@@ -86,7 +88,9 @@
                       statusLabel: '{{ $statusLabel }}',
                       statusBadgeClass: '{{ $badgeClass }}',
                       metodePembayaran: '{{ addslashes($ord->payment_method ?? 'Transfer Bank BCA') }}',
-                      batasBayar: '{{ $ord->created_at->addDay()->format('d M Y, H:i') }} WIB',
+                      batasBayar: '{{ $deadline->format('d M Y, H:i') }} WIB',
+                      deadlineTimestamp: {{ $deadline->getTimestamp() * 1000 }},
+                      isExpired: {{ $isExpired ? 'true' : 'false' }},
                       kurir: 'JNE Regular Express',
                       noResi: '{{ $trackingNo }}',
                       ongkir: 20000,
@@ -312,6 +316,31 @@
                   selesai: this.orders.filter(o => o.status === 'selesai').length,
                   dibatalkan: this.orders.filter(o => o.status === 'dibatalkan').length
               };
+          },
+
+          init() {
+              this.checkExpirations();
+              setInterval(() => {
+                  this.checkExpirations();
+              }, 15000);
+          },
+
+          checkExpirations() {
+              const now = Date.now();
+              this.orders.forEach(order => {
+                  if (order.status === 'menunggu_pembayaran' && order.deadlineTimestamp && order.deadlineTimestamp <= now) {
+                      order.status = 'dibatalkan';
+                      order.statusLabel = 'Dibatalkan';
+                      order.statusBadgeClass = 'bg-rose-100 text-rose-900 border-rose-300';
+                      order.isExpired = true;
+                  }
+              });
+              if (this.selectedOrder && this.selectedOrder.status === 'menunggu_pembayaran' && this.selectedOrder.deadlineTimestamp && this.selectedOrder.deadlineTimestamp <= now) {
+                  this.selectedOrder.status = 'dibatalkan';
+                  this.selectedOrder.statusLabel = 'Dibatalkan';
+                  this.selectedOrder.statusBadgeClass = 'bg-rose-100 text-rose-900 border-rose-300';
+                  this.selectedOrder.isExpired = true;
+              }
           }
       }">
 
@@ -502,6 +531,30 @@
                 </div>
             </div>
 
+            @guest
+            <div class="mb-8 p-4 sm:p-5 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-800 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-amber-950">Anda Belum Masuk Akun</h4>
+                        <p class="text-xs text-amber-900/80 mt-0.5">
+                            Sebelum masuk, daftar pesanan Anda kosong. Silakan masuk terlebih dahulu untuk melihat pesanan aktif dan riwayat transaksi Anda.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="{{ route('login') }}" class="px-4 py-2 rounded-xl bg-[#201A17] text-white text-xs font-semibold hover:bg-stone-800 transition shadow-xs">
+                        Masuk Akun
+                    </a>
+                    <a href="{{ route('register') }}" class="px-4 py-2 rounded-xl border border-stone-300 bg-white text-stone-800 text-xs font-semibold hover:bg-stone-50 transition">
+                        Daftar
+                    </a>
+                </div>
+            </div>
+            @endguest
+
             <!-- Search & Filters Container -->
             <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-[#ECE4D8] mb-8 space-y-4">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -526,10 +579,17 @@
 
                     <!-- Quick Refresh / Help Note -->
                     <div class="flex items-center gap-3 text-xs text-stone-500 shrink-0">
-                        <span class="inline-flex items-center gap-1.5 bg-[#FAF7F2] px-3 py-1.5 rounded-lg border border-[#ECE4D8]">
-                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-                            Data pesanan tersinkronisasi
-                        </span>
+                        @guest
+                            <a href="{{ route('login') }}" class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 hover:text-amber-900 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200 transition">
+                                <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                                <span>Masuk untuk melihat pesanan</span>
+                            </a>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 bg-[#FAF7F2] px-3 py-1.5 rounded-lg border border-[#ECE4D8]">
+                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                Data pesanan tersinkronisasi
+                            </span>
+                        @endguest
                     </div>
                 </div>
 
@@ -671,6 +731,13 @@
                                     </div>
                                 </template>
 
+                                <template x-if="order.status === 'dibatalkan'">
+                                    <div class="flex items-center gap-2 text-rose-800 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200/80">
+                                        <svg class="w-4 h-4 shrink-0 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span x-text="order.isExpired ? 'Batas waktu pembayaran telah habis • Pesanan otomatis dibatalkan' : 'Pesanan telah dibatalkan'"></span>
+                                    </div>
+                                </template>
+
                                 <p class="text-stone-500">
                                     Metode Pembayaran: <span class="font-medium text-stone-700" x-text="order.metodePembayaran"></span>
                                 </p>
@@ -731,6 +798,15 @@
                                             </a>
                                         </div>
                                     </template>
+
+                                    <template x-if="order.status === 'dibatalkan'">
+                                        <div class="flex items-center gap-2">
+                                            <a href="{{ route('koleksi.index') }}"
+                                               class="px-4 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl shadow-xs transition">
+                                                Pesan Ulang
+                                            </a>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -746,51 +822,41 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
                         </svg>
                     </div>
-                    <h3 class="text-lg font-bold text-stone-900 mb-1">Belum Ada Pesanan yang Sesuai</h3>
-                    <p class="text-sm text-stone-500 max-w-md mx-auto mb-6">
-                        Tidak ada riwayat transaksi yang cocok dengan tab status atau kata kunci yang Anda masukkan.
-                    </p>
-                    <div class="flex items-center justify-center gap-3">
-                        <button @click="searchQuery = ''; activeTab = 'semua'"
-                                class="px-4 py-2 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition">
-                            Reset Filter
-                        </button>
-                        <a href="{{ route('koleksi.index') }}"
-                           class="px-5 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl transition shadow-xs">
-                            Mulai Belanja Batik
-                        </a>
-                    </div>
+                    @guest
+                        <h3 class="text-lg font-bold text-stone-900 mb-1">Pesanan Kosong</h3>
+                        <p class="text-sm text-stone-500 max-w-md mx-auto mb-6">
+                            Anda belum masuk ke akun. Riwayat dan status pesanan hanya dapat diakses setelah Anda masuk ke akun terdaftar.
+                        </p>
+                        <div class="flex items-center justify-center gap-3">
+                            <a href="{{ route('login') }}"
+                               class="px-5 py-2.5 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl transition shadow-xs">
+                                Masuk ke Akun
+                            </a>
+                            <a href="{{ route('koleksi.index') }}"
+                               class="px-4 py-2.5 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition">
+                                Belanja Produk
+                            </a>
+                        </div>
+                    @else
+                        <h3 class="text-lg font-bold text-stone-900 mb-1">Belum Ada Pesanan yang Sesuai</h3>
+                        <p class="text-sm text-stone-500 max-w-md mx-auto mb-6">
+                            Tidak ada riwayat transaksi yang cocok dengan tab status atau kata kunci yang Anda masukkan.
+                        </p>
+                        <div class="flex items-center justify-center gap-3">
+                            <button @click="searchQuery = ''; activeTab = 'semua'"
+                                    class="px-4 py-2 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition">
+                                Reset Filter
+                            </button>
+                            <a href="{{ route('koleksi.index') }}"
+                               class="px-5 py-2 text-xs font-semibold text-white bg-[#201A17] hover:bg-stone-800 rounded-xl transition shadow-xs">
+                                Mulai Belanja Batik
+                            </a>
+                        </div>
+                    @endguest
                 </div>
             </div>
 
-            <!-- Customer Service & Assurance Banner -->
-            <div class="mt-12 bg-gradient-to-br from-[#201A17] to-stone-900 text-white rounded-3xl p-8 sm:p-10 relative overflow-hidden shadow-lg">
-                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-[#B58742]/10 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                    <div class="md:col-span-2">
-                        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#E5C38E] bg-[#E5C38E]/10 px-3 py-1 rounded-full mb-3 border border-[#E5C38E]/20">
-                            ✦ BANTUAN & GARANSI PESANAN
-                        </span>
-                        <h3 class="text-xl sm:text-2xl font-serif-title font-bold text-white mb-2">
-                            Butuh Bantuan dengan Pesanan Anda?
-                        </h3>
-                        <p class="text-stone-300 text-xs sm:text-sm leading-relaxed max-w-xl">
-                            Setiap helai batik dikemas rapi dengan kotak ramah lingkungan. Jika ada kendala dengan nomor resi, pengiriman terlambat, atau permintaan penyesuaian ukuran, tim layanan pelanggan kami siap membantu Anda.
-                        </p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row md:flex-col gap-3 justify-center md:items-end">
-                        <a href="https://wa.me/6281234567890?text=Halo%20Admin%20Hamzah%20Style,%20saya%20ingin%20menanyakan%20status%20pesanan%20saya"
-                           target="_blank"
-                           class="inline-flex items-center justify-center gap-2.5 px-6 py-3 rounded-full bg-[#B58742] text-white hover:bg-[#9d7335] text-xs sm:text-sm font-semibold transition shadow-md">
-                            <svg class="w-4 h-4 fill-currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.298.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.086-.177.18-.076.354.101.174.449.741.964 1.201.662.591 1.221.774 1.394.86s.274.072.376-.043c.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.202c.043.072.043.419-.101.824z"/></svg>
-                            <span>Hubungi Customer Care</span>
-                        </a>
-                        <p class="text-[11px] text-stone-400 text-center md:text-right">
-                            Senin - Minggu • 08.00 - 21.00 WIB
-                        </p>
-                    </div>
-                </div>
-            </div>
+
 
         </div>
     </main>

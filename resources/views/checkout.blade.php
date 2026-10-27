@@ -149,7 +149,7 @@
                   province: '',
                   postalCode: '',
                   address: '',
-                  isUtama: this.savedAddresses.length === 0
+                  isUtama: false
               };
               this.editAddressModal = true;
           },
@@ -248,20 +248,32 @@
                           if (idx !== -1) {
                               this.savedAddresses[idx] = savedObj;
                           }
+
+                          if (savedObj.isUtama) {
+                              this.savedAddresses.forEach(a => {
+                                  if (a.id !== savedObj.id) a.isUtama = false;
+                              });
+                          }
+
+                          if (this.selectedAddressId === savedObj.id) {
+                              this.selectAddress(savedObj.id);
+                          }
+                          this.editAddressModal = false;
+                          this.modalView = 'list';
+                          this.showToast('Alamat pengiriman berhasil diperbarui!');
                       } else {
                           this.savedAddresses.unshift(savedObj);
-                      }
 
-                      if (savedObj.isUtama) {
-                          this.savedAddresses.forEach(a => {
-                              if (a.id !== savedObj.id) a.isUtama = false;
-                          });
-                      }
+                          if (savedObj.isUtama) {
+                              this.savedAddresses.forEach(a => {
+                                  if (a.id !== savedObj.id) a.isUtama = false;
+                              });
+                          }
 
-                      this.selectAddress(savedObj.id);
-                      this.editAddressModal = false;
-                      this.modalView = 'list';
-                      this.showToast(isEdit ? 'Alamat pengiriman berhasil diperbarui!' : 'Alamat baru berhasil disimpan & digunakan!');
+                          // Alamat baru tidak langsung dipake; kembali ke daftar alamat
+                          this.modalView = 'list';
+                          this.showToast('Alamat baru berhasil ditambahkan.');
+                      }
                   }
               })
               .catch(() => {
