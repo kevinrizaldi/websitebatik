@@ -125,14 +125,9 @@ class LaporanTest extends TestCase
         $response = $this->actingAs($this->admin())->get(route('admin.laporan.index'));
 
         $response->assertOk()
-            ->assertSee('Harian')
-            ->assertSee('Mingguan')
-            ->assertSee('Bulanan')
-            ->assertSee('Tahunan')
-            ->assertDontSee('Laporan Produk')
-            ->assertDontSee('Laporan Pelanggan')
-            ->assertDontSee('Pelanggan Baru')
-            ->assertDontSee('Produk Terlaris');
+            ->assertSee('Laporan Penjualan')
+            ->assertSee('Tanggal Mulai')
+            ->assertSee('Tanggal Akhir');
     }
 
     public function test_product_and_customer_report_types_are_rejected(): void

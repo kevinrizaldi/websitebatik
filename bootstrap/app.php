@@ -18,6 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
         ]);
 
+        $middleware->redirectTo(
+            guests: '/login',
+            users: fn (Request $request) => $request->user()?->isAdmin() ? route('dashboard') : route('home')
+        );
+
         $middleware->validateCsrfTokens(except: [
             'midtrans/*',
             'api/*',

@@ -52,32 +52,34 @@ class AlamatController extends Controller
         }
 
         $validated = $request->validate([
-            'label_alamat' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s]+$/u'],
-            'penerima' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.]+$/u'],
+            'label_alamat' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
+            'penerima' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.()\-]+$/u'],
             'no_telepon' => ['required', 'string', 'regex:/^[0-9+\- ]{10,20}$/'],
-            'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-]+$/u'],
-            'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s]+$/u'],
-            'provinsi' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\s]+$/u'],
+            'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()]+$/u'],
+            'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
+            'provinsi' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
             'kode_pos' => ['nullable', 'string', 'regex:/^[0-9]{5}$/'],
             'is_utama' => 'nullable|boolean',
         ], [
             'penerima.required' => 'Nama penerima wajib diisi.',
-            'penerima.regex' => 'Nama penerima hanya boleh berupa huruf, spasi, titik, atau tanda petik.',
-            'label_alamat.regex' => 'Label alamat hanya boleh berupa huruf, angka, dan spasi.',
+            'penerima.regex' => 'Nama penerima hanya boleh berupa huruf, spasi, titik, tanda petik, atau tanda kurung.',
+            'label_alamat.regex' => 'Label alamat hanya boleh berupa huruf, angka, titik, dan spasi.',
             'no_telepon.required' => 'Nomor WhatsApp / HP wajib diisi.',
-            'no_telepon.regex' => 'Nomor WhatsApp / HP harus berupa angka 10 sampai 15 digit.',
+            'no_telepon.regex' => 'Nomor WhatsApp / HP harus berupa nomor telepon 10 sampai 15 digit.',
             'alamat_lengkap.required' => 'Alamat lengkap wajib diisi.',
             'alamat_lengkap.regex' => 'Alamat lengkap tidak boleh mengandung simbol khusus yang tidak wajar.',
             'kota.required' => 'Kabupaten / Kota wajib diisi.',
-            'kota.regex' => 'Kabupaten / Kota hanya boleh berupa huruf dan spasi.',
-            'provinsi.regex' => 'Provinsi hanya boleh berupa huruf dan spasi.',
+            'kota.regex' => 'Kabupaten / Kota hanya boleh berupa huruf, spasi, atau singkatan daerah.',
+            'provinsi.regex' => 'Provinsi hanya boleh berupa huruf, spasi, atau singkatan daerah.',
             'kode_pos.regex' => 'Kode pos harus berupa 5 digit angka.',
         ]);
 
         $user = Auth::user();
 
-        // If this is the user's first address, or marked as utama, adjust others
-        $isUtama = ! empty($validated['is_utama']) || $user->alamats()->count() === 0;
+        // If explicitly requested, respect the boolean flag; otherwise default to true only for first address
+        $isUtama = $request->has('is_utama')
+            ? $request->boolean('is_utama')
+            : ($user->alamats()->count() === 0);
 
         if ($isUtama) {
             $user->alamats()->update(['is_utama' => false]);
@@ -125,25 +127,25 @@ class AlamatController extends Controller
         }
 
         $validated = $request->validate([
-            'label_alamat' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s]+$/u'],
-            'penerima' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.]+$/u'],
+            'label_alamat' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
+            'penerima' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.()\-]+$/u'],
             'no_telepon' => ['required', 'string', 'regex:/^[0-9+\- ]{10,20}$/'],
-            'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-]+$/u'],
-            'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s]+$/u'],
-            'provinsi' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\s]+$/u'],
+            'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()]+$/u'],
+            'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
+            'provinsi' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
             'kode_pos' => ['nullable', 'string', 'regex:/^[0-9]{5}$/'],
             'is_utama' => 'nullable|boolean',
         ], [
             'penerima.required' => 'Nama penerima wajib diisi.',
-            'penerima.regex' => 'Nama penerima hanya boleh berupa huruf, spasi, titik, atau tanda petik.',
-            'label_alamat.regex' => 'Label alamat hanya boleh berupa huruf, angka, dan spasi.',
+            'penerima.regex' => 'Nama penerima hanya boleh berupa huruf, spasi, titik, tanda petik, atau tanda kurung.',
+            'label_alamat.regex' => 'Label alamat hanya boleh berupa huruf, angka, titik, dan spasi.',
             'no_telepon.required' => 'Nomor WhatsApp / HP wajib diisi.',
-            'no_telepon.regex' => 'Nomor WhatsApp / HP harus berupa angka 10 sampai 15 digit.',
+            'no_telepon.regex' => 'Nomor WhatsApp / HP harus berupa nomor telepon 10 sampai 15 digit.',
             'alamat_lengkap.required' => 'Alamat lengkap wajib diisi.',
             'alamat_lengkap.regex' => 'Alamat lengkap tidak boleh mengandung simbol khusus yang tidak wajar.',
             'kota.required' => 'Kabupaten / Kota wajib diisi.',
-            'kota.regex' => 'Kabupaten / Kota hanya boleh berupa huruf dan spasi.',
-            'provinsi.regex' => 'Provinsi hanya boleh berupa huruf dan spasi.',
+            'kota.regex' => 'Kabupaten / Kota hanya boleh berupa huruf, spasi, atau singkatan daerah.',
+            'provinsi.regex' => 'Provinsi hanya boleh berupa huruf, spasi, atau singkatan daerah.',
             'kode_pos.regex' => 'Kode pos harus berupa 5 digit angka.',
         ]);
 

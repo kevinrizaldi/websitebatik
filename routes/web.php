@@ -27,15 +27,20 @@ use Illuminate\Support\Facades\Schema;
 
 Route::get('/', function () {
     $produks = collect();
+    $kategoris = collect();
     try {
         if (Schema::hasTable('produks')) {
             $produks = Produk::latest()->take(12)->get();
         }
+        if (Schema::hasTable('kategoris')) {
+            $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
+        }
     } catch (Throwable $e) {
         $produks = collect();
+        $kategoris = collect();
     }
 
-    return view('welcome', compact('produks'));
+    return view('welcome', compact('produks', 'kategoris'));
 })->name('home');
 
 Route::get('/koleksi', function () {
@@ -107,10 +112,18 @@ Route::get('/pesanan', function () {
     $reviewMap = [];
     try {
         if (Schema::hasTable('orders')) {
-            $query = Order::with('items.produk')->latest();
             if (Auth::check()) {
-                $userOrders = (clone $query)->where('user_id', Auth::id())->get();
-                $orders = $userOrders->isNotEmpty() ? $userOrders : $query->take(5)->get();
+                $orders = Order::with(['items.produk', 'payments'])
+                    ->where('user_id', Auth::id())
+                    ->latest()
+                    ->get();
+
+                foreach ($orders as $ord) {
+                    if ($ord->isPaymentExpired()) {
+                        $ord->markAsExpired();
+                    }
+                }
+
                 if (Schema::hasTable('ulasans')) {
                     $myReviews = Ulasan::where('user_id', Auth::id())->get(['id', 'order_id', 'produk_id', 'rating', 'comment']);
                     $reviewedIds = $myReviews->pluck('produk_id')->all();
@@ -128,7 +141,7 @@ Route::get('/pesanan', function () {
                     }
                 }
             } else {
-                $orders = $query->take(5)->get();
+                $orders = collect();
             }
         }
     } catch (Throwable $e) {

@@ -30,7 +30,7 @@
       x-data="{
           mobileMenuOpen: false,
           searchQuery: '',
-          activeCategory: 'Semua Produk',
+          activeCategory: '{{ request('kategori') ? addslashes(request('kategori')) : 'Semua Produk' }}',
           priceRange: 'Semua',
           sortBy: 'paling-sesuai',
           priceDropdownOpen: false,

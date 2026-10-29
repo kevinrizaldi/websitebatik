@@ -48,8 +48,8 @@
                         📅 Pesanan dibuat: {{ $order->created_at->format('d F Y, H:i') }} WIB
                     </div>
                 </div>
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-gray-50 shadow-sm transition">
-                    ← Kembali ke Dashboard
+                <a href="{{ route('pesanan.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-gray-50 shadow-sm transition">
+                    ← Kembali ke Pesanan
                 </a>
             </div>
 

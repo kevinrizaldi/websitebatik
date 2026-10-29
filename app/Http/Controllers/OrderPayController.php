@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Services\Midtrans\MidtransService;
 use App\Services\Midtrans\PaymentAttemptProcessor;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
@@ -22,10 +23,22 @@ class OrderPayController extends Controller
      *
      * GET /orders/{order}/pay
      */
-    public function show(Request $request, Order $order): View
+    public function show(Request $request, Order $order): View|RedirectResponse
     {
         if ($order->user_id !== $request->user()->id) {
             abort(403, 'Anda tidak memiliki akses ke pesanan ini.');
+        }
+
+        if ($order->isPaymentExpired()) {
+            $order->markAsExpired();
+
+            return redirect()->route('pesanan.index')
+                ->with('error', "Waktu pembayaran untuk pesanan #{$order->code} telah habis dan pesanan telah dibatalkan.");
+        }
+
+        if (in_array(strtolower($order->status), ['dibatalkan', 'batal', 'cancelled'], true)) {
+            return redirect()->route('pesanan.index')
+                ->with('error', "Pesanan #{$order->code} sudah dibatalkan dan tidak dapat dibayar lagi.");
         }
 
         $order->load('items.produk');

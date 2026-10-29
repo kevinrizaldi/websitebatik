@@ -227,9 +227,9 @@ class WebPrdFlowTest extends TestCase
         $response = $this->actingAs($this->admin())->get(route('profile.edit'));
 
         $response->assertStatus(200);
-        $response->assertSee('Profile Admin');
-        $response->assertSee('Profile Information');
-        $response->assertSee('Update Password');
+        $response->assertSee('Profil Admin');
+        $response->assertSee('Informasi Akun');
+        $response->assertSee('Ubah Password');
         $response->assertDontSee('Profil Saya');
     }
 
@@ -937,6 +937,30 @@ class WebPrdFlowTest extends TestCase
             'user_id' => $user->id,
             'penerima' => 'Kevin Rizaldi',
             'kota' => 'Kota Pekalongan',
+        ]);
+    }
+
+    public function test_store_alamat_with_explicit_is_utama_false_does_not_become_utama(): void
+    {
+        $user = $this->customer();
+
+        // Menyimpan alamat dengan is_utama = false tidak boleh dijadikan alamat utama
+        $response = $this->actingAs($user)->postJson(route('alamat.store'), [
+            'penerima' => 'Kevin Rizaldi',
+            'label_alamat' => 'Alamat Tambahan',
+            'no_telepon' => '081234567890',
+            'kota' => 'Kota Pekalongan',
+            'provinsi' => 'Jawa Tengah',
+            'kode_pos' => '51111',
+            'alamat_lengkap' => 'Jl. Hayam Wuruk No. 5',
+            'is_utama' => false,
+        ]);
+
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertDatabaseHas('alamats', [
+            'user_id' => $user->id,
+            'label_alamat' => 'Alamat Tambahan',
+            'is_utama' => false,
         ]);
     }
 

@@ -24,6 +24,13 @@
         .font-serif-title {
             font-family: 'Playfair Display', serif;
         }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="antialiased bg-[#FAF7F2] text-[#26211D] min-h-screen selection:bg-[#B58742] selection:text-white"
@@ -275,122 +282,154 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </section>
 
     <!-- ================= SECTION: JELAJAHI KOLEKSI ================= -->
-    <section id="koleksi" class="py-16 md:py-24 bg-white/60 border-t border-b border-[#EFE8DE]">
+    <section id="koleksi" class="py-12 md:py-16 bg-white/60 border-t border-b border-[#EFE8DE] relative"
+             x-data="{
+                 canScrollLeft: false,
+                 canScrollRight: true,
+                 progress: 0,
+                 isDown: false,
+                 startX: 0,
+                 scrollLeftPos: 0,
+                 checkScroll() {
+                     const el = this.$refs.slider;
+                     if (!el) return;
+                     const maxScroll = el.scrollWidth - el.clientWidth;
+                     this.canScrollLeft = el.scrollLeft > 10;
+                     this.canScrollRight = el.scrollLeft < maxScroll - 10;
+                     this.progress = maxScroll > 0 ? Math.min(100, Math.max(0, (el.scrollLeft / maxScroll) * 100)) : 100;
+                 },
+                 scroll(dir) {
+                     const el = this.$refs.slider;
+                     if (!el) return;
+                     const card = el.querySelector('.category-card');
+                     const step = card ? (card.offsetWidth + 20) : 260;
+                     el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
+                 },
+                 startDrag(e) {
+                     this.isDown = true;
+                     this.startX = e.pageX - this.$refs.slider.offsetLeft;
+                     this.scrollLeftPos = this.$refs.slider.scrollLeft;
+                 },
+                 stopDrag() {
+                     this.isDown = false;
+                 },
+                 onDrag(e) {
+                     if (!this.isDown) return;
+                     e.preventDefault();
+                     const x = e.pageX - this.$refs.slider.offsetLeft;
+                     const walk = (x - this.startX) * 1.4;
+                     this.$refs.slider.scrollLeft = this.scrollLeftPos - walk;
+                     this.checkScroll();
+                 }
+             }"
+             x-init="$nextTick(() => checkScroll()); window.addEventListener('resize', () => checkScroll())">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
-            <!-- Section Header -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-12">
+            <!-- Section Header & Navigation Buttons -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                 <div>
-                    <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#1F1916]">
+                    <span class="text-xs font-bold uppercase tracking-widest text-[#B58742] block mb-1">
+                        WARISAN NUSANTARA
+                    </span>
+                    <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
                         Jelajahi Koleksi
                     </h2>
-                </div>
-                <div class="md:max-w-md">
-                    <p class="text-stone-600 text-sm sm:text-base leading-relaxed">
+                    <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
                         Pilihan busana batik terbaik dengan perpaduan filosofi tradisional dan siluet modern kontemporer untuk segala suasana.
                     </p>
                 </div>
+
+                <!-- Navigation Controls (Slider Buttons) -->
+                <div class="flex items-center gap-3 shrink-0">
+                    <span class="text-xs text-stone-400 font-medium hidden sm:inline-block">Geser koleksi</span>
+                    <button type="button"
+                            @click="scroll('left')"
+                            :disabled="!canScrollLeft"
+                            :class="!canScrollLeft ? 'opacity-35 cursor-not-allowed border-stone-200 text-stone-300' : 'hover:bg-[#201A17] hover:text-white hover:border-[#201A17] text-stone-800 border-stone-300 shadow-2xs'"
+                            class="w-10 h-10 rounded-full border bg-white flex items-center justify-center transition duration-200"
+                            aria-label="Geser ke kiri">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                    </button>
+                    <button type="button"
+                            @click="scroll('right')"
+                            :disabled="!canScrollRight"
+                            :class="!canScrollRight ? 'opacity-35 cursor-not-allowed border-stone-200 text-stone-300' : 'hover:bg-[#201A17] hover:text-white hover:border-[#201A17] text-stone-800 border-stone-300 shadow-2xs'"
+                            class="w-10 h-10 rounded-full border bg-white flex items-center justify-center transition duration-200"
+                            aria-label="Geser ke kanan">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
-            <!-- 3 Collection Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                
-                <!-- Card 1: Baju Modern -->
-                <div class="group bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
-                    <div class="relative aspect-[4/5] overflow-hidden bg-stone-100">
-                        <span class="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm text-stone-800 text-xs font-semibold px-3 py-1 rounded-full shadow-xs">
-                            Pria & Wanita
-                        </span>
-                        <img src="{{ asset('images/beranda/hero-couple.jpg') }}" 
-                             alt="Baju Batik Modern" 
-                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h3 class="font-bold text-xl text-stone-900 mb-2 group-hover:text-amber-800 transition">
-                                Baju Modern
-                            </h3>
-                            <p class="text-stone-600 text-sm leading-relaxed mb-4">
-                                Koleksi kemeja pria dan dress wanita berdesain kontemporer untuk gaya profesional, formal, maupun santai.
-                            </p>
+            <!-- Dynamic Collection Cards Carousel (Horizontally Scrollable) -->
+            <div class="relative">
+                <div x-ref="slider"
+                     @scroll.passive="checkScroll()"
+                     @mousedown="startDrag($event)"
+                     @mouseleave="stopDrag()"
+                     @mouseup="stopDrag()"
+                     @mousemove="onDrag($event)"
+                     class="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory pb-5 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 cursor-grab active:cursor-grabbing">
+                    @forelse($kategoris as $kat)
+                        <div class="category-card w-[210px] sm:w-[230px] md:w-[250px] shrink-0 snap-start group bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between select-none">
+                            <div>
+                                <div class="relative aspect-[4/5] overflow-hidden bg-stone-100">
+                                    <span class="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-md text-stone-900 text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs border border-white/60">
+                                        {{ $kat->produks_count }} Produk
+                                    </span>
+                                    <img src="{{ $kat->gambar_url }}" 
+                                         alt="{{ $kat->nama_kategori }}" 
+                                         draggable="false"
+                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out pointer-events-none">
+                                </div>
+                                <div class="p-4 sm:p-5">
+                                    <h3 class="font-bold text-base sm:text-lg text-stone-900 mb-1.5 group-hover:text-amber-800 transition line-clamp-1">
+                                        {{ $kat->nama_kategori }}
+                                    </h3>
+                                    <p class="text-stone-600 text-xs leading-relaxed line-clamp-2">
+                                        {{ $kat->deskripsi ?: 'Koleksi busana dan kerajinan batik autentik karya pengrajin sentra lokal pilihan.' }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="px-4 pb-4 sm:px-5 sm:pb-5 pt-0">
+                                <a href="{{ route('koleksi.index', ['kategori' => $kat->nama_kategori]) }}" 
+                                   class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
+                                    <span>Lihat Koleksi</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
+                                    </svg>
+                                </a>
+                            </div>
                         </div>
-                        <a href="#produk-unggulan" 
-                           @click="activeCategory = 'Baju Pria'"
-                           class="inline-flex items-center gap-1.5 text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
-                            Lihat Koleksi
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                            </svg>
-                        </a>
-                    </div>
+                    @empty
+                        <div class="w-full py-12 text-center text-stone-500 bg-white rounded-3xl border border-dashed border-stone-300">
+                            Belum ada kategori yang ditambahkan.
+                        </div>
+                    @endforelse
                 </div>
 
-                <!-- Card 2: Batik Tulis -->
-                <div class="group bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
-                    <div class="relative aspect-[4/5] overflow-hidden bg-stone-100">
-                        <span class="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm text-stone-800 text-xs font-semibold px-3 py-1 rounded-full shadow-xs">
-                            Batik Tradisional
-                        </span>
-                        <img src="{{ asset('images/beranda/folded-shirts.jpg') }}" 
-                             alt="Batik Tulis Tradisional" 
-                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                <!-- Scroll Progress Bar Track & Hint -->
+                <div class="flex items-center justify-between pt-2">
+                    <div class="flex items-center gap-2 text-stone-400 text-xs">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+                        </svg>
+                        <span class="text-[11px] font-medium">Geser untuk melihat kategori lainnya</span>
                     </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h3 class="font-bold text-xl text-stone-900 mb-2 group-hover:text-amber-800 transition">
-                                Batik Tulis
-                            </h3>
-                            <p class="text-stone-600 text-sm leading-relaxed mb-4">
-                                Mahakarya seni canting asli pengrajin lokal dengan motif parang, kawung, dan filosofi luhur nusantara.
-                            </p>
-                        </div>
-                        <a href="#produk-unggulan" 
-                           @click="activeCategory = 'Semua'"
-                           class="inline-flex items-center gap-1.5 text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
-                            Lihat Koleksi
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                            </svg>
-                        </a>
+                    <div class="w-24 sm:w-32 h-1 bg-stone-200/80 rounded-full overflow-hidden">
+                        <div class="h-full bg-[#B58742] rounded-full transition-all duration-200"
+                             :style="'width: ' + Math.max(20, progress) + '%'"></div>
                     </div>
                 </div>
-
-                <!-- Card 3: Tas & Pouch Batik -->
-                <div class="group bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
-                    <div class="relative aspect-[4/5] overflow-hidden bg-stone-100">
-                        <span class="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm text-stone-800 text-xs font-semibold px-3 py-1 rounded-full shadow-xs">
-                            Aksesoris & Tas
-                        </span>
-                        <img src="{{ asset('images/beranda/bags-accessories.jpg') }}" 
-                             alt="Tas & Pouch Batik" 
-                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h3 class="font-bold text-xl text-stone-900 mb-2 group-hover:text-amber-800 transition">
-                                Tas & Pouch Batik
-                            </h3>
-                            <p class="text-stone-600 text-sm leading-relaxed mb-4">
-                                Sentuhan estetika etnik dalam tas jinjing dan clutch modern untuk melengkapi gaya fashion harian Anda.
-                            </p>
-                        </div>
-                        <a href="#produk-unggulan" 
-                           @click="activeCategory = 'Aksesoris'"
-                           class="inline-flex items-center gap-1.5 text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
-                            Lihat Koleksi
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
-                            </svg>
-                        </a>
-                    </div>
-                </div>
-
             </div>
 
         </div>
@@ -414,35 +453,27 @@
                     </p>
                 </div>
 
-                <!-- Category Filter Buttons -->
+                <!-- Category Filter Buttons (Dynamic from Database) -->
                 <div class="flex flex-wrap items-center gap-2">
                     <button @click="activeCategory = 'Semua'" 
                             :class="activeCategory === 'Semua' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                             class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
                         Semua
                     </button>
-                    <button @click="activeCategory = 'Baju Batik'" 
-                            :class="activeCategory === 'Baju Batik' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                            class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
-                        Baju Batik
-                    </button>
-                    <button @click="activeCategory = 'Kain Batik'" 
-                            :class="activeCategory === 'Kain Batik' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                            class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
-                        Kain Batik
-                    </button>
-                    <button @click="activeCategory = 'Olahan Kain Sisa'" 
-                            :class="activeCategory === 'Olahan Kain Sisa' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                            class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
-                        Olahan Kain Sisa
-                    </button>
+                    @foreach($kategoris as $kat)
+                        <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'" 
+                                :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
+                            {{ $kat->nama_kategori }}
+                        </button>
+                    @endforeach
                 </div>
             </div>
 
             <!-- Products Grid (Dynamic from Database) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach($produks->take(8) as $p)
-                    <div x-show="activeCategory === 'Semua' || activeCategory === '{{ $p->kategori }}'"
+                    <div x-show="activeCategory === 'Semua' || activeCategory === '{{ addslashes($p->category_name) }}'"
                          x-transition
                          class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
                         <a href="{{ route('produk.detail', ['id' => $p->id]) }}" class="relative aspect-square overflow-hidden bg-stone-100 block">
@@ -450,7 +481,7 @@
                                 {{ $p->status === 'Stok Menipis' ? 'Stok Terbatas' : ($p->status === 'Habis' ? 'Habis' : 'Ready Stock') }}
                             </span>
                             <span class="absolute bottom-3 left-3 z-10 bg-[#201A17]/80 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded uppercase tracking-wider">
-                                {{ $p->kategori }}
+                                {{ $p->category_name }}
                             </span>
                             <img src="{{ $p->gambar_url }}" 
                                  alt="{{ $p->nama }}" 

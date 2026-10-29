@@ -101,7 +101,7 @@ class OrderController extends Controller
                 'tracking_number' => [
                     'nullable',
                     'string',
-                    'max:50',
+                    'max:15',
                     'regex:/^[A-Za-z0-9\-]+$/',
                     Rule::unique('orders', 'tracking_number')
                         ->ignore($order->id)
@@ -204,7 +204,7 @@ class OrderController extends Controller
             'no_resi' => [
                 'required',
                 'string',
-                'max:50',
+                'max:15',
                 'regex:/^[A-Za-z0-9\-]+$/',
                 Rule::unique('orders', 'tracking_number')
                     ->ignore($order->id)

@@ -116,7 +116,7 @@ class PaymentAttemptProcessor
                 $lockedPayment->save();
 
                 // Order handling
-                if ($order->status === Order::STATUS_CANCELLED) {
+                if (in_array($order->status, [Order::STATUS_CANCELLED, 'Batal', 'Dibatalkan'], true)) {
                     Log::warning('Midtrans: payment received for cancelled order', [
                         'order_id' => $order->id,
                         'payment_id' => $lockedPayment->id,
@@ -196,6 +196,10 @@ class PaymentAttemptProcessor
                     }
                     $lockedPayment->raw_notification = array_diff_key($payload, ['signature_key' => true]);
                     $lockedPayment->save();
+                }
+
+                if ($order && $order->isPaymentExpired()) {
+                    $order->markAsExpired();
                 }
             }
 
