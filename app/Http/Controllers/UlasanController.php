@@ -117,6 +117,7 @@ class UlasanController extends Controller
                 'order_id' => $targetOrder->id,
                 'produk_id' => $validated['produk_id'],
                 'user_id' => $user->id,
+                'user_name' => $user->name,
                 'customer_name' => $user->name ?? 'Pelanggan Batik',
                 'rating' => (int) $validated['rating'],
                 'comment' => $validated['comment'],

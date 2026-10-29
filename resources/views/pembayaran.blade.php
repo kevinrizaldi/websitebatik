@@ -210,7 +210,7 @@
                             <span class="text-xs text-stone-500">Status Pembayaran</span>
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold {{ $order->status === 'Diproses' || $order->status === 'Sudah Dibayar' ? 'bg-emerald-100 text-emerald-900' : 'bg-amber-100 text-amber-900' }}">
                                 <span class="w-1.5 h-1.5 rounded-full {{ $order->status === 'Diproses' || $order->status === 'Sudah Dibayar' ? 'bg-emerald-600' : 'bg-amber-600 animate-ping' }}"></span>
-                                {{ $order->pembayaran->status_pembayaran ?? $order->status }}
+                                {{ $order->payment_status ? ucfirst($order->payment_status) : $order->status }}
                             </span>
                         </div>
                     </div>

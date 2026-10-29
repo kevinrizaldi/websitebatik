@@ -13,6 +13,7 @@ class OrderItem extends Model
         'order_id',
         'produk_id',
         'produk_name',
+        'ukuran',
         'price',
         'quantity',
         'subtotal',

@@ -8,7 +8,7 @@ use App\Models\Order;
 use App\Models\Produk;
 use App\Models\Ulasan;
 use App\Models\User;
-use App\Services\MidtransService;
+use App\Services\Midtrans\MidtransService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -779,7 +779,7 @@ class WebPrdFlowTest extends TestCase
 
         $response->assertOk();
         $this->assertSame('Diproses', $order->refresh()->status);
-        $this->assertSame('Berhasil', $order->pembayaran->refresh()->status_pembayaran);
+        $this->assertSame('paid', $order->refresh()->payment_status);
     }
 
     public function test_refresh_from_midtrans_updates_order_on_settlement(): void

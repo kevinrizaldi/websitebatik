@@ -34,7 +34,7 @@ class AuthenticatedSessionController extends Controller
                 return redirect()->intended(route('admin.orders.index', absolute: false));
             }
 
-            return redirect()->intended('/');
+            return redirect('/');
         } catch (ValidationException $e) {
             return back()->withInput($request->only('email', 'remember'))->withErrors($e->errors());
         } catch (\Throwable $e) {

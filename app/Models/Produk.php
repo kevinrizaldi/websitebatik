@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Produk extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public const LOW_STOCK_THRESHOLD = 10;
 
@@ -24,6 +25,7 @@ class Produk extends Model
         'kategori',
         'harga',
         'stok',
+        'berat',
         'status',
         'deskripsi',
         'material',
@@ -36,6 +38,7 @@ class Produk extends Model
     protected $casts = [
         'harga' => 'decimal:2',
         'stok' => 'integer',
+        'berat' => 'integer',
         'stok_ukuran' => 'array',
         'gambar_lainnya' => 'array',
     ];

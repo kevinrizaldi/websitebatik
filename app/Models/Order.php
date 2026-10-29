@@ -56,31 +56,24 @@ class Order extends Model
         'user_id',
         'code',
         'customer_name',
+        'email',
         'address',
         'phone',
         'total_price',
         'shipping_cost',
+        'shipping_option',
         'payment_method',
         'payment_proof',
         'status',
         'tracking_number',
-        // Midtrans columns set by server code only:
-        'midtrans_order_id',
-        'snap_token',
         'payment_status',
-        'payment_type',
-        'transaction_id',
-        'paid_at',
         'payment_deadline',
-        'raw_notification',
     ];
 
     protected $casts = [
         'total_price' => 'decimal:2',
         'shipping_cost' => 'decimal:2',
-        'paid_at' => 'datetime',
         'payment_deadline' => 'datetime',
-        'raw_notification' => 'array',
     ];
 
     /**
@@ -137,11 +130,6 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
-    }
-
-    public function pembayaran(): HasOne
-    {
-        return $this->hasOne(Pembayaran::class, 'order_id');
     }
 
     public function pengiriman(): HasOne

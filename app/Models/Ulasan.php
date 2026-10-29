@@ -16,6 +16,7 @@ class Ulasan extends Model
         'order_id',
         'produk_id',
         'user_id',
+        'user_name',
         'customer_name',
         'rating',
         'comment',

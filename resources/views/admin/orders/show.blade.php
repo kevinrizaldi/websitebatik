@@ -107,9 +107,9 @@
                                     <div class="font-bold text-stone-800">Pembayaran via Midtrans</div>
                                     <div class="text-gray-400 text-[10px]">
                                         Status Midtrans:
-                                        <span class="font-semibold text-stone-700">{{ $order->pembayaran->status_pembayaran ?? $order->status }}</span>
-                                        @if ($order->pembayaran?->metode_pembayaran)
-                                            • {{ $order->pembayaran->metode_pembayaran }}
+                                        <span class="font-semibold text-stone-700">{{ $order->payment_status ? ucfirst($order->payment_status) : $order->status }}</span>
+                                        @if ($order->payment_method && $order->payment_method !== 'Transfer Bank')
+                                            • {{ $order->payment_method }}
                                         @endif
                                     </div>
                                 </div>

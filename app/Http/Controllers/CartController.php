@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Pengiriman;
 use App\Models\Produk;
-use App\Services\MidtransService;
+use App\Services\Midtrans\MidtransService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -215,8 +215,6 @@ class CartController extends Controller
     public function checkoutPage(): View|RedirectResponse
     {
         if (! Auth::check()) {
-            session()->put('url.intended', route('checkout.index'));
-
             return redirect()->route('login')->with('info', 'Silakan masuk atau daftar akun terlebih dahulu untuk melanjutkan checkout.');
         }
 
@@ -256,7 +254,6 @@ class CartController extends Controller
     public function checkout(Request $request): JsonResponse|RedirectResponse
     {
         if (! Auth::check()) {
-            session()->put('url.intended', route('checkout.index'));
             if ($request->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -330,15 +327,8 @@ class CartController extends Controller
             $totalPrice += ($price * $item->qty);
         }
 
-        // Apply voucher discount if applicable
-        $discount = 0;
-        $voucherInput = strtoupper((string) $request->input('voucher'));
-        if (in_array($voucherInput, ['SIRKULAR50K', 'LESTARI50K', 'LESTARICAPSULE']) && $totalPrice >= 200000) {
-            $discount = 50000;
-        }
-
-        $shipping = isset($validated['shipping_cost']) ? (float) $validated['shipping_cost'] : (($totalPrice >= 955000) ? 0 : 20000);
-        $grandTotal = max(0, $totalPrice - $discount + $shipping);
+        $shipping = isset($validated['shipping_cost']) ? (float) $validated['shipping_cost'] : 0;
+        $grandTotal = $totalPrice + $shipping;
 
         $orderCode = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(4));
         $shippingOption = $validated['shipping_option'] ?? 'JNE Reguler';
@@ -351,14 +341,20 @@ class CartController extends Controller
                 'user_id' => Auth::id(),
                 'code' => $orderCode,
                 'customer_name' => $validated['customer_name'],
+                'email' => Auth::user()->email,
                 'phone' => $validated['phone'],
                 'address' => $fullAddress,
                 'total_price' => $grandTotal,
                 'shipping_cost' => $shipping,
+                'shipping_option' => $shippingOption,
                 'payment_method' => $validated['payment_method'] ?? 'Midtrans Gateway',
                 'status' => 'Menunggu Pembayaran',
                 'payment_status' => Order::PAYMENT_PENDING,
             ]);
+
+            // Lock products to prevent race condition on stock deduction
+            $produkIds = $cartItems->pluck('produk_id')->unique()->filter()->values()->all();
+            $lockedProduks = Produk::whereIn('id', $produkIds)->lockForUpdate()->get()->keyBy('id');
 
             foreach ($cartItems as $item) {
                 if ($item->produk) {
@@ -367,14 +363,16 @@ class CartController extends Controller
                         'order_id' => $order->id,
                         'produk_id' => $item->produk->id,
                         'produk_name' => $item->produk->nama.($item->ukuran ? ' ('.$item->ukuran.')' : ''),
+                        'ukuran' => $item->ukuran,
                         'price' => $itemPrice,
                         'quantity' => $item->qty,
                         'subtotal' => $itemPrice * $item->qty,
                     ]);
 
-                    // Deduct stock if sufficient
-                    if ($item->produk->stok >= $item->qty) {
-                        $item->produk->decrementStokForUkuran($item->ukuran, $item->qty);
+                    // Deduct stock using locked product instance
+                    $lockedProduk = $lockedProduks->get($item->produk->id);
+                    if ($lockedProduk && $lockedProduk->getStokForUkuran($item->ukuran) >= $item->qty) {
+                        $lockedProduk->decrementStokForUkuran($item->ukuran, $item->qty);
                     }
                 }
 
@@ -396,8 +394,7 @@ class CartController extends Controller
         // bisa membayar lewat halaman pembayaran.
         $snapToken = null;
         try {
-            $snapData = $this->midtransService->createSnapTransaction($order);
-            $snapToken = $snapData['token'] ?? null;
+            $snapToken = $this->midtransService->getOrCreateSnapToken($order);
         } catch (Throwable $e) {
             Log::warning('Midtrans Snap token gagal dibuat saat checkout', [
                 'order_code' => $order->code,
