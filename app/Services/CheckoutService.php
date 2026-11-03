@@ -121,7 +121,7 @@ class CheckoutService
      *
      * @param  array<string, mixed>  $validated
      */
-    public function syncDefaultAddress(User $user, array $validated, ?string $city = null, ?string $province = null, ?string $postalCode = null): void
+    public function syncDefaultAddress(User $user, array $validated, ?string $city = null, ?string $province = null, ?string $postalCode = null, ?int $cityId = null, ?int $provinceId = null): void
     {
         if ($user->alamats()->count() === 0 && ! empty($validated['address'])) {
             try {
@@ -132,6 +132,8 @@ class CheckoutService
                     'alamat_lengkap' => $validated['address'],
                     'kota' => $city ?: 'Indonesia',
                     'provinsi' => $province ?: 'Indonesia',
+                    'city_id' => $cityId,
+                    'province_id' => $provinceId,
                     'kode_pos' => $postalCode ?: '',
                     'is_utama' => true,
                 ]);

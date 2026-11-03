@@ -60,7 +60,7 @@ class WebPrdFlowTest extends TestCase
         ]);
 
         $response->assertRedirect();
-        $this->assertDatabaseHas('alamats', [
+        $this->assertDatabaseHas('addresses', [
             'user_id' => $user->id,
             'kota' => 'Surakarta',
             'is_utama' => true,
@@ -123,7 +123,7 @@ class WebPrdFlowTest extends TestCase
             'nama_kategori' => 'Kain Tradisional Sutra',
         ]);
         $response->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('kategoris', ['nama_kategori' => 'Kain Tradisional Sutra']);
+        $this->assertDatabaseHas('categories', ['nama_kategori' => 'Kain Tradisional Sutra']);
     }
 
     public function test_produk_create_form_uses_dynamic_categories(): void
@@ -170,7 +170,7 @@ class WebPrdFlowTest extends TestCase
 
         $response->assertRedirect(route('pesanan.index'));
         $this->assertDatabaseHas('orders', ['code' => 'ORD-TEST-002', 'status' => 'Selesai']);
-        $this->assertDatabaseHas('pengirimans', ['order_id' => $order->id, 'status_pengiriman' => 'Diterima']);
+        $this->assertDatabaseHas('shipments', ['order_id' => $order->id, 'status_pengiriman' => 'Diterima']);
     }
 
     public function test_admin_resi_validation_rejects_symbols(): void
@@ -339,7 +339,7 @@ class WebPrdFlowTest extends TestCase
         ], ['Accept' => 'application/json']);
 
         $response->assertStatus(422)->assertJson(['success' => false]);
-        $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
+        $this->assertDatabaseMissing('reviews', ['produk_id' => $produk->id]);
     }
 
     public function test_review_rejected_when_order_not_completed(): void
@@ -357,7 +357,7 @@ class WebPrdFlowTest extends TestCase
         ], ['Accept' => 'application/json']);
 
         $response->assertStatus(422)->assertJson(['success' => false]);
-        $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
+        $this->assertDatabaseMissing('reviews', ['produk_id' => $produk->id]);
     }
 
     public function test_review_accepted_after_completed_purchase(): void
@@ -376,7 +376,7 @@ class WebPrdFlowTest extends TestCase
         ], ['Accept' => 'application/json']);
 
         $response->assertOk()->assertJson(['success' => true]);
-        $this->assertDatabaseHas('ulasans', [
+        $this->assertDatabaseHas('reviews', [
             'produk_id' => $produk->id,
             'user_id' => $user->id,
             'rating' => 5,
@@ -571,7 +571,7 @@ class WebPrdFlowTest extends TestCase
 
         $this->assertNotEmpty($imagePath);
         Storage::disk('public')->assertExists($imagePath);
-        $this->assertDatabaseHas('ulasans', [
+        $this->assertDatabaseHas('reviews', [
             'produk_id' => $produk->id,
             'image_path' => $imagePath,
         ]);
@@ -591,7 +591,7 @@ class WebPrdFlowTest extends TestCase
         ]);
 
         $response->assertOk()->assertJson(['success' => true]);
-        $this->assertDatabaseHas('ulasans', [
+        $this->assertDatabaseHas('reviews', [
             'produk_id' => $produk->id,
             'user_id' => $user->id,
             'image_path' => null,
@@ -614,7 +614,7 @@ class WebPrdFlowTest extends TestCase
 
         $response->assertUnprocessable()
             ->assertJsonPath('errors.image.0', 'File ulasan harus berupa gambar.');
-        $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
+        $this->assertDatabaseMissing('reviews', ['produk_id' => $produk->id]);
     }
 
     private function createPendingReview(User $user, Produk $produk, Order $order): Ulasan
@@ -696,7 +696,7 @@ class WebPrdFlowTest extends TestCase
         $response = $this->actingAs($user)->delete(route('ulasan.destroy', $ulasan), [], ['Accept' => 'application/json']);
 
         $response->assertOk()->assertJson(['success' => true]);
-        $this->assertDatabaseMissing('ulasans', ['id' => $ulasan->id]);
+        $this->assertDatabaseMissing('reviews', ['id' => $ulasan->id]);
         Storage::disk('public')->assertMissing($imagePath);
     }
 
@@ -712,7 +712,7 @@ class WebPrdFlowTest extends TestCase
         $response = $this->actingAs($user)->delete(route('ulasan.destroy', $ulasan), [], ['Accept' => 'application/json']);
 
         $response->assertStatus(422)->assertJson(['success' => false]);
-        $this->assertDatabaseHas('ulasans', ['id' => $ulasan->id]);
+        $this->assertDatabaseHas('reviews', ['id' => $ulasan->id]);
     }
 
     public function test_review_rejected_for_other_users_order(): void
@@ -731,7 +731,7 @@ class WebPrdFlowTest extends TestCase
         ], ['Accept' => 'application/json']);
 
         $response->assertStatus(403);
-        $this->assertDatabaseMissing('ulasans', ['produk_id' => $produk->id]);
+        $this->assertDatabaseMissing('reviews', ['produk_id' => $produk->id]);
     }
 
     public function test_koleksi_shows_database_categories_as_pills(): void
@@ -933,7 +933,7 @@ class WebPrdFlowTest extends TestCase
         ]);
 
         $validResponse->assertOk()->assertJson(['success' => true]);
-        $this->assertDatabaseHas('alamats', [
+        $this->assertDatabaseHas('addresses', [
             'user_id' => $user->id,
             'penerima' => 'Kevin Rizaldi',
             'kota' => 'Kota Pekalongan',

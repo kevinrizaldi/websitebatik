@@ -4,6 +4,10 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PelangganController;
+use App\Http\Controllers\Admin\PembayaranController;
+use App\Http\Controllers\Admin\PengirimanController;
+use App\Http\Controllers\Admin\StokController;
 use App\Http\Controllers\Admin\StoreSettingController;
 use App\Http\Controllers\Admin\UlasanController;
 use App\Http\Controllers\AlamatController;
@@ -16,6 +20,7 @@ use App\Http\Controllers\PaymentQrController;
 use App\Http\Controllers\PaymentSyncController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RajaOngkirController;
 use App\Http\Controllers\UlasanController as CustomerUlasanController;
 use App\Models\Kategori;
 use App\Models\Order;
@@ -26,13 +31,17 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
 Route::get('/', function () {
+    if (Auth::check() && Auth::user()->isAdmin()) {
+        return redirect()->route('dashboard');
+    }
+
     $produks = collect();
     $kategoris = collect();
     try {
-        if (Schema::hasTable('produks')) {
+        if (Schema::hasTable('products') || Schema::hasTable('produks')) {
             $produks = Produk::latest()->take(12)->get();
         }
-        if (Schema::hasTable('kategoris')) {
+        if (Schema::hasTable('categories') || Schema::hasTable('kategoris')) {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
@@ -47,10 +56,10 @@ Route::get('/koleksi', function () {
     $produks = collect();
     $kategoris = collect();
     try {
-        if (Schema::hasTable('produks')) {
+        if (Schema::hasTable('products') || Schema::hasTable('produks')) {
             $produks = Produk::latest()->get();
         }
-        if (Schema::hasTable('kategoris')) {
+        if (Schema::hasTable('categories') || Schema::hasTable('kategoris')) {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
@@ -69,7 +78,7 @@ Route::get('/produk-detail/{id?}', function ($id = null) {
     $ratingCount = 0;
     $ratingBars = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
     try {
-        if (Schema::hasTable('produks')) {
+        if (Schema::hasTable('products') || Schema::hasTable('produks')) {
             if ($id) {
                 $produk = Produk::find($id);
             }
@@ -78,7 +87,7 @@ Route::get('/produk-detail/{id?}', function ($id = null) {
             }
             $produksTerkait = Produk::latest()->take(4)->get();
         }
-        if ($produk && Schema::hasTable('ulasans')) {
+        if ($produk && (Schema::hasTable('reviews') || Schema::hasTable('ulasans'))) {
             $approved = Ulasan::where('produk_id', $produk->id)->where('status', 'Disetujui');
             $ulasans = (clone $approved)->latest()->take(6)->get();
             $ratingCount = (clone $approved)->count();
@@ -105,6 +114,14 @@ Route::post('/keranjang/checkout', [CartController::class, 'checkout'])->name('k
 Route::get('/checkout', [CartController::class, 'checkoutPage'])->name('checkout.index');
 Route::post('/checkout', [CartController::class, 'checkout'])->name('checkout.store');
 
+// RajaOngkir Ongkos Kirim API
+Route::prefix('rajaongkir')->name('rajaongkir.')->group(function () {
+    Route::get('/provinces', [RajaOngkirController::class, 'provinces'])->name('provinces');
+    Route::get('/cities', [RajaOngkirController::class, 'cities'])->name('cities');
+    Route::get('/destinations', [RajaOngkirController::class, 'destinations'])->name('destinations');
+    Route::post('/cost', [RajaOngkirController::class, 'calculateCost'])->name('cost');
+});
+
 Route::get('/pesanan', function () {
     $orders = collect();
     $reviewedIds = [];
@@ -116,7 +133,7 @@ Route::get('/pesanan', function () {
             if (Auth::check()) {
                 $userOrders = (clone $query)->where('user_id', Auth::id())->get();
                 $orders = $userOrders->isNotEmpty() ? $userOrders : $query->take(5)->get();
-                if (Schema::hasTable('ulasans')) {
+                if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
                     $myReviews = Ulasan::where('user_id', Auth::id())->get(['id', 'order_id', 'produk_id', 'rating', 'comment']);
                     $reviewedIds = $myReviews->pluck('produk_id')->all();
                     $reviewedPairs = $myReviews->whereNotNull('order_id')->groupBy('order_id')
@@ -230,8 +247,22 @@ Route::middleware(['auth', 'admin'])->group(function () {
         // Kelola Kategori (halaman tunggal + modal, tanpa create/edit/show terpisah)
         Route::resource('kategori', KategoriController::class)->only(['index', 'store', 'update', 'destroy'])->names('kategori');
 
-        // Update Pengiriman
+        // Kelola Stok & Inventaris Sirkular
+        Route::get('/stok', [StokController::class, 'index'])->name('stok.index');
+
+        // Kelola Pelanggan & Patron
+        Route::get('/pelanggan', [PelangganController::class, 'index'])->name('pelanggan.index');
+
+        // Kelola Pembayaran & Mutasi Gateway Midtrans
+        Route::get('/pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
+        Route::post('/pembayaran/sync', [PembayaranController::class, 'sync'])->name('pembayaran.sync');
+
+        // Kelola Pengiriman & Logistik RajaOngkir
+        Route::get('/pengiriman', [PengirimanController::class, 'index'])->name('pengiriman.index');
+
+        // Update Pengiriman & Sync Pembayaran Per-Order
         Route::patch('/orders/{order}/pengiriman', [OrderController::class, 'updatePengiriman'])->name('orders.update-pengiriman');
+        Route::post('/orders/{order}/sync-payment', [OrderController::class, 'syncPayment'])->name('orders.sync-payment');
 
         // Pengaturan Toko
         Route::get('/pengaturan', [StoreSettingController::class, 'index'])->name('pengaturan.index');

@@ -38,7 +38,7 @@ class UlasanController extends Controller
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
-            'produk_id' => 'required|exists:produks,id',
+            'produk_id' => 'required|exists:products,id',
             'order_code' => 'nullable|string|exists:orders,code',
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|min:3|max:1000',

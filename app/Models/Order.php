@@ -141,23 +141,33 @@ class Order extends Model
 
     public function pembayaran(): HasOne
     {
-        return $this->hasOne(Pembayaran::class, 'order_id');
+        return $this->payment();
+    }
+
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'order_id');
     }
 
     public function pengiriman(): HasOne
     {
-        return $this->hasOne(Pengiriman::class, 'order_id');
+        return $this->shipment();
+    }
+
+    public function shipment(): HasOne
+    {
+        return $this->hasOne(Shipment::class, 'order_id');
     }
 
     /**
      * Get or create pengiriman relation
      */
-    public function getOrInitPengiriman(): Pengiriman
+    public function getOrInitPengiriman(): Shipment
     {
-        return $this->pengiriman ?: $this->pengiriman()->create([
-            'ekspedisi' => 'JNE Reguler',
-            'no_resi' => $this->tracking_number,
-            'status_pengiriman' => $this->status === 'Dikirim' ? 'Dikirim' : ($this->status === 'Selesai' ? 'Diterima' : 'Menunggu Pengiriman'),
+        return $this->shipment ?: $this->shipment()->create([
+            'courier' => 'JNE Reguler',
+            'tracking_number' => $this->tracking_number,
+            'shipping_status' => $this->status === 'Dikirim' ? 'Dikirim' : ($this->status === 'Selesai' ? 'Diterima' : 'Menunggu Pengiriman'),
         ]);
     }
 

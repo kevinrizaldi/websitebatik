@@ -21,12 +21,17 @@ class ProdukController extends Controller
             'search' => 'nullable|string|max:100',
             'stok_menipis' => 'nullable|in:1',
             'stok_habis' => 'nullable|in:1',
+            'kategori' => 'nullable|string|max:50',
+            'status_stok' => 'nullable|string|max:50',
+            'sort' => 'nullable|string|max:50',
         ]);
         $search = trim($validated['search'] ?? '');
-        $lowStockOnly = $request->boolean('stok_menipis');
-        $outOfStockOnly = $request->boolean('stok_habis');
+        $lowStockOnly = $request->boolean('stok_menipis') || ($request->input('status_stok') === 'menipis');
+        $outOfStockOnly = $request->boolean('stok_habis') || ($request->input('status_stok') === 'habis');
+        $kategoriFilter = $validated['kategori'] ?? null;
+        $sort = $validated['sort'] ?? 'latest';
 
-        $produks = Produk::query()
+        $query = Produk::query()
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $query) use ($search): void {
                     foreach (['nama', 'sku', 'kategori', 'jenis_produk', 'deskripsi', 'material', 'ukuran', 'status'] as $column) {
@@ -34,15 +39,42 @@ class ProdukController extends Controller
                     }
                 });
             })
+            ->when($kategoriFilter, function (Builder $query, string $kat): void {
+                $query->where('kategori', $kat);
+            })
             ->when($lowStockOnly, fn (Builder $query): Builder => $query->whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD]))
-            ->when($outOfStockOnly, fn (Builder $query): Builder => $query->where('stok', '<=', 0))
-            ->latest()
-            ->paginate(5)
-            ->withQueryString();
+            ->when($outOfStockOnly, fn (Builder $query): Builder => $query->where('stok', '<=', 0));
+
+        match ($sort) {
+            'oldest' => $query->oldest(),
+            'price_high' => $query->orderByDesc('harga'),
+            'price_low' => $query->orderBy('harga'),
+            'stock_high' => $query->orderByDesc('stok'),
+            default => $query->latest(),
+        };
+
+        $produks = $query->paginate(5)->withQueryString();
+        $totalProduk = Produk::count();
         $lowStockCount = Produk::whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD])->count();
         $outOfStockCount = Produk::where('stok', '<=', 0)->count();
+        $totalKategori = Schema::hasTable('categories') ? Kategori::count() : 4;
+        $kategorisList = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
+        $totalValuasi = (float) (Produk::query()->selectRaw('SUM(harga * stok) as total')->value('total') ?? 128400000);
 
-        return view('produk.index', compact('produks', 'search', 'lowStockOnly', 'lowStockCount', 'outOfStockOnly', 'outOfStockCount'));
+        return view('produk.index', compact(
+            'produks',
+            'search',
+            'lowStockOnly',
+            'lowStockCount',
+            'outOfStockOnly',
+            'outOfStockCount',
+            'totalProduk',
+            'totalKategori',
+            'kategorisList',
+            'totalValuasi',
+            'kategoriFilter',
+            'sort'
+        ));
     }
 
     /**
@@ -50,7 +82,7 @@ class ProdukController extends Controller
      */
     public function create()
     {
-        $kategoris = Schema::hasTable('kategoris') ? Kategori::orderBy('nama_kategori')->get() : collect();
+        $kategoris = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
 
         return view('produk.create', compact('kategoris'));
     }
@@ -61,10 +93,10 @@ class ProdukController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama' => 'required|string|max:255|unique:produks,nama|regex:/^[a-zA-Z0-9\s]+$/',
-            'sku' => 'required|string|max:50|unique:produks,sku',
+            'nama' => 'required|string|max:255|unique:products,nama|regex:/^[a-zA-Z0-9\s]+$/',
+            'sku' => 'required|string|max:50|unique:products,sku',
             'kategori' => 'required|string|max:100',
-            'kategori_id' => 'nullable|exists:kategoris,id',
+            'kategori_id' => 'nullable|exists:categories,id',
             'harga' => 'required|numeric|min:0|max:1000000',
             'stok' => 'nullable|integer|min:0|max:1000',
             'stok_ukuran' => 'nullable|array',
@@ -120,12 +152,13 @@ class ProdukController extends Controller
             $validated['gambar_lainnya'] = $paths;
         }
 
-        if (! empty($validated['kategori_id']) && Schema::hasTable('kategoris')) {
+        $hasKategoris = Schema::hasTable('categories');
+        if (! empty($validated['kategori_id']) && $hasKategoris) {
             $kategori = Kategori::find($validated['kategori_id']);
             if ($kategori) {
                 $validated['kategori'] = $kategori->nama_kategori;
             }
-        } elseif (Schema::hasTable('kategoris')) {
+        } elseif ($hasKategoris) {
             $kategori = Kategori::where('nama_kategori', $validated['kategori'])->first();
             if ($kategori) {
                 $validated['kategori_id'] = $kategori->id;
@@ -152,7 +185,7 @@ class ProdukController extends Controller
      */
     public function edit(Produk $produk)
     {
-        $kategoris = Schema::hasTable('kategoris') ? Kategori::orderBy('nama_kategori')->get() : collect();
+        $kategoris = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
 
         return view('produk.edit', compact('produk', 'kategoris'));
     }
@@ -163,10 +196,10 @@ class ProdukController extends Controller
     public function update(Request $request, Produk $produk)
     {
         $validated = $request->validate([
-            'nama' => 'required|string|max:255|unique:produks,nama,'.$produk->id.'|regex:/^[a-zA-Z0-9\s]+$/',
-            'sku' => 'required|string|max:50|unique:produks,sku,'.$produk->id,
+            'nama' => 'required|string|max:255|unique:products,nama,'.$produk->id.'|regex:/^[a-zA-Z0-9\s]+$/',
+            'sku' => 'required|string|max:50|unique:products,sku,'.$produk->id,
             'kategori' => 'required|string|max:100',
-            'kategori_id' => 'nullable|exists:kategoris,id',
+            'kategori_id' => 'nullable|exists:categories,id',
             'harga' => 'required|numeric|min:0|max:1000000',
             'stok' => 'nullable|integer|min:0|max:1000',
             'stok_ukuran' => 'nullable|array',
@@ -245,12 +278,13 @@ class ProdukController extends Controller
 
         $validated['gambar_lainnya'] = ! empty($existingOthers) ? $existingOthers : null;
 
-        if (! empty($validated['kategori_id']) && Schema::hasTable('kategoris')) {
+        $hasKategoris = Schema::hasTable('categories');
+        if (! empty($validated['kategori_id']) && $hasKategoris) {
             $kategori = Kategori::find($validated['kategori_id']);
             if ($kategori) {
                 $validated['kategori'] = $kategori->nama_kategori;
             }
-        } elseif (Schema::hasTable('kategoris')) {
+        } elseif ($hasKategoris) {
             $kategori = Kategori::where('nama_kategori', $validated['kategori'])->first();
             if ($kategori) {
                 $validated['kategori_id'] = $kategori->id;

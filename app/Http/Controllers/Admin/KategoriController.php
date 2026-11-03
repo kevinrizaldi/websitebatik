@@ -42,7 +42,7 @@ class KategoriController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'nama_kategori' => ['required', 'string', 'max:30', 'regex:/^[\pL\s]+$/u', 'unique:kategoris,nama_kategori'],
+            'nama_kategori' => ['required', 'string', 'max:30', 'regex:/^[\pL\s]+$/u', 'unique:categories,nama_kategori'],
             'deskripsi' => 'nullable|string|max:1000',
             'gambar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:3072'],
         ], [
@@ -76,7 +76,7 @@ class KategoriController extends Controller
     public function update(Request $request, Kategori $kategori): RedirectResponse
     {
         $validated = $request->validate([
-            'nama_kategori' => ['required', 'string', 'max:30', 'regex:/^[\pL\s]+$/u', 'unique:kategoris,nama_kategori,'.$kategori->id],
+            'nama_kategori' => ['required', 'string', 'max:30', 'regex:/^[\pL\s]+$/u', 'unique:categories,nama_kategori,'.$kategori->id],
             'deskripsi' => 'nullable|string|max:1000',
             'gambar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:3072'],
         ], [

@@ -34,7 +34,7 @@ class ProdukValidationTest extends TestCase
         ]);
 
         $response->assertRedirect(route('produk.index'));
-        $this->assertDatabaseHas('produks', [
+        $this->assertDatabaseHas('products', [
             'sku' => 'BTK-001',
             'harga' => 1000000,
             'stok' => 1000,
@@ -53,7 +53,7 @@ class ProdukValidationTest extends TestCase
         ]);
 
         $response->assertRedirect(route('produk.index'));
-        $this->assertDatabaseHas('produks', [
+        $this->assertDatabaseHas('products', [
             'sku' => 'BTK-002',
             'harga' => 0,
             'stok' => 0,
@@ -78,8 +78,8 @@ class ProdukValidationTest extends TestCase
             'stok' => 11,
         ])->assertRedirect(route('produk.index'));
 
-        $this->assertDatabaseHas('produks', ['sku' => 'BTK-LOW-010', 'status' => 'Stok Menipis']);
-        $this->assertDatabaseHas('produks', ['sku' => 'BTK-LOW-011', 'status' => 'Tersedia']);
+        $this->assertDatabaseHas('products', ['sku' => 'BTK-LOW-010', 'status' => 'Stok Menipis']);
+        $this->assertDatabaseHas('products', ['sku' => 'BTK-LOW-011', 'status' => 'Tersedia']);
     }
 
     public function test_product_status_updates_when_stock_crosses_the_low_stock_threshold(): void
@@ -103,12 +103,12 @@ class ProdukValidationTest extends TestCase
             ->put(route('produk.update', $product), $productDetails + ['stok' => 10])
             ->assertRedirect(route('produk.index'));
 
-        $this->assertDatabaseHas('produks', ['id' => $product->id, 'status' => 'Stok Menipis']);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'status' => 'Stok Menipis']);
 
         $this->put(route('produk.update', $product), $productDetails + ['stok' => 11])
             ->assertRedirect(route('produk.index'));
 
-        $this->assertDatabaseHas('produks', ['id' => $product->id, 'status' => 'Tersedia']);
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'status' => 'Tersedia']);
     }
 
     public function test_create_fails_when_price_exceeds_one_million(): void
@@ -244,7 +244,7 @@ class ProdukValidationTest extends TestCase
         ]);
 
         $response->assertRedirect(route('produk.index'));
-        $this->assertDatabaseHas('produks', [
+        $this->assertDatabaseHas('products', [
             'id' => $produk->id,
             'harga' => 1000000,
             'stok' => 1000,

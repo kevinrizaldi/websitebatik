@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('store_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_toko')->default('Hamzah Style Official');
-            $table->string('kota_asal')->default('Kota Surakarta (Solo)');
+            $table->string('nama_toko')->default('Website Batik Official');
+            $table->string('kota_asal')->default('Kota Pekalongan');
             $table->string('provinsi_asal')->default('Jawa Tengah');
-            $table->string('kode_pos_asal')->default('57141');
+            $table->string('kode_pos_asal')->default('51111');
             $table->text('alamat_asal')->nullable();
             $table->string('no_telepon_toko')->nullable();
             $table->string('email_toko')->nullable();

@@ -34,6 +34,20 @@ class AdminSeeder extends Seeder
             $this->command->info("✓ Akun admin sudah ada, data diperbarui: {$email}");
         }
 
-        $this->command->warn('  Password: admin12345  — segera ganti setelah login!');
+        $this->command->warn('  Password Admin: admin12345');
+
+        // Akun customer demo
+        $customerEmail = 'customer@webstorebatik.com';
+        User::updateOrCreate(
+            ['email' => $customerEmail],
+            [
+                'name' => 'Budi Santoso',
+                'password' => Hash::make('password123'),
+                'role' => 'customer',
+                'phone' => '081234567890',
+                'email_verified_at' => now(),
+            ]
+        );
+        $this->command->info("✓ Akun customer demo disiapkan: {$customerEmail} (password: password123)");
     }
 }

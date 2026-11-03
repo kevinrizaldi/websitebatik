@@ -58,6 +58,8 @@ class AlamatController extends Controller
             'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()]+$/u'],
             'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
             'provinsi' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
+            'province_id' => ['nullable', 'integer'],
+            'city_id' => ['nullable', 'integer'],
             'kode_pos' => ['nullable', 'string', 'regex:/^[0-9]{5}$/'],
             'is_utama' => 'nullable|boolean',
         ], [
@@ -90,6 +92,8 @@ class AlamatController extends Controller
             'alamat_lengkap' => $validated['alamat_lengkap'],
             'kota' => $validated['kota'],
             'provinsi' => $validated['provinsi'] ?? 'Indonesia',
+            'province_id' => $validated['province_id'] ?? null,
+            'city_id' => $validated['city_id'] ?? null,
             'kode_pos' => $validated['kode_pos'] ?? '',
             'is_utama' => $isUtama,
         ]);
@@ -131,6 +135,8 @@ class AlamatController extends Controller
             'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()]+$/u'],
             'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
             'provinsi' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
+            'province_id' => ['nullable', 'integer'],
+            'city_id' => ['nullable', 'integer'],
             'kode_pos' => ['nullable', 'string', 'regex:/^[0-9]{5}$/'],
             'is_utama' => 'nullable|boolean',
         ], [

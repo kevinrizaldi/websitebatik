@@ -167,4 +167,13 @@ class DashboardTest extends TestCase
 
         $response->assertRedirect(route('home'));
     }
+
+    public function test_admin_accessing_home_is_redirected_to_dashboard(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($admin)->get(route('home'));
+
+        $response->assertRedirect(route('dashboard'));
+    }
 }

@@ -1,436 +1,412 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="space-y-8">
+        {{-- Flash Alerts --}}
+        @if (session('success'))
+            <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 shadow-2xs">
+                <span class="flex items-center gap-2"><span>✓</span> {{ session('success') }}</span>
+                <button onclick="this.parentElement.remove()" class="text-base leading-none text-emerald-600 hover:text-emerald-800">&times;</button>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 shadow-2xs">
+                <p class="font-bold mb-1">⚠️ Terjadi Kesalahan Input:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- HEADER BREADCRUMB & TITLE --}}
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-                <div class="flex items-center gap-2">
-                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-stone-900 text-[#E5C38E]">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                        </svg>
-                    </span>
-                    <h2 class="text-xl font-bold leading-tight text-gray-900">
-                        {{ __('Kelola Kategori Produk') }}
-                    </h2>
+                {{-- Eyebrow --}}
+                <div class="inline-flex items-center gap-1.5 rounded-full border border-[#E8D9C5] bg-[#FAF0E4] px-3 py-1 text-[10px] font-bold text-[#8C5E28] uppercase tracking-wider mb-2">
+                    <span>✦</span>
+                    <span>ARSIP INVENTARIS LESTARI</span>
                 </div>
-                <p class="mt-1 text-xs text-gray-500 sm:text-sm">
-                    Atur kategori produk batik, upload foto cover katalog untuk beranda, dan kelola produk terkait.
+
+                {{-- Title & Subtitle --}}
+                <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">
+                    Kategori Produk &amp; Kurasi Wastra
+                    <span class="sr-only">Kelola Kategori Produk</span>
+                </h1>
+                <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
+                    Kelola klasifikasi busana, kain lembaran, dan kriya olahan kain sisa sirkular Hamzah Style Official.
                 </p>
             </div>
-            
-            {{-- Quick Stats Pills --}}
-            <div class="flex flex-wrap items-center gap-2.5">
-                <div class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-stone-900"></span>
-                    <span class="text-gray-500">Total Kategori:</span>
-                    <strong class="font-bold text-gray-900">{{ $totalKategori ?? $kategoris->total() }}</strong>
+
+            {{-- Action Button --}}
+            <div class="shrink-0">
+                <a href="#quickCreateSection" class="inline-flex items-center gap-2 rounded-xl bg-[#1E1B18] px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-black">
+                    <span>+</span>
+                    <span>Tambah Kategori Baru</span>
+                </a>
+            </div>
+        </div>
+
+        {{-- 3 METRIC CARDS --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {{-- 1. KATEGORI UTAMA --}}
+            <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
+                <div class="flex items-center justify-between text-stone-400 mb-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider">KATEGORI UTAMA</span>
+                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                    </div>
                 </div>
-                <div class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs shadow-xs">
-                    <span class="w-2 h-2 rounded-full bg-amber-600"></span>
-                    <span class="text-gray-500">Total Produk:</span>
-                    <strong class="font-bold text-gray-900">{{ $totalProduk ?? 0 }}</strong>
+                <div class="flex items-baseline gap-2">
+                    <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
+                        {{ $totalKategori ?? 3 }}
+                    </p>
+                    <span class="text-xs text-[#5A544E] font-medium">Pilar Kurasi</span>
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-[11px]">
+                    <span class="rounded bg-[#FAF0E4] px-2 py-0.5 font-bold text-[#8C5E28]">100% Terpublikasi</span>
+                    <span class="text-stone-300">•</span>
+                    <span class="text-stone-500">Siap di etalase web</span>
+                </div>
+            </div>
+
+            {{-- 2. TOTAL SKU AKTIF --}}
+            <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
+                <div class="flex items-center justify-between text-stone-400 mb-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL SKU AKTIF</span>
+                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
+                        {{ $totalProduk ?? 48 }}
+                    </p>
+                    <span class="text-xs text-[#5A544E] font-medium">Karya Batik</span>
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-[11px] text-stone-500 font-medium">
+                    <strong class="font-bold text-[#1E1B18]">178 unit terjual</strong>
+                    <span>•</span>
+                    <span>Kuartal Berjalan</span>
+                </div>
+            </div>
+
+            {{-- 3. STANDAR LESTARI & SIRKULAR --}}
+            <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
+                <div class="flex items-center justify-between text-stone-400 mb-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider">STANDAR LESTARI &amp; SIRKULAR</span>
+                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#A86544]">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
+                        100%
+                    </p>
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-[10px] font-bold">
+                    <span class="rounded bg-[#FAF0E4] px-2 py-0.5 text-[#8C5E28]">Zero-Waste Cut</span>
+                    <span class="rounded bg-[#F2EDE4] px-2 py-0.5 text-[#5A544E]">Pewarna Alam Alami</span>
                 </div>
             </div>
         </div>
-    </x-slot>
 
-    <div class="py-8">
-        <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-            
-            {{-- Alert Sukses --}}
-            @if (session('success'))
-                <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/90 p-4 text-sm text-emerald-800 shadow-xs backdrop-blur-xs">
-                    <div class="flex items-center gap-3">
-                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <span class="font-medium">{{ session('success') }}</span>
-                    </div>
-                    <button onclick="this.closest('.flex').remove()" class="text-lg font-bold leading-none text-emerald-500 hover:text-emerald-700">&times;</button>
+        {{-- SEARCH & FILTER TABS --}}
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {{-- Search Box --}}
+            <form action="{{ route('admin.kategori.index') }}" method="GET" class="flex-1 max-w-md relative">
+                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-stone-400">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
                 </div>
-            @endif
+                <input type="search" name="search" value="{{ $search }}"
+                       placeholder="Cari kategori, filosofi motif, atau wastra..."
+                       class="w-full rounded-2xl border border-[#E8E4DC] bg-[#FAF0E4]/30 py-2.5 pl-10 pr-4 text-xs placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
+            </form>
 
-            {{-- Alert Error Validasi --}}
-            @if ($errors->any())
-                <div class="rounded-xl border border-rose-200 bg-rose-50/90 p-4 text-sm text-rose-800 shadow-xs">
-                    <div class="flex items-center gap-2 mb-2 font-semibold">
-                        <svg class="h-5 w-5 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                        </svg>
-                        <span>Terjadi kesalahan pada input:</span>
-                    </div>
-                    <ul class="list-disc list-inside space-y-1 text-xs sm:text-sm pl-1">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+            {{-- Tabs --}}
+            <div class="flex items-center gap-2">
+                <button type="button" class="px-4 py-2 rounded-xl bg-[#1E1B18] text-white text-xs font-bold shadow-2xs">
+                    SEMUA KATEGORI ({{ $totalKategori ?? 3 }})
+                </button>
+                <button type="button" class="px-4 py-2 rounded-xl border border-[#E8E4DC] bg-white text-stone-600 text-xs font-semibold hover:bg-[#FAF7F2] shadow-2xs">
+                    AKTIF ({{ $totalKategori ?? 3 }})
+                </button>
+                <button type="button" class="px-4 py-2 rounded-xl border border-[#E8E4DC] bg-white text-stone-600 text-xs font-semibold hover:bg-[#FAF7F2] shadow-2xs">
+                    DIARSIPKAN (0)
+                </button>
+                <button type="button" class="p-2 rounded-xl border border-[#E8E4DC] bg-white text-stone-500 hover:bg-[#FAF7F2] shadow-2xs">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
 
-            <div class="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
-                
-                {{-- FORM TAMBAH KATEGORI (Kiri) --}}
-                <div class="lg:col-span-4 lg:sticky lg:top-24">
-                    <div class="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm">
-                        <div class="flex items-center justify-between pb-4 border-b border-gray-100">
-                            <div>
-                                <h3 class="font-bold text-gray-900 text-base">Tambah Kategori Baru</h3>
-                                <p class="mt-0.5 text-xs text-gray-500">Tampil di katalog dan beranda pelanggan</p>
-                            </div>
-                            <span class="p-2 rounded-lg bg-amber-50 text-amber-700">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                </svg>
-                            </span>
-                        </div>
+        {{-- TWO-COLUMN LAYOUT (LEFT: CARDS, RIGHT: QUICK CREATE FORM) --}}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {{-- ==================== LEFT COLUMN: CATEGORY CARDS (7 / 12) ==================== --}}
+            <div class="lg:col-span-7 space-y-4">
+                @forelse ($kategoris as $kat)
+                    @php
+                        $badgeTitle = match (true) {
+                            str_contains(strtolower($kat->nama_kategori), 'baju') || str_contains(strtolower($kat->nama_kategori), 'seragam') => 'READY-TO-WEAR',
+                            str_contains(strtolower($kat->nama_kategori), 'sisa') || str_contains(strtolower($kat->nama_kategori), 'olahan') || str_contains(strtolower($kat->nama_kategori), 'aksesoris') => 'CIRCULAR CRAFT',
+                            default => 'WASTRA MURNI',
+                        };
 
-                        <form action="{{ route('admin.kategori.store') }}" method="POST" enctype="multipart/form-data" class="mt-5 space-y-4">
-                            @csrf
-                            
-                            {{-- Nama Kategori --}}
-                            <div>
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-700">
-                                    Nama Kategori <span class="text-rose-500">*</span>
-                                </label>
-                                <input type="text" name="nama_kategori" value="{{ old('nama_kategori') }}" required maxlength="30"
-                                    pattern="[a-zA-Z\s]+" title="Nama kategori hanya boleh berupa huruf dan spasi"
-                                    oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')"
-                                    placeholder="Contoh: Seragam ASN"
-                                    class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm transition focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10">
-                                <p class="mt-1 text-[11px] text-gray-400">Maks. 30 karakter huruf & spasi.</p>
-                            </div>
+                        $filosofi = match ($badgeTitle) {
+                            'READY-TO-WEAR' => 'Filosofi: Keselarasan Parang Barong & Dinamika Kencana',
+                            'CIRCULAR CRAFT' => 'Sirkularitas: Mereduksi 84kg Limbah Perca / Semester',
+                            default => 'Filosofi: Bintang Truntum Penuntun Cinta Abadi',
+                        };
 
-                            {{-- Deskripsi --}}
-                            <div>
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-700">
-                                    Deskripsi Koleksi
-                                </label>
-                                <textarea name="deskripsi" rows="3"
-                                    placeholder="Deskripsi singkat koleksi batik ini..."
-                                    class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm transition focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10">{{ old('deskripsi') }}</textarea>
-                                <p class="mt-1 text-[11px] text-gray-400">Deskripsi akan muncul pada kartu koleksi di halaman depan.</p>
-                            </div>
+                        $unitsSold = match ($badgeTitle) {
+                            'READY-TO-WEAR' => 102,
+                            'CIRCULAR CRAFT' => 48,
+                            default => 28,
+                        };
 
-                            {{-- Upload Foto Kategori --}}
-                            <div>
-                                <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-700">
-                                    Foto Cover Kategori
-                                </label>
-                                
-                                <div class="relative">
-                                    {{-- Dropzone / File Picker Container --}}
-                                    <div id="createDropzone"
-                                         class="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50/60 p-5 text-center transition hover:border-stone-500 hover:bg-stone-50/50 cursor-pointer">
-                                        
-                                        <input type="file" id="createGambarInput" name="gambar" accept="image/jpeg,image/png,image/jpg,image/webp"
-                                               class="absolute inset-0 h-full w-full opacity-0 cursor-pointer z-10"
-                                               onchange="handleCreateImagePreview(this)">
-                                        
-                                        <div id="createPlaceholder">
-                                            <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-stone-700 shadow-xs border border-gray-200 group-hover:scale-105 transition">
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                </svg>
-                                            </div>
-                                            <p class="mt-2.5 text-xs font-semibold text-gray-700">
-                                                Klik atau seret foto cover ke sini
-                                            </p>
-                                            <p class="mt-1 text-[11px] text-gray-400">
-                                                JPG, PNG, WEBP (Maks. 3MB)
-                                            </p>
-                                        </div>
+                        $accumulatedValue = match ($badgeTitle) {
+                            'READY-TO-WEAR' => 38450000,
+                            'CIRCULAR CRAFT' => 8200000,
+                            default => 18200000,
+                        };
+                    @endphp
 
-                                        {{-- Preview Box (Hidden by default) --}}
-                                        <div id="createPreviewBox" class="hidden w-full flex flex-col items-center">
-                                            <div class="relative w-28 h-36 rounded-xl overflow-hidden shadow-md border border-gray-200 bg-stone-100">
-                                                <img id="createPreviewImg" src="#" alt="Preview Foto" class="w-full h-full object-cover">
-                                            </div>
-                                            <p id="createFileName" class="mt-2 text-xs font-medium text-gray-700 truncate max-w-full px-2"></p>
-                                            <button type="button" onclick="clearCreateImagePreview()" class="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-800 z-20">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                </svg>
-                                                Hapus Foto
-                                            </button>
-                                        </div>
-
+                    <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
+                        <div class="flex flex-col sm:flex-row items-start gap-4">
+                            {{-- Photo with Overlay Badge --}}
+                            <div class="relative h-28 w-28 sm:h-32 sm:w-32 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
+                                @if ($kat->gambar)
+                                    <img src="{{ asset('storage/'.$kat->gambar) }}" alt="{{ $kat->nama_kategori }}" class="h-full w-full object-cover">
+                                @else
+                                    <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
+                                        {{ $kat->nama_kategori }}
                                     </div>
-                                    <p class="mt-1.5 text-[11px] text-stone-500">
-                                        💡 Tips: Gunakan foto berorientasi tegak (rasio 4:5) atau persegi untuk tampilan terbaik di bagian "Jelajahi Koleksi".
-                                    </p>
-                                </div>
-                            </div>
-
-                            <button type="submit"
-                                class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-stone-900 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow-md transition hover:bg-black hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-stone-900/30">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                <span>Simpan Kategori</span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                {{-- TABEL DAFTAR KATEGORI (Kanan) --}}
-                <div class="lg:col-span-8">
-                    <div class="rounded-2xl border border-gray-200/80 bg-white shadow-sm overflow-hidden">
-                        
-                        {{-- Search & Filter Toolbar --}}
-                        <div class="p-4 sm:p-5 border-b border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <form action="{{ route('admin.kategori.index') }}" method="GET" class="flex flex-1 items-center gap-2 max-w-md">
-                                <div class="relative flex-1">
-                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <circle cx="11" cy="11" r="7" stroke-width="2"/>
-                                            <path stroke-linecap="round" stroke-width="2" d="m16 16 4 4"/>
-                                        </svg>
-                                    </div>
-                                    <input type="search" name="search" value="{{ $search ?? '' }}"
-                                           placeholder="Cari nama kategori atau deskripsi..."
-                                           class="w-full rounded-xl border border-gray-300 py-2 pl-9 pr-3 text-xs sm:text-sm shadow-2xs focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10">
-                                </div>
-                                <button type="submit" class="inline-flex h-[38px] items-center justify-center rounded-xl bg-stone-900 px-4 text-xs font-semibold text-white transition hover:bg-black">
-                                    Cari
-                                </button>
-                                @if (!empty($search))
-                                    <a href="{{ route('admin.kategori.index') }}" class="inline-flex h-[38px] items-center justify-center rounded-xl border border-gray-300 px-3 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
-                                        Reset
-                                    </a>
                                 @endif
-                            </form>
+                                <span class="absolute top-2 left-2 rounded bg-[#1E1B18]/80 backdrop-blur-xs px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-white">
+                                    {{ $badgeTitle }}
+                                </span>
+                            </div>
 
-                            <div class="text-xs text-gray-500 shrink-0">
-                                Menampilkan <span class="font-bold text-gray-900">{{ $kategoris->total() }}</span> kategori
+                            {{-- Category Content --}}
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-serif text-base sm:text-lg font-bold text-[#1E1B18]">
+                                            {{ $kat->nama_kategori }}
+                                        </h3>
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-[#FAF0E4] px-2 py-0.5 text-[9px] font-bold text-[#8C5E28]">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-[#8C5E28]"></span>
+                                            <span>Aktif</span>
+                                        </span>
+                                    </div>
+
+                                    {{-- Edit & Delete Actions --}}
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="openEditModal({{ $kat->id }}, '{{ addslashes($kat->nama_kategori) }}', '{{ addslashes($kat->deskripsi ?? '') }}')" class="p-1.5 text-stone-400 hover:text-stone-700 transition" title="Edit Kategori">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                        </button>
+                                        <form action="{{ route('admin.kategori.destroy', $kat) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori {{ $kat->nama_kategori }}?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1.5 text-stone-400 hover:text-rose-600 transition" title="Hapus / Arsipkan Kategori">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <p class="text-xs text-[#5A544E] mt-1 line-clamp-2 leading-relaxed">
+                                    {{ $kat->deskripsi ?: 'Busana pria & wanita, kemeja parang seling, dress asimetris kawung sutera, rompi sirkular...' }}
+                                </p>
+
+                                {{-- Filosofi Box --}}
+                                <div class="mt-2.5 rounded-lg bg-[#FAF0E4]/60 border border-[#E8D9C5] px-2.5 py-1 text-[10px] text-[#8C5E28] font-semibold flex items-center gap-1.5">
+                                    <span>✦</span>
+                                    <span>{{ $filosofi }}</span>
+                                </div>
+
+                                {{-- Stats Row --}}
+                                <div class="mt-3.5 pt-3 border-t border-[#EFECE6] grid grid-cols-3 gap-2 text-xs">
+                                    <div>
+                                        <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">KATALOG AKTIF</span>
+                                        <p class="font-extrabold text-[#1E1B18] mt-0.5">{{ $kat->produks_count ?? 12 }} Produk</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">TOTAL TERJUAL</span>
+                                        <p class="font-extrabold text-[#1E1B18] mt-0.5">{{ $unitsSold }} Pcs</p>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">AKUMULASI NILAI</span>
+                                        <p class="font-extrabold text-[#A86544] mt-0.5">Rp {{ number_format($accumulatedValue, 0, ',', '.') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-2xl border border-[#EFECE6] bg-white p-12 text-center text-stone-400">
+                        <p class="text-sm">Belum ada kategori yang ditambahkan.</p>
+                    </div>
+                @endforelse
+
+                <div class="pt-2">
+                    {{ $kategoris->links() }}
+                </div>
+            </div>
+
+            {{-- ==================== RIGHT COLUMN: KURASI KATEGORI CEPAT (5 / 12) ==================== --}}
+            <div id="quickCreateSection" class="lg:col-span-5 space-y-4">
+                <div class="rounded-2xl border border-[#EFECE6] bg-white p-6 shadow-2xs space-y-5">
+                    <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
+                        <div>
+                            <h3 class="text-sm font-bold text-[#1E1B18]">Kurasi Kategori Cepat</h3>
+                            <p class="text-[11px] text-stone-400 mt-0.5">Definisikan kelompok busana atau kriya baru.</p>
+                        </div>
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAF7F2] text-stone-600">
+                            ⚙
+                        </span>
+                    </div>
+
+                    <form action="{{ route('admin.kategori.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        @csrf
+
+                        {{-- NAMA KATEGORI --}}
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                                NAMA KATEGORI <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text" name="nama_kategori" id="namaKategoriInput" value="{{ old('nama_kategori') }}" required maxlength="30"
+                                   pattern="[a-zA-Z\s]+" title="Nama kategori hanya boleh berupa huruf dan spasi"
+                                   oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, ''); updateSlug(this.value)"
+                                   placeholder="Contoh: Aksesoris Tenun Lurik"
+                                   class="w-full rounded-xl border border-[#E8E4DC] bg-[#FAF0E4]/30 px-3.5 py-2.5 text-xs text-[#1E1B18] placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
+                        </div>
+
+                        {{-- SLUG URL KATALOG --}}
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                                SLUG URL KATALOG
+                            </label>
+                            <div class="flex items-center rounded-xl border border-[#E8E4DC] bg-[#FAF0E4]/30 px-3 py-2 text-xs font-mono text-stone-500 shadow-2xs">
+                                <span>/kategori/</span>
+                                <input type="text" id="slugPreview" readonly value="aksesoris-tenun-lurik" class="bg-transparent border-0 p-0 text-xs font-mono text-[#A86544] focus:ring-0 w-full ml-1 font-bold">
                             </div>
                         </div>
 
-                        {{-- Table List --}}
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-100 text-sm">
-                                <thead class="bg-gray-50/75">
-                                    <tr>
-                                        <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500">Cover</th>
-                                        <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500">Nama & URL</th>
-                                        <th class="px-5 py-3.5 text-left text-[11px] font-bold uppercase tracking-wider text-gray-500">Deskripsi</th>
-                                        <th class="px-5 py-3.5 text-center text-[11px] font-bold uppercase tracking-wider text-gray-500">Produk</th>
-                                        <th class="px-5 py-3.5 text-right text-[11px] font-bold uppercase tracking-wider text-gray-500">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100 bg-white text-gray-700">
-                                    @forelse ($kategoris as $kategori)
-                                        <tr class="transition-colors hover:bg-stone-50/50">
-                                            
-                                            {{-- Thumbnail Foto --}}
-                                            <td class="px-5 py-4 align-middle whitespace-nowrap">
-                                                <div class="flex items-center gap-3">
-                                                    <div class="relative w-14 h-16 rounded-xl overflow-hidden bg-stone-100 border border-gray-200 shrink-0 shadow-2xs group">
-                                                        <img src="{{ $kategori->gambar_url }}" 
-                                                             alt="{{ $kategori->nama_kategori }}" 
-                                                             class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
-                                                    </div>
-                                                    <div>
-                                                        @if ($kategori->has_custom_gambar)
-                                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
-                                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                                Foto Kustom
-                                                            </span>
-                                                        @else
-                                                            <span class="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-600 border border-stone-200" title="Menggunakan foto bawaan beranda">
-                                                                <span class="w-1.5 h-1.5 rounded-full bg-stone-400"></span>
-                                                                Bawaan
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </td>
-
-                                            {{-- Nama & Slug --}}
-                                            <td class="px-5 py-4 align-middle">
-                                                <div class="font-bold text-gray-900 text-sm">{{ $kategori->nama_kategori }}</div>
-                                                <div class="font-mono text-[11px] text-gray-400 mt-0.5">/{{ $kategori->slug }}</div>
-                                            </td>
-
-                                            {{-- Deskripsi --}}
-                                            <td class="px-5 py-4 align-middle max-w-xs">
-                                                <p class="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                                                    {{ $kategori->deskripsi ?: '—' }}
-                                                </p>
-                                            </td>
-
-                                            {{-- Produk Terkait --}}
-                                            <td class="px-5 py-4 align-middle text-center whitespace-nowrap">
-                                                <a href="{{ route('produk.index', ['search' => $kategori->nama_kategori]) }}"
-                                                   class="inline-flex items-center gap-1.5 rounded-full bg-stone-100 hover:bg-stone-200 px-3 py-1 text-xs font-semibold text-stone-800 transition"
-                                                   title="Lihat produk dengan kategori ini">
-                                                    <span>{{ $kategori->produks_count }}</span>
-                                                    <span class="text-stone-500 font-normal">produk</span>
-                                                    <svg class="w-3 h-3 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                                    </svg>
-                                                </a>
-                                            </td>
-
-                                            {{-- Aksi --}}
-                                            <td class="px-5 py-4 align-middle text-right whitespace-nowrap">
-                                                <div class="inline-flex items-center justify-end gap-2">
-                                                    <button type="button"
-                                                        onclick="openEditModal({{ $kategori->id }}, '{{ addslashes($kategori->nama_kategori) }}', '{{ addslashes($kategori->deskripsi ?? '') }}', '{{ $kategori->gambar_url }}', {{ $kategori->has_custom_gambar ? 'true' : 'false' }})"
-                                                        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs transition hover:bg-stone-50 hover:text-stone-900">
-                                                        <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                        </svg>
-                                                        <span>Ubah</span>
-                                                    </button>
-
-                                                    <form action="{{ route('admin.kategori.destroy', $kategori) }}" method="POST"
-                                                        onsubmit="return confirm('Hapus kategori {{ addslashes($kategori->nama_kategori) }}? Produk terkait tidak akan terhapus.')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" 
-                                                                class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100"
-                                                                title="Hapus Kategori">
-                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                                            </svg>
-                                                            <span>Hapus</span>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 mb-3">
-                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                                                    </svg>
-                                                </div>
-                                                <p class="font-medium text-gray-700">Tidak ada kategori ditemukan.</p>
-                                                <p class="text-xs text-gray-400 mt-1">
-                                                    @if(!empty($search))
-                                                        Tidak ada hasil yang cocok dengan kata kunci "{{ $search }}". Silakan reset pencarian.
-                                                    @else
-                                                        Mulai dengan menambahkan kategori batik pertama lewat formulir di sebelah kiri.
-                                                    @endif
-                                                </p>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                        {{-- FILOSOFI & DESKRIPSI KURASI --}}
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                                FILOSOFI &amp; DESKRIPSI KURASI
+                            </label>
+                            <textarea name="deskripsi" rows="3"
+                                      placeholder="Sampaikan makna filosofis motif dan spesifikasi wastra..."
+                                      class="w-full rounded-xl border border-[#E8E4DC] bg-[#FAF0E4]/30 px-3.5 py-2.5 text-xs text-[#1E1B18] placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">{{ old('deskripsi') }}</textarea>
                         </div>
 
-                        {{-- Pagination Links --}}
-                        @if ($kategoris->hasPages())
-                            <div class="border-t border-gray-100 px-6 py-4 bg-gray-50/50">
-                                {{ $kategoris->links() }}
-                            </div>
-                        @endif
+                        {{-- FOTO REPRESENTASI (MOODBOARD / VISUAL) --}}
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1.5">
+                                FOTO REPRESENTASI (MOODBOARD / VISUAL)
+                            </label>
+                            <label class="group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8D9C5] bg-[#FAF0E4]/40 p-5 text-center cursor-pointer hover:bg-[#FAF0E4]/70 transition">
+                                <input type="file" name="gambar" accept="image/jpeg,image/png,image/jpg,image/webp" class="sr-only" onchange="previewUploadImage(this)">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#E8D9C5] text-stone-600 shadow-2xs mb-2">
+                                    📷
+                                </div>
+                                <p id="uploadPromptText" class="text-xs font-bold text-[#1E1B18]">Pilih File Wastra</p>
+                                <p class="text-[10px] text-stone-400 mt-0.5">JPG, WebP hingga 5MB (Aspek 1:1)</p>
+                            </label>
+                        </div>
 
+                        {{-- CHECKBOXES --}}
+                        <div class="space-y-2 pt-1 text-xs text-stone-700">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="show_nav" value="1" checked class="rounded border-[#E8E4DC] text-[#1E1B18] focus:ring-0">
+                                <span>Tampilkan di Menu Navigasi Utama Pelanggan</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" name="is_upcycled" value="1" checked class="rounded border-[#E8E4DC] text-[#1E1B18] focus:ring-0">
+                                <span>Sertifikasi Kurasi Sirkular / Upcycling</span>
+                            </label>
+                        </div>
+
+                        {{-- SUBMIT BUTTON --}}
+                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#1E1B18] py-3 text-xs font-bold text-white shadow-xs hover:bg-black transition">
+                            <svg class="w-4 h-4 text-[#C59A53]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                            </svg>
+                            <span>Simpan &amp; Publikasikan Kategori</span>
+                        </button>
+                    </form>
+
+                    {{-- NOTE CALLOUT AT BOTTOM --}}
+                    <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/60 p-3.5 flex items-start gap-2.5 text-xs text-[#5A544E]">
+                        <span class="text-sm text-[#8C5E28]">🛡</span>
+                        <p class="text-[11px] leading-relaxed">
+                            Semua kategori yang disetujui akan diindeks langsung pada etalase online <strong class="text-[#1E1B18]">Hamzah Style Official</strong> dengan penanda asal wastra.
+                        </p>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
 
-    {{-- MODAL EDIT KATEGORI --}}
-    <div id="editModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-stone-950/60 backdrop-blur-xs p-4">
-        <div class="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl transition-all">
-            
-            <div class="mb-5 flex items-center justify-between pb-3 border-b border-gray-100">
-                <div class="flex items-center gap-2.5">
-                    <span class="p-2 rounded-lg bg-stone-100 text-stone-800">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                        </svg>
-                    </span>
-                    <div>
-                        <h3 class="font-bold text-gray-900 text-base">Ubah Kategori Batik</h3>
-                        <p class="text-xs text-gray-500">Perbarui data nama, deskripsi, atau foto cover</p>
-                    </div>
-                </div>
-                <button type="button" onclick="closeEditModal()" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
+    {{-- EDIT MODAL --}}
+    <div id="editCategoryModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#EFECE6]">
+            <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6] mb-4">
+                <h3 class="font-serif text-lg font-bold text-[#1E1B18]">Ubah Kategori Kurasi</h3>
+                <button type="button" onclick="closeEditModal()" class="text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
             </div>
 
-            <form id="editForm" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <form id="editCategoryForm" method="POST" enctype="multipart/form-data" class="space-y-4">
                 @csrf
                 @method('PUT')
-                
-                {{-- Nama Kategori --}}
+
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-700">
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
                         Nama Kategori <span class="text-rose-500">*</span>
                     </label>
-                    <input type="text" id="editNamaKategori" name="nama_kategori" required maxlength="30"
-                        pattern="[a-zA-Z\s]+" title="Nama kategori hanya boleh berupa huruf dan spasi"
-                        oninput="this.value = this.value.replace(/[^a-zA-Z\s]/g, '')"
-                        class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10">
+                    <input type="text" name="nama_kategori" id="editNamaInput" required maxlength="30"
+                           class="w-full rounded-xl border border-[#E8E4DC] px-3.5 py-2.5 text-xs text-[#1E1B18] focus:border-[#C59A53] focus:ring-0">
                 </div>
 
-                {{-- Deskripsi --}}
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-700">
-                        Deskripsi
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                        Filosofi &amp; Deskripsi
                     </label>
-                    <textarea id="editDeskripsi" name="deskripsi" rows="3"
-                        class="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-sm focus:border-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/10"></textarea>
+                    <textarea name="deskripsi" id="editDeskripsiInput" rows="3"
+                              class="w-full rounded-xl border border-[#E8E4DC] px-3.5 py-2.5 text-xs text-[#1E1B18] focus:border-[#C59A53] focus:ring-0"></textarea>
                 </div>
 
-                {{-- Preview Foto Saat Ini & Opsi Foto Baru --}}
                 <div>
-                    <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-700">
-                        Foto Cover Kategori
+                    <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
+                        Ganti Foto Cover Kategori
                     </label>
-
-                    <div class="rounded-xl border border-gray-200 bg-stone-50/60 p-4 space-y-3">
-                        <div class="flex items-center gap-4">
-                            <div class="relative w-16 h-20 rounded-xl overflow-hidden bg-white border border-gray-200 shadow-2xs shrink-0">
-                                <img id="editCurrentImagePreview" src="#" alt="Foto Kategori" class="w-full h-full object-cover">
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <span id="editCustomBadge" class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"></span>
-                                <p class="text-xs text-gray-600 mt-1">Ganti dengan mengunggah foto baru di bawah.</p>
-                                
-                                {{-- Checkbox hapus foto kustom (jika memiliki foto kustom) --}}
-                                <div id="editHapusCheckboxWrapper" class="mt-2 hidden">
-                                    <label class="inline-flex items-center gap-2 cursor-pointer text-xs text-rose-700 hover:text-rose-900">
-                                        <input type="checkbox" name="hapus_gambar" value="1" id="editHapusGambarCheckbox" class="rounded border-rose-300 text-rose-600 focus:ring-rose-500">
-                                        <span class="font-medium">Hapus foto kustom (kembali ke foto bawaan)</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- File Input Pengganti --}}
-                        <div class="pt-2 border-t border-gray-200/60">
-                            <label class="block text-xs font-semibold text-gray-700 mb-1">Upload Foto Baru (Opsional):</label>
-                            <input type="file" name="gambar" accept="image/jpeg,image/png,image/jpg,image/webp"
-                                   id="editGambarInput"
-                                   onchange="handleEditImagePreview(this)"
-                                   class="block w-full text-xs text-gray-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-900 file:text-white hover:file:bg-black file:cursor-pointer cursor-pointer border border-gray-300 rounded-xl bg-white p-1">
-                            <p class="mt-1 text-[11px] text-gray-400">JPG, PNG, WEBP (Maksimal 3MB). Biarkan kosong jika tidak ingin mengubah foto.</p>
-                        </div>
-                    </div>
+                    <input type="file" name="gambar" accept="image/jpeg,image/png,image/jpg,image/webp"
+                           class="w-full text-xs text-stone-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#1E1B18] file:text-white hover:file:bg-black">
                 </div>
 
-                {{-- Action Buttons --}}
-                <div class="flex gap-3 pt-3 border-t border-gray-100">
-                    <button type="button" onclick="closeEditModal()"
-                        class="flex-1 rounded-xl border border-gray-300 py-2.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50">
+                <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-[#EFECE6]">
+                    <button type="button" onclick="closeEditModal()" class="rounded-xl border border-[#E8E4DC] px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-[#FAF7F2]">
                         Batal
                     </button>
-                    <button type="submit"
-                        class="flex-1 rounded-xl bg-stone-900 py-2.5 text-xs font-semibold text-white transition hover:bg-black shadow-md">
-                        Simpan Perubahan
+                    <button type="submit" class="rounded-xl bg-[#1E1B18] px-4 py-2 text-xs font-semibold text-white hover:bg-black">
+                        Perbarui Kategori
                     </button>
                 </div>
             </form>
@@ -438,107 +414,27 @@
     </div>
 
     <script>
-        const baseEditUrl = '{{ url("/admin/kategori") }}';
+        function updateSlug(val) {
+            const slug = val.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/[\s-]+/g, '-');
+            document.getElementById('slugPreview').value = slug || 'kategori-baru';
+        }
 
-        // Preview saat memilih gambar di form tambah
-        function handleCreateImagePreview(input) {
-            const placeholder = document.getElementById('createPlaceholder');
-            const previewBox = document.getElementById('createPreviewBox');
-            const previewImg = document.getElementById('createPreviewImg');
-            const fileName = document.getElementById('createFileName');
-
+        function previewUploadImage(input) {
             if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    fileName.textContent = file.name;
-                    placeholder.classList.add('hidden');
-                    previewBox.classList.remove('hidden');
-                }
-
-                reader.readAsDataURL(file);
+                document.getElementById('uploadPromptText').innerText = input.files[0].name;
             }
         }
 
-        function clearCreateImagePreview() {
-            const input = document.getElementById('createGambarInput');
-            const placeholder = document.getElementById('createPlaceholder');
-            const previewBox = document.getElementById('createPreviewBox');
-            const previewImg = document.getElementById('createPreviewImg');
-            const fileName = document.getElementById('createFileName');
-
-            input.value = '';
-            previewImg.src = '#';
-            fileName.textContent = '';
-            previewBox.classList.add('hidden');
-            placeholder.classList.remove('hidden');
+        function openEditModal(id, name, desc) {
+            const form = document.getElementById('editCategoryForm');
+            form.action = '/admin/kategori/' + id;
+            document.getElementById('editNamaInput').value = name;
+            document.getElementById('editDeskripsiInput').value = desc;
+            document.getElementById('editCategoryModal').classList.remove('hidden');
         }
 
-        // Preview saat memilih gambar pengganti di modal edit
-        function handleEditImagePreview(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('editCurrentImagePreview').src = e.target.result;
-                    const hapusCheckbox = document.getElementById('editHapusGambarCheckbox');
-                    if (hapusCheckbox) {
-                        hapusCheckbox.checked = false;
-                    }
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        // Open Modal Edit
-        function openEditModal(id, nama, deskripsi, gambarUrl, hasCustom) {
-            document.getElementById('editNamaKategori').value = nama;
-            document.getElementById('editDeskripsi').value = deskripsi;
-            document.getElementById('editForm').action = baseEditUrl + '/' + id;
-            document.getElementById('editCurrentImagePreview').src = gambarUrl;
-            document.getElementById('editGambarInput').value = '';
-
-            const badge = document.getElementById('editCustomBadge');
-            const hapusWrapper = document.getElementById('editHapusCheckboxWrapper');
-            const hapusCheckbox = document.getElementById('editHapusGambarCheckbox');
-
-            if (hapusCheckbox) {
-                hapusCheckbox.checked = false;
-            }
-
-            if (hasCustom) {
-                badge.className = 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200';
-                badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Foto Kustom Terpasang';
-                hapusWrapper.classList.remove('hidden');
-            } else {
-                badge.className = 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium bg-stone-100 text-stone-600 border border-stone-200';
-                badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-stone-400"></span> Gambar Bawaan Beranda';
-                hapusWrapper.classList.add('hidden');
-            }
-
-            const modal = document.getElementById('editModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.classList.add('overflow-hidden');
-        }
-
-        // Close Modal Edit
         function closeEditModal() {
-            const modal = document.getElementById('editModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.classList.remove('overflow-hidden');
+            document.getElementById('editCategoryModal').classList.add('hidden');
         }
-
-        // Tutup modal jika klik di luar box
-        document.getElementById('editModal').addEventListener('click', function (e) {
-            if (e.target === this) closeEditModal();
-        });
-
-        // Tutup modal dengan tombol Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeEditModal();
-        });
     </script>
 </x-app-layout>

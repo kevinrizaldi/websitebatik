@@ -43,6 +43,8 @@ class CheckoutRequest extends FormRequest
             'alamat_id' => ['nullable', 'integer'],
             'city' => ['nullable', 'string', 'max:100'],
             'province' => ['nullable', 'string', 'max:100'],
+            'city_id' => ['nullable', 'integer'],
+            'province_id' => ['nullable', 'integer'],
             'postal_code' => ['nullable', 'string', 'max:10'],
         ];
     }

@@ -30,6 +30,7 @@
     </style>
 </head>
 <body class="antialiased bg-[#FAF7F2] text-[#26211D] min-h-screen selection:bg-[#B58742] selection:text-white"
+      x-init="fetchRajaOngkirCosts()"
       x-data="{
           mobileMenuOpen: false,
           userMenu: false,
@@ -60,7 +61,9 @@
               phone: '{{ $defaultAlamat ? addslashes($defaultAlamat->no_telepon) : (Auth::check() && Auth::user()->phone ? addslashes(Auth::user()->phone) : '') }}',
               address: '{{ $defaultAlamat ? addslashes($defaultAlamat->alamat_lengkap) : '' }}',
               city: '{{ $defaultAlamat ? addslashes($defaultAlamat->kota ?? '') : '' }}',
+              cityId: '{{ $defaultAlamat ? ($defaultAlamat->city_id ?? '') : '' }}',
               province: '{{ $defaultAlamat ? addslashes($defaultAlamat->provinsi ?? '') : '' }}',
+              provinceId: '{{ $defaultAlamat ? ($defaultAlamat->province_id ?? '') : '' }}',
               postalCode: '{{ $defaultAlamat ? addslashes($defaultAlamat->kode_pos ?? '') : '' }}',
               isUtama: {{ $defaultAlamat && $defaultAlamat->is_utama ? 'true' : 'false' }},
               hasAddress: {{ $defaultAlamat ? 'true' : 'false' }}
@@ -93,7 +96,9 @@
                       phone: '{{ addslashes($alm->no_telepon) }}',
                       address: '{{ addslashes($alm->alamat_lengkap) }}',
                       city: '{{ addslashes($alm->kota ?? '') }}',
+                      cityId: '{{ $alm->city_id ?? '' }}',
                       province: '{{ addslashes($alm->provinsi ?? '') }}',
+                      provinceId: '{{ $alm->province_id ?? '' }}',
                       postalCode: '{{ addslashes($alm->kode_pos ?? '') }}',
                       isUtama: {{ $alm->is_utama ? 'true' : 'false' }}
                   }@if(!$loop->last),@endif
@@ -111,10 +116,13 @@
               this.addressData.phone = picked.phone;
               this.addressData.address = picked.address;
               this.addressData.city = picked.city;
+              this.addressData.cityId = picked.cityId || '';
               this.addressData.province = picked.province || '';
+              this.addressData.provinceId = picked.provinceId || '';
               this.addressData.postalCode = picked.postalCode || '';
               this.addressData.isUtama = picked.isUtama;
               this.addressData.hasAddress = true;
+              this.fetchRajaOngkirCosts();
           },
 
           tempAddress: {
@@ -122,10 +130,71 @@
               recipient: '',
               phone: '',
               city: '',
+              cityId: '',
               province: '',
+              provinceId: '',
               postalCode: '',
               address: '',
               isUtama: false
+          },
+
+          provincesList: [],
+          citiesList: [],
+          loadingProvinces: false,
+          loadingCities: false,
+
+          async loadProvincesForCheckout() {
+              if (this.provincesList.length > 0) return;
+              this.loadingProvinces = true;
+              try {
+                  const res = await fetch('{{ route('rajaongkir.provinces') }}');
+                  const data = await res.json();
+                  if (data.success && Array.isArray(data.provinces)) {
+                      this.provincesList = data.provinces;
+                  }
+              } catch (e) {
+                  console.error('Failed loading provinces', e);
+              } finally {
+                  this.loadingProvinces = false;
+              }
+          },
+
+          async loadCitiesForCheckout(provinceId) {
+              if (!provinceId) {
+                  this.citiesList = [];
+                  return;
+              }
+              this.loadingCities = true;
+              try {
+                  const res = await fetch('{{ route('rajaongkir.cities') }}?province_id=' + provinceId);
+                  const data = await res.json();
+                  if (data.success && Array.isArray(data.cities)) {
+                      this.citiesList = data.cities;
+                  }
+              } catch (e) {
+                  console.error('Failed loading cities', e);
+              } finally {
+                  this.loadingCities = false;
+              }
+          },
+
+          async onCheckoutProvinceChange() {
+              const selected = this.provincesList.find(p => String(p.province_id) === String(this.tempAddress.provinceId));
+              this.tempAddress.province = selected ? selected.province : '';
+              this.tempAddress.cityId = '';
+              this.tempAddress.city = '';
+              await this.loadCitiesForCheckout(this.tempAddress.provinceId);
+          },
+
+          onCheckoutCityChange() {
+              const selected = this.citiesList.find(c => String(c.city_id) === String(this.tempAddress.cityId));
+              if (selected) {
+                  const prefix = selected.type ? selected.type + ' ' : '';
+                  this.tempAddress.city = prefix + selected.city_name;
+                  if (selected.postal_code && !this.tempAddress.postalCode) {
+                      this.tempAddress.postalCode = selected.postal_code;
+                  }
+              }
           },
 
           openEditAddress() {
@@ -137,7 +206,7 @@
               }
           },
 
-          openAddAddress() {
+          async openAddAddress() {
               this.modalView = 'form';
               this.formMode = 'add';
               this.editingAddressId = null;
@@ -146,15 +215,18 @@
                   recipient: '{{ Auth::check() ? addslashes(Auth::user()->name) : '' }}',
                   phone: '{{ Auth::check() && Auth::user()->phone ? addslashes(Auth::user()->phone) : '' }}',
                   city: '',
+                  cityId: '',
                   province: '',
+                  provinceId: '',
                   postalCode: '',
                   address: '',
                   isUtama: this.savedAddresses.length === 0
               };
               this.editAddressModal = true;
+              await this.loadProvincesForCheckout();
           },
 
-          openEditSingleAddress(addr) {
+          async openEditSingleAddress(addr) {
               this.modalView = 'form';
               this.formMode = 'edit';
               this.editingAddressId = addr.id;
@@ -163,12 +235,18 @@
                   recipient: addr.penerima,
                   phone: addr.phone,
                   city: addr.city,
+                  cityId: addr.cityId || '',
                   province: addr.province || '',
+                  provinceId: addr.provinceId || '',
                   postalCode: addr.postalCode || '',
                   address: addr.address,
                   isUtama: addr.isUtama
               };
               this.editAddressModal = true;
+              await this.loadProvincesForCheckout();
+              if (this.tempAddress.provinceId) {
+                  await this.loadCitiesForCheckout(this.tempAddress.provinceId);
+              }
           },
 
           saveAddress() {
@@ -207,6 +285,8 @@
                   no_telepon: phone,
                   kota: city,
                   provinsi: province || null,
+                  province_id: this.tempAddress.provinceId ? parseInt(this.tempAddress.provinceId) : null,
+                  city_id: this.tempAddress.cityId ? parseInt(this.tempAddress.cityId) : null,
                   kode_pos: postalCode || null,
                   alamat_lengkap: address,
                   is_utama: isUtama
@@ -238,7 +318,9 @@
                           phone: data.alamat.no_telepon,
                           address: data.alamat.alamat_lengkap,
                           city: data.alamat.kota,
+                          cityId: data.alamat.city_id || '',
                           province: data.alamat.provinsi || '',
+                          provinceId: data.alamat.province_id || '',
                           postalCode: data.alamat.kode_pos || '',
                           isUtama: !!data.alamat.is_utama
                       };
@@ -361,27 +443,28 @@
               @endif
           ],
 
-          // Shipping Selection
-          selectedShipping: 'jne',
-          shippingOptions: {
-              jne: {
-                  id: 'jne',
-                  name: 'JNE Reguler',
-                  desc: 'Estimasi 1 hingga 2-3 hari kerja',
-                  cost: 20000
-              },
-              sicepat: {
-                  id: 'sicepat',
-                  name: 'SiCepat BEST',
-                  desc: 'Next Day (1 hari kerja)',
-                  cost: 35000
-              },
-              gosend: {
-                  id: 'gosend',
-                  name: 'Gosend / Grab',
-                  desc: 'Instant (Khusus Jabodetabek)',
-                  cost: 50000
+          // RajaOngkir Shipping State & Selection
+          shippingServices: [
+              { code: 'JNE', name: 'Jalur Nugraha Ekakurir (JNE)', service: 'REG', description: 'Layanan Reguler', cost: 20000, etd: '1-2 hari' },
+              { code: 'JNE', name: 'Jalur Nugraha Ekakurir (JNE)', service: 'YES', description: 'Yakin Esok Sampai', cost: 32000, etd: '1 hari' },
+              { code: 'POS', name: 'POS Indonesia (POS)', service: 'Pos Reguler', description: 'Pos Reguler Domestik', cost: 18000, etd: '2-3 hari' },
+              { code: 'TIKI', name: 'Citra Van Titipan Kilat (TIKI)', service: 'REG', description: 'Regular Service', cost: 19000, etd: '2 hari' }
+          ],
+          selectedShippingKey: 'JNE-REG',
+          loadingShipping: false,
+          courierFilter: 'all',
+          isRajaOngkirLive: false,
+
+          get filteredShippingServices() {
+              if (this.courierFilter === 'all') {
+                  return this.shippingServices;
               }
+              return this.shippingServices.filter(s => s.code.toUpperCase() === this.courierFilter.toUpperCase());
+          },
+
+          get selectedShippingService() {
+              const found = this.shippingServices.find(s => (s.code + '-' + s.service) === this.selectedShippingKey);
+              return found || this.shippingServices[0] || null;
           },
 
           // Pembayaran: seluruh transaksi via Midtrans (metode dipilih di popup Snap).
@@ -399,13 +482,56 @@
               return this.items.reduce((sum, item) => sum + (item.harga * item.qty), 0);
           },
 
-          get shippingCost() {
-              return this.shippingOptions[this.selectedShipping]?.cost || 20000;
+          get totalWeightGrams() {
+              return Math.max(1000, this.items.reduce((sum, item) => sum + (item.qty * 300), 0));
           },
 
+          get totalWeightKg() {
+              return (this.totalWeightGrams / 1000).toFixed(1);
+          },
+
+          get shippingCost() {
+              return this.selectedShippingService ? this.selectedShippingService.cost : 20000;
+          },
 
           get grandTotal() {
               return Math.max(0, this.rawSubtotal + this.shippingCost);
+          },
+
+          async fetchRajaOngkirCosts() {
+              let dest = this.addressData.cityId;
+              if (!dest && this.selectedAddressId) {
+                  const found = this.savedAddresses.find(a => a.id === Number(this.selectedAddressId));
+                  if (found && found.cityId) dest = found.cityId;
+              }
+              this.loadingShipping = true;
+              try {
+                  const res = await fetch('{{ route('rajaongkir.cost') }}', {
+                      method: 'POST',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                          'Accept': 'application/json'
+                      },
+                      body: JSON.stringify({
+                          destination: dest || 444,
+                          weight: this.totalWeightGrams,
+                          courier: ['jne', 'pos', 'tiki']
+                      })
+                  });
+                  const data = await res.json();
+                  if (data.success && Array.isArray(data.services) && data.services.length > 0) {
+                      this.shippingServices = data.services;
+                      this.isRajaOngkirLive = !!data.is_live;
+                      if (!this.shippingServices.some(s => (s.code + '-' + s.service) === this.selectedShippingKey)) {
+                          this.selectedShippingKey = this.shippingServices[0].code + '-' + this.shippingServices[0].service;
+                      }
+                  }
+              } catch (e) {
+                  console.error('Failed fetching RajaOngkir cost', e);
+              } finally {
+                  this.loadingShipping = false;
+              }
           },
 
           formatRupiah(amount) {
@@ -431,7 +557,9 @@
               }
 
               this.isSubmitting = true;
-              const shippingObj = this.shippingOptions[this.selectedShipping];
+              const selectedSvc = this.selectedShippingService;
+              const shippingLabel = selectedSvc ? (selectedSvc.code + ' - ' + selectedSvc.service + ' (' + selectedSvc.description + ')') : 'JNE Reguler';
+              const shippingPrice = selectedSvc ? selectedSvc.cost : 20000;
 
               fetch('{{ route('checkout.store') }}', {
                   method: 'POST',
@@ -446,10 +574,12 @@
                       address: this.fullAddress,
                       city: this.addressData.city,
                       province: this.addressData.province,
+                      city_id: this.addressData.cityId || null,
+                      province_id: this.addressData.provinceId || null,
                       postal_code: this.addressData.postalCode,
                       alamat_id: this.selectedAddressId,
-                      shipping_option: shippingObj.name,
-                      shipping_cost: shippingObj.cost,
+                      shipping_option: shippingLabel,
+                      shipping_cost: shippingPrice,
                       payment_method: this.paymentMethodName,
                       notes: this.sellerNotes
                   })
@@ -694,29 +824,6 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                Kabupaten / Kota <span class="text-rose-500">*</span>
-                            </label>
-                            <input type="text"
-                                   x-model="tempAddress.city"
-                                   @input="tempAddress.city = tempAddress.city.replace(/[^a-zA-Z\s.,\-()]/g, '')"
-                                   placeholder="Contoh: Kota Pekalongan, Kab. Bantul"
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        <div>
-                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                Provinsi
-                            </label>
-                            <input type="text"
-                                   x-model="tempAddress.province"
-                                   @input="tempAddress.province = tempAddress.province.replace(/[^a-zA-Z\s.,\-()]/g, '')"
-                                   placeholder="Contoh: Jawa Tengah, D.I. Yogyakarta"
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
                                 Kode Pos
                             </label>
                             <input type="text"
@@ -726,6 +833,33 @@
                                    @input="tempAddress.postalCode = tempAddress.postalCode.replace(/[^0-9]/g, '')"
                                    placeholder="Contoh: 51111 (5 digit)"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                                Provinsi <span class="text-rose-500">*</span>
+                            </label>
+                            <select x-model="tempAddress.provinceId" @change="onCheckoutProvinceChange()"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
+                                <option value="" x-text="loadingProvinces ? 'Memuat provinsi...' : '-- Pilih Provinsi --'">-- Pilih Provinsi --</option>
+                                <template x-for="p in provincesList" :key="p.province_id">
+                                    <option :value="p.province_id" x-text="p.province" :selected="String(p.province_id) === String(tempAddress.provinceId)"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                                Kabupaten / Kota <span class="text-rose-500">*</span>
+                            </label>
+                            <select x-model="tempAddress.cityId" @change="onCheckoutCityChange()" :disabled="!tempAddress.provinceId || loadingCities"
+                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40 disabled:opacity-50">
+                                <option value="" x-text="loadingCities ? 'Memuat kota...' : (tempAddress.provinceId ? '-- Pilih Kabupaten/Kota --' : '-- Pilih Provinsi Dulu --')">-- Pilih Kabupaten/Kota --</option>
+                                <template x-for="c in citiesList" :key="c.city_id">
+                                    <option :value="c.city_id" x-text="(c.type ? c.type + ' ' : '') + c.city_name" :selected="String(c.city_id) === String(tempAddress.cityId)"></option>
+                                </template>
+                            </select>
                         </div>
                     </div>
 
@@ -1101,135 +1235,94 @@
                         </div>
                     </div>
 
-                    <!-- ================= CARD 3: OPSI PENGIRIMAN ================= -->
+                    <!-- ================= CARD 3: OPSI PENGIRIMAN (RAJAONGKIR) ================= -->
                     <div class="bg-white rounded-3xl p-6 sm:p-7 border border-[#EDE6DB] shadow-sm">
                         <div class="pb-4 border-b border-stone-100 mb-5">
-                            <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-full bg-[#FAF4ED] text-[#9E6A38] flex items-center justify-center shrink-0">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V4.875A1.125 1.125 0 0013.125 3.75h-7.5A1.125 1.125 0 004.5 4.875v9.375m9 0V9.75" />
-                                    </svg>
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-full bg-[#FAF4ED] text-[#9E6A38] flex items-center justify-center shrink-0">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V4.875A1.125 1.125 0 0013.125 3.75h-7.5A1.125 1.125 0 004.5 4.875v9.375m9 0V9.75" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="font-bold text-base sm:text-lg text-stone-900 flex items-center gap-2">
+                                            <span>Opsi Pengiriman</span>
+                                            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full"
+                                                  :class="isRajaOngkirLive ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                                  x-text="isRajaOngkirLive ? 'RajaOngkir Live' : 'RajaOngkir Standar'"></span>
+                                        </h2>
+                                        <p class="text-xs text-stone-500 mt-0.5">
+                                            Dari <span class="font-semibold text-stone-700">Surakarta (Solo)</span> &bull; Berat paket: <span class="font-semibold text-stone-700" x-text="totalWeightGrams + ' gr (~' + totalWeightKg + ' kg)'"></span>
+                                        </p>
+                                    </div>
                                 </div>
-                                <h2 class="font-bold text-base sm:text-lg text-stone-900">
-                                    Opsi Pengiriman
-                                </h2>
+
+                                <!-- Filter Tab Kurir -->
+                                <div class="flex items-center gap-1 bg-stone-100 p-1 rounded-xl text-xs font-bold">
+                                    <button type="button" @click="courierFilter = 'all'"
+                                            :class="courierFilter === 'all' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'"
+                                            class="px-2.5 py-1 rounded-lg transition cursor-pointer">Semua</button>
+                                    <button type="button" @click="courierFilter = 'JNE'"
+                                            :class="courierFilter === 'JNE' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'"
+                                            class="px-2.5 py-1 rounded-lg transition cursor-pointer">JNE</button>
+                                    <button type="button" @click="courierFilter = 'POS'"
+                                            :class="courierFilter === 'POS' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'"
+                                            class="px-2.5 py-1 rounded-lg transition cursor-pointer">POS</button>
+                                    <button type="button" @click="courierFilter = 'TIKI'"
+                                            :class="courierFilter === 'TIKI' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'"
+                                            class="px-2.5 py-1 rounded-lg transition cursor-pointer">TIKI</button>
+                                </div>
                             </div>
-                            <p class="text-xs text-stone-500 mt-1 ml-10">
-                                Dikemas menggunakan besek anyaman bambu & serat daur ulang
-                            </p>
                         </div>
 
-                        <!-- 3 Courier Options Grid -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                            
-                            <!-- Courier 1: JNE Reguler -->
-                            <div @click="selectedShipping = 'jne'"
-                                 :class="selectedShipping === 'jne' 
-                                     ? 'bg-[#201A17] text-white border-[#201A17] shadow-md ring-2 ring-[#B58742]/50' 
-                                     : 'bg-[#FAF7F2] text-stone-800 border-stone-200 hover:border-stone-400'"
-                                 class="rounded-2xl p-4 sm:p-5 border cursor-pointer transition-all duration-200 flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm"
-                                             :class="selectedShipping === 'jne' ? 'bg-stone-800 text-[#E5C38E]' : 'bg-white text-stone-700 shadow-2xs'">
-                                            🧭
-                                        </div>
-                                        <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                                             :class="selectedShipping === 'jne' ? 'border-amber-400 bg-amber-400' : 'border-stone-300'">
-                                            <div x-show="selectedShipping === 'jne'" class="w-1.5 h-1.5 rounded-full bg-[#201A17]"></div>
-                                        </div>
-                                    </div>
-                                    <h3 class="font-bold text-sm" :class="selectedShipping === 'jne' ? 'text-white' : 'text-stone-900'">
-                                        JNE Reguler
-                                    </h3>
-                                    <p class="text-[11px] mt-0.5 leading-snug" :class="selectedShipping === 'jne' ? 'text-stone-300' : 'text-stone-500'">
-                                        Estimasi 1 hingga 2-3 hari kerja
-                                    </p>
-                                </div>
-                                <div class="mt-4 pt-3 flex items-center justify-between border-t"
-                                     :class="selectedShipping === 'jne' ? 'border-stone-700' : 'border-stone-200/60'">
-                                    <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded"
-                                          :class="selectedShipping === 'jne' ? 'bg-stone-800 text-stone-300' : 'bg-stone-200/60 text-stone-600'">
-                                        TARIF
-                                    </span>
-                                    <span class="font-bold text-xs sm:text-sm" :class="selectedShipping === 'jne' ? 'text-white' : 'text-stone-900'">
-                                        Rp 20.000
-                                    </span>
-                                </div>
-                            </div>
+                        <!-- Loading State -->
+                        <div x-show="loadingShipping" class="py-8 text-center text-xs text-stone-500 flex flex-col items-center justify-center gap-2">
+                            <div class="w-6 h-6 border-2 border-stone-300 border-t-[#B58742] rounded-full animate-spin"></div>
+                            <span>Menghitung ongkos kirim real-time...</span>
+                        </div>
 
-                            <!-- Courier 2: SiCepat BEST -->
-                            <div @click="selectedShipping = 'sicepat'"
-                                 :class="selectedShipping === 'sicepat' 
-                                     ? 'bg-[#201A17] text-white border-[#201A17] shadow-md ring-2 ring-[#B58742]/50' 
-                                     : 'bg-[#FAF7F2] text-stone-800 border-stone-200 hover:border-stone-400'"
-                                 class="rounded-2xl p-4 sm:p-5 border cursor-pointer transition-all duration-200 flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm"
-                                             :class="selectedShipping === 'sicepat' ? 'bg-stone-800 text-amber-400' : 'bg-white text-stone-700 shadow-2xs'">
-                                            ⚡
+                        <!-- Courier Options Grid -->
+                        <div x-show="!loadingShipping" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                            <template x-for="service in filteredShippingServices" :key="service.code + '-' + service.service">
+                                <div @click="selectedShippingKey = service.code + '-' + service.service"
+                                     :class="(selectedShippingKey === (service.code + '-' + service.service))
+                                         ? 'bg-[#201A17] text-white border-[#201A17] shadow-md ring-2 ring-[#B58742]/50' 
+                                         : 'bg-[#FAF7F2] text-stone-800 border-stone-200 hover:border-stone-400'"
+                                     class="rounded-2xl p-4 sm:p-5 border cursor-pointer transition-all duration-200 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="px-2.5 py-1 rounded-lg text-xs font-black tracking-wider uppercase"
+                                                 :class="(selectedShippingKey === (service.code + '-' + service.service)) ? 'bg-stone-800 text-[#E5C38E]' : 'bg-white text-stone-800 shadow-2xs border border-stone-200/80'"
+                                                 x-text="service.code">
+                                            </div>
+                                            <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                                                 :class="(selectedShippingKey === (service.code + '-' + service.service)) ? 'border-amber-400 bg-amber-400' : 'border-stone-300'">
+                                                <div x-show="selectedShippingKey === (service.code + '-' + service.service)" class="w-1.5 h-1.5 rounded-full bg-[#201A17]"></div>
+                                            </div>
                                         </div>
-                                        <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                                             :class="selectedShipping === 'sicepat' ? 'border-amber-400 bg-amber-400' : 'border-stone-300'">
-                                            <div x-show="selectedShipping === 'sicepat'" class="w-1.5 h-1.5 rounded-full bg-[#201A17]"></div>
-                                        </div>
+                                        <h3 class="font-bold text-sm" :class="(selectedShippingKey === (service.code + '-' + service.service)) ? 'text-white' : 'text-stone-900'">
+                                            <span x-text="service.code + ' ' + service.service"></span>
+                                        </h3>
+                                        <p class="text-[11px] mt-0.5 leading-snug line-clamp-1" :class="(selectedShippingKey === (service.code + '-' + service.service)) ? 'text-stone-300' : 'text-stone-500'"
+                                           x-text="service.description">
+                                        </p>
+                                        <p class="text-[11px] mt-1.5 font-medium" :class="(selectedShippingKey === (service.code + '-' + service.service)) ? 'text-amber-300' : 'text-stone-600'">
+                                            Estimasi: <span class="font-bold" x-text="service.etd"></span>
+                                        </p>
                                     </div>
-                                    <h3 class="font-bold text-sm" :class="selectedShipping === 'sicepat' ? 'text-white' : 'text-stone-900'">
-                                        SiCepat BEST
-                                    </h3>
-                                    <p class="text-[11px] mt-0.5 leading-snug" :class="selectedShipping === 'sicepat' ? 'text-stone-300' : 'text-stone-500'">
-                                        Next Day (1 hari kerja)
-                                    </p>
-                                </div>
-                                <div class="mt-4 pt-3 flex items-center justify-between border-t"
-                                     :class="selectedShipping === 'sicepat' ? 'border-stone-700' : 'border-stone-200/60'">
-                                    <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded"
-                                          :class="selectedShipping === 'sicepat' ? 'bg-stone-800 text-stone-300' : 'bg-stone-200/60 text-stone-600'">
-                                        TARIF
-                                    </span>
-                                    <span class="font-bold text-xs sm:text-sm" :class="selectedShipping === 'sicepat' ? 'text-white' : 'text-stone-900'">
-                                        Rp 35.000
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- Courier 3: Gosend / Grab -->
-                            <div @click="selectedShipping = 'gosend'"
-                                 :class="selectedShipping === 'gosend' 
-                                     ? 'bg-[#201A17] text-white border-[#201A17] shadow-md ring-2 ring-[#B58742]/50' 
-                                     : 'bg-[#FAF7F2] text-stone-800 border-stone-200 hover:border-stone-400'"
-                                 class="rounded-2xl p-4 sm:p-5 border cursor-pointer transition-all duration-200 flex flex-col justify-between">
-                                <div>
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm"
-                                             :class="selectedShipping === 'gosend' ? 'bg-stone-800 text-emerald-400' : 'bg-white text-stone-700 shadow-2xs'">
-                                            🛵
-                                        </div>
-                                        <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                                             :class="selectedShipping === 'gosend' ? 'border-amber-400 bg-amber-400' : 'border-stone-300'">
-                                            <div x-show="selectedShipping === 'gosend'" class="w-1.5 h-1.5 rounded-full bg-[#201A17]"></div>
-                                        </div>
+                                    <div class="mt-4 pt-3 flex items-center justify-between border-t"
+                                         :class="(selectedShippingKey === (service.code + '-' + service.service)) ? 'border-stone-700' : 'border-stone-200/60'">
+                                        <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded"
+                                              :class="(selectedShippingKey === (service.code + '-' + service.service)) ? 'bg-stone-800 text-stone-300' : 'bg-stone-200/60 text-stone-600'">
+                                            TARIF
+                                        </span>
+                                        <span class="font-bold text-xs sm:text-sm" :class="(selectedShippingKey === (service.code + '-' + service.service)) ? 'text-white' : 'text-stone-900'"
+                                              x-text="formatRupiah(service.cost)">
+                                        </span>
                                     </div>
-                                    <h3 class="font-bold text-sm" :class="selectedShipping === 'gosend' ? 'text-white' : 'text-stone-900'">
-                                        Gosend / Grab
-                                    </h3>
-                                    <p class="text-[11px] mt-0.5 leading-snug" :class="selectedShipping === 'gosend' ? 'text-stone-300' : 'text-stone-500'">
-                                        Instant (Khusus Jabodetabek)
-                                    </p>
                                 </div>
-                                <div class="mt-4 pt-3 flex items-center justify-between border-t"
-                                     :class="selectedShipping === 'gosend' ? 'border-stone-700' : 'border-stone-200/60'">
-                                    <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded"
-                                          :class="selectedShipping === 'gosend' ? 'bg-stone-800 text-stone-300' : 'bg-stone-200/60 text-stone-600'">
-                                        TARIF
-                                    </span>
-                                    <span class="font-bold text-xs sm:text-sm" :class="selectedShipping === 'gosend' ? 'text-white' : 'text-stone-900'">
-                                        Rp 50.000
-                                    </span>
-                                </div>
-                            </div>
-
+                            </template>
                         </div>
                     </div>
 

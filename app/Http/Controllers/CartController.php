@@ -155,7 +155,9 @@ class CartController extends Controller
             validated: $validated,
             city: $request->input('city'),
             province: $request->input('province'),
-            postalCode: $request->input('postal_code')
+            postalCode: $request->input('postal_code'),
+            cityId: $request->filled('city_id') ? (int) $request->input('city_id') : null,
+            provinceId: $request->filled('province_id') ? (int) $request->input('province_id') : null
         );
 
         $cartItems = $this->cartService->getVisitorSelectedCartItems();

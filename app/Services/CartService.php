@@ -98,6 +98,25 @@ class CartService
     public function addToCart(int $productId, int $requestedQty = 1, ?string $ukuran = null, ?string $varian = null): array
     {
         $produk = Produk::findOrFail($productId);
+
+        if (! Auth::check()) {
+            session()->put('cart_active', true);
+            session()->save();
+        }
+
+        if (empty($ukuran)) {
+            $stokUkuran = $produk->getStokUkuranArray();
+            foreach ($stokUkuran as $sz => $stk) {
+                if ($stk > 0) {
+                    $ukuran = (string) $sz;
+                    break;
+                }
+            }
+            if (empty($ukuran)) {
+                $ukuran = ! empty($stokUkuran) ? (string) array_key_first($stokUkuran) : 'All Size';
+            }
+        }
+
         $availableStock = $produk->getStokForUkuran($ukuran);
 
         if ($availableStock <= 0) {

@@ -234,4 +234,31 @@ class CartTest extends TestCase
             'id' => $cartItem->id,
         ]);
     }
+
+    /**
+     * Test guest can add product to cart without ukuran and view it in cart page.
+     */
+    public function test_guest_can_add_product_to_cart_without_ukuran_and_view_it_in_cart_page(): void
+    {
+        $produk = $this->createSampleProduct();
+
+        $response = $this->postJson(route('keranjang.store'), [
+            'produk_id' => $produk->id,
+            'qty' => 1,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+
+        $this->assertDatabaseHas('cart_items', [
+            'produk_id' => $produk->id,
+            'qty' => 1,
+        ]);
+
+        $viewResponse = $this->get(route('keranjang.index'));
+        $viewResponse->assertStatus(200);
+        $viewResponse->assertSee($produk->nama);
+    }
 }

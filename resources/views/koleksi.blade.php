@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Semua Produk - Hamzah Style Official</title>
+    <title>Semua Produk — HAMZAH STYLE OFFICIAL</title>
     <meta name="description" content="Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi di Hamzah Style Official.">
 
     <!-- Google Fonts -->
@@ -20,6 +20,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #FAF7F2;
             color: #26211D;
+            -webkit-font-smoothing: antialiased;
         }
         .font-serif-title {
             font-family: 'Playfair Display', serif;
@@ -30,29 +31,20 @@
       x-data="{
           mobileMenuOpen: false,
           searchQuery: '',
-          activeCategory: '{{ request('kategori') ? addslashes(request('kategori')) : 'Semua Produk' }}',
+          activeCategory: 'Semua Produk',
           priceRange: 'Semua',
           sortBy: 'paling-sesuai',
-          priceDropdownOpen: false,
-          sortDropdownOpen: false,
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
-
-          quickViewModal: false,
-          selectedProduct: null,
           toastMessage: '',
           currentPage: 1,
           perPage: 12,
-          
+
           showToast(msg) {
               this.toastMessage = msg;
               setTimeout(() => { this.toastMessage = ''; }, 3000);
           },
+
           addToCart(prod) {
-              if (!prod || !prod.id) return;
-              if ((prod.stok ?? 1) <= 0) {
-                  this.showToast('Stok ' + (prod.nama || 'produk') + ' habis.');
-                  return;
-              }
               fetch('{{ route('keranjang.store') }}', {
                   method: 'POST',
                   headers: {
@@ -60,6 +52,7 @@
                       'X-CSRF-TOKEN': '{{ csrf_token() }}',
                       'Accept': 'application/json'
                   },
+                  credentials: 'same-origin',
                   body: JSON.stringify({
                       produk_id: prod.id,
                       qty: 1
@@ -69,53 +62,43 @@
               .then(data => {
                   if (data.success) {
                       this.cartCount = data.cartCount;
-                      this.showToast(data.message);
+                      this.showToast((prod.nama || 'Produk') + ' ditambahkan ke keranjang');
                   } else {
-                      this.showToast(data.message || 'Gagal menambahkan ke keranjang');
+                      this.showToast(data.message || 'Gagal menambahkan produk');
                   }
               })
               .catch(() => {
-                  this.showToast('Gagal menghubungi server');
+                  this.showToast('Gagal menghubungi server saat menambah ke keranjang');
               });
           },
 
-          openQuickView(prod) {
-              this.selectedProduct = prod;
-              this.quickViewModal = true;
-          },
-
           products: [
-              @foreach($produks as $p)
-              {
-                  id: {{ $p->id }},
-                  nama: '{{ addslashes($p->nama) }}',
-                  fullName: '{{ addslashes($p->nama) }}',
-                  kategori: '{{ addslashes($p->category_name) }}',
-                  subkategori: '{{ strtoupper(addslashes($p->category_name)) }}',
-                  badge: '{{ $p->status === 'Stok Menipis' ? 'Stok Terbatas' : ($p->status === 'Habis' ? 'Habis' : 'Ready Stock') }}',
-                  badgeColor: '{{ $p->status === 'Stok Menipis' ? 'bg-[#5C3D28] text-white' : ($p->status === 'Habis' ? 'bg-rose-700 text-white' : 'bg-white/95 text-stone-800 border-stone-200') }}',
-                  harga: {{ (float) $p->harga }},
-                  stok: {{ (int) $p->stok }},
-                  hargaFormatted: 'Rp {{ number_format($p->harga, 0, ',', '.') }}',
-                  rating: '5.0',
-                  reviews: {{ 10 + (($p->id * 7) % 35) }},
-                  material: '{{ addslashes($p->material ?? 'Katun Primissima Halus') }}',
-                  deskripsi: '{{ addslashes($p->deskripsi ?? 'Batik autentik nusantara karya pengrajin pilihan.') }}',
-                  gambar: '{{ $p->gambar_url }}',
-                  detailUrl: '{{ route('produk.detail', ['id' => $p->id]) }}'
-              }@if(!$loop->last),@endif
-              @endforeach
+              @if(isset($produks) && $produks->isNotEmpty())
+                  @foreach($produks as $p)
+                  {
+                      id: {{ $p->id }},
+                      nama: {{ json_encode($p->nama) }},
+                      fullName: {{ json_encode($p->nama) }},
+                      kategori: {{ json_encode($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'Koleksi Batik') }},
+                      subkategori: {{ json_encode(strtoupper($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'BATIK')) }},
+                      badge: {{ json_encode($p->stok > 0 ? ($p->stok <= 10 ? 'Stok Terbatas' : 'Ready Stock') : 'Stok Habis') }},
+                      badgeColor: {{ json_encode($p->stok <= 0 ? 'bg-stone-500 text-white' : ($p->stok <= 10 ? 'bg-[#4A2D1B] text-white' : 'bg-white/95 text-stone-800 border border-stone-200')) }},
+                      harga: {{ (float) $p->harga }},
+                      hargaFormatted: {{ json_encode('Rp ' . number_format($p->harga, 0, ',', '.')) }},
+                      rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '5.0' }}',
+                      reviews: {{ $p->ulasans()->where('status', 'Disetujui')->count() }},
+                      detailUrl: '{{ route('produk.detail', $p->id) }}',
+                      gambar: '{{ $p->gambar_url }}'
+                  }@if(!$loop->last),@endif
+                  @endforeach
+              @endif
           ],
 
           get filteredProducts() {
               return this.products.filter(item => {
                   const matchCategory = this.activeCategory === 'Semua Produk' || item.kategori === this.activeCategory;
                   const q = this.searchQuery.toLowerCase().trim();
-                  const matchSearch = !q || 
-                      item.nama.toLowerCase().includes(q) || 
-                      (item.fullName && item.fullName.toLowerCase().includes(q)) || 
-                      item.kategori.toLowerCase().includes(q) ||
-                      item.material.toLowerCase().includes(q);
+                  const matchSearch = !q || item.nama.toLowerCase().includes(q) || item.kategori.toLowerCase().includes(q);
                   let matchPrice = true;
                   if (this.priceRange === 'Dibawah 200rb') {
                       matchPrice = item.harga < 200000;
@@ -132,25 +115,18 @@
                   return a.id - b.id;
               });
           },
+
           get totalPages() {
               return Math.ceil(this.filteredProducts.length / this.perPage) || 1;
           },
+
           get pagedProducts() {
               const start = (this.currentPage - 1) * this.perPage;
               return this.filteredProducts.slice(start, start + this.perPage);
           },
-          get pageNumbers() {
-              const total = this.totalPages;
-              if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-              const cur = this.currentPage;
-              if (cur <= 3) return [1, 2, 3, 4, '...', total];
-              if (cur >= total - 2) return [1, '...', total - 3, total - 2, total - 1, total];
-              return [1, '...', cur - 1, cur, cur + 1, '...', total];
-          },
+
           resetPage() { this.currentPage = 1; },
-          goToPage(p) { if (p !== '...' && p >= 1 && p <= this.totalPages) this.currentPage = p; },
-          get startItem() { return this.filteredProducts.length === 0 ? 0 : (this.currentPage - 1) * this.perPage + 1; },
-          get endItem() { return Math.min(this.currentPage * this.perPage, this.filteredProducts.length); }
+          goToPage(p) { if (p >= 1 && p <= this.totalPages) this.currentPage = p; }
       }">
 
     <!-- Toast Notification -->
@@ -169,25 +145,21 @@
     </div>
 
     <!-- ================= NAVBAR ================= -->
-    <header class="sticky top-0 z-40 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#ECE4D8] transition-all">
+    <header class="sticky top-0 z-40 bg-[#FAF7F2] border-b border-[#ECE4D8] transition-all">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
                 <!-- Brand / Logo -->
                 <div class="flex items-center gap-3">
-                    <a href="{{ url('/') }}" class="flex items-center gap-2.5 group">
-                        <div class="w-9 h-9 rounded-lg bg-[#201A17] flex items-center justify-center text-[#E5C38E] shadow-sm group-hover:bg-stone-800 transition">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                    <a href="{{ url('/') }}" class="flex items-center gap-3 group">
+                        <div class="w-9 h-9 rounded-lg bg-[#201A17] flex items-center justify-center text-[#E5C38E] shadow-xs group-hover:bg-stone-800 transition">
+                            <svg class="w-5 h-5 text-[#E5C38E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <rect x="3" y="3" width="18" height="18" rx="3" stroke-width="1.8"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
                             </svg>
                         </div>
-                        <div class="flex flex-col">
-                            <span class="font-bold tracking-wider text-sm sm:text-base text-stone-900 uppercase font-sans">
-                                HAMZAH STYLE
-                            </span>
-                            <span class="text-[10px] text-stone-500 tracking-widest uppercase -mt-1 font-medium">
-                                OFFICIAL
-                            </span>
-                        </div>
+                        <span class="font-bold tracking-wider text-sm sm:text-base text-stone-900 uppercase font-sans">
+                            HAMZAH STYLE OFFICIAL
+                        </span>
                     </a>
                 </div>
 
@@ -199,16 +171,31 @@
                     <a href="{{ route('koleksi.index') }}" class="text-sm font-semibold text-stone-900 border-b-2 border-stone-900 pb-0.5 transition">
                         Produk
                     </a>
-                    <a href="{{ route('pesanan.index') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
-                        Pesanan
+                    <a href="{{ url('/#koleksi') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Kategori
+                    </a>
+                    <a href="{{ url('/#tentang-kami') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Tentang Kami
+                    </a>
+                    <a href="#kontak" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Kontak
                     </a>
                 </nav>
 
-                <!-- Action Buttons: Cart, User -->
-                <div class="flex items-center gap-4">
+                <!-- Action Buttons: Search, Cart, Akun -->
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <!-- Search Icon Button -->
+                    <button @click="$refs.searchInput ? $refs.searchInput.focus() : null" 
+                            class="p-2 text-stone-700 hover:text-stone-950 rounded-full hover:bg-stone-200/50 transition"
+                            title="Cari Produk">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                        </svg>
+                    </button>
+
                     <!-- Cart Button with badge -->
-                    <a href="{{ route('keranjang.index') }}"
-                       class="relative p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"
+                    <a href="{{ route('keranjang.index') }}" 
+                       class="relative p-2 text-stone-700 hover:text-stone-950 rounded-full hover:bg-stone-200/50 transition"
                        title="Keranjang Belanja">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -219,68 +206,78 @@
                         </span>
                     </a>
 
-                    <!-- User Account / Auth Dropdown -->
-                    @if (Route::has('login'))
-                        <div class="relative" x-data="{ userMenu: false }">
+                    <!-- Akun Pill Button -->
+                    <div class="relative" x-data="{ userMenu: false }">
+                        <button @click="userMenu = !userMenu" 
+                                @click.away="userMenu = false"
+                                class="flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white/80 hover:bg-white transition shadow-2xs">
+                            <div class="w-7 h-7 rounded-full bg-[#1F1916] text-[#E5C38E] flex items-center justify-center font-bold text-xs">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-semibold text-stone-800">
+                                @auth {{ Auth::user()->name }} @else Akun @endauth
+                            </span>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div x-cloak x-show="userMenu" 
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             class="absolute right-0 mt-2 w-56 rounded-2xl bg-white shadow-xl border border-stone-200 py-2 z-50 text-sm">
                             @auth
-                                <button @click="userMenu = !userMenu" 
-                                        @click.away="userMenu = false"
-                                        class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white/70 transition">
-                                    <div class="w-7 h-7 rounded-full bg-[#201A17] text-[#E5C38E] flex items-center justify-center font-bold text-xs uppercase">
-                                        {{ substr(Auth::user()->name, 0, 1) }}
-                                    </div>
-                                    <span class="text-xs font-semibold text-stone-800 max-w-[90px] truncate hidden sm:inline">
-                                        {{ Auth::user()->name }}
-                                    </span>
-                                    <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-
-                                <div x-cloak x-show="userMenu" 
-                                     x-transition:enter="transition ease-out duration-100"
-                                     x-transition:enter-start="transform opacity-0 scale-95"
-                                     x-transition:enter-end="transform opacity-100 scale-100"
-                                     class="absolute right-0 mt-2 w-52 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-50 text-sm">
-                                    <div class="px-4 py-2 border-b border-stone-100">
-                                        <p class="text-xs text-stone-500">Masuk sebagai</p>
-                                        <p class="font-semibold text-stone-800 truncate">{{ Auth::user()->name }}</p>
-                                    </div>
-
-                                    @if(Auth::user()->isAdmin())
-                                        <a href="{{ route('produk.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 font-medium">
-                                            <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                                            Kelola Produk (Admin)
-                                        </a>
-                                    @endif
-
-                                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                        Profile
-                                    </a>
-
-                                    <div class="border-t border-stone-100 my-1"></div>
-                                    <form method="POST" action="{{ route('logout') }}">
-                                        @csrf
-                                        <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-600 hover:bg-rose-50 transition">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                                            Keluar
-                                        </button>
-                                    </form>
+                                <div class="px-4 py-2 border-b border-stone-100">
+                                    <p class="text-xs text-stone-500">Masuk sebagai</p>
+                                    <p class="font-semibold text-stone-800 truncate">{{ Auth::user()->name }}</p>
                                 </div>
+
+                                @if(Auth::user()->isAdmin())
+                                    <a href="{{ route('produk.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 font-medium">
+                                        <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                        Kelola Produk (Admin)
+                                    </a>
+                                    <a href="{{ route('admin.orders.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 font-medium">
+                                        <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                        Kelola Pesanan
+                                    </a>
+                                @endif
+
+                                <a href="{{ route('pesanan.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                                    <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                    Pesanan Saya
+                                </a>
+                                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                                    <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    Profil Akun
+                                </a>
+
+                                <div class="border-t border-stone-100 my-1"></div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-600 hover:bg-rose-50 transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                        Keluar
+                                    </button>
+                                </form>
                             @else
-                                <div class="flex items-center gap-2">
-                                    <a href="{{ route('login') }}" 
-                                       class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-stone-300 hover:border-stone-500 text-xs font-semibold text-stone-800 bg-white/60 hover:bg-white transition">
-                                        <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        User
+                                <div class="p-2 space-y-1">
+                                    <a href="{{ route('login') }}" class="flex items-center justify-center w-full py-2 px-4 rounded-xl bg-[#201A17] text-white text-xs font-semibold hover:bg-stone-800 transition">
+                                        Masuk
+                                    </a>
+                                    <a href="{{ route('register') }}" class="flex items-center justify-center w-full py-2 px-4 rounded-xl border border-stone-300 text-stone-800 text-xs font-semibold hover:bg-stone-50 transition">
+                                        Daftar Akun
+                                    </a>
+                                    <div class="border-t border-stone-100 my-1"></div>
+                                    <a href="{{ route('pesanan.index') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-stone-600 hover:text-stone-900">
+                                        <svg class="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                        Cek Status Pesanan
                                     </a>
                                 </div>
                             @endauth
                         </div>
-                    @endif
+                    </div>
 
                     <!-- Mobile Menu Hamburger Button -->
                     <button @click="mobileMenuOpen = !mobileMenuOpen" 
@@ -294,66 +291,59 @@
             </div>
 
             <!-- Mobile Navigation Menu -->
-            <div x-cloak x-show="mobileMenuOpen" 
-                 x-transition:enter="transition ease-out duration-200"
-                 x-transition:enter-start="opacity-0 -translate-y-4"
-                 x-transition:enter-end="opacity-100 translate-y-0"
-                 class="md:hidden py-4 border-t border-[#ECE4D8] space-y-2">
-                <a href="{{ url('/') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-200/30">Home</a>
+            <div x-cloak x-show="mobileMenuOpen" class="md:hidden py-4 border-t border-[#ECE4D8] space-y-2">
+                <a href="{{ url('/') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900">Home</a>
                 <a href="{{ route('koleksi.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-stone-900 bg-stone-200/50">Produk</a>
-                <a href="{{ route('pesanan.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-200/30">Pesanan</a>
-                @guest
-                    <div class="pt-2 border-t border-[#ECE4D8] flex gap-2">
-                        <a href="{{ route('login') }}" class="flex-1 text-center py-2 px-4 rounded-lg bg-[#201A17] text-white font-medium text-sm">Masuk</a>
-                        <a href="{{ route('register') }}" class="flex-1 text-center py-2 px-4 rounded-lg border border-stone-300 text-stone-800 font-medium text-sm">Daftar</a>
-                    </div>
-                @endguest
+                <a href="{{ url('/#koleksi') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900">Kategori</a>
+                <a href="{{ route('pesanan.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900">Pesanan</a>
+                <a href="{{ url('/#tentang-kami') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900">Tentang Kami</a>
+                <a href="#kontak" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900">Kontak</a>
             </div>
         </div>
     </header>
 
     <!-- ================= MAIN CATALOG CONTENT ================= -->
-    <main class="py-8 sm:py-12">
+    <main class="py-6 sm:py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             
             <!-- Breadcrumb -->
-            <nav class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-stone-400 mb-4">
+            <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-3">
                 <a href="{{ url('/') }}" class="hover:text-stone-700 transition">KOLEKSI</a>
                 <span>/</span>
-                <span class="text-stone-800">SEMUA PRODUK</span>
+                <span class="text-stone-900 font-extrabold">SEMUA PRODUK</span>
             </nav>
 
             <!-- Page Title & Subtitle -->
-            <div class="mb-8">
-                <h1 class="font-serif-title text-3xl sm:text-4xl md:text-5xl font-bold text-stone-900 leading-tight">
+            <div class="mb-6">
+                <h1 class="font-serif-title text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
                     Semua Produk
                 </h1>
-                <p class="text-stone-600 text-sm sm:text-base mt-2 max-w-2xl leading-relaxed">
+                <p class="text-stone-600 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
                     Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi.
                 </p>
             </div>
 
             <!-- Filter & Search Controls Bar -->
-            <div class="space-y-4 mb-8">
+            <div class="space-y-3 mb-6">
                 <!-- Top Row: Search input + Rentang Harga + Urutkan -->
                 <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
                     
                     <!-- Search Input Box -->
                     <div class="relative flex-1">
-                        <div class="absolute left-4 top-3.5 text-stone-400">
+                        <div class="absolute left-4 top-3 text-stone-400">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
                             </svg>
                         </div>
                         <input type="text" 
-                               id="catalog-search-input"
+                               x-ref="searchInput"
                                x-model="searchQuery" 
                                placeholder="Cari busana, jenis motif, atau olahan kriya..."
-                               class="w-full bg-[#FAF4EC] border border-[#EFE8DE] rounded-xl pl-11 pr-10 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:bg-white transition">
+                               class="w-full bg-[#FAF4EC] border border-[#EFE8DE] rounded-xl pl-11 pr-10 py-2.5 text-xs sm:text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:bg-white transition">
                         <button x-show="searchQuery" 
                                 @click="searchQuery = ''; resetPage()" 
-                                class="absolute right-3.5 top-3.5 text-stone-400 hover:text-stone-600">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                class="absolute right-3.5 top-3 text-stone-400 hover:text-stone-600">
+                            &times;
                         </button>
                     </div>
 
@@ -361,39 +351,22 @@
                     <div class="relative" x-data="{ priceOpen: false }">
                         <button @click="priceOpen = !priceOpen" 
                                 @click.away="priceOpen = false"
-                                class="w-full md:w-auto inline-flex items-center justify-between gap-2 px-5 py-3 rounded-xl bg-white border border-[#EFE8DE] text-xs sm:text-sm font-semibold text-stone-800 hover:border-stone-400 transition shadow-2xs">
+                                class="w-full md:w-auto inline-flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#EFE8DE] text-xs font-semibold text-stone-800 hover:border-stone-400 transition shadow-2xs">
                             <span class="flex items-center gap-2">
-                                <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M6 12h12m-9 6h6"/>
                                 </svg>
                                 <span x-text="priceRange === 'Semua' ? 'Rentang Harga' : priceRange"></span>
                             </span>
-                            <svg class="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg class="w-3 h-3 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
 
                         <div x-cloak x-show="priceOpen" 
-                             x-transition
-                             class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-30 text-xs">
-                            <button @click="priceRange = 'Semua'; priceOpen = false; resetPage()" 
-                                    :class="priceRange === 'Semua' ? 'bg-stone-100 font-bold' : ''"
-                                    class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
-                                Semua Harga
-                            </button>
-                            <button @click="priceRange = 'Dibawah 200rb'; priceOpen = false; resetPage()" 
-                                    :class="priceRange === 'Dibawah 200rb' ? 'bg-stone-100 font-bold' : ''"
-                                    class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
-                                &lt; Rp 200.000
-                            </button>
-                            <button @click="priceRange = '200rb - 400rb'; priceOpen = false; resetPage()" 
-                                    :class="priceRange === '200rb - 400rb' ? 'bg-stone-100 font-bold' : ''"
-                                    class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
-                                Rp 200.000 - Rp 400.000
-                            </button>
-                            <button @click="priceRange = 'Diatas 400rb'; priceOpen = false; resetPage()" 
-                                    :class="priceRange === 'Diatas 400rb' ? 'bg-stone-100 font-bold' : ''"
-                                    class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
-                                &gt; Rp 400.000
-                            </button>
+                             class="absolute right-0 mt-1 w-44 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-30 text-xs">
+                            <button @click="priceRange = 'Semua'; priceOpen = false; resetPage()" class="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700">Semua Harga</button>
+                            <button @click="priceRange = 'Dibawah 200rb'; priceOpen = false; resetPage()" class="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700">&lt; Rp 200.000</button>
+                            <button @click="priceRange = '200rb - 400rb'; priceOpen = false; resetPage()" class="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700">Rp 200rb - Rp 400rb</button>
+                            <button @click="priceRange = 'Diatas 400rb'; priceOpen = false; resetPage()" class="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700">&gt; Rp 400.000</button>
                         </div>
                     </div>
 
@@ -401,84 +374,88 @@
                     <div class="relative" x-data="{ sortOpen: false }">
                         <button @click="sortOpen = !sortOpen" 
                                 @click.away="sortOpen = false"
-                                class="w-full md:w-auto inline-flex items-center justify-between gap-2 px-5 py-3 rounded-xl bg-white border border-[#EFE8DE] text-xs sm:text-sm font-semibold text-stone-800 hover:border-stone-400 transition shadow-2xs">
+                                class="w-full md:w-auto inline-flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#EFE8DE] text-xs font-semibold text-stone-800 hover:border-stone-400 transition shadow-2xs">
                             <span class="flex items-center gap-1.5">
                                 <span class="text-stone-400 font-normal">Urutkan:</span>
-                                <span x-text="sortBy === 'paling-sesuai' ? 'Paling Sesuai' : (sortBy === 'termurah' ? 'Harga: Terendah' : (sortBy === 'termahal' ? 'Harga: Tertinggi' : 'Rating Terbaik'))"></span>
+                                <span x-text="sortBy === 'paling-sesuai' ? 'Paling Sesuai' : (sortBy === 'termurah' ? 'Harga: Terendah' : (sortBy === 'termahal' ? 'Harga: Tertinggi' : 'Rating'))"></span>
                             </span>
-                            <svg class="w-3.5 h-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg class="w-3 h-3 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
 
                         <div x-cloak x-show="sortOpen" 
-                             x-transition
-                             class="absolute right-0 mt-2 w-48 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-30 text-xs">
-                            <button @click="sortBy = 'paling-sesuai'; sortOpen = false; resetPage()" 
-                                    :class="sortBy === 'paling-sesuai' ? 'bg-stone-100 font-bold' : ''"
-                                    class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
-                                Paling Sesuai
-                            </button>
-                            <button @click="sortBy = 'termurah'; sortOpen = false; resetPage()" 
-                                    :class="sortBy === 'termurah' ? 'bg-stone-100 font-bold' : ''"
-                                    class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
-                                Harga: Terendah
-                            </button>
-                            <button @click="sortBy = 'termahal'; sortOpen = false; resetPage()" 
-                                    :class="sortBy === 'termahal' ? 'bg-stone-100 font-bold' : ''"
-                                    class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
-                                Harga: Tertinggi
-                            </button>
-                            <button @click="sortBy = 'rating'; sortOpen = false; resetPage()" 
-                                    :class="sortBy === 'rating' ? 'bg-stone-100 font-bold' : ''"
-                                    class="w-full text-left px-4 py-2 hover:bg-stone-50 text-stone-700">
-                                Rating Tertinggi
-                            </button>
+                             class="absolute right-0 mt-1 w-44 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-30 text-xs">
+                            <button @click="sortBy = 'paling-sesuai'; sortOpen = false; resetPage()" class="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700">Paling Sesuai</button>
+                            <button @click="sortBy = 'termurah'; sortOpen = false; resetPage()" class="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700">Harga: Terendah</button>
+                            <button @click="sortBy = 'termahal'; sortOpen = false; resetPage()" class="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700">Harga: Tertinggi</button>
+                            <button @click="sortBy = 'rating'; sortOpen = false; resetPage()" class="w-full text-left px-3 py-1.5 hover:bg-stone-50 text-stone-700">Rating Tertinggi</button>
                         </div>
                     </div>
 
                 </div>
 
                 <!-- Bottom Row: Category Pills & Products Count -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                     
-                    <!-- Category Pills (dari database) -->
+                    <!-- Category Pills -->
                     <div class="flex flex-wrap items-center gap-2">
                         <button @click="activeCategory = 'Semua Produk'; resetPage()" 
-                                :class="activeCategory === 'Semua Produk' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                                class="px-5 py-2 rounded-full text-xs font-semibold transition">
+                                :class="activeCategory === 'Semua Produk' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                             Semua Produk
                         </button>
-                        @forelse(($kategoris ?? collect()) as $kat)
-                            <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'; resetPage()" 
-                                    :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                                    class="px-5 py-2 rounded-full text-xs font-semibold transition">
-                                {{ $kat->nama_kategori }} ({{ $kat->produks_count }})
+                        @if(isset($kategoris) && $kategoris->isNotEmpty())
+                            @foreach($kategoris as $kat)
+                                <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'; resetPage()" 
+                                        :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                        class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
+                                    {{ $kat->nama_kategori }} ({{ $kat->produks_count }})
+                                </button>
+                            @endforeach
+                        @else
+                            <button @click="activeCategory = 'Baju Batik'; resetPage()" 
+                                    :class="activeCategory === 'Baju Batik' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
+                                Baju Batik
                             </button>
-                        @empty
-                            <span class="text-xs text-stone-400">Belum ada kategori.</span>
-                        @endforelse
+                            <button @click="activeCategory = 'Kain Batik'; resetPage()" 
+                                    :class="activeCategory === 'Kain Batik' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
+                                Kain Batik
+                            </button>
+                            <button @click="activeCategory = 'Olahan Kain Sisa'; resetPage()" 
+                                    :class="activeCategory === 'Olahan Kain Sisa' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
+                                Olahan Kain Sisa
+                            </button>
+                        @endif
                     </div>
 
                     <!-- Count Text -->
                     <div class="text-xs text-stone-500 font-medium">
-                        Menampilkan <span class="font-bold text-stone-800" x-text="startItem + '-' + endItem"></span> dari <span class="font-bold text-stone-800" x-text="filteredProducts.length"></span> produk
+                        Menampilkan <span class="font-bold text-stone-800" x-text="pagedProducts.length"></span> dari <span class="font-bold text-stone-800" x-text="filteredProducts.length"></span> produk
                     </div>
 
                 </div>
             </div>
 
-            <!-- ================= PRODUCT GRID (4 COLUMNS) ================= -->
+            <!-- ================= PRODUCT GRID (4 COLUMNS X 3 ROWS = 12 ITEMS) ================= -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-                <!-- Loop through client-side catalog items -->
                 <template x-for="item in pagedProducts" :key="item.id">
-                    <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
+                    <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-2xs hover:shadow-md transition-all flex flex-col group">
                         
-                        <!-- Image Container -->
+                        <!-- Image Container with badges -->
                         <a :href="item.detailUrl" class="relative aspect-square overflow-hidden bg-stone-100 block">
                             <!-- Top-left Stock/Edition Badge -->
-                            <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs"
+                            <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded shadow-xs"
                                   :class="item.badgeColor"
                                   x-text="item.badge">
+                            </span>
+
+                            <!-- Secondary bottom-left badge if exists (e.g. +4 Klasik) -->
+                            <span x-show="item.extraBadge" 
+                                  class="absolute bottom-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-white/90 text-stone-800 shadow-xs"
+                                  x-text="item.extraBadge">
                             </span>
 
                             <img :src="item.gambar" 
@@ -490,9 +467,9 @@
                         <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                             <div>
                                 <!-- Category & Rating Row -->
-                                <div class="flex items-center justify-between text-[11px] mb-1.5">
+                                <div class="flex items-center justify-between text-[10px] mb-1">
                                     <span class="font-bold tracking-wider uppercase text-stone-400" x-text="item.subkategori"></span>
-                                    <div class="flex items-center gap-1 font-semibold text-stone-800">
+                                    <div class="flex items-center gap-1 font-semibold text-stone-700">
                                         <span class="text-amber-500 text-xs">★</span>
                                         <span x-text="item.rating"></span>
                                         <span class="text-stone-400 font-normal" x-text="'(' + item.reviews + ')'"></span>
@@ -500,77 +477,76 @@
                                 </div>
 
                                 <!-- Product Title -->
-                                <h3 class="font-bold text-stone-900 text-sm leading-snug line-clamp-2 mb-2 group-hover:text-amber-800 transition">
-                                    <a :href="item.detailUrl" x-text="item.nama" :title="item.fullName || item.nama"></a>
+                                <h3 class="font-bold text-stone-900 text-sm leading-snug line-clamp-1 mb-1.5">
+                                    <a :href="item.detailUrl" x-text="item.nama" :title="item.fullName"></a>
                                 </h3>
 
                                 <!-- Price -->
-                                <p class="text-base font-extrabold text-stone-900 mb-4" x-text="item.hargaFormatted"></p>
+                                <p class="text-sm sm:text-base font-extrabold text-stone-900 mb-3" x-text="item.hargaFormatted"></p>
                             </div>
 
-                            <!-- Action Button: Lihat Produk -->
-                            <a :href="item.detailUrl" 
-                               class="w-full py-2.5 px-4 rounded-full bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition duration-200 shadow-xs flex items-center justify-center gap-1.5">
-                                Lihat Produk
-                            </a>
+                            <!-- Action Buttons Row (Lihat Produk + Secondary button) -->
+                            <div class="flex items-center gap-2 pt-1 border-t border-stone-100">
+                                <a :href="item.detailUrl" 
+                                   class="flex-1 py-2 px-3 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition text-center shadow-2xs">
+                                    Lihat Produk
+                                </a>
+                                <button @click="addToCart(item)" 
+                                        class="w-8 h-8 rounded-xl border border-stone-200 hover:bg-stone-100 flex items-center justify-center text-stone-700 transition"
+                                        title="Tambah ke Keranjang">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
                     </div>
                 </template>
-</div>
+
+            </div>
 
             <!-- Empty Search State -->
-            <div x-cloak x-show="filteredProducts.length === 0" class="text-center py-16 bg-white rounded-3xl border border-stone-200 mt-6">
-                <div class="w-16 h-16 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-400">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                </div>
+            <div x-cloak x-show="filteredProducts.length === 0" class="text-center py-16 bg-white rounded-2xl border border-stone-200 mt-6">
                 <h3 class="font-bold text-lg text-stone-800">Tidak ada produk yang cocok</h3>
-                <p class="text-stone-500 text-sm mt-1">Coba kata kunci lain atau reset filter pencarian Anda.</p>
+                <p class="text-stone-500 text-xs sm:text-sm mt-1">Coba kata kunci lain atau reset filter Anda.</p>
                 <button @click="searchQuery = ''; activeCategory = 'Semua Produk'; priceRange = 'Semua'; resetPage()" 
-                        class="mt-4 px-5 py-2.5 rounded-full bg-[#201A17] text-white text-xs font-semibold hover:bg-stone-800 transition">
+                        class="mt-4 px-5 py-2 rounded-xl bg-[#201A17] text-white text-xs font-semibold">
                     Reset Filter
                 </button>
             </div>
 
             <!-- ================= PAGINATION CONTROLS ================= -->
-            <div x-show="totalPages > 0" class="mt-12 pt-6 border-t border-[#EDE6DB] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="mt-12 pt-6 border-t border-[#EDE6DB] flex flex-col sm:flex-row items-center justify-between gap-4">
                 <!-- Info count -->
                 <div class="text-xs text-stone-500 font-medium">
-                    Menampilkan
-                    <span class="font-bold text-stone-800" x-text="startItem"></span>–<span class="font-bold text-stone-800" x-text="endItem"></span>
-                    dari total <span class="font-bold text-stone-800" x-text="filteredProducts.length"></span> Produk
+                    Menampilkan halaman <span class="font-bold text-stone-800" x-text="currentPage"></span> dari <span class="font-bold text-stone-800" x-text="totalPages"></span> (Total <span class="font-bold text-stone-800" x-text="filteredProducts.length"></span> Produk)
                 </div>
 
                 <!-- Page navigation -->
-                <div x-show="totalPages > 1" class="flex items-center gap-1.5 text-xs font-semibold text-stone-700">
+                <div class="flex items-center gap-1.5 text-xs font-semibold text-stone-700">
                     <!-- Sebelumnya -->
                     <button @click="goToPage(currentPage - 1)"
                             :disabled="currentPage === 1"
-                            :class="currentPage === 1 ? 'text-stone-300 border-[#EDE6DB] cursor-not-allowed' : 'hover:text-stone-900 hover:border-stone-400'"
+                            :class="currentPage === 1 ? 'text-stone-300 border-[#EDE6DB] cursor-not-allowed' : 'hover:border-stone-400 text-stone-700'"
                             class="px-3.5 py-2 rounded-xl bg-white border border-[#EDE6DB] transition">
-                        Sebelumnya
+                        &lt; Sebelumnya
                     </button>
 
-                    <!-- Page Numbers -->
-                    <template x-for="(page, index) in pageNumbers" :key="index">
-                        <span x-show="page === '...'"
-                              class="px-1 text-stone-400">...</span>
-                        <button x-show="page !== '...'"
-                                @click="goToPage(page)"
-                                :class="page === currentPage
-                                    ? 'bg-[#201A17] text-white shadow-xs'
-                                    : 'bg-white border border-[#EDE6DB] hover:border-stone-400 text-stone-700'"
+                    <template x-for="p in totalPages" :key="p">
+                        <button @click="goToPage(p)"
+                                :class="currentPage === p ? 'bg-[#201A17] text-white' : 'bg-white border border-[#EDE6DB] text-stone-700 hover:border-stone-400'"
                                 class="w-9 h-9 rounded-xl flex items-center justify-center transition"
-                                x-text="page">
+                                x-text="p">
                         </button>
                     </template>
 
                     <!-- Selanjutnya -->
                     <button @click="goToPage(currentPage + 1)"
                             :disabled="currentPage === totalPages"
-                            :class="currentPage === totalPages ? 'text-stone-300 border-[#EDE6DB] cursor-not-allowed' : 'hover:text-stone-900 hover:border-stone-400'"
+                            :class="currentPage === totalPages ? 'text-stone-300 border-[#EDE6DB] cursor-not-allowed' : 'hover:border-stone-400 text-stone-700'"
                             class="px-3.5 py-2 rounded-xl bg-white border border-[#EDE6DB] transition">
-                        Selanjutnya
+                        Selanjutnya &gt;
                     </button>
                 </div>
             </div>
@@ -579,7 +555,7 @@
     </main>
 
     <!-- ================= FOOTER ================= -->
-    <footer id="kontak" class="bg-[#FAF7F2] border-t border-[#ECE4D8] pt-16 pb-12 text-stone-700 mt-16">
+    <footer id="kontak" class="bg-[#FAF7F2] border-t border-[#ECE4D8] pt-16 pb-12 text-stone-700 mt-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-12">
                 
@@ -587,8 +563,9 @@
                 <div class="lg:col-span-4">
                     <div class="flex items-center gap-2.5 mb-4">
                         <div class="w-8 h-8 rounded-lg bg-[#201A17] flex items-center justify-center text-[#E5C38E]">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                            <svg class="w-4 h-4 text-[#E5C38E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <rect x="3" y="3" width="18" height="18" rx="3" stroke-width="1.8"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
                             </svg>
                         </div>
                         <span class="font-bold tracking-wider text-stone-900 uppercase text-sm">
@@ -596,11 +573,11 @@
                         </span>
                     </div>
                     <p class="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4 max-w-sm">
-                        Batik Modern & Olahan Kain Sisa Berkelanjutan. Menjaga warisan tekstil Nusantara melalui inovasi kriya estetika dan potongan siluet ramah lingkungan.
+                        Batik Modern & Olahan Kain Sisa Berkelanjutan. Menjaga warisan tekstil Nusantara melalui inovasi kriya beretika dan potongan adibusana ramah lingkungan.
                     </p>
                     <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EFE8DD] border border-[#DFCDBB] text-amber-900 text-[11px] font-bold">
                         <span>🌱</span>
-                        <span>WARISAN BERKELANJUTAN</span>
+                        <span>KARYA BERKELANJUTAN</span>
                     </div>
                 </div>
 
@@ -611,11 +588,10 @@
                     </h5>
                     <ul class="space-y-2.5 text-xs sm:text-sm text-stone-600">
                         <li><a href="{{ url('/') }}" class="hover:text-stone-950 transition">Home</a></li>
-                        <li><a href="{{ url('/') }}#koleksi" class="hover:text-stone-950 transition">Tentang Kami</a></li>
+                        <li><a href="{{ url('/') }}#tentang-kami" class="hover:text-stone-950 transition">Tentang Kami</a></li>
                         <li><a href="{{ route('koleksi.index') }}" class="hover:text-stone-950 font-semibold text-stone-900 transition">Produk</a></li>
-                        <li><a href="{{ route('pesanan.index') }}" class="hover:text-stone-950 transition">Pesanan</a></li>
-                        <li><a href="{{ route('keranjang.index') }}" class="hover:text-stone-950 transition">Keranjang Belanja</a></li>
-                        <li><a href="{{ url('/') }}#kontak" class="hover:text-stone-950 transition">Kontak</a></li>
+                        <li><a href="{{ url('/#koleksi') }}" class="hover:text-stone-950 transition">Kategori</a></li>
+                        <li><a href="#kontak" class="hover:text-stone-950 transition">Kontak</a></li>
                     </ul>
                 </div>
 
@@ -652,14 +628,14 @@
                         Media Sosial & Buletin
                     </h5>
                     <p class="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4">
-                        Dapatkan kabar terbaru untuk rilis produk baru dan penawaran terbatas:
+                        Dapatkan akses awal untuk rilisan eksklusif dan seri upcycle terbatas.
                     </p>
                     <div class="flex items-center gap-3">
                         <a href="#" class="w-9 h-9 rounded-full bg-white border border-stone-300 hover:border-stone-500 flex items-center justify-center text-stone-700 hover:text-stone-950 transition shadow-xs">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                         </a>
                         <a href="#" class="w-9 h-9 rounded-full bg-white border border-stone-300 hover:border-stone-500 flex items-center justify-center text-stone-700 hover:text-stone-950 transition shadow-xs">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-.778.099-1.533.284-2.253"/></svg>
                         </a>
                         <a href="#" class="w-9 h-9 rounded-full bg-white border border-stone-300 hover:border-stone-500 flex items-center justify-center text-stone-700 hover:text-stone-950 transition shadow-xs">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 00-1-.08A6.34 6.34 0 003 15.66a6.34 6.34 0 0010.86 4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-.04-4.52z"/></svg>
@@ -671,96 +647,11 @@
 
             <!-- Bottom Copyright Line -->
             <div class="pt-8 border-t border-[#ECE4D8] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
-                <p>© 2026 Hamzah Style Official. All rights reserved.</p>
+                <p>&copy; 2025 Hamzah Style Official. All rights reserved.</p>
                 <p class="text-stone-400">Made with pride in Indonesia</p>
             </div>
         </div>
     </footer>
-
-    <!-- ================= QUICK VIEW MODAL ================= -->
-    <div x-cloak x-show="quickViewModal" 
-         class="fixed inset-0 z-50 overflow-y-auto" 
-         aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div x-show="quickViewModal" 
-             x-transition:enter="ease-out duration-300"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="ease-in duration-200"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             @click="quickViewModal = false"
-             class="fixed inset-0 bg-stone-900/60 backdrop-blur-sm transition-opacity"></div>
-
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-            <div x-show="quickViewModal"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                 class="relative transform overflow-hidden rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-stone-200">
-                
-                <button @click="quickViewModal = false" 
-                        class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/80 hover:bg-stone-100 text-stone-600 flex items-center justify-center transition shadow-xs">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-
-                <template x-if="selectedProduct">
-                    <div class="grid grid-cols-1 sm:grid-cols-2">
-                        <div class="relative aspect-square sm:aspect-auto bg-stone-100 overflow-hidden">
-                            <img :src="selectedProduct.gambar" :alt="selectedProduct.nama" class="w-full h-full object-cover">
-                            <span class="absolute top-3 left-3 bg-[#201A17] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full" 
-                                  x-text="selectedProduct.kategori"></span>
-                        </div>
-
-                        <div class="p-6 sm:p-8 flex flex-col justify-between">
-                            <div>
-                                <div class="flex items-center gap-1.5 text-xs text-amber-600 mb-2">
-                                    <span>★</span>
-                                    <span class="font-semibold text-stone-800" x-text="selectedProduct.rating"></span>
-                                    <span class="text-stone-400" x-text="'(' + selectedProduct.reviews + ' ulasan)'"></span>
-                                </div>
-                                <h3 class="font-serif-title font-bold text-xl sm:text-2xl text-stone-900 mb-2" x-text="selectedProduct.fullName || selectedProduct.nama"></h3>
-                                <p class="text-2xl font-extrabold text-[#B58742] mb-4" x-text="selectedProduct.hargaFormatted"></p>
-                                <p class="text-xs mb-4" :class="(selectedProduct.stok ?? 1) > 0 ? 'text-emerald-700 font-semibold' : 'text-rose-700 font-bold'">
-                                    <span x-text="(selectedProduct.stok ?? 1) > 0 ? ('Stok tersedia: ' + selectedProduct.stok + ' pcs') : 'Stok Habis'"></span>
-                                </p>
-                                
-                                <div class="border-t border-b border-stone-100 py-3 mb-4 space-y-1.5 text-xs text-stone-600">
-                                    <p><strong class="text-stone-900">Material:</strong> <span x-text="selectedProduct.material"></span></p>
-                                    <p><strong class="text-stone-900">Garansi:</strong> 100% Batik Nusantara Asli</p>
-                                </div>
-
-                                <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-6" x-text="selectedProduct.deskripsi"></p>
-                            </div>
-
-                            <div class="space-y-2">
-                                <a href="{{ route('produk.detail') }}" 
-                                   class="w-full py-2.5 px-4 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white font-semibold text-sm transition text-center block">
-                                    Lihat Halaman Lengkap &rarr;
-                                </a>
-                                <a :href="'https://wa.me/6281234567890?text=Halo%20Hamzah%20Style,%20saya%20tertarik%20dengan%20produk%20' + encodeURIComponent(selectedProduct.fullName || selectedProduct.nama) + '%20(' + encodeURIComponent(selectedProduct.hargaFormatted) + ')'"
-                                   target="_blank"
-                                   class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition shadow-sm flex items-center justify-center gap-2">
-                                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-                                    Pesan via WhatsApp
-                                </a>
-                                <button x-show="(selectedProduct.stok ?? 1) > 0" @click="quickViewModal = false; addToCart(selectedProduct)"
-                                        class="w-full py-2.5 px-4 rounded-xl border border-stone-300 hover:bg-stone-50 text-stone-800 font-semibold text-sm transition">
-                                    + Tambah ke Keranjang
-                                </button>
-                                <div x-show="!((selectedProduct.stok ?? 1) > 0)" class="w-full py-2.5 px-4 rounded-xl bg-stone-100 text-stone-500 font-semibold text-sm text-center">
-                                    Stok Habis
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-
-            </div>
-        </div>
-    </div>
 
 </body>
 </html>

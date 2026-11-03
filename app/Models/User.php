@@ -67,13 +67,23 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(Address::class);
+    }
+
     public function alamats(): HasMany
     {
-        return $this->hasMany(Alamat::class);
+        return $this->addresses();
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
     }
 
     public function ulasans(): HasMany
     {
-        return $this->hasMany(Ulasan::class);
+        return $this->reviews();
     }
 }

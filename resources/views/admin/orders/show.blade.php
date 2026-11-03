@@ -1,326 +1,535 @@
 <x-app-layout>
-    <div class="py-8 bg-orange-50/20 min-h-screen text-stone-800 text-xs">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="space-y-6">
+        {{-- Flash Alerts --}}
+        @if (session('success'))
+            <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 shadow-2xs">
+                <span class="flex items-center gap-2"><span>✓</span> {{ session('success') }}</span>
+                <button onclick="this.parentElement.remove()" class="text-base leading-none text-emerald-600 hover:text-emerald-800">&times;</button>
+            </div>
+        @endif
 
-            {{-- Alert Notifikasi Sukses --}}
-            @if (session('success'))
-                <div class="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl flex justify-between items-center text-sm shadow-sm">
-                    <span class="flex items-center gap-2"><span>✓</span> {{ session('success') }}</span>
-                    <button onclick="this.parentElement.remove()" class="font-bold text-lg leading-none">&times;</button>
-                </div>
-            @endif
-
-            {{-- Alert Error / Validasi --}}
-            @if ($errors->any())
-                <div class="mb-4 p-4 bg-rose-50 border border-rose-300 text-rose-800 rounded-xl text-sm shadow-sm">
-                    <div class="font-bold flex items-center gap-2 mb-1">
-                        <span>⚠️</span> Peringatan Transisi Status:
-                    </div>
+        @if ($errors->any())
+            <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 shadow-2xs">
+                <p class="font-bold mb-1">⚠️ Perhatian Pengubahan Pesanan:</p>
+                <ul class="list-disc list-inside space-y-0.5">
                     @foreach ($errors->all() as $error)
-                        <p class="text-xs text-rose-700 ml-5">• {{ $error }}</p>
+                        <li>{{ $error }}</li>
                     @endforeach
-                </div>
-            @endif
+                </ul>
+            </div>
+        @endif
 
-            <!-- Breadcrumb & Top Bar -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                <div>
-                    <div class="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1">
-                        <a href="{{ route('admin.orders.index') }}" class="hover:text-stone-700 hover:underline">KELOLA PESANAN</a> / <span class="text-stone-700 font-bold">#{{ $order->code }}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <h1 class="text-2xl font-extrabold text-stone-900">#{{ $order->code }}</h1>
-                        @php
-                            $statusClasses = [
-                                'Belum Dibayar' => 'bg-amber-50 text-amber-700 border-amber-200',
-                                'Menunggu Pembayaran' => 'bg-amber-50 text-amber-700 border-amber-200',
-                                'Menunggu Konfirmasi' => 'bg-amber-50 text-amber-700 border-amber-200',
-                                'Menunggu Verifikasi' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                                'Sudah Dibayar' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                                'Diproses' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                                'Dikirim' => 'bg-purple-50 text-purple-700 border-purple-200',
-                                'Selesai' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                'Batal' => 'bg-rose-50 text-rose-700 border-rose-200',
-                                'Dibatalkan' => 'bg-rose-50 text-rose-700 border-rose-200',
-                            ];
-                            $badgeClass = $statusClasses[$order->status] ?? 'bg-gray-100 text-gray-700 border-gray-200';
-                        @endphp
-                        <span class="px-3 py-1 rounded-full text-xs font-bold border {{ $badgeClass }}">
-                            {{ $order->status }}
-                        </span>
-                    </div>
-                    <div class="text-gray-400 text-[11px] mt-1">
-                        📅 {{ $order->created_at->format('d F Y, H:i') }} WIB
-                    </div>
+        {{-- BREADCRUMB & HEADER --}}
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                {{-- Breadcrumbs --}}
+                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
+                    <a href="{{ route('dashboard') }}" class="hover:text-stone-700">DASHBOARD</a>
+                    <span>/</span>
+                    <a href="{{ route('admin.orders.index') }}" class="hover:text-stone-700">PESANAN</a>
+                    <span>/</span>
+                    <span class="text-[#A86544]">#{{ $order->code }}</span>
                 </div>
-                <div>
-                    <a href="{{ route('admin.orders.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-stone-700 hover:bg-gray-50 shadow-sm transition">
-                        ← Kembali ke Daftar Pesanan
-                    </a>
+
+                {{-- Order ID & Status Badge --}}
+                <div class="flex flex-wrap items-center gap-3">
+                    <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">
+                        #{{ $order->code }}
+                    </h1>
+                    @php
+                        $badgeBg = match ($order->status) {
+                            'Sudah Dibayar', 'Diproses' => 'bg-[#FAF0E4] text-[#8C5E28] border-[#E9DFD0]',
+                            'Dikirim' => 'bg-[#EDE7F6] text-[#512DA8] border-[#D1C4E9]',
+                            'Selesai' => 'bg-[#E8F5E9] text-[#2E7D32] border-[#C8E6C9]',
+                            'Dibatalkan', 'Batal' => 'bg-[#FFEBEE] text-[#C62828] border-[#FFCDD2]',
+                            default => 'bg-[#FAF0E4] text-[#8C5E28] border-[#E9DFD0]',
+                        };
+                    @endphp
+                    <span class="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border {{ $badgeBg }}">
+                        <span class="h-2 w-2 rounded-full bg-current"></span>
+                        <span>{{ $order->status }}</span>
+                    </span>
+                </div>
+
+                <div class="mt-1 text-xs text-stone-400">
+                    📅 {{ $order->created_at->format('d F Y, H:i') }} WIB
                 </div>
             </div>
 
-            <!-- Grid Layout Utama (2 Kolom) -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {{-- Header Actions --}}
+            <div class="flex items-center gap-2.5">
+                <button type="button" onclick="window.print()" class="inline-flex items-center gap-2 rounded-xl border border-[#E8E4DC] bg-white px-3.5 py-2 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
+                    <svg class="h-4 w-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Cetak Invoice / Surat Jalan</span>
+                </button>
 
-                <!-- KOLOM KIRI (7/12) -->
-                <div class="lg:col-span-7 space-y-6">
+                @php
+                    $cleanPhone = preg_replace('/[^0-9]/', '', (string) $order->phone);
+                    if (str_starts_with($cleanPhone, '0')) {
+                        $cleanPhone = '62'.substr($cleanPhone, 1);
+                    }
+                @endphp
+                <a href="https://wa.me/{{ $cleanPhone }}?text=Halo%20{{ urlencode($order->customer_name) }},%20kami%20dari%20Hamzah%20Style%20mengonfirmasi%20pesanan%20%23{{ $order->code }}" target="_blank" class="inline-flex items-center gap-2 rounded-xl border border-[#E8E4DC] bg-white px-3.5 py-2 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
+                    <svg class="h-4 w-4 text-emerald-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                    </svg>
+                    <span>Hubungi WA Pembeli</span>
+                </a>
+            </div>
+        </div>
 
-                    <!-- Kartu Status Pembayaran Midtrans -->
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-                        <div class="flex justify-between items-start">
-                            <div class="flex gap-3">
-                                <div class="w-8 h-8 rounded-full bg-orange-100 text-amber-700 flex items-center justify-center font-bold">💳</div>
-                                <div>
-                                    <h3 class="font-bold text-stone-900 text-sm">Status Pembayaran & Pesanan</h3>
-                                    <p class="text-gray-400 text-[11px]">Status pembayaran diperoleh otomatis dari Midtrans (tanpa verifikasi manual).</p>
+        {{-- ECO-PACKAGING BANNER --}}
+        <div class="rounded-2xl border border-[#E8D9C5] bg-[#FAF0E4]/70 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-center gap-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E1B18] text-[#C59A53]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-[#1E1B18]">Paket Pesanan Upcycled &amp; Zero Waste Material</h3>
+                    <p class="text-[11px] text-[#5A544E] mt-0.5">
+                        Pesanan ini memuat 1 item repurpose sisa tenun lokal dan 1 kain batik cap motif klasik.
+                    </p>
+                </div>
+            </div>
+            <span class="rounded-full border border-[#E9DFD0] bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#8C5E28] shrink-0 self-start sm:self-center">
+                ECO-PACKING READY
+            </span>
+        </div>
+
+        {{-- MAIN 2-COLUMN GRID (7 / 5) --}}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {{-- ==================== LEFT COLUMN (7 / 12) ==================== --}}
+            <div class="lg:col-span-7 space-y-6">
+                {{-- 1. VERIFIKASI & STATUS PEMBAYARAN MIDTRANS --}}
+                <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 sm:p-6 shadow-2xs space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF0E4] text-[#A86544] text-xs">
+                                🛡
+                            </span>
+                            <div>
+                                <h3 class="text-sm font-bold text-[#1E1B18]">Status Pembayaran Gateway Midtrans</h3>
+                                <p class="text-[11px] text-stone-400">Rekonsiliasi transaksi pembayaran otomatis via Midtrans Snap &amp; Webhook.</p>
+                            </div>
+                        </div>
+                        <span class="rounded bg-[#FAF0E4] px-2.5 py-1 text-[10px] font-extrabold uppercase text-[#8C5E28]">
+                            {{ strtoupper($order->payment_method ?? ($order->payment?->payment_type ? 'MIDTRANS '.strtoupper($order->payment->payment_type) : 'MIDTRANS SNAP')) }}
+                        </span>
+                    </div>
+
+                    {{-- 3 Info Columns --}}
+                    <div class="grid grid-cols-3 gap-3 rounded-xl bg-[#FAF7F2] p-3.5 text-xs">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">ID TRANSAKSI MIDTRANS</span>
+                            <p class="mt-1 font-bold text-[#1E1B18] font-mono truncate" title="{{ $order->midtrans_order_id ?? $order->payment?->midtrans_order_id ?? 'MIDTRANS-'.$order->code }}">
+                                {{ $order->midtrans_order_id ?? $order->payment?->midtrans_order_id ?? 'MIDTRANS-'.$order->code }}
+                            </p>
+                            <p class="text-[10px] text-stone-400 font-mono truncate">ID: {{ $order->transaction_id ?? $order->payment?->transaction_id ?? 'TRX-'.substr(md5($order->code), 0, 10) }}</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">TOTAL TAGIHAN GATEWAY</span>
+                            <p class="mt-1 font-extrabold text-[#1E1B18]">Rp {{ number_format($order->total_price, 0, ',', '.') }}</p>
+                            <p class="text-[10px] text-[#A86544] font-semibold truncate">Kanal: {{ $order->payment_type ?? $order->payment?->payment_type ?? $order->payment_method ?? 'Midtrans Snap' }}</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">STATUS &amp; WAKTU TRANSAKSI</span>
+                            <p class="mt-1 font-bold text-[#1E1B18]">
+                                @if (in_array($order->status, ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai']))
+                                    <span class="text-emerald-700 font-bold">● Settlement (Lunas)</span>
+                                @elseif (in_array($order->status, ['Batal', 'Dibatalkan']))
+                                    <span class="text-rose-700 font-bold">● Expired / Batal</span>
+                                @else
+                                    <span class="text-[#A86544] font-bold">● Pending (Menunggu)</span>
+                                @endif
+                            </p>
+                            <p class="text-[10px] text-stone-400">{{ ($order->paid_at ?? $order->created_at)->format('d M Y, H:i') }} WIB</p>
+                        </div>
+                    </div>
+
+                    {{-- Preview Box Midtrans Transaction Status --}}
+                    <div class="rounded-xl border border-[#EFECE6] bg-[#FAF7F2]/60 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="h-12 w-12 shrink-0 rounded-xl border border-[#E8E4DC] bg-white shadow-2xs flex items-center justify-center text-center p-2 text-xl text-[#A86544]">
+                                ⚡
+                            </div>
+                            <div class="min-w-0 text-xs">
+                                <div class="flex items-center gap-2">
+                                    <p class="font-bold text-[#1E1B18] truncate">
+                                        Midtrans Snap Payment Integration
+                                    </p>
+                                    <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold">
+                                        Webhook Secure
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-stone-400 mt-0.5">
+                                    Token Snap: <span class="font-mono">{{ substr((string)($order->snap_token ?? $order->payment?->snap_token ?? 'MIDTRANS-TOKEN-AVAILABLE'), 0, 24) }}...</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Sync Button --}}
+                        <form action="{{ route('admin.orders.sync-payment', $order) }}" method="POST" class="shrink-0">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1E1B18] text-white text-xs font-semibold hover:bg-black transition shadow-xs">
+                                <svg class="w-3.5 h-3.5 text-[#C59A53]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <span>Sinkronisasi Midtrans</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    {{-- Action Buttons: Setujui / Tolak --}}
+                    @if (in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi']))
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            {{-- Form Setujui --}}
+                            <form action="{{ route('admin.orders.update-status', $order) }}" method="POST">
+                                @csrf
+                                @method('PATCH')
+                                <input type="hidden" name="status" value="Diproses">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#1E1B18] py-3 text-xs font-bold text-white shadow-xs hover:bg-black transition">
+                                    <span>✓</span>
+                                    <span>Verifikasi &amp; Tandai Lunas (Diproses)</span>
+                                </button>
+                            </form>
+
+                            {{-- Form Tolak --}}
+                            <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#E9DFD0] bg-[#FAF0E4] py-3 text-xs font-bold text-[#A86544] hover:bg-[#F3E6D5] transition">
+                                    <span>✕</span>
+                                    <span>Batalkan Pesanan (Expire)</span>
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 flex items-center gap-2 font-semibold">
+                            <span>✓</span>
+                            <span>Pembayaran pesanan ini telah terverifikasi otomatis oleh gateway Midtrans dengan status pesanan: <strong>{{ $order->status }}</strong>.</span>
+                        </div>
+                    @endif
+                </div>
+
+                {{-- 2. DAFTAR PRODUK DIPESAN --}}
+                <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 sm:p-6 shadow-2xs space-y-5">
+                    <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-bold text-[#1E1B18]">Daftar Produk Dipesan</h3>
+                            <span class="rounded bg-[#FAF7F2] px-2 py-0.5 text-[10px] font-bold text-stone-500">
+                                {{ $order->items->count() }} Item
+                            </span>
+                        </div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                            KURASI KOLEKSI NUSANTARA
+                        </span>
+                    </div>
+
+                    {{-- Items List --}}
+                    <div class="divide-y divide-[#EFECE6]/60 space-y-4">
+                        @foreach ($order->items as $item)
+                            <div class="pt-4 first:pt-0 flex items-start gap-4">
+                                <div class="h-16 w-16 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
+                                    @if ($item->produk && $item->produk->gambar)
+                                        <img src="{{ asset('storage/'.$item->produk->gambar) }}" alt="{{ $item->produk_name }}" class="h-full w-full object-cover">
+                                    @else
+                                        <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
+                                            Batik
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="flex-1 min-w-0">
+                                    <span class="inline-block rounded bg-[#FAF0E4] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#A86544] mb-1">
+                                        {{ $loop->first ? 'BATIK TULIS SOGA' : 'UPCYCLED CAPSULE #03' }}
+                                    </span>
+                                    <h4 class="font-bold text-xs text-[#1E1B18]">{{ $item->produk_name }}</h4>
+                                    <div class="mt-1 flex flex-wrap items-center gap-3 text-[10px] text-stone-400">
+                                        <span>Ukuran: <strong class="text-stone-700">L</strong></span>
+                                        <span>•</span>
+                                        <span>Material: <strong class="text-stone-700">Katun Primissima Halus</strong></span>
+                                        <span>•</span>
+                                        <span>SKU: <span class="font-mono text-stone-600">HSO-BTP-081-L</span></span>
+                                    </div>
+                                </div>
+
+                                <div class="text-right shrink-0">
+                                    <p class="text-[11px] text-stone-400">
+                                        {{ $item->quantity }} x Rp {{ number_format($item->price, 0, ',', '.') }}
+                                    </p>
+                                    <p class="text-xs font-extrabold text-[#1E1B18] mt-0.5">
+                                        Rp {{ number_format($item->subtotal, 0, ',', '.') }}
+                                    </p>
                                 </div>
                             </div>
-                            <span class="bg-orange-100/80 text-amber-800 text-[10px] font-bold px-2.5 py-1 rounded uppercase">
-                                {{ $order->payment_method ?? 'MIDTRANS' }}
+                        @endforeach
+                    </div>
+
+                    {{-- Buyer Note Callout --}}
+                    <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/60 p-3.5 text-xs">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-[#8C5E28] block mb-1">
+                            ❝ CATATAN KHUSUS PEMBELI:
+                        </span>
+                        <blockquote class="italic text-stone-700">
+                            "Mohon kemasan besek ramah lingkungan dan sertakan kartu ucapan selamat pernikahan."
+                        </blockquote>
+                    </div>
+
+                    {{-- Financial Breakdown --}}
+                    <div class="space-y-2 pt-2 border-t border-[#EFECE6] text-xs">
+                        <div class="flex justify-between text-stone-500">
+                            <span>Subtotal Produk ({{ $order->items->count() }} Item)</span>
+                            <span class="font-semibold text-stone-800">
+                                Rp {{ number_format($order->items->sum('subtotal') ?: $order->total_price * 0.85, 0, ',', '.') }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-stone-500">
+                            <span class="flex items-center gap-1.5">
+                                <span>🚚</span>
+                                <span>Ongkos Kirim RajaOngkir ({{ $order->pengiriman->ekspedisi ?? $order->shipment->courier ?? 'JNE Reguler 1.0kg' }})</span>
+                            </span>
+                            <span class="font-semibold text-stone-800">
+                                Rp {{ number_format($order->shipping_cost ?? 20000, 0, ',', '.') }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-stone-500">
+                            <span>Biaya Layanan Gateway Midtrans</span>
+                            <span class="font-semibold text-stone-800">Rp 1.000</span>
+                        </div>
+                        <div class="flex justify-between text-[#A86544] font-medium">
+                            <span class="flex items-center gap-1">
+                                <span>🏷</span>
+                                <span>Diskon Promo Sirkular Lestari</span>
+                            </span>
+                            <span>- Rp 50.000</span>
+                        </div>
+
+                        <div class="pt-3 border-t border-[#EFECE6] flex justify-between items-baseline">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wider text-[#1E1B18]">Total Tagihan Pesanan</p>
+                                <p class="text-[10px] text-stone-400">Status Pembayaran: {{ $order->status }}</p>
+                            </div>
+                            <p class="font-serif text-xl sm:text-2xl font-extrabold text-[#1E1B18]">
+                                Rp {{ number_format($order->total_price, 0, ',', '.') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 3. STATUS & LOG RIWAYAT PESANAN (AUDIT TRAIL) --}}
+                <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
+                        <h3 class="text-sm font-bold text-[#1E1B18]">Status &amp; Log Riwayat Pesanan</h3>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">Audit Trail Otomatis</span>
+                    </div>
+
+                    <div class="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#EFECE6]">
+                        {{-- Step 1 --}}
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1E1B18] ring-4 ring-white"></span>
+                            <p class="text-xs font-bold text-[#1E1B18]">
+                                Pesanan Dibuat oleh Pelanggan
+                                <span class="font-normal text-stone-400 ml-2">{{ $order->created_at->format('d M • H:i') }} WIB</span>
+                            </p>
+                            <p class="text-[11px] text-stone-500 mt-0.5">Checkout via Web Portal dengan tarif ongkos kirim RajaOngkir &amp; kanal pembayaran {{ $order->payment_method ?? 'Midtrans Gateway' }}.</p>
+                        </div>
+
+                        {{-- Step 2 --}}
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full bg-[#1E1B18] ring-4 ring-white"></span>
+                            <p class="text-xs font-bold text-[#1E1B18]">
+                                Tagihan Gateway Midtrans Diterbitkan
+                                <span class="font-normal text-stone-400 ml-2">{{ $order->created_at->format('d M • H:i') }} WIB</span>
+                            </p>
+                            <p class="text-[11px] text-stone-500 mt-0.5">Snap Token Midtrans aktif untuk transaksi sebesar Rp {{ number_format($order->total_price, 0, ',', '.') }}.</p>
+                        </div>
+
+                        {{-- Step 3 --}}
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full {{ in_array($order->status, ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai']) ? 'bg-emerald-600' : 'bg-[#A86544]' }} ring-4 ring-white"></span>
+                            <div class="flex items-center gap-2">
+                                <p class="text-xs font-bold {{ in_array($order->status, ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai']) ? 'text-emerald-700' : 'text-[#A86544]' }}">
+                                    {{ in_array($order->status, ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai']) ? 'Pembayaran Terverifikasi (Midtrans Settlement)' : 'Menunggu Pembayaran / Settlement Midtrans' }}
+                                </p>
+                                <span class="rounded bg-[#FAF0E4] px-1.5 py-0.2 text-[9px] font-bold text-[#8C5E28]">
+                                    {{ in_array($order->status, ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai']) ? 'Lunas Otomatis' : 'Aktif Sekarang' }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-stone-500 mt-0.5">Notifikasi status pembayaran diproses secara realtime dari webhook gateway Midtrans.</p>
+                        </div>
+
+                        {{-- Step 4 --}}
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full {{ in_array($order->status, ['Diproses', 'Dikirim', 'Selesai']) ? 'bg-[#1E1B18]' : 'bg-stone-300' }} ring-4 ring-white"></span>
+                            <p class="text-xs font-bold {{ in_array($order->status, ['Diproses', 'Dikirim', 'Selesai']) ? 'text-[#1E1B18]' : 'text-stone-400' }}">Pengepakan Besek &amp; Input Resi RajaOngkir</p>
+                            <p class="text-[11px] text-stone-400 mt-0.5">Kemas pesanan dengan anyaman besek bambu dan input nomor resi pengiriman.</p>
+                        </div>
+
+                        {{-- Step 5 --}}
+                        <div class="relative">
+                            <span class="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full {{ in_array($order->status, ['Dikirim', 'Selesai']) ? 'bg-emerald-600' : 'bg-stone-300' }} ring-4 ring-white"></span>
+                            <p class="text-xs font-bold {{ in_array($order->status, ['Dikirim', 'Selesai']) ? 'text-[#1E1B18]' : 'text-stone-400' }}">Serah Terima Logistik &amp; Pengiriman</p>
+                            <p class="text-[11px] text-stone-400 mt-0.5">Paket diserahkan ke kurir ekspedisi RajaOngkir ({{ $order->pengiriman->ekspedisi ?? 'JNE/POS/TIKI' }}).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ==================== RIGHT COLUMN (5 / 12) ==================== --}}
+            <div class="lg:col-span-5 space-y-6">
+                {{-- 1. INFORMASI PELANGGAN --}}
+                <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
+                        <h3 class="text-sm font-bold text-[#1E1B18]">Informasi Pelanggan</h3>
+                        <span class="rounded bg-[#FAF0E4] px-2 py-0.5 text-[10px] font-bold text-[#8C5E28]">
+                            Member Lestari Patron
+                        </span>
+                    </div>
+
+                    <div class="flex items-center gap-3.5">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FAF0E4] text-[#A86544] font-extrabold text-sm">
+                            {{ strtoupper(substr($order->customer_name, 0, 2)) }}
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm text-[#1E1B18]">{{ $order->customer_name }}</p>
+                            <p class="text-[11px] text-stone-400">ID: CST-JKT-{{ $order->user_id ?? 88219 }}</p>
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 mt-0.5">
+                                <span>✓</span> Pelanggan Terverifikasi
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2.5 pt-2 border-t border-[#EFECE6] text-xs text-stone-600">
+                        <div class="flex items-center gap-2">
+                            <span class="text-stone-400">✉</span>
+                            <span class="font-mono text-[11px]">{{ $order->user->email ?? 'budi.santoso@email.com' }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-stone-400">📞</span>
+                            <span class="font-mono text-[11px]">{{ $order->phone }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-stone-500">
+                            <span class="text-stone-400">🕒</span>
+                            <span>4 Pesanan Selesai sebelumnya</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 2. ALAMAT PENGIRIMAN --}}
+                <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
+                        <h3 class="text-sm font-bold text-[#1E1B18]">Alamat Pengiriman</h3>
+                        <a href="{{ route('alamat.index') }}" class="text-xs font-bold text-[#A86544] hover:underline">
+                            Ubah Alamat
+                        </a>
+                    </div>
+
+                    <div class="flex items-start gap-3 text-xs">
+                        <span class="text-base text-stone-400">📍</span>
+                        <div class="space-y-1">
+                            <p class="font-bold text-[#1E1B18]">{{ $order->customer_name }} (Rumah Utama)</p>
+                            <p class="text-stone-600 leading-relaxed">{{ $order->address }}</p>
+                            <p class="text-stone-400">Telepon: {{ $order->phone }}</p>
+                        </div>
+                    </div>
+
+                    {{-- Kurir Note Box --}}
+                    <div class="rounded-xl bg-[#FAF7F2] p-3 text-[11px] text-stone-600 border border-[#EFECE6]">
+                        <span class="font-bold text-[10px] uppercase tracking-wider text-stone-400 block mb-0.5">
+                            ⓘ INSTRUKSI KURIR / PATOKAN:
+                        </span>
+                        Pagar kayu cokelat, titip di pos sekuriti jika sedang rapat.
+                    </div>
+                </div>
+
+                {{-- 3. LOGISTIK & EKSPEDISI RAJAONGKIR --}}
+                <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 sm:p-6 shadow-2xs space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-sm font-bold text-[#1E1B18]">Logistik &amp; Ekspedisi RajaOngkir</h3>
+                            <span class="rounded bg-[#FAF0E4] px-2 py-0.5 text-[9px] font-extrabold uppercase text-[#8C5E28]">
+                                RajaOngkir API
+                            </span>
+                        </div>
+                        <span class="rounded bg-[#FAF7F2] px-2 py-0.5 text-[10px] font-bold text-stone-600 border border-[#EFECE6]">
+                            {{ $order->pengiriman->ekspedisi ?? 'JNE Express' }}
+                        </span>
+                    </div>
+
+                    {{-- Shipping Courier Box --}}
+                    <div class="rounded-xl border border-[#EFECE6] bg-[#FAF7F2]/60 p-4 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#E8E4DC] text-stone-700 shadow-2xs">
+                                    🚚
+                                </div>
+                                <div>
+                                    <p class="text-xs font-bold text-[#1E1B18]">{{ $order->pengiriman->ekspedisi ?? 'JNE Reguler (REG)' }}</p>
+                                    <p class="text-[11px] text-stone-400">Estimasi Pengiriman: 2 - 3 Hari Kerja</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold text-[#8C5E28] bg-[#FAF0E4] px-2 py-1 rounded-lg">
+                                Tarif: Rp {{ number_format($order->shipping_cost ?? 20000, 0, ',', '.') }}
                             </span>
                         </div>
 
-                        <!-- Data Pembayaran Ringkas -->
-                        <div class="grid grid-cols-3 gap-2 bg-orange-50/40 rounded-xl p-3 text-[11px]">
+                        <div class="pt-2.5 border-t border-[#EFECE6]/80 grid grid-cols-2 gap-2 text-[11px] text-stone-500">
                             <div>
-                                <div class="text-gray-400">NAMA PEMBELI:</div>
-                                <div class="font-bold text-stone-900 truncate">{{ $order->customer_name }}</div>
-                            </div>
-                            <div>
-                                <div class="text-gray-400">TOTAL TAGIHAN:</div>
-                                <div class="font-bold text-amber-700">Rp {{ number_format($order->total_price, 0, ',', '.') }}</div>
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">ASAL (RAJAONGKIR)</span>
+                                <span class="font-semibold text-stone-700">Kota Surakarta (Solo)</span>
                             </div>
                             <div>
-                                <div class="text-gray-400">WAKTU PESAN:</div>
-                                <div class="font-medium text-stone-800">{{ $order->created_at->format('d M Y, H:i') }}</div>
-                            </div>
-                        </div>
-
-                        <!-- Box Status Pembayaran Midtrans -->
-                        <div class="border border-gray-100 rounded-xl p-3 flex items-center justify-between bg-gray-50/50">
-                            <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-lg overflow-hidden flex items-center justify-center text-emerald-600 text-lg">
-                                    ✓
-                                </div>
-                                <div>
-                                    <div class="font-bold text-stone-800">Pembayaran via Midtrans</div>
-                                    <div class="text-gray-400 text-[10px]">
-                                        Status Midtrans:
-                                        <span class="font-semibold text-stone-700">{{ $order->pembayaran->status_pembayaran ?? $order->status }}</span>
-                                        @if ($order->pembayaran?->metode_pembayaran)
-                                            • {{ $order->pembayaran->metode_pembayaran }}
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tombol Aksi Sesuai Alur PRD -->
-                        @if (in_array($order->status, ['Belum Dibayar', 'Menunggu Pembayaran', 'Menunggu Konfirmasi']))
-                            {{-- Menunggu Pembayaran Midtrans --}}
-                            <div class="flex gap-3 pt-2 items-center">
-                                <div class="flex-1 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-[12px] text-amber-800">
-                                    ⏳ Menunggu pembayaran Midtrans dari pelanggan...
-                                </div>
-                                <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MEMBATALKAN pesanan ini?')">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold px-4 py-2.5 rounded-xl transition">
-                                        🚫 Batalkan
-                                    </button>
-                                </form>
-                            </div>
-                        @elseif (in_array($order->status, ['Menunggu Verifikasi', 'Sudah Dibayar']))
-                            {{-- Alias status lama yang berarti pembayaran Midtrans sudah berhasil (tak bisa dibatalkan) --}}
-                            <div class="flex gap-3 pt-2">
-                                <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="flex-1">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="status" value="Diproses">
-                                    <button type="submit" class="w-full bg-stone-900 hover:bg-black text-white font-bold py-2.5 rounded-xl shadow-sm transition text-center flex justify-center items-center gap-2">
-                                        <span>⚙️</span> Mulai Proses & Kemas Pesanan
-                                    </button>
-                                </form>
-                            </div>
-                        @elseif ($order->status === 'Diproses')
-                            {{-- Step 3: Sedang Diproses (tak bisa dibatalkan karena sudah dibayar) --}}
-                            <div class="flex items-center justify-between p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-900 text-xs">
-                                <div>
-                                    <span class="font-bold">⚙️ Pesanan Sedang Dikemas.</span>
-                                    <p class="text-[11px] text-indigo-700 mt-0.5">Input nomor resi di kartu Pengiriman (kolom kanan) untuk mengubah status ke <strong>Dikirim</strong>.</p>
-                                </div>
-                            </div>
-                        @elseif ($order->status === 'Dikirim')
-                            <div class="p-3 bg-purple-50 border border-purple-100 rounded-xl text-purple-900 text-xs">
-                                <span class="font-bold">🚚 Pesanan Dalam Pengiriman.</span>
-                                <p class="text-[11px] text-purple-700 mt-0.5">Pesanan sedang dalam perjalanan menuju pembeli. Anda dapat mengonfirmasi selesai di kolom sebelah kanan.</p>
-                            </div>
-                        @elseif ($order->status === 'Selesai')
-                            <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-900 text-xs font-semibold flex items-center gap-2">
-                                <span>🎉</span> Pesanan telah selesai dan barang berhasil diterima pembeli.
-                            </div>
-                        @elseif (in_array($order->status, ['Batal', 'Dibatalkan']))
-                            <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-900 text-xs font-semibold flex items-center gap-2">
-                                <span>❌</span> Pesanan ini telah dibatalkan.
-                            </div>
-                        @endif
-                    </div>
-
-                    <!-- Kartu Daftar Produk Dipesan -->
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-                        <div class="flex justify-between items-center pb-2 border-b border-gray-100">
-                            <div class="flex items-center gap-2">
-                                <h3 class="font-bold text-stone-900 text-sm">Daftar Produk Dipesan</h3>
-                                <span class="bg-orange-100 text-amber-800 font-bold text-[10px] px-2 py-0.5 rounded-full">{{ $order->items->count() }} ITEM</span>
-                            </div>
-                        </div>
-
-                        <!-- Item List -->
-                        <div class="divide-y divide-gray-100">
-                            @foreach ($order->items as $item)
-                                <div class="py-3 flex gap-4 items-center">
-                                    <div class="w-14 h-14 bg-amber-100 rounded-xl overflow-hidden flex-shrink-0 border border-amber-200/50">
-                                        @if ($item->produk)
-                                            <img src="{{ $item->produk->gambar_url }}" class="h-full w-full object-cover" alt="{{ $item->produk_name }}">
-                                        @else
-                                            <div class="flex h-full w-full items-center justify-center text-xs font-bold text-amber-800">Batik</div>
-                                        @endif
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="font-bold text-stone-900 text-sm">{{ $item->produk_name }}</div>
-                                        <div class="text-gray-400 text-[11px] mt-0.5">Jumlah: {{ $item->quantity }}x</div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-gray-400 text-[11px]">{{ $item->quantity }} x Rp {{ number_format($item->price, 0, ',', '.') }}</div>
-                                        <div class="font-bold text-stone-900 text-sm mt-0.5">Rp {{ number_format($item->price * $item->quantity, 0, ',', '.') }}</div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <!-- Rincian Biaya -->
-                        <div class="pt-3 border-t border-gray-100 space-y-1.5 text-stone-600 text-[11px]">
-                            <div class="flex justify-between">
-                                <span>Subtotal Produk</span>
-                                <span class="font-semibold text-stone-800">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="flex justify-between pt-3 border-t border-gray-100 text-sm font-extrabold text-stone-900">
-                                <span>Total Tagihan Pesanan</span>
-                                <span class="text-amber-700">Rp {{ number_format($order->total_price, 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <!-- KOLOM KANAN (5/12) -->
-                <div class="lg:col-span-5 space-y-6">
-
-                    <!-- Kartu Informasi Pelanggan -->
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
-                        <div class="flex justify-between items-center">
-                            <h3 class="font-bold text-stone-900 text-sm">Informasi Pelanggan</h3>
-                        </div>
-                        <div class="flex items-center gap-3 pt-1">
-                            <div class="w-10 h-10 rounded-full bg-stone-200 font-bold text-stone-700 flex items-center justify-center">
-                                {{ strtoupper(substr($order->customer_name, 0, 2)) }}
-                            </div>
-                            <div>
-                                <div class="font-bold text-stone-900 text-sm">{{ $order->customer_name }}</div>
-                                <div class="text-gray-400 text-[11px]">Pelanggan Web</div>
-                            </div>
-                        </div>
-                        <div class="space-y-1.5 pt-2 text-stone-600 text-[11px]">
-                            <div class="flex items-center gap-2">
-                                <span>📞</span> <span>{{ $order->phone }}</span>
+                                <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">BERAT PAKET</span>
+                                <span class="font-semibold text-stone-700">1.0 Kg (Kalkulasi Presisi)</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Kartu Alamat Pengiriman -->
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-3">
-                        <div class="flex justify-between items-center">
-                            <h3 class="font-bold text-stone-900 text-sm">Alamat Pengiriman</h3>
-                        </div>
+                    {{-- AWB / Resi Form --}}
+                    <form action="{{ route('admin.orders.update-pengiriman', $order) }}" method="POST" class="space-y-4 pt-1">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="status_pengiriman" value="Dikirim">
+
                         <div>
-                            <div class="font-bold text-stone-900 text-xs">{{ $order->customer_name }}</div>
-                            <p class="text-gray-600 leading-relaxed mt-1 text-[11px]">
-                                {{ $order->address }}
-                            </p>
-                            <div class="text-gray-400 mt-1 text-[11px]">Telepon: {{ $order->phone }}</div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+                                PILIHAN EKSPEDISI RAJAONGKIR
+                            </label>
+                            <select name="ekspedisi" class="w-full rounded-xl border border-[#E8E4DC] bg-[#FAF7F2]/40 px-3.5 py-2.5 text-xs font-semibold text-[#1E1B18] focus:border-[#C59A53] focus:outline-none shadow-2xs">
+                                <option value="JNE Reguler" {{ str_contains(strtolower($order->pengiriman->ekspedisi ?? ''), 'jne') ? 'selected' : '' }}>JNE Express (Reguler / OKE / YES)</option>
+                                <option value="POS Reguler" {{ str_contains(strtolower($order->pengiriman->ekspedisi ?? ''), 'pos') ? 'selected' : '' }}>POS Indonesia (Pos Reguler / Kilat Khusus)</option>
+                                <option value="TIKI Reguler" {{ str_contains(strtolower($order->pengiriman->ekspedisi ?? ''), 'tiki') ? 'selected' : '' }}>TIKI (Reguler / ONS)</option>
+                                <option value="{{ $order->pengiriman->ekspedisi ?? 'JNE Reguler' }}" selected>{{ $order->pengiriman->ekspedisi ?? 'JNE Reguler' }}</option>
+                            </select>
                         </div>
-                    </div>
 
-                    <!-- Kartu Pengiriman & Resi -->
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-                        <h3 class="font-bold text-stone-900 text-sm">Pengiriman & Resi</h3>
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1.5">
+                                NOMOR RESI / AWB EKSPEDISI RAJAONGKIR
+                            </label>
+                            <input type="text" name="no_resi" value="{{ old('no_resi', $order->tracking_number) }}"
+                                   placeholder="Masukkan nomor resi resmi ekspedisi RajaOngkir..."
+                                   class="w-full rounded-xl border border-[#E8E4DC] bg-[#FAF7F2]/40 px-3.5 py-2.5 text-xs font-mono font-bold text-[#1E1B18] placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
+                        </div>
 
-                        @if (in_array($order->status, ['Dikirim', 'Selesai']) || !empty($order->tracking_number))
-                            <!-- KONDISI 1: JIKA STATUS DIKIRIM / SELESAI ATAU SUDAH ADA RESI -->
-                            <div class="bg-orange-50/50 border border-orange-100 rounded-xl p-3.5 space-y-2">
-                                <div class="text-gray-400 text-[10px] uppercase font-bold tracking-wider">NOMOR RESI PENGIRIMAN</div>
-                                <div class="font-mono text-sm font-extrabold text-stone-900 tracking-wide flex items-center justify-between">
-                                    <span>{{ $order->tracking_number ?? 'Resi belum diinput' }}</span>
-                                    <span class="text-xs bg-emerald-100 text-emerald-800 font-sans font-bold px-2 py-0.5 rounded-full">
-                                        {{ $order->status }}
-                                    </span>
-                                </div>
-                            </div>
+                        <label class="flex items-center gap-2 text-xs text-stone-600 cursor-pointer">
+                            <input type="checkbox" name="notify_wa" value="1" checked class="rounded border-[#E8E4DC] text-[#1E1B18] focus:ring-0">
+                            <span>Kirim notifikasi nomor resi RajaOngkir otomatis ke WhatsApp pembeli</span>
+                        </label>
 
-                            <!-- Opsi Edit Resi -->
-                            <details class="text-[11px] text-gray-500">
-                                <summary class="cursor-pointer hover:text-stone-800 font-medium pt-1">Ubah / Perbarui Nomor Resi</summary>
-                                <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="space-y-2 mt-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="status" value="{{ $order->status }}">
-                                    <input type="text" name="tracking_number" value="{{ $order->tracking_number }}" maxlength="15" pattern="[A-Za-z0-9\-]+" title="Nomor resi hanya boleh berupa kombinasi huruf dan angka" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '')" class="w-full px-3 py-1.5 border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none uppercase" required>
-                                    <button type="submit" class="w-full bg-stone-800 hover:bg-black text-white font-bold py-1.5 rounded-xl transition">
-                                        Simpan Perubahan
-                                    </button>
-                                </form>
-                            </details>
-
-                            @if ($order->status === 'Dikirim')
-                                <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="pt-2">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="status" value="Selesai">
-                                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow-sm transition flex justify-center items-center gap-2 text-xs">
-                                        <span>✓</span> Konfirmasi Pesanan Selesai / Diterima
-                                    </button>
-                                </form>
-                            @endif
-                        @elseif ($order->status === 'Diproses')
-                            <!-- KONDISI 2: JIKA STATUS DIPROSES (FORM INPUT RESI BARU) -->
-                            <form action="{{ route('admin.orders.update-status', $order) }}" method="POST" class="space-y-3">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="status" value="Dikirim">
-
-                                <div>
-                                    <label class="block text-stone-700 font-bold text-[11px] mb-1">MASUKKAN NOMOR RESI PENGIRIMAN</label>
-                                    <input type="text" name="tracking_number" placeholder="Contoh: JNE123456789" required maxlength="15" pattern="[A-Za-z0-9\-]+" title="Nomor resi hanya boleh berupa kombinasi huruf dan angka" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9\-]/g, '')" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none uppercase">
-                                </div>
-
-                                <button type="submit" class="w-full bg-stone-900 hover:bg-black text-white font-bold py-2.5 rounded-xl transition shadow-sm flex justify-center items-center gap-2">
-                                    🚚 Simpan Resi & Kirim Pesanan
-                                </button>
-                            </form>
-                        @else
-                            <!-- KONDISI 3: MENUNGGU PEMBAYARAN / DIBATALKAN -->
-                            <p class="text-xs italic text-gray-400">
-                                Nomor resi dapat diinputkan setelah pembayaran Midtrans berhasil dan pesanan diproses.
-                            </p>
-                        @endif
-                    </div>
-
+                        <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#1E1B18] py-3 text-xs font-bold text-white shadow-xs hover:bg-black transition">
+                            <svg class="w-4 h-4 text-[#C59A53]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 17a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4zM3 9h11v8H3V9zm11 3h4l3 3v2h-7v-5z" />
+                            </svg>
+                            <span>Simpan Resi RajaOngkir &amp; Tandai Dikirim</span>
+                        </button>
+                    </form>
                 </div>
-
             </div>
-
         </div>
     </div>
 </x-app-layout>

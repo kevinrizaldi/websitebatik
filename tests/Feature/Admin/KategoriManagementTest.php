@@ -128,7 +128,7 @@ class KategoriManagementTest extends TestCase
         $response = $this->actingAs($admin)->delete(route('admin.kategori.destroy', $kategori));
 
         $response->assertRedirect(route('admin.kategori.index'));
-        $this->assertDatabaseMissing('kategoris', ['id' => $kategori->id]);
+        $this->assertDatabaseMissing('categories', ['id' => $kategori->id]);
         $this->assertFalse(Storage::disk('public')->exists($path));
     }
 

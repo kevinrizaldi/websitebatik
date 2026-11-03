@@ -1,5 +1,5 @@
-<x-app-layout>
-    <div class="py-8 bg-gray-50 min-h-screen text-stone-800 text-xs">
+<x-storefront-layout :title="'Pembayaran Pesanan #' . $order->code">
+    <div class="py-8 sm:py-10 bg-[#FAF7F2] text-stone-800 text-xs">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Alert --}}
@@ -420,4 +420,4 @@
             @endif
         </script>
     @endif
-</x-app-layout>
+</x-storefront-layout>

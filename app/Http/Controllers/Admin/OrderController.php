@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Pengiriman;
+use App\Services\MidtransService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -260,6 +261,28 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
                 'status' => "Gagal membatalkan pesanan #{$order->code}: ".$e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Sinkronisasi status transaksi pembayaran secara langsung dari gateway Midtrans.
+     */
+    public function syncPayment(Request $request, Order $order)
+    {
+        try {
+            /** @var MidtransService $midtransService */
+            $midtransService = app(MidtransService::class);
+            $refreshed = $midtransService->refreshFromMidtrans($order);
+
+            if ($refreshed) {
+                return redirect()->back()->with('success', "✓ Status pembayaran Midtrans untuk pesanan #{$order->code} berhasil diperbarui: {$order->fresh()->status}.");
+            }
+
+            return redirect()->back()->with('success', "✓ Pemeriksaan status gateway Midtrans untuk pesanan #{$order->code} selesai.");
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors([
+                'status' => 'Gagal menyinkronkan status Midtrans: '.$e->getMessage(),
             ]);
         }
     }

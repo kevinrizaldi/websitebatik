@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Produk;
 use App\Models\Ulasan;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -100,6 +101,28 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $topProducts->each(function ($item): void {
+            $produk = Produk::where('nama', $item->produk_name)->first();
+            $item->produk = $produk;
+            $item->stok = $produk?->stok ?? 8;
+            $item->kategori_nama = $produk?->kategori?->nama_kategori ?? 'Katun Primissima';
+            $item->gambar = $produk?->gambar;
+        });
+
+        $totalCustomers = User::where(function ($q): void {
+            $q->where('role', '!=', 'admin')->orWhereNull('role');
+        })->count();
+
+        $pendingActionOrders = Order::with(['items.produk'])
+            ->whereIn('status', ['Menunggu Verifikasi', 'Menunggu Pembayaran', 'Belum Dibayar', 'Diproses', 'Menunggu Konfirmasi'])
+            ->latest()
+            ->limit(4)
+            ->get();
+
+        if ($pendingActionOrders->isEmpty()) {
+            $pendingActionOrders = Order::with(['items.produk'])->latest()->limit(4)->get();
+        }
+
         return view('dashboard', [
             'isAdminDashboard' => true,
             'period' => $period,
@@ -124,6 +147,8 @@ class DashboardController extends Controller
             'chartPath' => $chartPath,
             'chartAreaPath' => $chartAreaPath,
             'topProducts' => $topProducts,
+            'totalCustomers' => $totalCustomers,
+            'pendingActionOrders' => $pendingActionOrders,
         ]);
     }
 

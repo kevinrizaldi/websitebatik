@@ -80,10 +80,7 @@
                         </div>
                         <div class="flex flex-col">
                             <span class="font-bold tracking-wider text-sm sm:text-base text-stone-900 uppercase font-sans">
-                                HAMZAH STYLE
-                            </span>
-                            <span class="text-[10px] text-stone-500 tracking-widest uppercase -mt-1 font-medium">
-                                OFFICIAL
+                                HAMZAH STYLE OFFICIAL
                             </span>
                         </div>
                     </a>
@@ -91,22 +88,37 @@
 
                 <!-- Navigation Links (Desktop) -->
                 <nav class="hidden md:flex items-center gap-8">
-                    <a href="{{ url('/') }}" class="text-sm font-medium text-stone-900 border-b-2 border-stone-900 pb-0.5 hover:text-stone-950 transition">
+                    <a href="{{ url('/') }}" class="text-sm font-semibold text-stone-900 border-b-2 border-stone-900 pb-0.5 hover:text-stone-950 transition">
                         Home
                     </a>
                     <a href="{{ route('koleksi.index') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
                         Produk
                     </a>
-                    <a href="{{ route('pesanan.index') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
-                        Pesanan
+                    <a href="{{ url('/#koleksi') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Kategori
+                    </a>
+                    <a href="{{ url('/#tentang-kami') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Tentang Kami
+                    </a>
+                    <a href="#kontak" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                        Kontak
                     </a>
                 </nav>
 
-                <!-- Action Buttons: Cart, User -->
-                <div class="flex items-center gap-4">
+                <!-- Action Buttons: Search, Cart, Akun -->
+                <div class="flex items-center gap-3 sm:gap-4">
+                    <!-- Search Icon Button -->
+                    <a href="{{ route('koleksi.index') }}" 
+                       class="p-2 text-stone-700 hover:text-stone-950 rounded-full hover:bg-stone-200/50 transition"
+                       title="Cari Produk">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+                        </svg>
+                    </a>
+
                     <!-- Cart Button with badge -->
                     <a href="{{ route('keranjang.index') }}" 
-                       class="relative p-2 text-stone-600 hover:text-stone-900 rounded-full hover:bg-stone-200/50 transition"
+                       class="relative p-2 text-stone-700 hover:text-stone-950 rounded-full hover:bg-stone-200/50 transition"
                        title="Keranjang Belanja">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
@@ -117,73 +129,78 @@
                         </span>
                     </a>
 
-                    <!-- User Account / Auth Dropdown -->
-                    @if (Route::has('login'))
-                        <div class="relative" x-data="{ userMenu: false }">
+                    <!-- Akun Pill Button -->
+                    <div class="relative" x-data="{ userMenu: false }">
+                        <button @click="userMenu = !userMenu" 
+                                @click.away="userMenu = false"
+                                class="flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white/80 hover:bg-white transition shadow-2xs">
+                            <div class="w-7 h-7 rounded-full bg-[#1F1916] text-[#E5C38E] flex items-center justify-center font-bold text-xs">
+                                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <span class="text-xs font-semibold text-stone-800">
+                                @auth {{ Auth::user()->name }} @else Akun @endauth
+                            </span>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div x-cloak x-show="userMenu" 
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             class="absolute right-0 mt-2 w-56 rounded-2xl bg-white shadow-xl border border-stone-200 py-2 z-50 text-sm">
                             @auth
-                                <button @click="userMenu = !userMenu" 
-                                        @click.away="userMenu = false"
-                                        class="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white/70 transition">
-                                    <div class="w-7 h-7 rounded-full bg-[#201A17] text-[#E5C38E] flex items-center justify-center font-bold text-xs uppercase">
-                                        {{ substr(Auth::user()->name, 0, 1) }}
-                                    </div>
-                                    <span class="text-xs font-semibold text-stone-800 max-w-[90px] truncate hidden sm:inline">
-                                        {{ Auth::user()->name }}
-                                    </span>
-                                    <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
-
-                                <!-- Dropdown Menu -->
-                                <div x-cloak x-show="userMenu" 
-                                     x-transition:enter="transition ease-out duration-100"
-                                     x-transition:enter-start="transform opacity-0 scale-95"
-                                     x-transition:enter-end="transform opacity-100 scale-100"
-                                     class="absolute right-0 mt-2 w-52 rounded-xl bg-white shadow-xl border border-stone-200 py-1.5 z-50 text-sm">
-                                    <div class="px-4 py-2 border-b border-stone-100">
-                                        <p class="text-xs text-stone-500">Masuk sebagai</p>
-                                        <p class="font-semibold text-stone-800 truncate">{{ Auth::user()->name }}</p>
-                                    </div>
-
-                                    @if(Auth::user()->isAdmin())
-                                        <a href="{{ route('produk.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 font-medium">
-                                            <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                                            Kelola Produk (Admin)
-                                        </a>
-                                        <a href="{{ route('admin.orders.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 font-medium">
-                                            <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                                            Kelola Pesanan
-                                        </a>
-                                    @endif
-
-                                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
-                                        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                                        Profile
-                                    </a>
-
-                                    <div class="border-t border-stone-100 my-1"></div>
-                                    <form method="POST" action="{{ route('logout') }}">
-                                        @csrf
-                                        <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-600 hover:bg-rose-50 transition">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                                            Keluar
-                                        </button>
-                                    </form>
+                                <div class="px-4 py-2 border-b border-stone-100">
+                                    <p class="text-xs text-stone-500">Masuk sebagai</p>
+                                    <p class="font-semibold text-stone-800 truncate">{{ Auth::user()->name }}</p>
                                 </div>
+
+                                @if(Auth::user()->isAdmin())
+                                    <a href="{{ route('produk.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 font-medium">
+                                        <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                        Kelola Produk (Admin)
+                                    </a>
+                                    <a href="{{ route('admin.orders.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900 font-medium">
+                                        <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                        Kelola Pesanan
+                                    </a>
+                                @endif
+
+                                <a href="{{ route('pesanan.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                                    <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                    Pesanan Saya
+                                </a>
+                                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2 text-stone-700 hover:bg-stone-50 hover:text-stone-900">
+                                    <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                    Profil Akun
+                                </a>
+
+                                <div class="border-t border-stone-100 my-1"></div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-600 hover:bg-rose-50 transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                        Keluar
+                                    </button>
+                                </form>
                             @else
-                                <div class="flex items-center gap-2">
-                                    <a href="{{ route('login') }}" 
-                                       class="flex items-center gap-1.5 px-4 py-2 rounded-full border border-stone-300 hover:border-stone-500 text-xs font-semibold text-stone-800 bg-white/60 hover:bg-white transition">
-                                        <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        User
+                                <div class="p-2 space-y-1">
+                                    <a href="{{ route('login') }}" class="flex items-center justify-center w-full py-2 px-4 rounded-xl bg-[#201A17] text-white text-xs font-semibold hover:bg-stone-800 transition">
+                                        Masuk
+                                    </a>
+                                    <a href="{{ route('register') }}" class="flex items-center justify-center w-full py-2 px-4 rounded-xl border border-stone-300 text-stone-800 text-xs font-semibold hover:bg-stone-50 transition">
+                                        Daftar Akun
+                                    </a>
+                                    <div class="border-t border-stone-100 my-1"></div>
+                                    <a href="{{ route('pesanan.index') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-stone-600 hover:text-stone-900">
+                                        <svg class="w-4 h-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                                        Cek Status Pesanan
                                     </a>
                                 </div>
                             @endauth
                         </div>
-                    @endif
+                    </div>
 
                     <!-- Mobile Menu Hamburger Button -->
                     <button @click="mobileMenuOpen = !mobileMenuOpen" 
@@ -204,6 +221,9 @@
                  class="md:hidden py-4 border-t border-[#ECE4D8] space-y-2">
                 <a href="{{ url('/') }}" class="block px-3 py-2 rounded-lg text-base font-semibold text-stone-900 bg-stone-200/50">Home</a>
                 <a href="{{ route('koleksi.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-200/30">Produk</a>
+                <a href="{{ url('/#koleksi') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-200/30">Kategori</a>
+                <a href="{{ url('/#tentang-kami') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-200/30">Tentang Kami</a>
+                <a href="#kontak" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-200/30">Kontak</a>
                 <a href="{{ route('pesanan.index') }}" class="block px-3 py-2 rounded-lg text-base font-medium text-stone-600 hover:text-stone-900 hover:bg-stone-200/30">Pesanan</a>
                 @guest
                     <div class="pt-2 border-t border-[#ECE4D8] flex gap-2">
@@ -225,7 +245,7 @@
                     <!-- Pill Tag -->
                     <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EFE8DD] border border-[#DFCDBB] text-[#785933] text-xs font-semibold uppercase tracking-wider mb-6">
                         <span class="w-2 h-2 rounded-full bg-[#B58742]"></span>
-                        <span>KOLEKSI TERBARU • BATIK MODERN</span>
+                        <span>KOLEKSI EKSKLUSIF EDISI TERBATAS</span>
                     </div>
 
                     <!-- Heading -->
@@ -236,12 +256,12 @@
 
                     <!-- Paragraph -->
                     <p class="text-stone-600 text-base sm:text-lg leading-relaxed mb-8 max-w-xl">
-                        Sentuhan estetika tradisional yang berpadu dengan kenyamanan modern. Dibuat dengan dedikasi tinggi oleh pengrajin berpengalaman untuk menemani setiap langkah percaya diri Anda.
+                        Temukan keindahan batik autentik Indonesia pilihan Hamzah Style Official. Menggabungkan kemewahan tradisi Nusantara dengan sentuhan modern ramah lingkungan.
                     </p>
 
                     <!-- CTA Buttons -->
                     <div class="flex flex-wrap items-center gap-4">
-                        <a href="#produk-unggulan" 
+                        <a href="{{ route('koleksi.index') }}" 
                            class="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-[#201A17] text-white font-medium hover:bg-stone-800 transition duration-200 shadow-md hover:shadow-lg text-sm sm:text-base">
                             Belanja Sekarang
                         </a>
@@ -265,10 +285,10 @@
                             <div class="absolute bottom-6 left-6 right-6 bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-2xl shadow-xl border border-stone-100 flex items-center justify-between">
                                 <div class="pr-2">
                                     <span class="block text-[11px] font-bold uppercase tracking-wider text-amber-800">
-                                        KOLEKSI COUPLE HARMONI
+                                        Karya Unggulan
                                     </span>
                                     <h4 class="font-bold text-stone-900 text-sm sm:text-base mt-0.5 leading-snug">
-                                        Perpaduan Keanggunan & Wibawa
+                                        Sarimbit Parang Seling &amp; Motif Kawung
                                     </h4>
                                 </div>
                                 <a href="#produk-unggulan" 
@@ -340,7 +360,7 @@
                         Jelajahi Koleksi
                     </h2>
                     <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
-                        Pilihan busana batik terbaik dengan perpaduan filosofi tradisional dan siluet modern kontemporer untuk segala suasana.
+                        Menghadirkan pesona wastra nusantara dalam potongan tren masa kini.
                     </p>
                 </div>
 
@@ -449,7 +469,7 @@
                         Produk Unggulan
                     </h2>
                     <p class="text-stone-600 text-sm sm:text-base mt-2 max-w-xl">
-                        Pilihan favorit pelanggan dengan jaminan keaslian bahan, jahitan rapi, dan sentuhan motif berkarakter.
+                        Pilihan terbaik yang menggabungkan estetika tradisi dan fesyen modern.
                     </p>
                 </div>
 
@@ -529,7 +549,170 @@
         </div>
     </section>
 
+    <!-- ================= SECTION: TENTANG HAMZAH STYLE OFFICIAL ================= -->
+    <section id="tentang-kami" class="py-16 md:py-24 bg-[#FAF7F2] border-t border-[#ECE4D8]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
+                
+                <!-- Left: 3-Image Collage with Floating Badge -->
+                <div class="lg:col-span-6">
+                    <div class="relative grid grid-cols-12 gap-3 sm:gap-4 items-center">
+                        <!-- Tall Main Image -->
+                        <div class="col-span-7 rounded-3xl overflow-hidden shadow-xl aspect-[3/4] bg-stone-200">
+                            <img src="{{ asset('images/beranda/hero-couple.jpg') }}" 
+                                 alt="Karya Batik Hamzah Style" 
+                                 class="w-full h-full object-cover hover:scale-103 transition duration-500">
+                        </div>
 
+                        <!-- 2 Stacked Images -->
+                        <div class="col-span-5 space-y-3 sm:space-y-4">
+                            <div class="rounded-2xl overflow-hidden shadow-md aspect-square bg-stone-200">
+                                <img src="{{ asset('images/beranda/folded-shirts.jpg') }}" 
+                                     alt="Lipatan Kemeja Batik" 
+                                     class="w-full h-full object-cover hover:scale-103 transition duration-500">
+                            </div>
+                            <div class="rounded-2xl overflow-hidden shadow-md aspect-square bg-stone-200">
+                                <img src="{{ asset('images/beranda/bags-accessories.jpg') }}" 
+                                     alt="Kriya Olahan Kain Sisa" 
+                                     class="w-full h-full object-cover hover:scale-103 transition duration-500">
+                            </div>
+                        </div>
+
+                        <!-- Floating Badge on bottom-left -->
+                        <div class="absolute -bottom-4 left-4 bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-stone-200/80 max-w-[240px]">
+                            <span class="block text-xs font-extrabold text-stone-900 leading-tight">
+                                100% Motif Asli
+                            </span>
+                            <span class="text-[11px] text-stone-500 leading-snug block mt-0.5">
+                                Dari pengrajin batik tradisional di Solo &amp; Jogja
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Story, Philosophy & 3 Feature Cards -->
+                <div class="lg:col-span-6 lg:pl-4">
+                    <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[#B58742] mb-3">
+                        <span>TENTANG KAMI</span>
+                    </div>
+
+                    <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#1F1916] leading-tight mb-2">
+                        Tentang Hamzah Style Official
+                    </h2>
+
+                    <p class="text-sm sm:text-base font-semibold text-[#8C5E35] mb-4">
+                        Melestarikan Budaya, Mengolah Potensi Limbah Menjadi Karya Nyata
+                    </p>
+
+                    <p class="text-stone-600 text-xs sm:text-sm leading-relaxed mb-8">
+                        Hamzah Style Official hadir sebagai wujud cinta dan dedikasi mendalam terhadap warisan wastra Nusantara. Kami menghadirkan busana batik autentik yang dirancang harmonis dengan sentuhan gaya modern kontemporer, sekaligus memelopori gerakan kriya beretika dengan mengolah kain sisa menjadi karya bernilai artistik tinggi dan ramah lingkungan.
+                    </p>
+
+                    <!-- 3 Feature Cards -->
+                    <div class="space-y-3.5">
+                        <!-- Card 1 -->
+                        <div class="p-4 rounded-2xl bg-white border border-[#EBE3D6] shadow-2xs flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-[#FAF5ED] border border-[#EADBCC] text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-stone-900 text-sm">Warisan Mahakarya Nusantara</h4>
+                                <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
+                                    Menjaga keaslian motif batik, ketelitian canting manual, dan teknik cap tradisional warisan leluhur.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card 2 -->
+                        <div class="p-4 rounded-2xl bg-white border border-[#EBE3D6] shadow-2xs flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-[#FAF5ED] border border-[#EADBCC] text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-stone-900 text-sm">Desain Modern Berkelanjutan</h4>
+                                <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
+                                    Mengolah kain sirkular upcycled bernilai estetika premium untuk gaya hidup ramah lingkungan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Card 3 -->
+                        <div class="p-4 rounded-2xl bg-white border border-[#EBE3D6] shadow-2xs flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-[#FAF5ED] border border-[#EADBCC] text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-stone-900 text-sm">Pemberdayaan Komunitas Pengrajin</h4>
+                                <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
+                                    Bermitra langsung dengan sentra perajin lokal di sentra batik Yogyakarta, Solo, &amp; Pekalongan.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= SECTION: CTA BANNER (TEMUKAN KOLEKSI FAVORITMU) ================= -->
+    <section class="py-12 md:py-16 bg-[#FAF7F2]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="relative rounded-3xl overflow-hidden bg-[#201A17] text-white p-8 sm:p-12 md:p-16 text-center shadow-2xl border border-stone-800">
+                <!-- Tag -->
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[#E5C38E] text-[11px] font-bold uppercase tracking-widest mb-4">
+                    <span>ESTETIKA BERKELANJUTAN</span>
+                </div>
+
+                <!-- Heading -->
+                <h2 class="font-serif-title text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4">
+                    Temukan Koleksi Favoritmu
+                </h2>
+
+                <!-- Subtitle -->
+                <p class="text-stone-300 text-xs sm:text-sm md:text-base max-w-2xl mx-auto leading-relaxed mb-8">
+                    Belanja produk batik premium dan olahan kain sisa ramah lingkungan dari Hamzah Style Official. Tampil percaya diri seraya ikut menjaga kelestarian bumi dan kebudayaan Nusantara.
+                </p>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap items-center justify-center gap-4 mb-12">
+                    <a href="{{ route('koleksi.index') }}" 
+                       class="px-8 py-3.5 rounded-full bg-white text-stone-900 hover:bg-stone-100 font-bold text-sm transition shadow-lg">
+                        Mulai Belanja
+                    </a>
+                    <a href="https://wa.me/6281234567890?text=Halo%20Hamzah%20Style%20Official,%20saya%20ingin%20konsultasi%20koleksi%20batik" 
+                       target="_blank"
+                       class="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-stone-600 hover:border-white text-white font-semibold text-sm transition bg-white/5 hover:bg-white/10">
+                        <svg class="w-4 h-4 fill-current text-emerald-400" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                        <span>Konsultasi Lebih Lanjut</span>
+                    </a>
+                </div>
+
+                <!-- Feature Icons Footer in Banner -->
+                <div class="pt-8 border-t border-stone-800 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-xs text-stone-400">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-[#E5C38E]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.25V3.75m0 3.75h-7.5A2.25 2.25 0 004.5 9.75v5.25m12-7.5h3.75"/></svg>
+                        <span>Pengiriman Seluruh Indonesia</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-[#E5C38E]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"/></svg>
+                        <span>Jaminan Produk Asli 100%</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-[#E5C38E]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+                        <span>Pembayaran Aman Terverifikasi</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
 
     <!-- ================= FOOTER ================= -->
     <footer id="kontak" class="bg-[#FAF7F2] border-t border-[#ECE4D8] pt-16 pb-12 text-stone-700">
@@ -549,11 +732,12 @@
                         </span>
                     </div>
                     <p class="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4 max-w-sm">
-                        Pusat busana batik berkualitas dengan ragam motif nusantara terlengkap. Menghadirkan karya seni batik elegan untuk gaya hidup masa kini.
+                        Batik Modern &amp; Olahan Kain Sisa Berkelanjutan. Menjaga warisan tekstil Nusantara melalui inovasi kriya beretika dan potongan adibusana ramah lingkungan.
                     </p>
-                    <p class="text-xs text-stone-500">
-                        📍 Yogyakarta & Solo, Indonesia
-                    </p>
+                    <div class="inline-flex items-center gap-2 text-xs font-semibold text-stone-800 bg-[#EFE8DD] px-3.5 py-1.5 rounded-full border border-[#DFCDBB]">
+                        <svg class="w-3.5 h-3.5 text-stone-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z"/></svg>
+                        <span>KARYA BERKELANJUTAN</span>
+                    </div>
                 </div>
 
                 <!-- Col 2: Navigasi -->
@@ -562,10 +746,11 @@
                         Navigasi
                     </h5>
                     <ul class="space-y-2.5 text-xs sm:text-sm text-stone-600">
-                        <li><a href="{{ url('/') }}" class="hover:text-stone-950 transition">Beranda</a></li>
-                        <li><a href="#koleksi" class="hover:text-stone-950 transition">Koleksi Pilihan</a></li>
-                        <li><a href="#produk-unggulan" class="hover:text-stone-950 transition">Produk Unggulan</a></li>
-                        <li><a href="#kontak" class="hover:text-stone-950 transition">Kontak Resmi</a></li>
+                        <li><a href="{{ url('/') }}" class="hover:text-stone-950 transition">Home</a></li>
+                        <li><a href="{{ url('/#tentang-kami') }}" class="hover:text-stone-950 transition">Tentang Kami</a></li>
+                        <li><a href="{{ route('koleksi.index') }}" class="hover:text-stone-950 transition">Produk</a></li>
+                        <li><a href="{{ url('/#koleksi') }}" class="hover:text-stone-950 transition">Kategori</a></li>
+                        <li><a href="#kontak" class="hover:text-stone-950 transition">Kontak</a></li>
                     </ul>
                 </div>
 
@@ -576,49 +761,43 @@
                     </h5>
                     <ul class="space-y-2.5 text-xs sm:text-sm text-stone-600">
                         <li>
-                            <a href="#" class="inline-flex items-center gap-2 hover:text-stone-950 transition">
-                                <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                                Shopee Official Store
+                            <a href="https://wa.me/6281234567890" target="_blank" class="inline-flex items-center gap-2 hover:text-stone-950 transition">
+                                <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                                WhatsApp Business
                             </a>
                         </li>
                         <li>
                             <a href="#" class="inline-flex items-center gap-2 hover:text-stone-950 transition">
-                                <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
-                                Tokopedia Official
+                                <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+                                Shopee Official
                             </a>
                         </li>
                         <li>
                             <a href="#" class="inline-flex items-center gap-2 hover:text-stone-950 transition">
-                                <span class="w-2 h-2 rounded-full bg-stone-900"></span>
+                                <svg class="w-4 h-4 text-stone-900" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 00-1-.08A6.34 6.34 0 003 15.66a6.34 6.34 0 0010.86 4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-.04-4.52z"/></svg>
                                 TikTok Shop
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="inline-flex items-center gap-2 hover:text-stone-950 transition">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                WhatsApp Order Direct
                             </a>
                         </li>
                     </ul>
                 </div>
 
-                <!-- Col 4: Media Sosial & Desain -->
+                <!-- Col 4: Media Sosial & Buletin -->
                 <div class="lg:col-span-3">
                     <h5 class="font-bold text-stone-900 text-sm mb-4">
-                        Media Sosial & Desain
+                        Media Sosial &amp; Buletin
                     </h5>
                     <p class="text-stone-600 text-xs sm:text-sm leading-relaxed mb-4">
-                        Ikuti update koleksi terbaru, tutorial berpakaian batik, dan inspirasi motif nusantara di media sosial kami:
+                        Dapatkan akses awal untuk rilisan eksklusif dan seri upcycle terbatas.
                     </p>
                     <div class="flex items-center gap-3">
                         <a href="#" class="w-9 h-9 rounded-full bg-white border border-stone-300 hover:border-stone-500 flex items-center justify-center text-stone-700 hover:text-stone-950 transition shadow-xs">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                         </a>
                         <a href="#" class="w-9 h-9 rounded-full bg-white border border-stone-300 hover:border-stone-500 flex items-center justify-center text-stone-700 hover:text-stone-950 transition shadow-xs">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418"/></svg>
                         </a>
                         <a href="#" class="w-9 h-9 rounded-full bg-white border border-stone-300 hover:border-stone-500 flex items-center justify-center text-stone-700 hover:text-stone-950 transition shadow-xs">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 00-1-.08A6.34 6.34 0 003 15.66a6.34 6.34 0 0010.86 4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-.04-4.52z"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
                         </a>
                     </div>
                 </div>
@@ -627,11 +806,8 @@
 
             <!-- Bottom Copyright Line -->
             <div class="pt-8 border-t border-[#ECE4D8] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
-                <p>© 2026 Hamzah Style Official. Seluruh Hak Cipta Dilindungi.</p>
-                <div class="flex items-center gap-6">
-                    <a href="#" class="hover:text-stone-800 transition">Kebijakan Privasi</a>
-                    <a href="#" class="hover:text-stone-800 transition">Syarat & Ketentuan</a>
-                </div>
+                <p>&copy; 2025 Hamzah Style Official. All rights reserved.</p>
+                <p>Made with pride in Indonesia</p>
             </div>
         </div>
     </footer>

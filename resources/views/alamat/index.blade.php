@@ -25,7 +25,11 @@
           editingId: null,
           saving: false,
           formErrors: [],
-          addrForm: { label: '', penerima: '', phone: '', provinsi: '', kota: '', kodepos: '', lengkap: '', utama: false },
+          provinces: [],
+          cities: [],
+          loadingProvinces: false,
+          loadingCities: false,
+          addrForm: { label: '', penerima: '', phone: '', provinsi: '', kota: '', province_id: '', city_id: '', kodepos: '', lengkap: '', utama: false },
           addressList: [
               @foreach($alamats as $alamat)
               {
@@ -35,27 +39,95 @@
                   phone: '{{ addslashes($alamat->no_telepon) }}',
                   provinsi: '{{ addslashes($alamat->provinsi ?? '') }}',
                   kota: '{{ addslashes($alamat->kota) }}',
+                  province_id: '{{ $alamat->province_id ?? '' }}',
+                  city_id: '{{ $alamat->city_id ?? '' }}',
                   kodepos: '{{ addslashes($alamat->kode_pos ?? '') }}',
                   lengkap: '{{ addslashes($alamat->alamat_lengkap) }}',
                   utama: {{ $alamat->is_utama ? 'true' : 'false' }}
               }@if(!$loop->last),@endif
               @endforeach
           ],
-          openAdd() {
+          async loadProvinces() {
+              if (this.provinces.length > 0) return;
+              this.loadingProvinces = true;
+              try {
+                  const res = await fetch('{{ route('rajaongkir.provinces') }}');
+                  const data = await res.json();
+                  if (data.success && Array.isArray(data.provinces)) {
+                      this.provinces = data.provinces;
+                  }
+              } catch (e) {
+                  console.error('Failed loading provinces', e);
+              } finally {
+                  this.loadingProvinces = false;
+              }
+          },
+          async loadCities(provinceId) {
+              if (!provinceId) {
+                  this.cities = [];
+                  return;
+              }
+              this.loadingCities = true;
+              try {
+                  const res = await fetch('{{ route('rajaongkir.cities') }}?province_id=' + provinceId);
+                  const data = await res.json();
+                  if (data.success && Array.isArray(data.cities)) {
+                      this.cities = data.cities;
+                  }
+              } catch (e) {
+                  console.error('Failed loading cities', e);
+              } finally {
+                  this.loadingCities = false;
+              }
+          },
+          async onProvinceChange() {
+              const selected = this.provinces.find(p => String(p.province_id) === String(this.addrForm.province_id));
+              this.addrForm.provinsi = selected ? selected.province : '';
+              this.addrForm.city_id = '';
+              this.addrForm.kota = '';
+              await this.loadCities(this.addrForm.province_id);
+          },
+          onCityChange() {
+              const selected = this.cities.find(c => String(c.city_id) === String(this.addrForm.city_id));
+              if (selected) {
+                  const prefix = selected.type ? selected.type + ' ' : '';
+                  this.addrForm.kota = prefix + selected.city_name;
+                  if (selected.postal_code && !this.addrForm.kodepos) {
+                      this.addrForm.kodepos = selected.postal_code;
+                  }
+              }
+          },
+          async openAdd() {
               this.modalMode = 'add';
               this.editingId = null;
               this.formErrors = [];
-              this.addrForm = { label: '', penerima: '', phone: '', provinsi: '', kota: '', kodepos: '', lengkap: '', utama: this.addressList.length === 0 };
+              this.addrForm = { label: '', penerima: '', phone: '', provinsi: '', kota: '', province_id: '', city_id: '', kodepos: '', lengkap: '', utama: this.addressList.length === 0 };
               this.addressModalOpen = true;
+              await this.loadProvinces();
           },
-          openEdit(id) {
+          async openEdit(id) {
               const found = this.addressList.find(a => a.id === id);
               if (!found) return;
               this.modalMode = 'edit';
               this.editingId = id;
               this.formErrors = [];
-              this.addrForm = { label: found.label, penerima: found.penerima, phone: found.phone, provinsi: found.provinsi, kota: found.kota, kodepos: found.kodepos, lengkap: found.lengkap, utama: found.utama };
+              this.addrForm = {
+                  label: found.label,
+                  penerima: found.penerima,
+                  phone: found.phone,
+                  provinsi: found.provinsi,
+                  kota: found.kota,
+                  province_id: found.province_id || '',
+                  city_id: found.city_id || '',
+                  kodepos: found.kodepos,
+                  lengkap: found.lengkap,
+                  utama: found.utama
+              };
               this.addressModalOpen = true;
+              await this.loadProvinces();
+              if (this.addrForm.province_id) {
+                  await this.loadCities(this.addrForm.province_id);
+              }
           },
           submitModalForm() {
               this.saving = true;
@@ -75,6 +147,8 @@
                       no_telepon: this.addrForm.phone,
                       provinsi: this.addrForm.provinsi,
                       kota: this.addrForm.kota,
+                      province_id: this.addrForm.province_id ? parseInt(this.addrForm.province_id) : null,
+                      city_id: this.addrForm.city_id ? parseInt(this.addrForm.city_id) : null,
                       kode_pos: this.addrForm.kodepos,
                       alamat_lengkap: this.addrForm.lengkap,
                       is_utama: !!this.addrForm.utama
@@ -276,14 +350,24 @@
                         <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Label Alamat</label>
                         <input type="text" x-model="addrForm.label" @input="addrForm.label = addrForm.label.replace(/[^a-zA-Z0-9\s]/g, '')" placeholder="Contoh: Rumah, Kantor" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Provinsi</label>
-                            <input type="text" x-model="addrForm.provinsi" @input="addrForm.provinsi = addrForm.provinsi.replace(/[^a-zA-Z\s]/g, '')" placeholder="Provinsi" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Provinsi <span class="text-rose-500">*</span></label>
+                            <select x-model="addrForm.province_id" @change="onProvinceChange()" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                                <option value="" x-text="loadingProvinces ? 'Memuat data provinsi...' : '-- Pilih Provinsi --'">-- Pilih Provinsi --</option>
+                                <template x-for="p in provinces" :key="p.province_id">
+                                    <option :value="p.province_id" x-text="p.province" :selected="String(p.province_id) === String(addrForm.province_id)"></option>
+                                </template>
+                            </select>
                         </div>
                         <div>
                             <label class="mb-1 block text-[11px] font-bold uppercase tracking-wider text-stone-500">Kabupaten/Kota <span class="text-rose-500">*</span></label>
-                            <input type="text" x-model="addrForm.kota" @input="addrForm.kota = addrForm.kota.replace(/[^a-zA-Z\s]/g, '')" placeholder="Kabupaten/Kota" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <select x-model="addrForm.city_id" @change="onCityChange()" :disabled="!addrForm.province_id || loadingCities" class="w-full rounded-xl border border-stone-200 bg-[#FDF9F3] px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none disabled:opacity-50">
+                                <option value="" x-text="loadingCities ? 'Memuat kota...' : (addrForm.province_id ? '-- Pilih Kabupaten/Kota --' : '-- Pilih Provinsi Dulu --')">-- Pilih Kabupaten/Kota --</option>
+                                <template x-for="c in cities" :key="c.city_id">
+                                    <option :value="c.city_id" x-text="(c.type ? c.type + ' ' : '') + c.city_name" :selected="String(c.city_id) === String(addrForm.city_id)"></option>
+                                </template>
+                            </select>
                         </div>
                     </div>
                     <div>
