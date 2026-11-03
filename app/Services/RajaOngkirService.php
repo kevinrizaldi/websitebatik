@@ -429,9 +429,9 @@ class RajaOngkirService
                     ['service' => 'YES', 'desc' => 'Yakin Esok Sampai', 'rate' => 20000, 'etd' => '1 hari'],
                 ],
                 'jawa' => [
-                    ['service' => 'OKE', 'desc' => 'Ongkos Kirim Ekonomis', 'rate' => 16000, 'etd' => '2-4 hari'],
-                    ['service' => 'REG', 'desc' => 'Layanan Reguler', 'rate' => 20000, 'etd' => '2-3 hari'],
-                    ['service' => 'YES', 'desc' => 'Yakin Esok Sampai', 'rate' => 32000, 'etd' => '1 hari'],
+                    ['service' => 'REG', 'desc' => 'Layanan Reguler', 'rate' => 15000, 'etd' => '1-2 hari'],
+                    ['service' => 'YES', 'desc' => 'Yakin Esok Sampai', 'rate' => 25000, 'etd' => '1 hari'],
+                    ['service' => 'JTR', 'desc' => 'JNE Trucking', 'rate' => 55000, 'etd' => '3-4 hari'],
                 ],
                 'dekat_luar_jawa' => [
                     ['service' => 'OKE', 'desc' => 'Ongkos Kirim Ekonomis', 'rate' => 24000, 'etd' => '3-5 hari'],
