@@ -398,7 +398,8 @@ class RajaOngkirService
         ?string $cityName = null,
         ?string $provinceName = null,
         ?int $provinceId = null
-    ): array {
+    ): array
+    {
         $courierList = is_string($couriers) ? explode(',', $couriers) : $couriers;
         $courierList = array_map('strtolower', array_map('trim', $courierList));
 
@@ -545,7 +546,8 @@ class RajaOngkirService
         ?string $cityName = null,
         ?string $provinceName = null,
         ?int $provinceId = null
-    ): array {
+    ): array
+    {
         $weightInKg = (int) ceil($weight / 1000);
 
         $cityNameLower = strtolower(trim((string) $cityName));
