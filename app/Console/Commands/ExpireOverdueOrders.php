@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Order;
-use App\Models\Payment;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -34,7 +33,7 @@ class ExpireOverdueOrders extends Command
         // 1. Cancel orders with an explicit payment_deadline that has passed.
         Order::query()
             ->where('payment_status', Order::PAYMENT_PENDING)
-            ->where('status', Order::STATUS_UNPAID)
+            ->whereIn('status', [Order::STATUS_UNPAID, 'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'])
             ->whereNotNull('payment_deadline')
             ->where('payment_deadline', '<', now())
             ->chunkById(50, function ($orders) {
@@ -48,7 +47,7 @@ class ExpireOverdueOrders extends Command
         //    Without this, orders that never reach getOrCreateSnapToken stay open forever.
         Order::query()
             ->where('payment_status', Order::PAYMENT_PENDING)
-            ->where('status', Order::STATUS_UNPAID)
+            ->whereIn('status', [Order::STATUS_UNPAID, 'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'])
             ->whereNull('payment_deadline')
             ->where('created_at', '<', now()->subHours($deadlineHours))
             ->chunkById(50, function ($orders) use ($deadlineHours) {
@@ -81,7 +80,7 @@ class ExpireOverdueOrders extends Command
             // Re-check conditions after acquiring lock.
             if (
                 $locked->payment_status !== Order::PAYMENT_PENDING
-                || $locked->status !== Order::STATUS_UNPAID
+                || ! in_array($locked->status, [Order::STATUS_UNPAID, 'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'], true)
             ) {
                 return;
             }
@@ -101,24 +100,7 @@ class ExpireOverdueOrders extends Command
                 }
             }
 
-            // Expire all pending payment attempts (no Cancel API call – PAY-19).
-            Payment::where('order_id', $locked->id)
-                ->where('status', Payment::STATUS_PENDING)
-                ->get()
-                ->each(function (Payment $payment) use ($locked) {
-                    $payment->status = Payment::STATUS_EXPIRED;
-                    $payment->save();
-
-                    Log::info('orders:expire-overdue: expired payment attempt', [
-                        'order_id' => $locked->id,
-                        'payment_id' => $payment->id,
-                    ]);
-                });
-
-            // Cancel the order.
-            $locked->status = Order::STATUS_CANCELLED;
-            $locked->payment_status = Order::PAYMENT_EXPIRED;
-            $locked->save();
+            $locked->markAsExpired();
 
             Log::info('orders:expire-overdue: cancelled overdue order', [
                 'order_id' => $locked->id,

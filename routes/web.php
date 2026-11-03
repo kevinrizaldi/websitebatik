@@ -129,10 +129,18 @@ Route::get('/pesanan', function () {
     $reviewMap = [];
     try {
         if (Schema::hasTable('orders')) {
-            $query = Order::with('items.produk')->latest();
             if (Auth::check()) {
-                $userOrders = (clone $query)->where('user_id', Auth::id())->get();
-                $orders = $userOrders->isNotEmpty() ? $userOrders : $query->take(5)->get();
+                $orders = Order::with(['items.produk', 'payments'])
+                    ->where('user_id', Auth::id())
+                    ->latest()
+                    ->get();
+
+                foreach ($orders as $ord) {
+                    if ($ord->isPaymentExpired()) {
+                        $ord->markAsExpired();
+                    }
+                }
+
                 if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
                     $myReviews = Ulasan::where('user_id', Auth::id())->get(['id', 'order_id', 'produk_id', 'rating', 'comment']);
                     $reviewedIds = $myReviews->pluck('produk_id')->all();
@@ -150,7 +158,7 @@ Route::get('/pesanan', function () {
                     }
                 }
             } else {
-                $orders = $query->take(5)->get();
+                $orders = collect();
             }
         }
     } catch (Throwable $e) {
