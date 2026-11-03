@@ -88,6 +88,31 @@ class RajaOngkirShippingTest extends TestCase
         $this->assertGreaterThan(0, $services[0]['cost']);
     }
 
+    public function test_jakarta_barat_shipping_cost_matches_expected_fifteen_thousand_rate(): void
+    {
+        $response = $this->postJson(route('rajaongkir.cost'), [
+            'destination' => 135, // Jakarta Barat
+            'weight' => 1000,
+            'courier' => ['jne'],
+            'city_name' => 'Kota Jakarta Barat',
+            'province_name' => 'Dki Jakarta',
+            'province_id' => 10,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'destination_id' => 135,
+            ]);
+
+        $services = $response->json('services');
+        $this->assertNotEmpty($services);
+
+        $regService = collect($services)->firstWhere('service', 'REG');
+        $this->assertNotNull($regService, 'JNE REG service should be present');
+        $this->assertEquals(15000, $regService['cost'], 'JNE REG from Solo to Jakarta Barat must be Rp 15.000');
+    }
+
     public function test_user_can_save_address_with_rajaongkir_city_and_province_ids(): void
     {
         $user = User::factory()->create();
