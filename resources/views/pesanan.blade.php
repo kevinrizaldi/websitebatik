@@ -78,7 +78,10 @@
                               default => $ord->status
                           }
                       };
-                      $trackingNo = $ord->tracking_number ?: 'HS-RESI-' . substr(md5($ord->id), 0, 8);
+                      $trackingNo = $ord->tracking_number ?: ($ord->shipment?->tracking_number ?: ($ord->shipment?->no_resi ?: 'Menunggu Nomor Resi'));
+                      $ordCourier = $ord->shipment?->ekspedisi ?: ($ord->shipment?->courier ?: 'JNE Reguler');
+                      $ordOngkir = (float) ($ord->shipping_cost ?? 0);
+                      $ordSubtotal = max(0, (float) $ord->total_price - $ordOngkir);
                   @endphp
                   {
                       id: '{{ $ord->code }}',
@@ -91,11 +94,11 @@
                       batasBayar: '{{ $deadline->format('d M Y, H:i') }} WIB',
                       deadlineTimestamp: {{ $deadline->getTimestamp() * 1000 }},
                       isExpired: {{ $isExpired ? 'true' : 'false' }},
-                      kurir: 'JNE Regular Express',
-                      noResi: '{{ $trackingNo }}',
-                      ongkir: 20000,
+                      kurir: '{{ addslashes($ordCourier) }}',
+                      noResi: '{{ addslashes($trackingNo) }}',
+                      ongkir: {{ $ordOngkir }},
                       diskon: 0,
-                      subtotal: {{ (float) $ord->total_price }},
+                      subtotal: {{ $ordSubtotal > 0 ? $ordSubtotal : (float) $ord->total_price }},
                       total: {{ (float) $ord->total_price }},
                       alamat: '{{ addslashes($ord->customer_name) }} ({{ addslashes($ord->phone) }}) • {{ addslashes($ord->address) }}',
                       items: [
