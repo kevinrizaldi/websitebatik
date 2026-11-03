@@ -250,6 +250,135 @@ class RajaOngkirService
     }
 
     /**
+     * Resolve a Komerce destination ID.
+     * Komerce /calculate/domestic-cost requires a 5-digit subdistrict destination ID.
+     * If a 2-3 digit city ID is provided, map it to the corresponding subdistrict ID
+     * so it doesn't mistakenly calculate to an arbitrary small subdistrict ID in Aceh.
+     */
+    protected function resolveKomerceDestination(int $destinationCityId, ?string $cityName = null): int
+    {
+        if ($destinationCityId >= 10000) {
+            return $destinationCityId;
+        }
+
+        // Map known Komerce city IDs to their major central subdistrict ID
+        $map = [
+            // DKI Jakarta (Komerce Province 10)
+            135 => 17473, // Kota Jakarta Barat (Grogol Petamburan)
+            136 => 17610, // Kota Jakarta Selatan (Kebayoran Baru)
+            137 => 17565, // Kota Jakarta Pusat (Gambir)
+            138 => 17730, // Kota Jakarta Utara (Tanjung Priok)
+            139 => 17680, // Kota Jakarta Timur (Jatinegara)
+            141 => 17770, // Kab Kepulauan Seribu
+
+            // Jawa Barat (Komerce Province 5 / V1 9)
+            22 => 19850,  // Kota Bandung
+            23 => 19900,  // Kab Bandung
+            54 => 20150,  // Kota Bekasi
+            55 => 20160,  // Kab Bekasi
+            78 => 20320,  // Kota Bogor
+            79 => 20330,  // Kab Bogor
+            115 => 20480, // Kota Depok
+            107 => 20550, // Kota Cirebon
+            468 => 20600, // Kota Tasikmalaya
+
+            // Banten (Komerce Province 11 / V1 3)
+            455 => 13210, // Kota Tangerang
+            456 => 13220, // Kota Tangerang Selatan
+            457 => 13230, // Kab Tangerang
+            106 => 13300, // Kota Cilegon
+            418 => 13350, // Kota Serang
+
+            // Jawa Tengah (Komerce Province 12 / V1 10)
+            444 => 61663, // Kota Surakarta (Solo) - Pasar Kliwon
+            399 => 61580, // Kota Semarang
+            427 => 61680, // Kab Sukoharjo
+            196 => 61700, // Kab Karanganyar
+            433 => 61720, // Kab Sragen
+            92 => 61740,  // Kab Boyolali
+            200 => 61760, // Kab Klaten
+            497 => 61780, // Kab Wonogiri
+            249 => 61800, // Kota Magelang
+            349 => 61820, // Kota Pekalongan
+            386 => 61860, // Kota Salatiga
+            209 => 61880, // Kab Kudus
+            344 => 61900, // Kab Pati
+            186 => 61920, // Kab Jepara
+            41 => 61940,  // Kab Banyumas (Purwokerto)
+            103 => 61960, // Kab Cilacap
+
+            // DI Yogyakarta (Komerce Province 19 / V1 5)
+            501 => 42100, // Kota Yogyakarta
+            419 => 42120, // Kab Sleman
+            39 => 42140,  // Kab Bantul
+            210 => 42180, // Kab Kulon Progo
+
+            // Jawa Timur (Komerce Province 18 / V1 11)
+            445 => 64250, // Kota Surabaya
+            255 => 64300, // Kota Malang
+            256 => 64320, // Kab Malang
+            417 => 64350, // Kab Sidoarjo
+            160 => 64400, // Kab Jember
+            19 => 64450,  // Kota Banyuwangi
+            247 => 64500, // Kota Madiun
+            178 => 64550, // Kota Kediri
+
+            // Bali (Komerce Province 15 / V1 1)
+            114 => 11000, // Kota Denpasar
+            32 => 11050,  // Kab Badung
+
+            // Sumatera Selatan (Komerce Province 26 / V1 33)
+            327 => 28000, // Kota Palembang
+
+            // Lampung (Komerce Province 30 / V1 18)
+            21 => 26000,  // Kota Bandar Lampung
+
+            // Sumatera Utara (Komerce Province 16 / V1 34)
+            278 => 29000, // Kota Medan
+        ];
+
+        if (isset($map[$destinationCityId])) {
+            return $map[$destinationCityId];
+        }
+
+        if (! empty($cityName)) {
+            $cn = strtolower($cityName);
+            if (str_contains($cn, 'jakarta barat')) {
+                return 17473;
+            }
+            if (str_contains($cn, 'jakarta selatan')) {
+                return 17610;
+            }
+            if (str_contains($cn, 'jakarta pusat')) {
+                return 17565;
+            }
+            if (str_contains($cn, 'jakarta utara')) {
+                return 17730;
+            }
+            if (str_contains($cn, 'jakarta timur')) {
+                return 17680;
+            }
+            if (str_contains($cn, 'surakarta') || str_contains($cn, 'solo')) {
+                return 61663;
+            }
+            if (str_contains($cn, 'semarang')) {
+                return 61580;
+            }
+            if (str_contains($cn, 'jogja') || str_contains($cn, 'yogyakarta')) {
+                return 42100;
+            }
+            if (str_contains($cn, 'bandung')) {
+                return 19850;
+            }
+            if (str_contains($cn, 'surabaya')) {
+                return 64250;
+            }
+        }
+
+        return $destinationCityId;
+    }
+
+    /**
      * Calculate shipping cost for a given destination and weight across requested couriers.
      *
      * @param  array<int, string>|string  $couriers
@@ -262,8 +391,14 @@ class RajaOngkirService
      *     etd: string
      * }>
      */
-    public function calculateCost(int $destinationCityId, int $weight = 1000, array|string $couriers = ['jne', 'sicepat', 'jnt', 'pos', 'tiki']): array
-    {
+    public function calculateCost(
+        int $destinationCityId,
+        int $weight = 1000,
+        array|string $couriers = ['jne', 'sicepat', 'jnt', 'pos', 'tiki'],
+        ?string $cityName = null,
+        ?string $provinceName = null,
+        ?int $provinceId = null
+    ): array {
         $courierList = is_string($couriers) ? explode(',', $couriers) : $couriers;
         $courierList = array_map('strtolower', array_map('trim', $courierList));
 
@@ -280,16 +415,18 @@ class RajaOngkirService
 
                 $cacheKey = "rajaongkir_cost_{$this->originCityId}_{$destinationCityId}_{$weight}_{$courier}";
 
-                $courierCosts = Cache::remember($cacheKey, 1800, function () use ($destinationCityId, $weight, $courier) {
+                $courierCosts = Cache::remember($cacheKey, 1800, function () use ($destinationCityId, $weight, $courier, $cityName) {
                     try {
                         if ($this->isKomerce) {
                             $origin = $this->originId ?: $this->originCityId;
+                            $destination = $this->resolveKomerceDestination($destinationCityId, $cityName);
+
                             $response = Http::asForm()
                                 ->timeout(4)
                                 ->withHeaders(['key' => $this->apiKey])
                                 ->post("{$this->baseUrl}/calculate/domestic-cost", [
                                     'origin' => $origin,
-                                    'destination' => $destinationCityId,
+                                    'destination' => $destination,
                                     'weight' => $weight,
                                     'courier' => $courier,
                                 ]);
@@ -314,7 +451,7 @@ class RajaOngkirService
                                 }
                             }
 
-                            // 404 or courier error -> return null to fallback
+                            // 429 Daily limit exceeded, 404 or courier error -> return null to fallback
                             return null;
                         }
 
@@ -365,7 +502,14 @@ class RajaOngkirService
                     }
                 } else {
                     // Fallback for this courier
-                    $results = array_merge($results, $this->getFallbackCostForCourier($destinationCityId, $weight, $courier));
+                    $results = array_merge($results, $this->getFallbackCostForCourier(
+                        $destinationCityId,
+                        $weight,
+                        $courier,
+                        $cityName,
+                        $provinceName,
+                        $provinceId
+                    ));
                 }
             }
 
@@ -376,7 +520,14 @@ class RajaOngkirService
 
         // Offline calculation fallback when API key is missing or calls fail
         foreach ($courierList as $courier) {
-            $results = array_merge($results, $this->getFallbackCostForCourier($destinationCityId, $weight, $courier));
+            $results = array_merge($results, $this->getFallbackCostForCourier(
+                $destinationCityId,
+                $weight,
+                $courier,
+                $cityName,
+                $provinceName,
+                $provinceId
+            ));
         }
 
         return $results;
@@ -387,32 +538,98 @@ class RajaOngkirService
      *
      * @return array<int, array{code: string, name: string, service: string, description: string, cost: int, etd: string}>
      */
-    protected function getFallbackCostForCourier(int $destinationCityId, int $weight, string $courier): array
-    {
-        $weightInKg = ceil($weight / 1000);
+    protected function getFallbackCostForCourier(
+        int $destinationCityId,
+        int $weight,
+        string $courier,
+        ?string $cityName = null,
+        ?string $provinceName = null,
+        ?int $provinceId = null
+    ): array {
+        $weightInKg = (int) ceil($weight / 1000);
+
+        $cityNameLower = strtolower(trim((string) $cityName));
+        $provinceNameLower = strtolower(trim((string) $provinceName));
+        $combined = $cityNameLower.' '.$provinceNameLower;
 
         // Cari tahu info kota tujuan dari fallback list
         $allCities = $this->getFallbackCities();
         $targetCity = collect($allCities)->firstWhere('city_id', (string) $destinationCityId)
             ?? collect($allCities)->firstWhere('city_id', $destinationCityId);
 
-        $provinceId = $targetCity ? (int) $targetCity['province_id'] : 10; // Default Jateng (10)
-        $cityName = $targetCity ? $targetCity['city_name'] : '';
+        $fallbackCityName = $targetCity ? strtolower((string) $targetCity['city_name']) : '';
+        $fallbackProvinceId = $targetCity ? (int) $targetCity['province_id'] : null;
 
-        // Determinasi zona tarif dari Solo (Jateng):
-        // Zona 1: Dalam Solo Raya / Jateng & DIY
-        // Zona 2: Pulau Jawa lainnya (DKI Jakarta, Jabar, Banten, Jatim)
-        // Zona 3: Bali, NTB, NTT, Lampung, Sumsel
-        // Zona 4: Luar Jawa (Sumatera lainnya, Kalimantan, Sulawesi, Maluku, Papua)
-        if ($destinationCityId === 444 || stripos($cityName, 'Surakarta') !== false) {
+        // Determinasi zona tarif dari Solo (Surakarta, Jateng):
+        // 1. Solo Raya
+        if ($destinationCityId === 444
+            || str_contains($combined, 'surakarta')
+            || str_contains($combined, 'solo')
+            || str_contains($fallbackCityName, 'surakarta')
+        ) {
             $zone = 'solo';
-        } elseif (in_array($provinceId, [10, 5], true)) { // Jateng & DIY
-            $zone = 'jateng_diy';
-        } elseif (in_array($provinceId, [6, 9, 11, 3], true)) { // DKI, Jabar, Jatim, Banten
+        }
+        // 2. DKI Jakarta (Komerce city_id: 135..141, Komerce province_id: 10, RajaOngkir V1: 151..155, prov 6)
+        elseif (in_array($destinationCityId, [135, 136, 137, 138, 139, 141, 151, 152, 153, 154, 155], true)
+            || str_contains($combined, 'jakarta')
+            || str_contains($combined, 'dki')
+            || ($this->isKomerce && $provinceId === 10)
+            || (! $this->isKomerce && ($provinceId === 6 || $fallbackProvinceId === 6))
+        ) {
             $zone = 'jawa';
-        } elseif (in_array($provinceId, [1, 17, 18], true)) { // Bali, Lampung, Sumsel
+        }
+        // 3. Jateng & DIY (Solo's home region)
+        // Di Komerce Jateng: 12, DIY: 19. Di RajaOngkir V1 Jateng: 10, DIY: 5.
+        elseif (($this->isKomerce && in_array($provinceId, [12, 19], true))
+            || (! $this->isKomerce && in_array($fallbackProvinceId ?: $provinceId, [10, 5], true))
+            || str_contains($combined, 'jawa tengah')
+            || str_contains($combined, 'jateng')
+            || str_contains($combined, 'yogyakarta')
+            || str_contains($combined, 'jogja')
+            || str_contains($fallbackCityName, 'semarang')
+            || str_contains($fallbackCityName, 'sukoharjo')
+            || str_contains($fallbackCityName, 'karanganyar')
+            || str_contains($fallbackCityName, 'sragen')
+            || str_contains($fallbackCityName, 'boyolali')
+            || str_contains($fallbackCityName, 'klaten')
+            || str_contains($fallbackCityName, 'wonogiri')
+            || str_contains($fallbackCityName, 'sleman')
+            || str_contains($fallbackCityName, 'bantul')
+        ) {
+            $zone = 'jateng_diy';
+        }
+        // 4. Pulau Jawa lainnya (Jabar, Jatim, Banten)
+        // Di Komerce: Jabar 5, Banten 11, Jatim 18. Di V1: Jabar 9, Banten 3, Jatim 11.
+        elseif (($this->isKomerce && in_array($provinceId, [5, 11, 18], true))
+            || (! $this->isKomerce && in_array($fallbackProvinceId ?: $provinceId, [9, 3, 11], true))
+            || str_contains($combined, 'jawa barat')
+            || str_contains($combined, 'jabar')
+            || str_contains($combined, 'jawa timur')
+            || str_contains($combined, 'jatim')
+            || str_contains($combined, 'banten')
+            || str_contains($combined, 'bandung')
+            || str_contains($combined, 'surabaya')
+            || str_contains($combined, 'tangerang')
+            || str_contains($combined, 'bekasi')
+            || str_contains($combined, 'bogor')
+            || str_contains($combined, 'depok')
+            || str_contains($combined, 'malang')
+            || str_contains($combined, 'jember')
+        ) {
+            $zone = 'jawa';
+        }
+        // 5. Dekat Luar Jawa (Bali, Lampung, Sumatera Selatan)
+        elseif (in_array($provinceId, [15, 26, 30, 1, 18, 33], true)
+            || str_contains($combined, 'bali')
+            || str_contains($combined, 'lampung')
+            || str_contains($combined, 'sumatera selatan')
+            || str_contains($combined, 'palembang')
+            || str_contains($combined, 'denpasar')
+        ) {
             $zone = 'dekat_luar_jawa';
-        } else {
+        }
+        // 6. Luar Jawa lainnya
+        else {
             $zone = 'luar_jawa';
         }
 
@@ -601,12 +818,81 @@ class RajaOngkirService
     }
 
     /**
-     * Fallback cities matching RajaOngkir starter IDs for popular destinations and surrounding areas.
+     * Fallback cities matching RajaOngkir starter IDs and Komerce IDs for popular destinations and surrounding areas.
      *
      * @return array<int, array{city_id: string, province_id: string, province: string, type: string, city_name: string, postal_code: string}>
      */
     public function getFallbackCities(?int $provinceId = null): array
     {
+        // When configured with Komerce V2 API, province IDs differ from RajaOngkir Starter V1:
+        // In Komerce: DKI Jakarta is 10, Jabar is 5, Banten is 11, Jateng is 12, DIY is 19, Jatim is 18.
+        if ($this->isKomerce) {
+            $komerceCities = [
+                // DKI Jakarta (10)
+                ['city_id' => '135', 'province_id' => '10', 'province' => 'DKI Jakarta', 'type' => 'Kota', 'city_name' => 'Jakarta Barat', 'postal_code' => '11220'],
+                ['city_id' => '136', 'province_id' => '10', 'province' => 'DKI Jakarta', 'type' => 'Kota', 'city_name' => 'Jakarta Selatan', 'postal_code' => '12110'],
+                ['city_id' => '137', 'province_id' => '10', 'province' => 'DKI Jakarta', 'type' => 'Kota', 'city_name' => 'Jakarta Pusat', 'postal_code' => '10540'],
+                ['city_id' => '138', 'province_id' => '10', 'province' => 'DKI Jakarta', 'type' => 'Kota', 'city_name' => 'Jakarta Utara', 'postal_code' => '14140'],
+                ['city_id' => '139', 'province_id' => '10', 'province' => 'DKI Jakarta', 'type' => 'Kota', 'city_name' => 'Jakarta Timur', 'postal_code' => '13330'],
+                ['city_id' => '141', 'province_id' => '10', 'province' => 'DKI Jakarta', 'type' => 'Kabupaten', 'city_name' => 'Kepulauan Seribu', 'postal_code' => '14510'],
+
+                // Jawa Tengah (12)
+                ['city_id' => '444', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kota', 'city_name' => 'Surakarta (Solo)', 'postal_code' => '57100'],
+                ['city_id' => '399', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kota', 'city_name' => 'Semarang', 'postal_code' => '50135'],
+                ['city_id' => '427', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Sukoharjo', 'postal_code' => '57514'],
+                ['city_id' => '196', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Karanganyar', 'postal_code' => '57718'],
+                ['city_id' => '433', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Sragen', 'postal_code' => '57211'],
+                ['city_id' => '92', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Boyolali', 'postal_code' => '57312'],
+                ['city_id' => '200', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Klaten', 'postal_code' => '57411'],
+                ['city_id' => '497', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Wonogiri', 'postal_code' => '57612'],
+                ['city_id' => '249', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kota', 'city_name' => 'Magelang', 'postal_code' => '56133'],
+                ['city_id' => '349', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kota', 'city_name' => 'Pekalongan', 'postal_code' => '51122'],
+                ['city_id' => '468', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kota', 'city_name' => 'Tegal', 'postal_code' => '52114'],
+                ['city_id' => '386', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kota', 'city_name' => 'Salatiga', 'postal_code' => '50711'],
+                ['city_id' => '209', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Kudus', 'postal_code' => '59311'],
+                ['city_id' => '344', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Pati', 'postal_code' => '59114'],
+                ['city_id' => '186', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Jepara', 'postal_code' => '59411'],
+                ['city_id' => '41', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Banyumas (Purwokerto)', 'postal_code' => '53114'],
+                ['city_id' => '103', 'province_id' => '12', 'province' => 'Jawa Tengah', 'type' => 'Kabupaten', 'city_name' => 'Cilacap', 'postal_code' => '53211'],
+
+                // DI Yogyakarta (19)
+                ['city_id' => '501', 'province_id' => '19', 'province' => 'DI Yogyakarta', 'type' => 'Kota', 'city_name' => 'Yogyakarta', 'postal_code' => '55111'],
+                ['city_id' => '419', 'province_id' => '19', 'province' => 'DI Yogyakarta', 'type' => 'Kabupaten', 'city_name' => 'Sleman', 'postal_code' => '55511'],
+                ['city_id' => '39', 'province_id' => '19', 'province' => 'DI Yogyakarta', 'type' => 'Kabupaten', 'city_name' => 'Bantul', 'postal_code' => '55711'],
+                ['city_id' => '210', 'province_id' => '19', 'province' => 'DI Yogyakarta', 'type' => 'Kabupaten', 'city_name' => 'Kulon Progo', 'postal_code' => '55611'],
+
+                // Jawa Barat (5)
+                ['city_id' => '22', 'province_id' => '5', 'province' => 'Jawa Barat', 'type' => 'Kota', 'city_name' => 'Bandung', 'postal_code' => '40111'],
+                ['city_id' => '23', 'province_id' => '5', 'province' => 'Jawa Barat', 'type' => 'Kabupaten', 'city_name' => 'Bandung', 'postal_code' => '40311'],
+                ['city_id' => '54', 'province_id' => '5', 'province' => 'Jawa Barat', 'type' => 'Kota', 'city_name' => 'Bekasi', 'postal_code' => '17121'],
+                ['city_id' => '55', 'province_id' => '5', 'province' => 'Jawa Barat', 'type' => 'Kabupaten', 'city_name' => 'Bekasi', 'postal_code' => '17530'],
+                ['city_id' => '78', 'province_id' => '5', 'province' => 'Jawa Barat', 'type' => 'Kota', 'city_name' => 'Bogor', 'postal_code' => '16119'],
+                ['city_id' => '79', 'province_id' => '5', 'province' => 'Jawa Barat', 'type' => 'Kabupaten', 'city_name' => 'Bogor', 'postal_code' => '16911'],
+                ['city_id' => '115', 'province_id' => '5', 'province' => 'Jawa Barat', 'type' => 'Kota', 'city_name' => 'Depok', 'postal_code' => '16416'],
+                ['city_id' => '109', 'province_id' => '5', 'province' => 'Jawa Barat', 'type' => 'Kota', 'city_name' => 'Cirebon', 'postal_code' => '45116'],
+
+                // Banten (11)
+                ['city_id' => '455', 'province_id' => '11', 'province' => 'Banten', 'type' => 'Kota', 'city_name' => 'Tangerang', 'postal_code' => '15111'],
+                ['city_id' => '456', 'province_id' => '11', 'province' => 'Banten', 'type' => 'Kota', 'city_name' => 'Tangerang Selatan', 'postal_code' => '15310'],
+                ['city_id' => '457', 'province_id' => '11', 'province' => 'Banten', 'type' => 'Kabupaten', 'city_name' => 'Tangerang', 'postal_code' => '15710'],
+                ['city_id' => '106', 'province_id' => '11', 'province' => 'Banten', 'type' => 'Kota', 'city_name' => 'Cilegon', 'postal_code' => '42411'],
+                ['city_id' => '418', 'province_id' => '11', 'province' => 'Banten', 'type' => 'Kota', 'city_name' => 'Serang', 'postal_code' => '42111'],
+
+                // Jawa Timur (18)
+                ['city_id' => '444', 'province_id' => '18', 'province' => 'Jawa Timur', 'type' => 'Kota', 'city_name' => 'Surabaya', 'postal_code' => '60111'],
+                ['city_id' => '255', 'province_id' => '18', 'province' => 'Jawa Timur', 'type' => 'Kota', 'city_name' => 'Malang', 'postal_code' => '65111'],
+                ['city_id' => '417', 'province_id' => '18', 'province' => 'Jawa Timur', 'type' => 'Kabupaten', 'city_name' => 'Sidoarjo', 'postal_code' => '61212'],
+                ['city_id' => '160', 'province_id' => '18', 'province' => 'Jawa Timur', 'type' => 'Kabupaten', 'city_name' => 'Jember', 'postal_code' => '68121'],
+                ['city_id' => '178', 'province_id' => '18', 'province' => 'Jawa Timur', 'type' => 'Kota', 'city_name' => 'Kediri', 'postal_code' => '64121'],
+            ];
+
+            if ($provinceId !== null) {
+                return array_values(array_filter($komerceCities, fn ($city) => (string) $city['province_id'] === (string) $provinceId));
+            }
+
+            return $komerceCities;
+        }
+
         $all = [
             // Jawa Tengah (10)
             ['city_id' => '444', 'province_id' => '10', 'province' => 'Jawa Tengah', 'type' => 'Kota', 'city_name' => 'Surakarta (Solo)', 'postal_code' => '57100'],

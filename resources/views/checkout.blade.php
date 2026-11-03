@@ -528,7 +528,10 @@
                       body: JSON.stringify({
                           destination: dest || 444,
                           weight: this.totalWeightGrams,
-                          courier: ['jne', 'pos', 'tiki']
+                          courier: ['jne', 'pos', 'tiki'],
+                          city_name: this.addressData.city || '',
+                          province_name: this.addressData.province || '',
+                          province_id: this.addressData.provinceId || null
                       })
                   });
                   const data = await res.json();

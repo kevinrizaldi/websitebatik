@@ -65,16 +65,25 @@ class RajaOngkirController extends Controller
             'destination' => ['required'],
             'weight' => ['nullable', 'integer', 'min:1'],
             'courier' => ['nullable'],
+            'city_name' => ['nullable', 'string'],
+            'province_name' => ['nullable', 'string'],
+            'province_id' => ['nullable'],
         ]);
 
         $destination = (int) $validated['destination'];
         $weight = isset($validated['weight']) ? (int) $validated['weight'] : 1000;
         $courier = $validated['courier'] ?? $this->rajaOngkirService->getSupportedCouriers();
+        $cityName = $validated['city_name'] ?? null;
+        $provinceName = $validated['province_name'] ?? null;
+        $provinceId = ! empty($validated['province_id']) ? (int) $validated['province_id'] : null;
 
         $services = $this->rajaOngkirService->calculateCost(
             destinationCityId: $destination,
             weight: $weight,
-            couriers: $courier
+            couriers: $courier,
+            cityName: $cityName,
+            provinceName: $provinceName,
+            provinceId: $provinceId
         );
 
         return response()->json([
