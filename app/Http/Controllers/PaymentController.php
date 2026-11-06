@@ -218,7 +218,7 @@ class PaymentController extends Controller
      */
     public function confirmReceived(Request $request, Order $order): RedirectResponse
     {
-        if ($order->user_id !== $request->user()->id) {
+        if ($order->user_id !== $request->user()->id && ! $request->user()->isAdmin()) {
             abort(403);
         }
 
