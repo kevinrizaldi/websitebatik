@@ -167,7 +167,7 @@ class Order extends Model
             return;
         }
 
-        $this->status = self::STATUS_CANCELLED;
+        $this->status = 'Dibatalkan';
         $this->payment_status = self::PAYMENT_EXPIRED;
         $this->save();
 
@@ -182,8 +182,8 @@ class Order extends Model
 
             try {
                 app(\App\Services\Midtrans\MidtransService::class)->cancelTransaction($p->midtrans_order_id);
-            } catch (\Throwable) {
-                // Ignore if already cancelled or expired on Midtrans
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::info("Midtrans cancel for payment {$p->id} on order {$this->code} skipped/already settled: ".$e->getMessage());
             }
         }
 

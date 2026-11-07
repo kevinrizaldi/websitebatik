@@ -45,6 +45,7 @@ Route::get('/', function () {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
+        Log::warning('Error loading homepage data: '.$e->getMessage(), ['exception' => $e]);
         $produks = collect();
         $kategoris = collect();
     }
@@ -63,6 +64,7 @@ Route::get('/koleksi', function () {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
+        Log::warning('Error loading koleksi data: '.$e->getMessage(), ['exception' => $e]);
         $produks = collect();
         $kategoris = collect();
     }
@@ -71,23 +73,25 @@ Route::get('/koleksi', function () {
 })->name('koleksi.index');
 
 Route::get('/produk-detail/{id?}', function ($id = null) {
-    $produk = null;
+    if (! $id) {
+        abort(404);
+    }
+
+    $produk = Produk::find($id);
+    if (! $produk) {
+        abort(404);
+    }
+
     $produksTerkait = collect();
     $ulasans = collect();
     $ratingAvg = 0;
     $ratingCount = 0;
     $ratingBars = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
+
     try {
-        if (Schema::hasTable('products') || Schema::hasTable('produks')) {
-            if ($id) {
-                $produk = Produk::find($id);
-            }
-            if (! $produk) {
-                $produk = Produk::first();
-            }
-            $produksTerkait = Produk::latest()->take(4)->get();
-        }
-        if ($produk && (Schema::hasTable('reviews') || Schema::hasTable('ulasans'))) {
+        $produksTerkait = Produk::where('id', '!=', $produk->id)->latest()->take(4)->get();
+
+        if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
             $approved = Ulasan::where('produk_id', $produk->id)->where('status', 'Disetujui');
             $ulasans = (clone $approved)->latest()->take(6)->get();
             $ratingCount = (clone $approved)->count();
@@ -97,7 +101,7 @@ Route::get('/produk-detail/{id?}', function ($id = null) {
             }
         }
     } catch (Throwable $e) {
-        $produk = null;
+        Log::warning('Error loading product detail relations: '.$e->getMessage(), ['exception' => $e]);
         $produksTerkait = collect();
         $ulasans = collect();
     }
@@ -106,13 +110,22 @@ Route::get('/produk-detail/{id?}', function ($id = null) {
 })->name('produk.detail');
 
 Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang.index');
-Route::post('/keranjang/tambah', [CartController::class, 'store'])->name('keranjang.store');
+Route::post('/keranjang/tambah', [CartController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('keranjang.store');
 Route::patch('/keranjang/{cartItem}', [CartController::class, 'update'])->name('keranjang.update');
 Route::delete('/keranjang/{cartItem}', [CartController::class, 'destroy'])->name('keranjang.destroy');
 Route::get('/keranjang/count', [CartController::class, 'count'])->name('keranjang.count');
-Route::post('/keranjang/checkout', [CartController::class, 'checkout'])->name('keranjang.checkout');
+Route::post('/keranjang/checkout', [CartController::class, 'checkout'])
+    ->middleware('throttle:15,1')
+    ->name('keranjang.checkout');
 Route::get('/checkout', [CartController::class, 'checkoutPage'])->name('checkout.index');
-Route::post('/checkout', [CartController::class, 'checkout'])->name('checkout.store');
+Route::post('/checkout', [CartController::class, 'checkout'])
+    ->middleware('throttle:15,1')
+    ->name('checkout.store');
+Route::post('/checkout/process', [CartController::class, 'checkout'])
+    ->middleware('throttle:15,1')
+    ->name('checkout.process');
 
 // RajaOngkir Ongkos Kirim API
 Route::prefix('rajaongkir')->name('rajaongkir.')->group(function () {

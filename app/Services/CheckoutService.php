@@ -89,7 +89,7 @@ class CheckoutService
      *     grand_total: float
      * }
      */
-    public function calculateOrderTotals(Collection $cartItems, ?string $voucher = null, ?float $shippingCost = null): array
+    public function calculateOrderTotals(Collection $cartItems, ?string $voucher = null, ?float $shippingCost = null, ?User $user = null): array
     {
         $subtotal = 0.0;
         foreach ($cartItems as $item) {
@@ -98,9 +98,19 @@ class CheckoutService
         }
 
         $discount = 0.0;
-        $voucherInput = strtoupper((string) $voucher);
+        $voucherInput = strtoupper(trim((string) $voucher));
         if (in_array($voucherInput, ['SIRKULAR50K', 'LESTARI50K', 'LESTARICAPSULE'], true) && $subtotal >= 200000) {
-            $discount = 50000.0;
+            $alreadyUsed = false;
+            if ($user && $user->exists) {
+                $alreadyUsed = Order::where('user_id', $user->id)
+                    ->where('address', 'like', "%[Voucher: {$voucherInput}]%")
+                    ->whereNotIn('status', [Order::STATUS_CANCELLED, 'Dibatalkan'])
+                    ->exists();
+            }
+
+            if (! $alreadyUsed) {
+                $discount = 50000.0;
+            }
         }
 
         $isFreeShipping = ($subtotal >= 955000);
@@ -110,7 +120,7 @@ class CheckoutService
         } else {
             // Guard against manipulated shipping costs below safe minimum (e.g. 0 or negative)
             if ($shippingCost !== null && $shippingCost >= 5000) {
-                $shipping = (float) $shippingCost;
+                $shipping = min((float) $shippingCost, 5000000.0);
             } else {
                 $shipping = 20000.0;
             }
@@ -123,6 +133,7 @@ class CheckoutService
             'discount' => $discount,
             'shipping' => $shipping,
             'grand_total' => $grandTotal,
+            'voucher' => $discount > 0 ? $voucherInput : null,
         ];
     }
 
@@ -159,32 +170,38 @@ class CheckoutService
      * @param  array<string, mixed>  $validated
      * @param  Collection<int, CartItem>  $cartItems
      */
-    public function createOrder(User $user, array $validated, Collection $cartItems, float $grandTotal, float $shipping): Order
+    public function createOrder(User $user, array $validated, Collection $cartItems, float $grandTotal, float $shipping, ?string $appliedVoucher = null): Order
     {
-        $orderCode = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(4));
+        do {
+            $orderCode = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(6));
+        } while (Order::where('code', $orderCode)->exists());
+
         $shippingOption = $validated['shipping_option'] ?? 'JNE Reguler';
 
-        return DB::transaction(function () use ($user, $validated, $cartItems, $grandTotal, $orderCode, $shippingOption, $shipping) {
+        return DB::transaction(function () use ($user, $validated, $cartItems, $grandTotal, $orderCode, $shippingOption, $shipping, $appliedVoucher) {
             $notesText = ! empty($validated['notes']) ? ' (Catatan: '.$validated['notes'].')' : '';
-            $fullAddress = $validated['address'].$notesText.' [Kurir: '.$shippingOption.']';
+            $voucherTag = ! empty($appliedVoucher) ? ' [Voucher: '.$appliedVoucher.']' : '';
+            $fullAddress = $validated['address'].$notesText.$voucherTag.' [Kurir: '.$shippingOption.']';
 
-            // Lock and re-validate stock for each product to prevent race conditions / overselling
+            // Lock and re-validate stock for each unique product to prevent race conditions / overselling
             $lockedProducts = [];
             foreach ($cartItems as $item) {
                 if ($item->produk_id) {
-                    /** @var Product|null $product */
-                    $product = Product::whereKey($item->produk_id)->lockForUpdate()->first();
-                    if (! $product) {
-                        throw new \InvalidArgumentException("Produk tidak ditemukan untuk item ID {$item->produk_id}.");
+                    if (! isset($lockedProducts[$item->produk_id])) {
+                        /** @var Product|null $product */
+                        $product = Product::whereKey($item->produk_id)->lockForUpdate()->first();
+                        if (! $product) {
+                            throw new \InvalidArgumentException("Produk tidak ditemukan untuk item ID {$item->produk_id}.");
+                        }
+                        $lockedProducts[$item->produk_id] = $product;
                     }
 
+                    $product = $lockedProducts[$item->produk_id];
                     $availableStock = $product->getStokForUkuran($item->ukuran);
                     if ($availableStock < $item->qty) {
                         $sizeNotice = $item->ukuran ? " (Ukuran {$item->ukuran})" : '';
                         throw new \InvalidArgumentException("Stok {$product->nama}{$sizeNotice} tidak mencukupi (tersedia: {$availableStock}).");
                     }
-
-                    $lockedProducts[$item->id] = $product;
                 }
             }
 
@@ -202,7 +219,7 @@ class CheckoutService
             ]);
 
             foreach ($cartItems as $item) {
-                $product = $lockedProducts[$item->id] ?? $item->produk;
+                $product = $lockedProducts[$item->produk_id] ?? $item->produk;
                 if ($product) {
                     $itemPrice = (float) $product->harga;
                     OrderItem::create([

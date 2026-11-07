@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\Payment;
 use App\Services\Midtrans\MidtransService;
 use App\Services\Midtrans\PaymentAttemptProcessor;
@@ -49,15 +50,22 @@ class MidtransWebhookController extends Controller
             return response()->json(['message' => 'Invalid signature.'], 403);
         }
 
-        // -- 3. Lookup payment attempt by midtrans_order_id (unlocked read) ----
+        // -- 3. Lookup payment attempt by midtrans_order_id or order code -----
         $payment = Payment::where('midtrans_order_id', $payload['order_id'])->first();
+        if (! $payment) {
+            $order = Order::where('code', $payload['order_id'])->first();
+            if ($order) {
+                $payment = $order->payments()->latest('id')->first();
+            }
+        }
+
         if (! $payment) {
             // Fallback alur toko (Snap order_id = kode pesanan, tercatat di pembayarans).
             $legacyService = app(\App\Services\MidtransService::class);
             $order = $legacyService->handleNotification($payload);
 
             if (! $order) {
-                return response()->json(['message' => 'Payment attempt not found.'], 404);
+                return response()->json(['message' => 'Payment attempt not found or invalid.'], 404);
             }
 
             return response()->json(['message' => 'OK', 'order_code' => $order->code]);

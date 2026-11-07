@@ -172,14 +172,26 @@ class MidtransService
             return null;
         }
 
-        // Verify signature if remote server key is valid
-        if (! empty($this->serverKey) && ! str_contains($this->serverKey, 'demo-key')) {
+        // Verify signature if remote server key is configured
+        if (! empty($this->serverKey)) {
             $expectedSignature = hash('sha512', $orderId.$statusCode.$grossAmount.$this->serverKey);
-            if ($signatureKey && $signatureKey !== $expectedSignature) {
+            if (! hash_equals($expectedSignature, (string) $signatureKey)) {
                 Log::warning("Midtrans signature mismatch for order {$orderId}");
 
                 return null;
             }
+        }
+
+        // Verify gross amount matches the order total price exactly
+        $payloadGross = (int) round((float) $grossAmount);
+        $orderGross = (int) round((float) $order->total_price);
+        if ($payloadGross !== $orderGross) {
+            Log::warning("Midtrans webhook: gross amount mismatch for order {$orderId}", [
+                'expected' => $orderGross,
+                'received' => $payloadGross,
+            ]);
+
+            return null;
         }
 
         // Determine new order and payment statuses based on Midtrans spec

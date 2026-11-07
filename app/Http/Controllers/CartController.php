@@ -184,7 +184,8 @@ class CartController extends Controller
         $totals = $this->checkoutService->calculateOrderTotals(
             cartItems: $cartItems,
             voucher: $request->input('voucher'),
-            shippingCost: isset($validated['shipping_cost']) ? (float) $validated['shipping_cost'] : null
+            shippingCost: isset($validated['shipping_cost']) ? (float) $validated['shipping_cost'] : null,
+            user: $user
         );
 
         try {
@@ -193,7 +194,8 @@ class CartController extends Controller
                 validated: $validated,
                 cartItems: $cartItems,
                 grandTotal: $totals['grand_total'],
-                shipping: $totals['shipping']
+                shipping: $totals['shipping'],
+                appliedVoucher: $totals['voucher'] ?? null
             );
         } catch (\Throwable $e) {
             if ($request->wantsJson()) {

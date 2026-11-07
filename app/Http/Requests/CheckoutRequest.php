@@ -38,7 +38,7 @@ class CheckoutRequest extends FormRequest
             'address' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()\[\]#&\'":;]+$/u'],
             'payment_method' => ['nullable', 'string', 'max:100'],
             'shipping_option' => ['nullable', 'string', 'max:100'],
-            'shipping_cost' => ['nullable', 'numeric', 'min:0'],
+            'shipping_cost' => ['nullable', 'numeric', 'min:0', 'max:5000000'],
             'notes' => ['nullable', 'string', 'max:500', 'regex:/^[\pL0-9\s.,\'\-()\/!?]+$/u'],
             'alamat_id' => ['nullable', 'integer'],
             'city' => ['nullable', 'string', 'max:100'],
