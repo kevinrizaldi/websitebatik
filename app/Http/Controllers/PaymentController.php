@@ -264,6 +264,19 @@ class PaymentController extends Controller
             if ($order->payment_status === Order::PAYMENT_PENDING) {
                 $order->update(['payment_status' => Order::PAYMENT_CANCELLED]);
             }
+
+            // Cancel any pending payment attempts locally and on Midtrans to prevent phantom payments
+            $pendingPayments = $order->payments()->where('status', Payment::STATUS_PENDING)->get();
+            foreach ($pendingPayments as $pendingPayment) {
+                $pendingPayment->status = Payment::STATUS_CANCELLED;
+                $pendingPayment->save();
+
+                try {
+                    $this->midtransService->cancelTransaction($pendingPayment->midtrans_order_id);
+                } catch (\Throwable) {
+                    // Ignore if transaction is already closed or not created on Midtrans
+                }
+            }
         });
 
         return redirect()->route('pesanan.index')

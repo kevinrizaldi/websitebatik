@@ -187,13 +187,21 @@ class CartController extends Controller
             shippingCost: isset($validated['shipping_cost']) ? (float) $validated['shipping_cost'] : null
         );
 
-        $order = $this->checkoutService->createOrder(
-            user: $user,
-            validated: $validated,
-            cartItems: $cartItems,
-            grandTotal: $totals['grand_total'],
-            shipping: $totals['shipping']
-        );
+        try {
+            $order = $this->checkoutService->createOrder(
+                user: $user,
+                validated: $validated,
+                cartItems: $cartItems,
+                grandTotal: $totals['grand_total'],
+                shipping: $totals['shipping']
+            );
+        } catch (\Throwable $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+
+            return redirect()->route('keranjang.index')->with('error', $e->getMessage());
+        }
 
         $snapToken = $this->checkoutService->createSnapToken($order);
         $payUrl = route('pembayaran', ['id' => $order->code]);

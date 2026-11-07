@@ -97,10 +97,10 @@ class ProdukController extends Controller
             'sku' => 'required|string|max:50|unique:products,sku',
             'kategori' => 'required|string|max:100',
             'kategori_id' => 'nullable|exists:categories,id',
-            'harga' => 'required|numeric|min:0|max:1000000',
-            'stok' => 'nullable|integer|min:0|max:1000',
+            'harga' => 'required|numeric|min:0|max:100000000',
+            'stok' => 'nullable|integer|min:0|max:100000',
             'stok_ukuran' => 'nullable|array',
-            'stok_ukuran.*' => 'nullable|integer|min:0|max:1000',
+            'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -112,10 +112,10 @@ class ProdukController extends Controller
             'harga.required' => 'Harga produk wajib diisi.',
             'harga.numeric' => 'Harga produk harus berupa angka.',
             'harga.min' => 'Harga produk tidak boleh minus (minimal Rp 0).',
-            'harga.max' => 'Harga produk maksimal adalah Rp 1.000.000.',
+            'harga.max' => 'Harga produk maksimal adalah Rp 100.000.000.',
             'stok.integer' => 'Stok produk harus berupa bilangan bulat.',
             'stok.min' => 'Stok produk tidak boleh minus (minimal 0).',
-            'stok.max' => 'Stok produk maksimal adalah 1.000 unit.',
+            'stok.max' => 'Stok produk maksimal adalah 100.000 unit.',
         ]);
 
         if ($request->has('stok_ukuran') && is_array($request->input('stok_ukuran'))) {
@@ -200,10 +200,10 @@ class ProdukController extends Controller
             'sku' => 'required|string|max:50|unique:products,sku,'.$produk->id,
             'kategori' => 'required|string|max:100',
             'kategori_id' => 'nullable|exists:categories,id',
-            'harga' => 'required|numeric|min:0|max:1000000',
-            'stok' => 'nullable|integer|min:0|max:1000',
+            'harga' => 'required|numeric|min:0|max:100000000',
+            'stok' => 'nullable|integer|min:0|max:100000',
             'stok_ukuran' => 'nullable|array',
-            'stok_ukuran.*' => 'nullable|integer|min:0|max:1000',
+            'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -217,10 +217,10 @@ class ProdukController extends Controller
             'harga.required' => 'Harga produk wajib diisi.',
             'harga.numeric' => 'Harga produk harus berupa angka.',
             'harga.min' => 'Harga produk tidak boleh minus (minimal Rp 0).',
-            'harga.max' => 'Harga produk maksimal adalah Rp 1.000.000.',
+            'harga.max' => 'Harga produk maksimal adalah Rp 100.000.000.',
             'stok.integer' => 'Stok produk harus berupa bilangan bulat.',
             'stok.min' => 'Stok produk tidak boleh minus (minimal 0).',
-            'stok.max' => 'Stok produk maksimal adalah 1.000 unit.',
+            'stok.max' => 'Stok produk maksimal adalah 100.000 unit.',
         ]);
 
         if ($request->has('stok_ukuran') && is_array($request->input('stok_ukuran'))) {

@@ -171,10 +171,21 @@ class Order extends Model
         $this->payment_status = self::PAYMENT_EXPIRED;
         $this->save();
 
-        // Expire pending payments
-        $this->payments()
+        // Expire pending payments locally and on Midtrans to prevent phantom payments
+        $pendingPayments = $this->payments()
             ->where('status', Payment::STATUS_PENDING)
-            ->update(['status' => Payment::STATUS_EXPIRED]);
+            ->get();
+
+        foreach ($pendingPayments as $p) {
+            $p->status = Payment::STATUS_EXPIRED;
+            $p->save();
+
+            try {
+                app(\App\Services\Midtrans\MidtransService::class)->cancelTransaction($p->midtrans_order_id);
+            } catch (\Throwable) {
+                // Ignore if already cancelled or expired on Midtrans
+            }
+        }
 
         // Restore product stock
         foreach ($this->items as $item) {
@@ -220,7 +231,7 @@ class Order extends Model
 
     public function payment(): HasOne
     {
-        return $this->hasOne(Payment::class, 'order_id');
+        return $this->hasOne(Payment::class, 'order_id')->latestOfMany();
     }
 
     public function pengiriman(): HasOne

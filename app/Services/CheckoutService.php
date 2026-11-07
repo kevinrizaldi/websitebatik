@@ -6,6 +6,7 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Pengiriman;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -102,9 +103,18 @@ class CheckoutService
             $discount = 50000.0;
         }
 
-        $shipping = $shippingCost !== null
-            ? (float) $shippingCost
-            : (($subtotal >= 955000) ? 0.0 : 20000.0);
+        $isFreeShipping = ($subtotal >= 955000);
+
+        if ($isFreeShipping) {
+            $shipping = 0.0;
+        } else {
+            // Guard against manipulated shipping costs below safe minimum (e.g. 0 or negative)
+            if ($shippingCost !== null && $shippingCost >= 5000) {
+                $shipping = (float) $shippingCost;
+            } else {
+                $shipping = 20000.0;
+            }
+        }
 
         $grandTotal = max(0.0, $subtotal - $discount + $shipping);
 
@@ -158,6 +168,26 @@ class CheckoutService
             $notesText = ! empty($validated['notes']) ? ' (Catatan: '.$validated['notes'].')' : '';
             $fullAddress = $validated['address'].$notesText.' [Kurir: '.$shippingOption.']';
 
+            // Lock and re-validate stock for each product to prevent race conditions / overselling
+            $lockedProducts = [];
+            foreach ($cartItems as $item) {
+                if ($item->produk_id) {
+                    /** @var Product|null $product */
+                    $product = Product::whereKey($item->produk_id)->lockForUpdate()->first();
+                    if (! $product) {
+                        throw new \InvalidArgumentException("Produk tidak ditemukan untuk item ID {$item->produk_id}.");
+                    }
+
+                    $availableStock = $product->getStokForUkuran($item->ukuran);
+                    if ($availableStock < $item->qty) {
+                        $sizeNotice = $item->ukuran ? " (Ukuran {$item->ukuran})" : '';
+                        throw new \InvalidArgumentException("Stok {$product->nama}{$sizeNotice} tidak mencukupi (tersedia: {$availableStock}).");
+                    }
+
+                    $lockedProducts[$item->id] = $product;
+                }
+            }
+
             $order = Order::create([
                 'user_id' => $user->id,
                 'code' => $orderCode,
@@ -172,20 +202,19 @@ class CheckoutService
             ]);
 
             foreach ($cartItems as $item) {
-                if ($item->produk) {
-                    $itemPrice = (float) $item->produk->harga;
+                $product = $lockedProducts[$item->id] ?? $item->produk;
+                if ($product) {
+                    $itemPrice = (float) $product->harga;
                     OrderItem::create([
                         'order_id' => $order->id,
-                        'produk_id' => $item->produk->id,
-                        'produk_name' => $item->produk->nama.($item->ukuran ? ' ('.$item->ukuran.')' : ''),
+                        'produk_id' => $product->id,
+                        'produk_name' => $product->nama.($item->ukuran ? ' ('.$item->ukuran.')' : ''),
                         'price' => $itemPrice,
                         'quantity' => $item->qty,
                         'subtotal' => $itemPrice * $item->qty,
                     ]);
 
-                    if ($item->produk->stok >= $item->qty) {
-                        $item->produk->decrementStokForUkuran($item->ukuran, $item->qty);
-                    }
+                    $product->decrementStokForUkuran($item->ukuran, $item->qty);
                 }
 
                 $item->delete();

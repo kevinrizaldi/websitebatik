@@ -30,6 +30,8 @@ class DashboardController extends Controller
 
     private const CANCELLED_STATUSES = ['Batal', 'Dibatalkan'];
 
+    private const PAID_STATUSES = ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai'];
+
     public function index(Request $request): View|RedirectResponse
     {
         $user = $request->user();
@@ -90,7 +92,10 @@ class DashboardController extends Controller
 
         $topProducts = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->whereNotIn('orders.status', self::CANCELLED_STATUSES)
+            ->where(function ($q): void {
+                $q->where('orders.payment_status', Order::PAYMENT_PAID)
+                    ->orWhereIn('orders.status', self::PAID_STATUSES);
+            })
             ->whereBetween('orders.created_at', [$startDate, $endDate])
             ->select('order_items.produk_name')
             ->selectRaw('SUM(order_items.quantity) as units_sold')
@@ -154,7 +159,10 @@ class DashboardController extends Controller
 
     private function salesTotal(Carbon $startDate, Carbon $endDate): float
     {
-        return (float) Order::whereNotIn('status', self::CANCELLED_STATUSES)
+        return (float) Order::where(function ($q): void {
+            $q->where('payment_status', Order::PAYMENT_PAID)
+                ->orWhereIn('status', self::PAID_STATUSES);
+        })
             ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('total_price');
     }
@@ -194,7 +202,10 @@ class DashboardController extends Controller
         }
 
         $orders = Order::query()
-            ->whereNotIn('status', self::CANCELLED_STATUSES)
+            ->where(function ($q): void {
+                $q->where('payment_status', Order::PAYMENT_PAID)
+                    ->orWhereIn('status', self::PAID_STATUSES);
+            })
             ->whereBetween('created_at', [$startDate, $endDate])
             ->get(['created_at', 'total_price']);
 

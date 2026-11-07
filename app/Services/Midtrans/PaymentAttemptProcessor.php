@@ -116,11 +116,18 @@ class PaymentAttemptProcessor
                 $lockedPayment->save();
 
                 // Order handling
-                if ($order->status === Order::STATUS_CANCELLED) {
-                    Log::warning('Midtrans: payment received for cancelled order', [
+                if ($order->status === Order::STATUS_CANCELLED || in_array(strtolower((string) $order->status), ['batal', 'dibatalkan', 'cancelled'], true)) {
+                    Log::critical('Midtrans: payment received for CANCELLED order - customer funds deducted without active order!', [
                         'order_id' => $order->id,
+                        'order_code' => $order->code,
                         'payment_id' => $lockedPayment->id,
+                        'gross_amount' => $lockedPayment->gross_amount,
                     ]);
+
+                    $currentDetails = $lockedPayment->payment_details ?? [];
+                    $currentDetails['attention_required'] = 'Payment received for cancelled order. Manual refund or reactivation required.';
+                    $lockedPayment->payment_details = $currentDetails;
+                    $lockedPayment->save();
                 } elseif ($order->payment_status === Order::PAYMENT_PAID) {
                     Log::warning('Midtrans: duplicate payment for paid order', [
                         'order_id' => $order->id,
@@ -196,6 +203,16 @@ class PaymentAttemptProcessor
                     }
                     $lockedPayment->raw_notification = array_diff_key($payload, ['signature_key' => true]);
                     $lockedPayment->save();
+
+                    // Jika tidak ada attempt pending lain, sinkronkan pembatalan pesanan dan pulihkan stok seketika
+                    $hasOtherPending = Payment::where('order_id', $order->id)
+                        ->where('id', '!=', $lockedPayment->id)
+                        ->where('status', Payment::STATUS_PENDING)
+                        ->exists();
+
+                    if (! $hasOtherPending && in_array($order->status, [Order::STATUS_UNPAID, Order::STATUS_WAITING, 'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'], true)) {
+                        $order->markAsExpired();
+                    }
                 }
             }
 

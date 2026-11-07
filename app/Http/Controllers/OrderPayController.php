@@ -76,9 +76,9 @@ class OrderPayController extends Controller
 
             $statusData = $this->midtransService->getTransactionStatus($activePayment->midtrans_order_id);
             if ($statusData !== null) {
-                $this->processor->apply($order, $activePayment, $statusData);
+                $this->processor->apply($activePayment, $statusData);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::info('OrderPayController: silent sync failed', [
                 'order_id' => $order->id,
                 'error' => $e->getMessage(),

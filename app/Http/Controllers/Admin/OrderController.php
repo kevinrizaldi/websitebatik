@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Pengiriman;
 use App\Services\MidtransService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -255,9 +257,40 @@ class OrderController extends Controller
                 ]);
             }
 
-            $order->update(['status' => 'Dibatalkan']);
+            DB::transaction(function () use ($order): void {
+                // Kembalikan stok produk jika dibatalkan sebelum selesai/dikirim
+                if (! in_array($order->status, ['Selesai', 'Dikirim'], true)) {
+                    foreach ($order->items as $item) {
+                        if ($item->produk) {
+                            $extractedUkuran = null;
+                            if (preg_match('/\((S|M|L|XL|XXL|All Size)\)$/i', (string) $item->produk_name, $m)) {
+                                $extractedUkuran = strtoupper($m[1]);
+                            }
+                            $item->produk->incrementStokForUkuran($extractedUkuran, $item->quantity);
+                        }
+                    }
+                }
 
-            return redirect()->back()->with('success', "✓ Pesanan #{$order->code} berhasil dibatalkan.");
+                $order->update([
+                    'status' => 'Dibatalkan',
+                    'payment_status' => Order::PAYMENT_CANCELLED,
+                ]);
+
+                // Cancel pending payment attempts locally and on Midtrans
+                $pendingPayments = $order->payments()->where('status', Payment::STATUS_PENDING)->get();
+                foreach ($pendingPayments as $p) {
+                    $p->status = Payment::STATUS_CANCELLED;
+                    $p->save();
+
+                    try {
+                        app(\App\Services\Midtrans\MidtransService::class)->cancelTransaction($p->midtrans_order_id);
+                    } catch (\Throwable) {
+                        // Ignore if already cancelled or expired on Midtrans
+                    }
+                }
+            });
+
+            return redirect()->back()->with('success', "✓ Pesanan #{$order->code} berhasil dibatalkan dan stok produk telah dikembalikan.");
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
                 'status' => "Gagal membatalkan pesanan #{$order->code}: ".$e->getMessage(),
