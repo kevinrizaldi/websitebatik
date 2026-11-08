@@ -5,12 +5,30 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 
 class Shipment extends Model
 {
     use HasFactory;
 
-    protected $table = 'shipments';
+    protected static ?string $resolvedTable = null;
+
+    public function getTable(): string
+    {
+        if (static::$resolvedTable !== null) {
+            return static::$resolvedTable;
+        }
+
+        if (Schema::hasTable('shipments')) {
+            return static::$resolvedTable = 'shipments';
+        }
+
+        if (Schema::hasTable('pengirimans')) {
+            return static::$resolvedTable = 'pengirimans';
+        }
+
+        return static::$resolvedTable = 'shipments';
+    }
 
     protected $fillable = [
         'order_id',

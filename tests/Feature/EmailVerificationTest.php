@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Notifications\VerifyEmailNotification;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -53,13 +52,26 @@ class EmailVerificationTest extends TestCase
     }
 
     /**
-     * Pengguna yang sudah verifikasi tidak diarahkan ke halaman notice saat akses route terproteksi.
+     * Pengguna yang sudah verifikasi bisa akses dashboard admin jika admin.
      */
     public function test_verified_user_can_access_protected_routes(): void
     {
-        $user = User::factory()->create(['email_verified_at' => now()]);
+        $admin = User::factory()->create(['email_verified_at' => now()]);
+        $admin->role = 'admin';
+        $admin->save();
 
-        // Route profile hanya dapat diakses user terautentikasi dan terverifikasi (bukan admin-only)
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk();
+    }
+
+    /**
+     * Pengguna yang belum verifikasi tetap bisa membuka halaman profil untuk melihat / memperbaiki emailnya.
+     */
+    public function test_unverified_user_can_access_profile_page(): void
+    {
+        $user = User::factory()->unverified()->create();
+
         $this->actingAs($user)
             ->get(route('profile.edit'))
             ->assertOk();
