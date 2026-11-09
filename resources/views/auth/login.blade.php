@@ -5,57 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Masuk | Hamzah Style Official — Boutique Atelier</title>
+    <title>Masuk | Hamzah Store</title>
 
-    <!-- Google Fonts: Playfair Display, Outfit & Plus Jakarta Sans -->
+    <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Scripts & Styles via Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
         body {
-            font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
-            background-color: #FFF8F5;
-            color: #110703;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #FAF7F2;
+            color: #26211D;
         }
         .font-serif-luxury {
             font-family: 'Playfair Display', serif;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between selection:bg-[#2B1E16] selection:text-white antialiased">
+<body class="min-h-screen flex flex-col justify-between selection:bg-[#B58742] selection:text-white antialiased bg-[#FAF7F2] text-[#26211D]">
 
-    <!-- Top Atelier Minimal Header -->
-    <header class="w-full border-b border-[#EFE0D6]/60 bg-[#FFF8F5]/90 backdrop-blur-md sticky top-0 z-30 px-6 sm:px-12 py-4">
+    <!-- Top Minimal Header -->
+    <header class="w-full border-b border-[#ECE4D8] bg-[#FAF7F2]/90 backdrop-blur-md sticky top-0 z-30 px-6 sm:px-12 py-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <a href="{{ url('/') }}" class="inline-flex items-center gap-3.5 group">
-                <!-- Luxury Geometric Motif Emblem -->
-                <div class="w-10 h-10 rounded-xl bg-[#2B1E16] flex items-center justify-center text-[#FFDBCE] shadow-sm group-hover:bg-[#110703] transition-all duration-300">
+            <a href="{{ url('/') }}" class="inline-flex items-center gap-3 group">
+                <!-- Motif Emblem -->
+                <div class="w-10 h-10 rounded-xl bg-[#201A17] flex items-center justify-center text-[#E5C38E] shadow-sm group-hover:bg-stone-800 transition-all duration-300">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                     </svg>
                 </div>
-                <div class="flex flex-col text-left">
-                    <span class="font-bold tracking-widest text-sm text-[#110703] uppercase">
-                        Hamzah Style Official
-                    </span>
-                    <span class="text-[10px] text-[#4E4540] uppercase tracking-[0.2em] font-medium -mt-0.5">
-                        Boutique Atelier
-                    </span>
-                </div>
+                <span class="font-bold tracking-wider text-sm sm:text-base text-[#26211D] uppercase font-sans">
+                    Hamzah Style Official
+                </span>
             </a>
 
             <!-- Nav Links (Desktop) -->
-            <div class="hidden md:flex items-center gap-8 text-xs tracking-wider uppercase font-medium text-[#4E4540]">
-                <a href="{{ url('/') }}#koleksi" class="hover:text-[#110703] transition">Atelier</a>
-                <span class="text-[#EFE0D6]">|</span>
-                <a href="{{ url('/') }}#tentang" class="hover:text-[#110703] transition">Filosofi</a>
-                <span class="text-[#EFE0D6]">|</span>
-                <span class="text-[#80756F]">ID / EN</span>
-                <a href="{{ url('/') }}" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#2B1E16]/20 text-[#110703] hover:bg-[#2B1E16] hover:text-[#FFF8F5] transition duration-200">
+            <div class="hidden md:flex items-center">
+                <a href="{{ url('/') }}" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#201A17]/20 text-xs tracking-wider uppercase font-medium text-[#201A17] hover:bg-[#201A17] hover:text-white hover:border-[#201A17] transition duration-200">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -65,7 +55,7 @@
 
             <!-- Mobile Back Button -->
             <div class="md:hidden">
-                <a href="{{ url('/') }}" class="inline-flex items-center gap-1.5 text-xs font-medium text-[#4E4540] hover:text-[#110703]">
+                <a href="{{ url('/') }}" class="inline-flex items-center gap-1.5 text-xs font-medium text-stone-600 hover:text-stone-900">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path>
                     </svg>
@@ -78,87 +68,38 @@
     <!-- Main Authentication Section -->
     <main class="flex-grow flex items-center justify-center p-4 sm:p-8 lg:p-12 relative overflow-hidden">
         <!-- Ambient Background Glows -->
-        <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#F6DED1]/60 blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#F4E5DC]/70 blur-3xl pointer-events-none"></div>
+        <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#EEDBC5]/50 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#F5EDE2]/70 blur-3xl pointer-events-none"></div>
 
-        <!-- Balanced Two-Column Editorial Card -->
-        <div class="w-full max-w-5xl bg-white border border-[#EFE0D6] rounded-3xl shadow-[0_20px_60px_-15px_rgba(43,30,22,0.07)] overflow-hidden grid grid-cols-1 lg:grid-cols-12 relative z-10">
+        <!-- Authentication Card Form -->
+        <div class="w-full max-w-lg bg-white border border-[#ECE4D8] rounded-3xl shadow-[0_20px_60px_-15px_rgba(32,26,23,0.06)] p-6 sm:p-10 relative z-10">
 
-            <!-- LEFT COLUMN: Editorial & Heritage Visual Panel (Desktop) -->
-            <div class="hidden lg:flex lg:col-span-5 bg-[#2B1E16] text-[#FFF8F5] relative p-10 flex-col justify-between overflow-hidden">
-                <!-- Background Image & Scrim -->
-                <div class="absolute inset-0 z-0">
-                    <img src="{{ asset('images/beranda/cloth-fabric.jpg') }}" alt="Wastra Nusantara" class="w-full h-full object-cover opacity-35 scale-105 transform hover:scale-110 transition duration-1000 ease-out">
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#110703] via-[#2B1E16]/85 to-[#2B1E16]/60"></div>
-                </div>
-
-                <!-- Top Header & Material Seal -->
-                <div class="relative z-10 flex items-center justify-between">
-                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFF8F5]/10 backdrop-blur-md border border-[#FFDBCE]/20 text-[11px] font-medium tracking-widest text-[#FFDBCE] uppercase">
-                        <svg class="w-3.5 h-3.5 text-[#FFDBCE]" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span>Kurasi Sirkular</span>
-                    </div>
-                    <span class="text-[11px] tracking-widest uppercase font-semibold text-[#FFDBCE]/80">Edisi 2025</span>
-                </div>
-
-                <!-- Inspirational Quote & Brand Narrative -->
-                <div class="relative z-10 my-12 space-y-4">
-                    <p class="text-[11px] uppercase tracking-[0.25em] text-[#FFDBCE] font-semibold">
-                        Filosofi & Adibusana
-                    </p>
-                    <blockquote class="font-serif-luxury text-2xl xl:text-3xl font-medium leading-snug text-white">
-                        “Wastra Nusantara Berkelanjutan & Busana Adibusana.”
-                    </blockquote>
-                    <p class="text-xs text-[#FFDBCE]/80 leading-relaxed font-light">
-                        Menyatukan keanggunan batik tulis tradisional dengan material kain terselamatkan dalam wujud siluet modern yang abadi.
-                    </p>
-                </div>
-
-                <!-- Sustainable Material Lineage Badge -->
-                <div class="relative z-10 p-4 rounded-2xl bg-[#FFF8F5]/10 backdrop-blur-md border border-[#FFDBCE]/20 flex items-center gap-3.5">
-                    <div class="w-10 h-10 rounded-xl bg-[#401100] flex items-center justify-center text-[#FFDBCE] flex-shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                    </div>
-                    <div class="text-left">
-                        <p class="text-xs font-semibold text-white tracking-wide">Batik Tulis & Upcycled Primissima</p>
-                        <p class="text-[11px] text-[#FFDBCE]/75">100% Terlacak & Terdaftar Hak Cipta</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- RIGHT COLUMN: Authentication Card Form -->
-            <div class="lg:col-span-7 p-6 sm:p-10 lg:p-12 flex flex-col justify-center bg-white">
-
-                <!-- Header: Emblem & Welcome Heading -->
-                <div class="mb-8">
+            <!-- Header: Emblem & Welcome Heading -->
+            <div class="mb-8">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="w-8 h-8 rounded-lg bg-[#2B1E16] flex items-center justify-center text-[#FFDBCE]">
+                        <div class="w-8 h-8 rounded-lg bg-[#201A17] flex items-center justify-center text-[#E5C38E]">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                             </svg>
                         </div>
-                        <div class="h-4 w-px bg-[#EFE0D6]"></div>
-                        <span class="text-[11px] uppercase tracking-widest text-[#4E4540] font-semibold">
-                            Boutique Atelier
+                        <div class="h-4 w-px bg-[#ECE4D8]"></div>
+                        <span class="text-xs uppercase tracking-widest text-stone-700 font-semibold">
+                            Hamzah Store
                         </span>
                     </div>
 
-                    <h1 class="font-serif-luxury text-2xl sm:text-3xl font-semibold text-[#110703] tracking-tight">
+                    <h1 class="font-serif-luxury text-2xl sm:text-3xl font-semibold text-[#26211D] tracking-tight">
                         Selamat Datang Kembali
                     </h1>
-                    <p class="text-sm text-[#4E4540] mt-1.5 leading-relaxed font-light">
-                        Masuk ke akun Anda untuk melanjutkan belanja koleksi batik dan kriya sirkular.
+                    <p class="text-sm text-stone-600 mt-1.5 leading-relaxed font-light">
+                        Masuk ke akun Anda untuk melanjutkan belanja koleksi batik Nusantara.
                     </p>
                 </div>
 
                 <!-- Session Status / Alert -->
                 @if (session('status'))
-                    <div class="mb-6 p-4 rounded-xl bg-[#F6DED1]/60 border border-[#2B1E16]/15 text-xs text-[#2B1E16] font-medium flex items-center gap-2">
-                        <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 font-medium flex items-center gap-2">
+                        <svg class="w-4 h-4 flex-shrink-0 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                         </svg>
                         <span>{{ session('status') }}</span>
@@ -171,11 +112,11 @@
 
                     <!-- Email Field -->
                     <div>
-                        <label for="email" class="block text-xs font-semibold tracking-wider text-[#211A15] uppercase mb-1.5">
+                        <label for="email" class="block text-xs font-semibold tracking-wider text-stone-800 uppercase mb-1.5">
                             Email
                         </label>
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#4E4540]">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                                 </svg>
@@ -189,7 +130,7 @@
                                 autofocus
                                 autocomplete="username"
                                 placeholder="pelanggan@hamzahstyle.id"
-                                class="w-full pl-10 pr-4 py-3 bg-[#FFF8F5] border @error('email') border-red-400 @else border-[#EFE0D6] @enderror rounded-xl text-sm text-[#211A15] placeholder-[#80756F]/60 focus:outline-none focus:ring-2 focus:ring-[#2B1E16] focus:border-transparent transition duration-200"
+                                class="w-full pl-10 pr-4 py-3 bg-[#FAF7F2] border @error('email') border-red-400 @else border-[#ECE4D8] @enderror rounded-xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:border-transparent transition duration-200"
                             />
                         </div>
                         @error('email')
@@ -205,12 +146,12 @@
                     <!-- Password Field -->
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
-                            <label for="password" class="block text-xs font-semibold tracking-wider text-[#211A15] uppercase">
+                            <label for="password" class="block text-xs font-semibold tracking-wider text-stone-800 uppercase">
                                 Password
                             </label>
                         </div>
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#4E4540]">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
@@ -222,14 +163,14 @@
                                 required
                                 autocomplete="current-password"
                                 placeholder="••••••••••••"
-                                class="w-full pl-10 pr-11 py-3 bg-[#FFF8F5] border @error('password') border-red-400 @else border-[#EFE0D6] @enderror rounded-xl text-sm text-[#211A15] placeholder-[#80756F]/60 focus:outline-none focus:ring-2 focus:ring-[#2B1E16] focus:border-transparent transition duration-200"
+                                class="w-full pl-10 pr-11 py-3 bg-[#FAF7F2] border @error('password') border-red-400 @else border-[#ECE4D8] @enderror rounded-xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:border-transparent transition duration-200"
                             />
                             <!-- Toggle Password Visibility -->
                             <button
                                 type="button"
                                 id="togglePasswordBtn"
                                 aria-label="Tampilkan atau sembunyikan password"
-                                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#4E4540] hover:text-[#110703] transition focus:outline-none"
+                                class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-700 transition focus:outline-none"
                             >
                                 <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -252,18 +193,18 @@
 
                     <!-- Controls Row: Remember me & Forgot Password -->
                     <div class="flex items-center justify-between text-xs pt-1">
-                        <label for="remember_me" class="inline-flex items-center gap-2 cursor-pointer select-none text-[#332621]">
+                        <label for="remember_me" class="inline-flex items-center gap-2 cursor-pointer select-none text-stone-700">
                             <input
                                 id="remember_me"
                                 type="checkbox"
                                 name="remember"
-                                class="w-4 h-4 rounded border-[#EFE0D6] text-[#2B1E16] focus:ring-[#2B1E16] transition"
+                                class="w-4 h-4 rounded border-[#ECE4D8] text-[#B58742] focus:ring-[#B58742] transition"
                             />
                             <span>Ingat saya</span>
                         </label>
 
                         @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="font-medium text-[#C9704C] hover:text-[#110703] transition">
+                            <a href="{{ route('password.request') }}" class="font-medium text-[#B58742] hover:text-[#8C6428] transition">
                                 Lupa Password?
                             </a>
                         @endif
@@ -272,7 +213,7 @@
                     <!-- Primary Action CTA Button -->
                     <button
                         type="submit"
-                        class="w-full py-3.5 px-6 rounded-xl bg-[#2B1E16] text-[#FFF8F5] text-sm font-semibold tracking-wider hover:bg-[#110703] active:scale-[0.99] transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2 group"
+                        class="w-full py-3.5 px-6 rounded-xl bg-[#201A17] text-[#FAF7F2] text-sm font-semibold tracking-wider hover:bg-stone-800 active:scale-[0.99] transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2 group"
                     >
                         <span>Masuk</span>
                         <svg class="w-4 h-4 transform group-hover:translate-x-1 transition duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -284,9 +225,9 @@
                 <!-- Visual Divider -->
                 <div class="relative my-6">
                     <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-[#EFE0D6]"></div>
+                        <div class="w-full border-t border-[#ECE4D8]"></div>
                     </div>
-                    <div class="relative flex justify-center text-[11px] uppercase tracking-widest font-semibold text-[#80756F]">
+                    <div class="relative flex justify-center text-[11px] uppercase tracking-widest font-semibold text-stone-400">
                         <span class="bg-white px-3">Atau</span>
                     </div>
                 </div>
@@ -294,7 +235,7 @@
                 <!-- Google Login Button -->
                 <a
                     href="{{ route('auth.google') }}"
-                    class="w-full py-3 px-4 rounded-xl bg-[#FFF1E9] hover:bg-[#FFE8DC] border border-[#EFE0D6] text-xs font-semibold text-[#211A15] tracking-wide flex items-center justify-center gap-3 transition duration-200"
+                    class="w-full py-3 px-4 rounded-xl bg-[#F5EDE2] hover:bg-[#ECE1D2] border border-[#ECE4D8] text-xs font-semibold text-stone-900 tracking-wide flex items-center justify-center gap-3 transition duration-200"
                 >
                     <svg class="w-4 h-4" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -306,33 +247,14 @@
                 </a>
 
                 <!-- Alternative Action: Register Prompt -->
-                <div class="text-center text-sm text-[#4E4540] mt-6">
+                <div class="text-center text-sm text-stone-600 mt-6">
                     <span>Belum memiliki akun?</span>
-                    <a href="{{ route('register') }}" class="font-semibold text-[#C9704C] hover:text-[#110703] underline underline-offset-4 ml-1 transition">
+                    <a href="{{ route('register') }}" class="font-semibold text-[#B58742] hover:text-[#8C6428] underline underline-offset-4 ml-1 transition">
                         Daftar sekarang
                     </a>
                 </div>
-
-
             </div>
-        </div>
     </main>
-
-    <!-- Footer -->
-    <footer class="w-full border-t border-[#EFE0D6]/60 bg-[#FFF1E9]/60 px-6 sm:px-12 py-5 text-xs text-[#4E4540]">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-            <div>
-                <span class="font-medium">© {{ date('Y') }} HAMZAH STYLE OFFICIAL. CONSCIOUS CRAFTSMANSHIP.</span>
-                <span class="hidden md:inline mx-1.5 text-[#D2C4BD]">•</span>
-                <span class="text-[#80756F]">Handcrafted Upcycled & Batik Tulis</span>
-            </div>
-            <div class="flex items-center gap-5 text-[11px] font-medium tracking-wide uppercase">
-                <a href="{{ url('/') }}" class="hover:text-[#110703] transition">Privacy Policy</a>
-                <a href="{{ url('/') }}" class="hover:text-[#110703] transition">Terms of Service</a>
-                <a href="{{ url('/') }}" class="hover:text-[#110703] transition">Client Care</a>
-            </div>
-        </div>
-    </footer>
 
     <!-- Password Visibility Toggle Script -->
     <script>

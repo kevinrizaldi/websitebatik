@@ -173,7 +173,7 @@
                         </td>
                         <td style="vertical-align: middle; text-align: left;">
                             <div class="header-title">Hamzah Style Official</div>
-                            <div class="header-subtitle">Boutique Atelier</div>
+                            <div class="header-subtitle">Warisan Batik Nusantara Modern</div>
                         </td>
                     </tr>
                 </table>
