@@ -30,7 +30,7 @@ class MidtransService
     /**
      * Create Snap Token for an Order.
      *
-     * @return array{token: string, redirect_url: string}
+     * @return array{token: string|null, redirect_url: string|null}
      */
     public function createSnapTransaction(Order $order): array
     {
@@ -124,10 +124,15 @@ class MidtransService
             }
         }
 
-        // Fallback mock token for sandbox simulation/testing if remote Midtrans is offline or demo key is used
-        if (! $token) {
+        // Fallback mock token for sandbox simulation/testing if remote Midtrans is offline or demo key is used.
+        // Production must never receive a mock token or a `mock=1` redirect — leave null and log instead.
+        if (! $token && ! config('midtrans.is_production')) {
             $token = 'MOCK_SNAP_'.md5($order->code.time());
             $redirectUrl = route('midtrans.finish', ['order_id' => $order->code, 'mock' => 1]);
+        } elseif (! $token) {
+            Log::error('Midtrans Snap token unavailable in production; mock fallback refused', [
+                'order_id' => $order->code,
+            ]);
         }
 
         // Store or update Pembayaran record

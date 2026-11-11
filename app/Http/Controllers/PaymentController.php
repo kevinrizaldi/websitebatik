@@ -187,7 +187,8 @@ class PaymentController extends Controller
         $order->refresh();
 
         // Mode simulasi Sandbox untuk testing: tandai lunas lalu ke pesanan.
-        if ($request->query('mock') && in_array($order->payment_status, [null, Order::PAYMENT_PENDING], true)) {
+        // `?mock=1` hanya berlaku di luar production — production mengikuti status normal.
+        if ($request->query('mock') && ! config('midtrans.is_production') && in_array($order->payment_status, [null, Order::PAYMENT_PENDING], true)) {
             $order->update(['status' => 'Diproses']);
             Pembayaran::updateOrCreate(
                 ['order_id' => $order->id],
