@@ -7,6 +7,9 @@ use App\Notifications\VerifyEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
+use Laravel\Socialite\Contracts\User as SocialiteUser;
+use Laravel\Socialite\Facades\Socialite;
+use Mockery;
 use Tests\TestCase;
 
 class EmailVerificationTest extends TestCase
@@ -125,5 +128,46 @@ class EmailVerificationTest extends TestCase
             ->assertRedirect();
 
         Notification::assertNothingSentTo($user);
+    }
+
+    /**
+     * Login via Google harus otomatis memverifikasi email user baru maupun yang sudah ada.
+     */
+    public function test_google_login_marks_user_email_as_verified(): void
+    {
+        $existingUnverified = User::factory()->unverified()->create([
+            'email' => 'google-existing@example.com',
+            'google_id' => 'google-123',
+        ]);
+
+        $socialiteExisting = Mockery::mock(SocialiteUser::class);
+        $socialiteExisting->shouldReceive('getId')->andReturn('google-123');
+        $socialiteExisting->shouldReceive('getEmail')->andReturn('google-existing@example.com');
+        $socialiteExisting->shouldReceive('getName')->andReturn('Existing Google User');
+        $socialiteExisting->shouldReceive('getAvatar')->andReturn('https://example.com/avatar.jpg');
+
+        $socialiteNew = Mockery::mock(SocialiteUser::class);
+        $socialiteNew->shouldReceive('getId')->andReturn('google-456');
+        $socialiteNew->shouldReceive('getEmail')->andReturn('google-new@example.com');
+        $socialiteNew->shouldReceive('getName')->andReturn('New Google User');
+        $socialiteNew->shouldReceive('getAvatar')->andReturn('https://example.com/avatar2.jpg');
+
+        Socialite::shouldReceive('driver')
+            ->with('google')
+            ->twice()
+            ->andReturnSelf();
+        Socialite::shouldReceive('user')
+            ->twice()
+            ->andReturn($socialiteExisting, $socialiteNew);
+
+        $this->get(route('auth.google.callback'))->assertRedirect('/');
+        $this->assertTrue($existingUnverified->fresh()->hasVerifiedEmail());
+
+        $this->post(route('logout'));
+
+        $this->get(route('auth.google.callback'))->assertRedirect('/');
+        $newUser = User::where('email', 'google-new@example.com')->first();
+        $this->assertNotNull($newUser);
+        $this->assertTrue($newUser->hasVerifiedEmail());
     }
 }

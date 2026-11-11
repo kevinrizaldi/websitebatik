@@ -261,4 +261,18 @@ class CartTest extends TestCase
         $viewResponse->assertStatus(200);
         $viewResponse->assertSee($produk->nama);
     }
+
+    /**
+     * Test viewing checkout page when cart is empty redirects to cart page.
+     */
+    public function test_viewing_checkout_page_with_empty_cart_redirects_to_cart(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $response = $this->get(route('checkout.index'));
+
+        $response->assertRedirect(route('keranjang.index'));
+        $response->assertSessionHas('error', 'Keranjang belanja Anda masih kosong.');
+    }
 }

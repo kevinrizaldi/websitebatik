@@ -39,7 +39,6 @@ class GoogleAuthController extends Controller
                     $user->update([
                         'google_id' => $googleUser->getId(),
                         'avatar' => $user->avatar ?: $googleUser->getAvatar(),
-                        'email_verified_at' => $user->email_verified_at ?? now(),
                     ]);
                 } else {
                     // 3. Buat user baru
@@ -48,9 +47,12 @@ class GoogleAuthController extends Controller
                         'email' => $googleUser->getEmail(),
                         'google_id' => $googleUser->getId(),
                         'avatar' => $googleUser->getAvatar(),
-                        'email_verified_at' => now(),
                     ]);
                 }
+            }
+
+            if (! $user->hasVerifiedEmail()) {
+                $user->markEmailAsVerified();
             }
 
             Auth::login($user, remember: true);

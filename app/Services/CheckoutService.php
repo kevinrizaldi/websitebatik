@@ -44,7 +44,7 @@ class CheckoutService
                 ->get();
 
             if ($allCartItems->isEmpty()) {
-                return collect();
+                return new Collection;
             }
 
             CartItem::forCurrentVisitor()->update(['selected' => true]);
