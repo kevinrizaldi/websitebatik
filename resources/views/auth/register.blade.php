@@ -31,16 +31,10 @@
     <!-- Top Minimal Header -->
     <header class="w-full border-b border-[#ECE4D8] bg-[#FAF7F2]/90 backdrop-blur-md sticky top-0 z-30 px-6 sm:px-12 py-4">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <a href="{{ url('/') }}" class="inline-flex items-center gap-3 group">
-                <!-- Motif Emblem -->
-                <div class="w-10 h-10 rounded-xl bg-[#201A17] flex items-center justify-center text-[#E5C38E] shadow-sm group-hover:bg-stone-800 transition-all duration-300">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                    </svg>
-                </div>
-                <span class="font-bold tracking-wider text-sm sm:text-base text-[#26211D] uppercase font-sans">
-                    Hamzah Style Official
-                </span>
+            <a href="{{ url('/') }}" class="inline-flex items-center group">
+                <img src="{{ asset('images/logo.png') }}" 
+                     alt="HAMZAH STYLE OFFICIAL" 
+                     class="h-8 sm:h-9 w-auto object-contain">
             </a>
 
             <!-- Nav Links (Desktop) -->

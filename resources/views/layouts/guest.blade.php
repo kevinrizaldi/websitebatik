@@ -29,20 +29,10 @@
     <body class="font-sans antialiased bg-[#FAF7F2] text-[#26211D] selection:bg-[#B58742] selection:text-white">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-8 sm:pt-0 pb-12 px-4">
             <div class="mb-6 text-center">
-                <a href="{{ url('/') }}" class="inline-flex items-center gap-3 group">
-                    <div class="w-12 h-12 rounded-2xl bg-[#201A17] flex items-center justify-center text-[#E5C38E] shadow-md group-hover:bg-stone-800 transition">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                        </svg>
-                    </div>
-                    <div class="flex flex-col text-left">
-                        <span class="font-bold tracking-wider text-base text-stone-900 uppercase font-sans">
-                            HAMZAH STYLE
-                        </span>
-                        <span class="text-[11px] text-stone-500 uppercase tracking-widest font-medium -mt-1">
-                            OFFICIAL
-                        </span>
-                    </div>
+                <a href="{{ url('/') }}" class="inline-flex items-center group">
+                    <img src="{{ asset('images/logo.png') }}" 
+                         alt="HAMZAH STYLE OFFICIAL" 
+                         class="h-9 sm:h-10 w-auto object-contain">
                 </a>
             </div>
 

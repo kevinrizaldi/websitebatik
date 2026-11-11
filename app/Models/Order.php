@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Midtrans\MidtransService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @property int $id
@@ -181,9 +183,9 @@ class Order extends Model
             $p->save();
 
             try {
-                app(\App\Services\Midtrans\MidtransService::class)->cancelTransaction($p->midtrans_order_id);
+                app(MidtransService::class)->cancelTransaction($p->midtrans_order_id);
             } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::info("Midtrans cancel for payment {$p->id} on order {$this->code} skipped/already settled: ".$e->getMessage());
+                Log::info("Midtrans cancel for payment {$p->id} on order {$this->code} skipped/already settled: ".$e->getMessage());
             }
         }
 
