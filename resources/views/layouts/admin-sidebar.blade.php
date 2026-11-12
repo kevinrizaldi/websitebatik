@@ -35,19 +35,12 @@
     {{-- LOGO & BRANDING --}}
     <div class="border-b border-[#EFECE6]/80 p-5">
         <div class="flex items-center justify-between">
-            <a href="{{ route('dashboard') }}" class="flex items-center gap-3">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#1E1B18] text-[#C59A53] shadow-xs">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                    </svg>
-                </div>
-                <div class="min-w-0">
-                    <h1 class="font-serif text-sm font-bold tracking-wider text-[#1E1B18] uppercase">HAMZAH STYLE</h1>
-                    <span class="inline-block rounded bg-[#F7EFE6] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#A86544]">
-                        ADMIN PORTAL
-                    </span>
-                    <span class="sr-only">Panel Toko</span>
-                </div>
+            <a href="{{ route('dashboard') }}" class="flex flex-col gap-1">
+                <img src="{{ asset('images/logo.png') }}" alt="HAMZAH STYLE OFFICIAL" class="h-7 w-auto object-contain object-left">
+                <span class="inline-block w-fit rounded bg-[#F7EFE6] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#A86544]">
+                    ADMIN PORTAL
+                </span>
+                <span class="sr-only">Panel Toko</span>
             </a>
             @if(!empty($isMobile))
                 <button type="button" @click="mobileNavOpen = false" class="lg:hidden p-1.5 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-[#FAF7F2] transition" aria-label="Tutup Navigasi">

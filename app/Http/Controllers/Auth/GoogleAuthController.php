@@ -16,6 +16,10 @@ class GoogleAuthController extends Controller
      */
     public function redirectToGoogle(): RedirectResponse
     {
+        if (empty(config('services.google.client_id')) || empty(config('services.google.client_secret'))) {
+            return redirect()->route('login')->with('error', 'Fitur Login Google belum aktif karena GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET belum diisi di file .env.');
+        }
+
         return Socialite::driver('google')->redirect();
     }
 
@@ -39,7 +43,6 @@ class GoogleAuthController extends Controller
                     $user->update([
                         'google_id' => $googleUser->getId(),
                         'avatar' => $user->avatar ?: $googleUser->getAvatar(),
-                        'email_verified_at' => $user->email_verified_at ?? now(),
                     ]);
                 } else {
                     // 3. Buat user baru
@@ -48,9 +51,12 @@ class GoogleAuthController extends Controller
                         'email' => $googleUser->getEmail(),
                         'google_id' => $googleUser->getId(),
                         'avatar' => $googleUser->getAvatar(),
-                        'email_verified_at' => now(),
                     ]);
                 }
+            }
+
+            if (! $user->hasVerifiedEmail()) {
+                $user->markEmailAsVerified();
             }
 
             Auth::login($user, remember: true);
