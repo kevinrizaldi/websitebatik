@@ -187,12 +187,10 @@ Route::get('/midtrans/finish', [PaymentController::class, 'finish'])->name('midt
 
 // Midtrans webhook / notification (tidak perlu auth, diverifikasi via signature)
 Route::post('/midtrans/notification', [MidtransWebhookController::class, 'handle'])
-    ->name('midtrans.notification')
-    ->withoutMiddleware(['App\Http\Middleware\PreventRequestForgery']);
+    ->name('midtrans.notification');
 
 Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
-    ->name('midtrans.webhook')
-    ->withoutMiddleware(['App\Http\Middleware\PreventRequestForgery']);
+    ->name('midtrans.webhook');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
