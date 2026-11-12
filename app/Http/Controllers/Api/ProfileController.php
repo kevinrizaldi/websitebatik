@@ -35,16 +35,19 @@ class ProfileController extends Controller
         $user->fill($validated);
         $user->save();
 
+        $formatted = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'avatar' => $user->avatar,
+            'role' => $user->role ?? 'user',
+        ];
+
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'avatar' => $user->avatar,
-                'role' => $user->role ?? 'user',
-            ],
+            'data' => ['user' => $formatted],
+            'user' => $formatted,
         ]);
     }
 
@@ -184,4 +187,3 @@ class ProfileController extends Controller
         ];
     }
 }
-

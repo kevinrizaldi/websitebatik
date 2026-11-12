@@ -20,6 +20,7 @@ Route::get('/media/{path}', [MediaController::class, 'show'])->where('path', '.*
 
 // Protected endpoints (require Bearer token from Sanctum)
 Route::middleware('auth:sanctum')->group(function (): void {
+    Route::get('/me', [AuthController::class, 'me']);
     Route::get('/user', [AuthController::class, 'me']);
     Route::patch('/user', [ProfileController::class, 'updateProfile']);
     Route::post('/logout', [AuthController::class, 'logout']);
