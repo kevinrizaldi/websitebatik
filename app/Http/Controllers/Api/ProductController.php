@@ -115,6 +115,30 @@ class ProductController extends Controller
         ]);
     }
 
+    /**
+     * Public review list for a product (only approved reviews).
+     */
+    public function reviews(Product $product): JsonResponse
+    {
+        $reviews = $product->reviews()
+            ->where('status', 'Disetujui')
+            ->latest()
+            ->get()
+            ->map(fn ($review): array => [
+                'id' => $review->id,
+                'user_name' => $review->user?->name ?? 'Pelanggan',
+                'rating' => (int) $review->rating,
+                'comment' => $review->comment ?? $review->komentar ?? '',
+                'status' => $review->status,
+                'created_at' => $review->created_at?->toIso8601String(),
+            ])
+            ->values();
+
+        return response()->json([
+            'data' => $reviews,
+        ]);
+    }
+
     private function formatProduct(Product $product, bool $includeReviews = false): array
     {
         $mainImage = MediaUrl::fromProduct($product);

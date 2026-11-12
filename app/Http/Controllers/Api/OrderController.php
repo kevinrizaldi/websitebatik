@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Services\CheckoutService;
+use App\Services\MidtransService;
+use App\Services\OrderLifecycleService;
 use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
@@ -21,9 +23,12 @@ class OrderController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $status = $request->query('status');
+
         $orders = $request->user()
             ->orders()
             ->with(['items.product', 'shipment', 'reviews'])
+            ->when(is_string($status) && $status !== '', fn ($query) => $query->where('status', $status))
             ->latest()
             ->get()
             ->map(fn (Order $order): array => $this->formatOrder($order))
@@ -56,14 +61,23 @@ class OrderController extends Controller
     public function checkout(Request $request, CheckoutService $checkoutService): JsonResponse
     {
         $validated = $request->validate([
-            'customer_name' => ['required', 'string', 'max:255'],
+            // Flutter sends customer_name; the plan canonical body uses recipient_name.
+            'customer_name' => ['required_without:recipient_name', 'nullable', 'string', 'max:255'],
+            'recipient_name' => ['nullable', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
             'address' => ['required', 'string', 'max:1000'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'province' => ['nullable', 'string', 'max:100'],
+            'postal_code' => ['nullable', 'string', 'max:10'],
+            // Flutter sends shipping_option; the plan uses courier.
             'shipping_option' => ['nullable', 'string', 'max:100'],
+            'courier' => ['nullable', 'string', 'max:100'],
             'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'payment_method' => ['nullable', 'string', 'max:100'],
             'voucher' => ['nullable', 'string', 'max:50'],
+            // Flutter sends notes; the plan uses note.
             'notes' => ['nullable', 'string', 'max:500'],
+            'note' => ['nullable', 'string', 'max:500'],
             'cart_item_ids' => ['nullable', 'array'],
             'cart_item_ids.*' => ['integer'],
             'items' => ['nullable', 'array', 'min:1'],
@@ -71,6 +85,14 @@ class OrderController extends Controller
             'items.*.size' => ['nullable', 'string', 'max:50'],
             'items.*.quantity' => ['required_with:items', 'integer', 'min:1', 'max:99'],
         ]);
+
+        // Normalize plan aliases onto the web CheckoutService field names.
+        $validated['customer_name'] = $validated['customer_name'] ?? $validated['recipient_name'] ?? null;
+        unset($validated['recipient_name']);
+        $validated['shipping_option'] = $validated['shipping_option'] ?? $validated['courier'] ?? null;
+        unset($validated['courier']);
+        $validated['notes'] = $validated['notes'] ?? $validated['note'] ?? null;
+        unset($validated['note']);
 
         $user = $request->user();
 
@@ -136,17 +158,126 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $checkoutService->syncDefaultAddress($user, $validated);
+        $checkoutService->syncDefaultAddress(
+            $user,
+            $validated,
+            $validated['city'] ?? null,
+            $validated['province'] ?? null,
+            $validated['postal_code'] ?? null,
+        );
         $snapToken = $checkoutService->createSnapToken($order);
+
+        $order->load(['items.product', 'shipment', 'reviews', 'pembayaran']);
+        $snapRedirectUrl = $this->resolveSnapRedirectUrl($order);
+
+        // Plan-canonical payload: data.order + data.snap_token + data.snap_redirect_url.
+        // Flat order keys are kept inside data because checkout_screen.dart reads
+        // res['data'] as the order map directly (dual-shape).
+        $orderPayload = $this->formatOrder($order);
+
+        return response()->json([
+            'message' => 'Pesanan berhasil dibuat.',
+            'data' => $orderPayload + [
+                'order' => $orderPayload,
+                'snap_token' => $snapToken,
+                'snap_redirect_url' => $snapRedirectUrl,
+            ],
+            'totals' => $totals,
+            'snap_token' => $snapToken,
+        ], 201);
+    }
+
+    /**
+     * Payment/snap info for an order (plan: GET /api/orders/{id}/payment).
+     *
+     * Mirrors the web pembayaran page: refresh the Midtrans status first,
+     * then make sure a snap token exists for payable orders.
+     */
+    public function payment(Request $request, Order $order, MidtransService $midtrans): JsonResponse
+    {
+        if ((int) $order->user_id !== (int) $request->user()->id) {
+            return response()->json(['message' => 'Tidak diizinkan.'], 403);
+        }
+
+        try {
+            $midtrans->refreshFromMidtrans($order);
+        } catch (\Throwable) {
+            // Gateway unreachable — fall back to the stored payment record.
+        }
+
+        $order->refresh();
+
+        $payable = in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi'], true);
+
+        if (empty($order->pembayaran?->snap_token) && $payable) {
+            try {
+                $midtrans->createSnapTransaction($order);
+            } catch (\Throwable) {
+                // Ignore — respond with whatever is stored.
+            }
+            $order->refresh();
+        }
+
+        $snapToken = $order->pembayaran?->snap_token ?? null;
+        $snapRedirectUrl = $order->pembayaran?->snap_redirect_url ?? null;
+
+        if (empty($snapRedirectUrl) && ! empty($snapToken)) {
+            $snapRedirectUrl = $this->deriveRedirectFromToken($order, (string) $snapToken);
+        }
+
+        return response()->json([
+            'data' => [
+                'payment_status' => $order->payment_status,
+                'snap_token' => $snapToken,
+                'snap_redirect_url' => $snapRedirectUrl,
+            ],
+        ]);
+    }
+
+    /**
+     * Customer confirms received goods (order → Selesai).
+     */
+    public function confirm(Request $request, Order $order, OrderLifecycleService $lifecycle): JsonResponse
+    {
+        if ((int) $order->user_id !== (int) $request->user()->id) {
+            return response()->json(['message' => 'Tidak diizinkan.'], 403);
+        }
+
+        if (! $lifecycle->confirmReceived($order)) {
+            return response()->json([
+                'message' => 'Pesanan tidak dapat dikonfirmasi pada status saat ini.',
+            ], 422);
+        }
 
         $order->load(['items.product', 'shipment', 'reviews']);
 
         return response()->json([
-            'message' => 'Pesanan berhasil dibuat.',
+            'message' => 'Pesanan telah dikonfirmasi diterima.',
             'data' => $this->formatOrder($order),
-            'totals' => $totals,
-            'snap_token' => $snapToken,
-        ], 201);
+        ]);
+    }
+
+    /**
+     * Customer cancels an unpaid order (restocks inventory).
+     */
+    public function cancel(Request $request, Order $order, OrderLifecycleService $lifecycle): JsonResponse
+    {
+        if ((int) $order->user_id !== (int) $request->user()->id) {
+            return response()->json(['message' => 'Tidak diizinkan.'], 403);
+        }
+
+        if (! $lifecycle->cancelUnpaid($order)) {
+            return response()->json([
+                'message' => 'Pesanan tidak dapat dibatalkan pada status ini.',
+            ], 422);
+        }
+
+        $order->load(['items.product', 'shipment', 'reviews']);
+
+        return response()->json([
+            'message' => 'Pesanan berhasil dibatalkan.',
+            'data' => $this->formatOrder($order),
+        ]);
     }
 
     /**
@@ -171,19 +302,40 @@ class OrderController extends Controller
             return response()->json(['message' => 'Produk pesanan tidak ditemukan.'], 422);
         }
 
-        $review = Review::updateOrCreate(
-            [
-                'order_id' => $order->id,
-                'product_id' => $productId,
-                'user_id' => $request->user()->id,
-            ],
-            [
-                'customer_name' => $request->user()->name,
-                'rating' => $validated['rating'],
-                'comment' => $validated['comment'],
-                'status' => 'Disetujui',
-            ]
-        );
+        // Plan gate: reviews are only allowed on Selesai orders
+        // (same rule as UlasanController::store).
+        if ($order->status !== 'Selesai') {
+            return response()->json([
+                'message' => 'Ulasan hanya dapat diberikan setelah Anda menyelesaikan pembelian produk ini (pesanan berstatus Selesai).',
+            ], 422);
+        }
+
+        if (! $order->items->contains(fn ($item): bool => (int) ($item->product_id ?? $item->produk_id) === (int) $productId)) {
+            return response()->json(['message' => 'Produk tersebut tidak ada dalam pesanan ini.'], 422);
+        }
+
+        // One review per order × product (plan: belum pernah review).
+        $alreadyReviewed = Review::query()
+            ->where('order_id', $order->id)
+            ->where('product_id', $productId)
+            ->where('user_id', $request->user()->id)
+            ->exists();
+
+        if ($alreadyReviewed) {
+            return response()->json([
+                'message' => 'Anda sudah memberi ulasan untuk produk ini pada pesanan #'.$order->code.'.',
+            ], 422);
+        }
+
+        $review = Review::create([
+            'order_id' => $order->id,
+            'product_id' => $productId,
+            'user_id' => $request->user()->id,
+            'customer_name' => $request->user()->name,
+            'rating' => $validated['rating'],
+            'comment' => $validated['comment'],
+            'status' => 'Disetujui',
+        ]);
 
         return response()->json([
             'message' => 'Ulasan berhasil disimpan.',
@@ -193,6 +345,41 @@ class OrderController extends Controller
                 'comment' => $review->comment,
             ],
         ], 201);
+    }
+
+    /**
+     * Resolve the Snap redirect URL for an order, deriving it from the
+     * token when Midtrans never returned one (mock/production fallback).
+     */
+    private function resolveSnapRedirectUrl(Order $order): ?string
+    {
+        $redirectUrl = $order->pembayaran?->snap_redirect_url;
+
+        if (! empty($redirectUrl)) {
+            return $redirectUrl;
+        }
+
+        $snapToken = $order->pembayaran?->snap_token;
+
+        return $snapToken ? $this->deriveRedirectFromToken($order, (string) $snapToken) : null;
+    }
+
+    /**
+     * Build the Snap redirect URL from a bare token:
+     * mock tokens finish on the sandbox simulation route, real tokens on
+     * the standard Snap transactions/{token}/redirect endpoint.
+     */
+    private function deriveRedirectFromToken(Order $order, string $snapToken): string
+    {
+        if (str_starts_with($snapToken, 'MOCK_SNAP_')) {
+            return route('midtrans.finish', ['order_id' => $order->code, 'mock' => 1]);
+        }
+
+        $base = config('midtrans.is_production')
+            ? 'https://app.midtrans.com'
+            : 'https://app.sandbox.midtrans.com';
+
+        return $base.'/snap/v1/transactions/'.$snapToken.'/redirect';
     }
 
     private function formatOrder(Order $order): array
@@ -229,6 +416,10 @@ class OrderController extends Controller
             'created_at' => $order->created_at?->toIso8601String(),
             'payment_deadline' => $order->payment_deadline?->toIso8601String(),
             'items' => $items,
+            // Plan-canonical payment block: {payment: {status}} on order detail.
+            'payment' => [
+                'status' => $order->payment_status,
+            ],
         ];
     }
 
@@ -248,4 +439,3 @@ class OrderController extends Controller
         return 1;
     }
 }
-
