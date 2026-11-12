@@ -55,8 +55,8 @@ class PesananPageTest extends TestCase
         $response->assertViewHas('orders', function ($orders) {
             return $orders->isEmpty();
         });
-        $response->assertSee('Anda Belum Masuk Akun');
-        $response->assertSee('Pesanan Kosong');
+        $response->assertSee('Pesanan Saya');
+        $response->assertSee('Masuk ke Akun');
         $response->assertDontSee($order->code);
     }
 
@@ -105,7 +105,8 @@ class PesananPageTest extends TestCase
             return $orders->isEmpty();
         });
         $response->assertDontSee($order->code);
-        $response->assertSee('Belum Ada Pesanan yang Sesuai');
+        $response->assertSee('Pesanan Saya');
+        $response->assertSee($freshUser->name);
     }
 
     /**

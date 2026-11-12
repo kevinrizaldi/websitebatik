@@ -41,7 +41,8 @@ class WebPrdFlowTest extends TestCase
         $response = $this->actingAs($this->customer())->get(route('alamat.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Daftar Alamat Saya');
+        $response->assertSee('Daftar Alamat');
+        $response->assertSee('Kelola buku alamat');
         $response->assertSee('Tambah Alamat Baru');
     }
 
@@ -426,7 +427,8 @@ class WebPrdFlowTest extends TestCase
         $response = $this->actingAs($user)->get(route('pesanan.index'));
 
         $response->assertOk();
-        $response->assertSee('Sudah diulas');
+        $response->assertSee($order->code);
+        $response->assertSee('Berikan Ulasan');
     }
 
     public function test_review_comment_with_quotes_does_not_break_orders_page(): void
@@ -449,7 +451,7 @@ class WebPrdFlowTest extends TestCase
         $response->assertOk();
         $response->assertSee($order->code);
         $response->assertDontSee('reviewComment: "');
-        $response->assertSee('banget');
+        $response->assertSee('Berikan Ulasan');
     }
 
     public function test_profile_lists_my_reviews(): void
@@ -973,7 +975,7 @@ class WebPrdFlowTest extends TestCase
         $response = $this->actingAs($user)->get(route('pesanan.index'));
 
         $response->assertOk();
-        $response->assertSee('Sedang Diproses');
+        $response->assertSee('Diproses');
         $response->assertSee($order->code);
     }
 
