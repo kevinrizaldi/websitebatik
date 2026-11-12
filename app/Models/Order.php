@@ -263,4 +263,10 @@ class Order extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    /** @return HasMany<Review> */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'order_id');
+    }
 }
