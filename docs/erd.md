@@ -234,7 +234,15 @@ Catatan lain:
 
 ## Ringkasan status penting (untuk laporan)
 
-- `orders.status` (state machine pesanan, dijaga `Admin\OrderController::$allowedTransitions`): `Belum Dibayar` → `Menunggu Pembayaran` → `Sudah Dibayar` / `Diproses` → `Dikirim` → `Selesai`; varian `Menunggu Konfirmasi` → `Diproses`/`Sudah Dibayar`, `Menunggu Verifikasi` → `Diproses`/`Sudah Dibayar`; status akhir: `Selesai`, `Dibatalkan`, `Batal`.
+- `orders.status` (state machine pesanan, dijaga `Admin\OrderController::$allowedTransitions`):
+  - `Belum Dibayar` → `Menunggu Pembayaran`, `Diproses`, `Dibatalkan`
+  - `Menunggu Pembayaran` → `Diproses`, `Sudah Dibayar`, `Dibatalkan`
+  - `Menunggu Konfirmasi` → `Menunggu Pembayaran`, `Diproses`, `Dibatalkan`
+  - `Menunggu Verifikasi` → `Diproses`, `Sudah Dibayar`
+  - `Sudah Dibayar` → `Diproses`
+  - `Diproses` → `Dikirim`
+  - `Dikirim` → `Selesai`
+  - `Selesai`, `Batal`, `Dibatalkan` = status final (tanpa transisi keluar)
 - `orders.payment_status`: `pending` → `paid` / `failed` / `cancelled` / `expired` (konstanta `Order::PAYMENT_*`).
 - `payments.status`: `pending`, `paid`, `failed`, `cancelled`, `expired`, `replaced` (konstanta `Payment::STATUS_*`).
 - `shipments.status_pengiriman`: `Menunggu Pengiriman` → `Diproses` → `Dikirim` → `Diterima`.
