@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Models\User;
+use App\Services\GoogleAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -81,6 +82,41 @@ class AuthController extends Controller
             'token' => $token,
             'user' => $formatted,
         ]);
+    }
+
+    /**
+     * Authenticate a user via a Google ID token and issue a Sanctum token.
+     *
+     * Response carries the canonical `{data: {user, token}}` wrapper while
+     * keeping legacy top-level `token`/`user` keys for the current Flutter app.
+     */
+    public function google(Request $request, GoogleAuthService $googleAuth): JsonResponse
+    {
+        $result = $googleAuth->authenticate($request->input('id_token'));
+
+        if ($result === null) {
+            $message = 'Token Google tidak valid atau sudah kadaluarsa.';
+
+            return response()->json([
+                'message' => $message,
+                'errors' => [
+                    'id_token' => [$message],
+                ],
+            ], 401);
+        }
+
+        $token = $result['token'];
+        $formatted = $this->formatUser($result['user']);
+
+        return response()->json([
+            'message' => 'Login dengan Google berhasil.',
+            'data' => [
+                'user' => $formatted,
+                'token' => $token,
+            ],
+            'token' => $token,
+            'user' => $formatted,
+        ], 200);
     }
 
     /**
