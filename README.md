@@ -59,7 +59,7 @@ Base URL: `/api` — auth memakai **Bearer token Sanctum** (dari `POST /api/regi
 | `/api/login` | POST | – | Login + token |
 | `/api/me`, `/api/user` | GET | Bearer | Profil user |
 | `/api/user` | PATCH | Bearer | Update profil |
-| `/api/logout` | POST | Bearer | Cetak token |
+| `/api/logout` | POST | Bearer | Cabut token |
 | `/api/categories` | GET | – | Daftar kategori |
 | `/api/products` | GET | – | Katalog (search/category/sort/per_page) |
 | `/api/products/{id}` | GET | – | Detail produk + ulasan |

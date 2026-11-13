@@ -86,10 +86,13 @@ erDiagram
         string midtrans_order_id UK "nullable"
         string snap_token "nullable"
         string payment_status "default 'pending', index"
+        string payment_type "nullable"
+        string transaction_id "nullable"
         timestamp paid_at
         timestamp payment_deadline "index"
         json raw_notification "nullable"
         string payment_method "default 'Transfer Bank'"
+        string payment_proof "nullable"
         string status "default 'Belum Dibayar'"
         string tracking_number "nullable"
     }
@@ -120,9 +123,16 @@ erDiagram
         string snap_token "nullable"
         text snap_redirect_url "nullable"
         string status "default 'pending', index"
+        string status_pembayaran "default 'Menunggu Pembayaran'"
+        string payment_type "nullable"
+        string metode_pembayaran "nullable"
+        string transaction_id "nullable"
+        json payment_details "nullable"
         decimal gross_amount "default 0"
+        decimal jumlah_bayar "default 0"
         timestamp expires_at "nullable"
         timestamp paid_at "nullable"
+        timestamp tanggal_bayar "nullable"
         json raw_notification "nullable"
         json payment_response "nullable"
     }
@@ -139,11 +149,13 @@ erDiagram
     reviews {
         bigint id PK
         bigint product_id FK "products, cascadeOnDelete"
+        bigint produk_id "legacy, tanpa FK"
         bigint order_id FK "orders, nullOnDelete, nullable"
         bigint user_id FK "users, nullOnDelete, nullable"
         string customer_name
         tinyint rating
         text comment
+        string image_path "nullable"
         string status "default 'Menunggu'"
     }
     personal_access_tokens {
@@ -222,7 +234,7 @@ Catatan lain:
 
 ## Ringkasan status penting (untuk laporan)
 
-- `orders.status` (state machine pesanan): `Belum Dibayar` / `Menunggu Pembayaran` → `Diproses` → `Dikirim` → `Selesai`, dengan `Dibatalkan` sebagai status akhir batal; transisi dijaga `Admin\OrderController::$allowedTransitions`.
+- `orders.status` (state machine pesanan, dijaga `Admin\OrderController::$allowedTransitions`): `Belum Dibayar` → `Menunggu Pembayaran` → `Sudah Dibayar` / `Diproses` → `Dikirim` → `Selesai`; varian `Menunggu Konfirmasi` → `Diproses`/`Sudah Dibayar`, `Menunggu Verifikasi` → `Diproses`/`Sudah Dibayar`; status akhir: `Selesai`, `Dibatalkan`, `Batal`.
 - `orders.payment_status`: `pending` → `paid` / `failed` / `cancelled` / `expired` (konstanta `Order::PAYMENT_*`).
 - `payments.status`: `pending`, `paid`, `failed`, `cancelled`, `expired`, `replaced` (konstanta `Payment::STATUS_*`).
 - `shipments.status_pengiriman`: `Menunggu Pengiriman` → `Diproses` → `Dikirim` → `Diterima`.

@@ -17,7 +17,7 @@ Dokumen ini pengganti koleksi Postman. Semua endpoint di bawah **diverifikasi da
 | `GET /api/me` | Bearer | Profil user aktif |
 | `GET /api/user` | Bearer | Alias `/me` (Flutter) |
 | `PATCH /api/user` | Bearer | Update profil |
-| `POST /api/logout` | Bearer | Cetak token aktif |
+| `POST /api/logout` | Bearer | Cabut token aktif |
 | `GET /api/categories` | publik | Daftar kategori |
 | `GET /api/products` | publik | Katalog (cari/filter/sort/paginasi) |
 | `GET /api/products/{product}` | publik | Detail produk + ulasan |
