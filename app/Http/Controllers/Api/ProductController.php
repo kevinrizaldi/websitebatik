@@ -153,15 +153,20 @@ class ProductController extends Controller
         $sizeStock = is_array($sizeStock) ? $sizeStock : [];
 
         $categoryRelation = $product->relationLoaded('category') ? $product->getRelation('category') : null;
+        $categoryName = $categoryRelation?->name ?: ($product->category ?: $product->kategori);
 
         $data = [
             'id' => $product->id,
             'sku' => $product->sku,
             'name' => $product->name ?: $product->nama,
-            'category' => $product->category ?: $product->kategori,
+            'category' => [
+                'id' => $categoryRelation?->id ?? $product->category_id ?? $product->kategori_id ?? null,
+                'name' => $categoryName,
+            ],
+            'category_name' => $categoryName,
             'category_object' => [
                 'id' => $categoryRelation?->id ?? $product->category_id ?? $product->kategori_id ?? null,
-                'name' => $categoryRelation?->name ?: ($product->category ?: $product->kategori),
+                'name' => $categoryName,
             ],
             'product_type' => $product->product_type ?: $product->jenis_produk,
             'price' => (float) ($product->price ?? $product->harga ?? 0),

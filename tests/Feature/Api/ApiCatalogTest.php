@@ -62,11 +62,16 @@ class ApiCatalogTest extends TestCase
         $this->assertSame($category->id, $product['category_object']['id']);
         $this->assertSame('Kain Batik', $product['category_object']['name']);
 
+        // Plan-canonical category object (legacy string moved to category_name).
+        $this->assertIsArray($product['category']);
+        $this->assertSame($category->id, $product['category']['id']);
+        $this->assertSame('Kain Batik', $product['category']['name']);
+
         // Legacy keys kept for Flutter.
         $this->assertArrayHasKey('image_url', $product);
         $this->assertArrayHasKey('reviews_count', $product);
         $this->assertArrayHasKey('size_stock', $product);
-        $this->assertSame('Kain Batik', $product['category']);
+        $this->assertSame('Kain Batik', $product['category_name']);
         $this->assertSame($product['image'], $product['image_url']);
         $this->assertSame($product['sizes'], $product['size_stock']);
     }
