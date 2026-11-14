@@ -33,7 +33,7 @@ Skrip shot-by-shot untuk video demo akhir. **Target total: 5 menit tepat (300 de
 **Aksi layar:**
 
 1. `0:00` — Buka `http://127.0.0.1:8000/` (beranda: banner + produk unggulan).
-2. `0:08` — Pindah cepat ke jendela emulator yang sudah membuka aplikasi Flutter (layar `/login` atau `/home`).
+2. `0:08` — Pindah cepat ke jendela emulator yang sudah membuka aplikasi Flutter (layar `/home`, mode tamu).
 3. `0:15` — Pindah cepat ke tab admin `http://127.0.0.1:8000/dashboard` (atau halaman login admin).
 4. `0:22` — Kembali ke beranda web, zoom pelan ke grid produk; sisakan waktu untuk jeda napas sebelum transisi.
 
@@ -43,13 +43,13 @@ Skrip shot-by-shot untuk video demo akhir. **Target total: 5 menit tepat (300 de
 
 **Narasi (±95 kata):**
 
-> Kita mulai dari dua klien dengan backend yang sama. Di browser, buka 127.0.0.1:8000/login; bila belum punya akun, daftar lewat /register dengan nama, email, telepon, dan password. Di aplikasi Flutter, layar awal mengarahkan ke /login, dan setelah berhasil, guard router membawa pengguna ke /home. Perhatikan perbedaannya: web memakai sesi cookie dan CSRF, sedangkan mobile menyimpan token dari POST /api/login lalu mengirimkannya sebagai Authorization: Bearer. Dua mekanisme autentikasi, satu API, dan satu basis data pengguna yang sama — semua data yang tampil di kedua layar datang dari endpoint yang sama.
+> Kita mulai dari dua klien dengan backend yang sama. Di browser, buka 127.0.0.1:8000/login; bila belum punya akun, daftar lewat /register dengan nama, email, telepon, dan password. Di aplikasi Flutter, aplikasi langsung membuka /home dalam mode tamu; untuk masuk, tap ikon profil atau tekan + Keranjang lalu pilih Login pada ajakan yang muncul — setelah berhasil, guard router membawa pengguna kembali ke /home. Perhatikan perbedaannya: web memakai sesi cookie dan CSRF, sedangkan mobile menyimpan token dari POST /api/login lalu mengirimkannya sebagai Authorization: Bearer. Dua mekanisme autentikasi, satu API, dan satu basis data pengguna yang sama — semua data yang tampil di kedua layar datang dari endpoint yang sama.
 
 **Aksi layar:**
 
 1. `0:30` — Web: buka `http://127.0.0.1:8000/register` (Breeze), isi formulir dengan akun demo, **atau** langsung `http://127.0.0.1:8000/login` bila akun sudah ada.
 2. `0:45` — Web: setelah masuk, arahkan singkat ke halaman profil `http://127.0.0.1:8000/profile` sebagai bukti sesi aktif.
-3. `0:55` — Mobile: layar `/register` (nama, email, telepon, password + konfirmasi) → submit → guard `app_router.dart` mengarahkan ke `/home`. Alternatif cepat: login via `/login`.
+3. `0:55` — Mobile: dari `/home` tap ikon profil → `/login` → buka `/register` (nama, email, telepon, password + konfirmasi) → submit → guard `app_router.dart` mengarahkan ke `/home`. Alternatif cepat: login via `/login` (atau lewat SnackBar "+ Keranjang" tadi).
 4. `1:05` — Tampilkan dua layar berdampingan (browser + emulator) pada posisi login-sukses masing-masing.
 
 **Prasyarat/props:** akun demo dari seeder (atau akun baru yang dibuat khusus rekaman); jangan tampilkan password di layar — ketik singkat atau pakai autofill tersembunyi.
