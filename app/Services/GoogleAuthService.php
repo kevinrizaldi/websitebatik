@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Http;
 class GoogleAuthService
 {
     /**
+     * Allowed clock skew (seconds) when validating iat/nbf against now.
+     */
+    private const CLOCK_SKEW_SECONDS = 60;
+
+    /**
      * Verify a Google ID token and resolve the user, then issue a Sanctum token.
      *
      * Resolves the user by google_id first, then falls back to email. Creates
@@ -60,10 +65,20 @@ class GoogleAuthService
     /**
      * Verify a Google ID token (JWT) via Google's tokeninfo endpoint.
      *
+     * Fails closed: rejects when GOOGLE_CLIENT_ID is not configured, when the
+     * token audience is missing or mismatched, and when exp/iat/nbf claims are
+     * absent or outside their validity window.
+     *
      * @return array<string, mixed>|null
      */
     public function verifyIdToken(string $idToken): ?array
     {
+        $clientId = config('services.google.client_id');
+
+        if (blank($clientId) || ! is_string($clientId)) {
+            return null;
+        }
+
         $response = Http::timeout(5)
             ->get('https://oauth2.googleapis.com/tokeninfo', [
                 'id_token' => $idToken,
@@ -84,12 +99,40 @@ class GoogleAuthService
         }
 
         $audience = $payload['aud'] ?? null;
-        $clientId = config('services.google.client_id');
 
-        if ($clientId && $audience && $audience !== $clientId) {
+        if (! is_string($audience) || $audience === '' || $audience !== $clientId) {
+            return null;
+        }
+
+        if (! $this->timestampsValid($payload)) {
             return null;
         }
 
         return $payload;
+    }
+
+    /**
+     * Explicitly validate exp/iat/nbf claims (fail-closed on missing values).
+     */
+    private function timestampsValid(array $payload): bool
+    {
+        $now = time();
+        $skew = self::CLOCK_SKEW_SECONDS;
+
+        $expiresAt = $payload['exp'] ?? null;
+        if (! is_numeric($expiresAt) || (int) $expiresAt <= $now) {
+            return false;
+        }
+
+        $issuedAt = $payload['iat'] ?? null;
+        if (! is_numeric($issuedAt) || (int) $issuedAt > $now + $skew) {
+            return false;
+        }
+
+        if (isset($payload['nbf']) && (! is_numeric($payload['nbf']) || (int) $payload['nbf'] > $now + $skew)) {
+            return false;
+        }
+
+        return true;
     }
 }
