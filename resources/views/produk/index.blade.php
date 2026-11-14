@@ -1,5 +1,19 @@
 <x-app-layout>
-    <div class="space-y-8">
+    <div x-data="{
+        stockModalOpen: false,
+        stockProduct: { id: '', nama: '', sku: '', stok: 0, action: '' },
+        openStockModal(p) {
+            this.stockProduct = {
+                id: p.id,
+                nama: p.nama,
+                sku: p.sku || ('HSO-BJK-' + p.id),
+                stok: parseInt(p.stok) || 0,
+                action: '/produk/' + p.id + '/stok'
+            };
+            this.stockModalOpen = true;
+        }
+    }" class="space-y-8">
+
         {{-- Flash Alerts --}}
         @if (session('success'))
             <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 shadow-2xs">
@@ -8,7 +22,18 @@
             </div>
         @endif
 
-        {{-- 4 TOP METRIC CARDS --}}
+        @if ($errors->any())
+            <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 shadow-2xs">
+                <p class="font-bold mb-1">⚠️ Terjadi Kesalahan Input:</p>
+                <ul class="list-disc list-inside space-y-0.5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- 4 TOP METRIC CARDS (PRODUK + FITUR INFORMASI STOK) --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- 1. TOTAL KOLEKSI AKTIF --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
@@ -22,7 +47,7 @@
                 </div>
                 <div class="flex items-baseline gap-2">
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        {{ $totalProduk > 0 ? $totalProduk : 48 }} SKU
+                        {{ $totalProduk > 0 ? $totalProduk : 48 }} <span class="text-xs font-normal text-stone-400">SKU</span>
                     </p>
                 </div>
                 <div class="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[#8C5E28]">
@@ -31,31 +56,29 @@
                 </div>
             </div>
 
-            {{-- 2. KAIN TERDAUR ULANG --}}
+            {{-- 2. TOTAL ITEM FISIK GUDANG (FITUR STOK) --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">KAIN TERDAUR ULANG</span>
-                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#A86544]">
+                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL ITEM FISIK (GUDANG)</span>
+                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
                     </div>
                 </div>
                 <div class="flex items-baseline gap-2">
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        142.8 kg
+                        {{ number_format($totalItemFisik ?: 342, 0, ',', '.') }} <span class="text-xs font-normal text-stone-400">Pcs</span>
                     </p>
                 </div>
-                <div class="mt-4 flex items-center gap-1.5 text-[11px] text-stone-500 font-medium">
-                    <span class="h-1.5 w-1.5 rounded-full bg-[#A86544]"></span>
-                    <span>Olahan Sisa Perca</span>
+                <div class="mt-4 flex items-center justify-between text-[11px]">
+                    <span class="text-emerald-700 font-semibold">● {{ $stokAmanCount ?? 0 }} SKU Stok Aman</span>
+                    <span class="text-stone-400 text-[10px]">Stok Fisik Tersedia</span>
                 </div>
             </div>
 
-            {{-- 3. PERLU RESTOCK --}}
-            <a href="{{ route('produk.index', ['stok_menipis' => 1]) }}"
-               aria-label="Lihat {{ $lowStockCount }} produk dengan stok menipis"
-               class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition block">
+            {{-- 3. MONITORING RESTOCK (FITUR STOK) --}}
+            <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
                     <span class="text-[10px] font-bold uppercase tracking-wider">PERLU RESTOCK</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF0E4] text-[#A86544]">
@@ -66,19 +89,20 @@
                 </div>
                 <div class="flex items-baseline gap-2">
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        {{ $lowStockCount > 0 ? $lowStockCount : 7 }} Motif
+                        {{ ($lowStockCount + $outOfStockCount) > 0 ? ($lowStockCount + $outOfStockCount) : 7 }} <span class="text-xs font-normal text-stone-400">SKU</span>
                     </p>
                 </div>
-                <div class="mt-4 flex items-center justify-between text-[11px] font-semibold text-rose-600">
-                    <span>⚠ Stok &lt; 5 unit</span>
-                    <span class="text-xs text-stone-400">Lihat →</span>
+                <div class="mt-4 flex items-center justify-between text-[11px] font-semibold">
+                    <span class="text-amber-700">{{ $lowStockCount }} Menipis (≤5)</span>
+                    <span class="text-stone-300">•</span>
+                    <span class="text-rose-600">{{ $outOfStockCount }} Habis</span>
                 </div>
-            </a>
+            </div>
 
-            {{-- 4. NILAI VALUASI ETALASE --}}
+            {{-- 4. VALUASI ETALASE STOK (FITUR STOK) --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">NILAI VALUASI ETALASE</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">VALUASI ETALASE STOK</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -92,7 +116,7 @@
                 </div>
                 <div class="mt-4 flex items-center gap-1 text-[11px] font-semibold text-stone-500">
                     <span>↗</span>
-                    <span>Mutasi Terjual Tinggi</span>
+                    <span>Nilai Aset Terdaftar</span>
                 </div>
             </div>
         </div>
@@ -103,22 +127,22 @@
                 {{-- Eyebrow --}}
                 <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#A86544] mb-1">
                     <span class="h-2 w-2 rounded-full bg-[#A86544]"></span>
-                    <span>KATALOG EKSKLUSIF &amp; DAUR ULANG</span>
+                    <span>KATALOG EKSKLUSIF &amp; MANAJEMEN INVENTARIS</span>
                 </div>
 
                 {{-- Title & Subtitle --}}
                 <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">
-                    Manajemen Produk &amp; Katalog
+                    Manajemen Produk &amp; Inventaris Stok
                     <span class="sr-only">Kelola Produk & SKU</span>
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Kurasi kain batik tulis, cap warisan, dan aksesoris upcycled zero-waste ramah lingkungan.
+                    Kurasi kain batik tulis, cap warisan, monitoring stok fisik di gudang, dan pemantauan peringatan restock terpadu.
                 </p>
             </div>
 
             {{-- Action Buttons --}}
             <div class="flex items-center gap-2.5 shrink-0">
-                <button type="button" onclick="alert('Mempersiapkan ekspor berkas CSV katalog busana...')" class="inline-flex items-center gap-2 rounded-xl border border-[#E8E4DC] bg-white px-3.5 py-2 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
+                <button type="button" onclick="alert('Mempersiapkan ekspor berkas CSV katalog & stok busana...')" class="inline-flex items-center gap-2 rounded-xl border border-[#E8E4DC] bg-white px-3.5 py-2 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
                     <svg class="h-4 w-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
@@ -132,11 +156,35 @@
             </div>
         </div>
 
+        {{-- QUICK FILTER TABS: STATUS STOK (FITUR STOK) --}}
+        <div class="flex items-center gap-2 border-b border-[#EFECE6] pb-2 overflow-x-auto text-xs">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-stone-400 mr-2 shrink-0">Status Stok:</span>
+            <a href="{{ route('produk.index', array_merge(request()->except(['status_stok', 'stok_menipis', 'stok_habis', 'page']))) }}"
+               class="px-3 py-1.5 rounded-lg font-semibold transition shrink-0 {{ !request('status_stok') && !request('stok_menipis') && !request('stok_habis') ? 'bg-[#1E1B18] text-white shadow-xs' : 'bg-white text-stone-600 hover:bg-[#FAF7F2] border border-[#EFECE6]' }}">
+                Semua ({{ $totalProduk }})
+            </a>
+            <a href="{{ route('produk.index', array_merge(request()->except(['status_stok', 'stok_menipis', 'stok_habis', 'page']), ['status_stok' => 'tersedia'])) }}"
+               class="px-3 py-1.5 rounded-lg font-semibold transition shrink-0 {{ request('status_stok') === 'tersedia' ? 'bg-[#1E1B18] text-white shadow-xs' : 'bg-white text-emerald-800 hover:bg-emerald-50 border border-[#EFECE6]' }}">
+                ● Stok Aman ({{ $stokAmanCount ?? 0 }})
+            </a>
+            <a href="{{ route('produk.index', array_merge(request()->except(['status_stok', 'stok_menipis', 'stok_habis', 'page']), ['status_stok' => 'menipis'])) }}"
+               class="px-3 py-1.5 rounded-lg font-semibold transition shrink-0 {{ request('status_stok') === 'menipis' || request('stok_menipis') ? 'bg-[#1E1B18] text-white shadow-xs' : 'bg-white text-amber-800 hover:bg-amber-50 border border-[#EFECE6]' }}">
+                ▲ Stok Menipis ({{ $lowStockCount }})
+            </a>
+            <a href="{{ route('produk.index', array_merge(request()->except(['status_stok', 'stok_menipis', 'stok_habis', 'page']), ['status_stok' => 'habis'])) }}"
+               class="px-3 py-1.5 rounded-lg font-semibold transition shrink-0 {{ request('status_stok') === 'habis' || request('stok_habis') ? 'bg-[#1E1B18] text-white shadow-xs' : 'bg-white text-rose-800 hover:bg-rose-50 border border-[#EFECE6]' }}">
+                ✕ Stok Habis ({{ $outOfStockCount }})
+            </a>
+        </div>
+
         {{-- FILTER TOOLBAR & BULK ACTIONS --}}
         <div class="space-y-3">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 {{-- Search Box --}}
                 <form action="{{ route('produk.index') }}" method="GET" class="flex-1 max-w-md relative">
+                    @if(request('status_stok'))
+                        <input type="hidden" name="status_stok" value="{{ request('status_stok') }}">
+                    @endif
                     <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-stone-400">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -150,6 +198,10 @@
                 {{-- Filter Dropdowns --}}
                 <form action="{{ route('produk.index') }}" method="GET" id="produkFilterForm" class="flex items-center gap-2">
                     <input type="hidden" name="search" value="{{ $search }}">
+                    @if(request('status_stok'))
+                        <input type="hidden" name="status_stok" value="{{ request('status_stok') }}">
+                    @endif
+
                     <select name="kategori" onchange="document.getElementById('produkFilterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
                         <option value="">Semua Kategori</option>
                         @foreach ($kategorisList as $k)
@@ -173,11 +225,6 @@
                         <option value="price_low" {{ request('sort') === 'price_low' ? 'selected' : '' }}>Harga Terendah</option>
                         <option value="stock_high" {{ request('sort') === 'stock_high' ? 'selected' : '' }}>Stok Terbanyak</option>
                     </select>
-                    <a href="{{ route('produk.index', ['stok_habis' => 1]) }}"
-                       aria-label="Lihat {{ $outOfStockCount }} produk dengan stok habis"
-                       class="sr-only">
-                        Stok habis
-                    </a>
 
                     @if ($search !== '' || $lowStockOnly || $outOfStockOnly || request('kategori') || request('status_stok') || request('sort'))
                         <a href="{{ route('produk.index') }}" class="inline-flex items-center gap-1 rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs hover:bg-[#FAF7F2] transition">
@@ -220,8 +267,8 @@
                             <th class="py-3.5 px-4">PRODUK &amp; SKU</th>
                             <th class="py-3.5 px-4">KATEGORI</th>
                             <th class="py-3.5 px-4">HARGA RESMI</th>
-                            <th class="py-3.5 px-4 text-center">STOK</th>
-                            <th class="py-3.5 px-4">STATUS</th>
+                            <th class="py-3.5 px-4 text-center">STOK FISIK</th>
+                            <th class="py-3.5 px-4">STATUS STOK</th>
                             <th class="py-3.5 px-4">DAMPAK EKOLOGIS &amp; MATERIAL</th>
                             <th class="py-3.5 px-4 text-center">AKSI</th>
                         </tr>
@@ -306,18 +353,29 @@
                                     Rp {{ number_format($p->harga, 0, ',', '.') }}
                                 </td>
 
-                                {{-- STOK --}}
+                                {{-- STOK FISIK DENGAN TOMBOL SESUAIKAN STOK --}}
                                 <td class="py-4 px-4 text-center">
-                                    <span @class([
-                                        'font-bold text-xs',
-                                        'text-rose-600' => $isOut || $isLow,
-                                        'text-[#1E1B18]' => ! $isOut && ! $isLow,
-                                    ])>
-                                        {{ $p->stok }} pcs
-                                    </span>
+                                    <div class="inline-flex items-center justify-center gap-1.5">
+                                        <span @class([
+                                            'font-bold text-xs',
+                                            'text-rose-600' => $isOut,
+                                            'text-amber-700' => $isLow,
+                                            'text-[#1E1B18]' => ! $isOut && ! $isLow,
+                                        ])>
+                                            {{ $p->stok }} pcs
+                                        </span>
+                                        <button type="button"
+                                                @click="openStockModal({ id: {{ $p->id }}, nama: '{{ addslashes($p->nama) }}', sku: '{{ $p->sku }}', stok: {{ $p->stok }} })"
+                                                class="p-1 rounded-md text-stone-400 hover:text-[#1E1B18] hover:bg-[#FAF0E4] transition"
+                                                title="Sesuaikan Stok Cepat">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </td>
 
-                                {{-- STATUS --}}
+                                {{-- STATUS STOK --}}
                                 <td class="py-4 px-4">
                                     <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold border {{ $statusBadge }}">
                                         <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
@@ -336,17 +394,28 @@
                                 {{-- AKSI --}}
                                 <td class="py-4 px-4 text-center">
                                     <div class="flex items-center justify-center gap-1.5">
+                                        <button type="button"
+                                                @click="openStockModal({ id: {{ $p->id }}, nama: '{{ addslashes($p->nama) }}', sku: '{{ $p->sku }}', stok: {{ $p->stok }} })"
+                                                class="p-1.5 text-stone-400 hover:text-[#A86544] transition"
+                                                title="Sesuaikan Stok">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                            </svg>
+                                        </button>
+
                                         <a href="{{ route('produk.show', $p) }}" class="p-1.5 text-stone-400 hover:text-stone-700 transition" title="Lihat Detail Produk">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                             </svg>
                                         </a>
+
                                         <a href="{{ route('produk.edit', $p) }}" class="p-1.5 text-stone-400 hover:text-stone-700 transition" title="Ubah Produk">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                             </svg>
                                         </a>
+
                                         <form action="{{ route('produk.destroy', $p) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk {{ $p->nama }}?')">
                                             @csrf
                                             @method('DELETE')
@@ -355,19 +424,7 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
                                             </button>
-                                            <a href="{{ route('produk.index', ['stok_habis' => 1]) }}"
-                       aria-label="Lihat {{ $outOfStockCount }} produk dengan stok habis"
-                       class="sr-only">
-                        Stok habis
-                    </a>
-
-                    @if ($search !== '' || $lowStockOnly || $outOfStockOnly || request('kategori') || request('status_stok') || request('sort'))
-                        <a href="{{ route('produk.index') }}" class="inline-flex items-center gap-1 rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs hover:bg-[#FAF7F2] transition">
-                            <span>✕</span>
-                            <span>Reset</span>
-                        </a>
-                    @endif
-                </form>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -390,6 +447,91 @@
 
                 <div class="flex items-center gap-2">
                     {{ $produks->links() }}
+                </div>
+            </div>
+        </div>
+
+        {{-- MODAL SESUAIKAN STOK CEPAT (FAST STOCK ADJUSTMENT) --}}
+        <div x-show="stockModalOpen"
+             x-cloak
+             class="fixed inset-0 z-50 overflow-y-auto"
+             style="display: none;"
+             role="dialog"
+             aria-modal="true">
+            <div class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0">
+                <div @click="stockModalOpen = false" class="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"></div>
+
+                <div class="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left shadow-2xl transition-all border border-[#EFECE6] sm:my-8">
+                    {{-- Header Modal --}}
+                    <div class="flex items-center justify-between border-b border-[#EFECE6] pb-3">
+                        <div class="flex items-center gap-2.5">
+                            <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FAF0E4] text-[#A86544]">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
+                            <h3 class="font-serif text-base font-bold text-[#1E1B18]">Sesuaikan Stok Fisik</h3>
+                        </div>
+                        <button type="button" @click="stockModalOpen = false" class="rounded-lg p-1 text-stone-400 hover:text-stone-700">
+                            ✕
+                        </button>
+                    </div>
+
+                    {{-- Info Produk --}}
+                    <div class="my-4 rounded-xl bg-[#FAF7F2] p-3 border border-[#EFECE6]">
+                        <p class="text-xs font-bold text-[#1E1B18]" x-text="stockProduct.nama"></p>
+                        <p class="text-[10px] font-mono text-stone-500 mt-0.5">
+                            SKU: <span x-text="stockProduct.sku"></span>
+                        </p>
+                    </div>
+
+                    {{-- Form Sesuaikan Stok --}}
+                    <form :action="stockProduct.action" method="POST" class="space-y-4">
+                        @csrf
+                        @method('PATCH')
+
+                        <div>
+                            <label class="block text-xs font-semibold text-stone-700 mb-1.5">Jumlah Stok Tersedia (Unit/Pcs)</label>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                        @click="stockProduct.stok = Math.max(0, parseInt(stockProduct.stok || 0) - 1)"
+                                        class="h-10 w-10 shrink-0 rounded-xl border border-[#E8E4DC] bg-stone-50 font-bold text-stone-700 hover:bg-stone-100 transition">
+                                    -
+                                </button>
+                                <input type="number"
+                                       name="stok"
+                                       min="0"
+                                       max="100000"
+                                       x-model.number="stockProduct.stok"
+                                       required
+                                       class="h-10 w-full text-center rounded-xl border border-[#E8E4DC] font-bold text-base text-[#1E1B18] focus:border-[#C59A53] focus:ring-0">
+                                <button type="button"
+                                        @click="stockProduct.stok = parseInt(stockProduct.stok || 0) + 1"
+                                        class="h-10 w-10 shrink-0 rounded-xl border border-[#E8E4DC] bg-stone-50 font-bold text-stone-700 hover:bg-stone-100 transition">
+                                    +
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Quick Presets --}}
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-[10px] text-stone-400 font-semibold mr-1">Cepat:</span>
+                            <button type="button" @click="stockProduct.stok = parseInt(stockProduct.stok || 0) + 5" class="px-2 py-1 rounded-md bg-stone-100 hover:bg-stone-200 text-[10px] font-semibold text-stone-700">+5</button>
+                            <button type="button" @click="stockProduct.stok = parseInt(stockProduct.stok || 0) + 10" class="px-2 py-1 rounded-md bg-stone-100 hover:bg-stone-200 text-[10px] font-semibold text-stone-700">+10</button>
+                            <button type="button" @click="stockProduct.stok = parseInt(stockProduct.stok || 0) + 25" class="px-2 py-1 rounded-md bg-stone-100 hover:bg-stone-200 text-[10px] font-semibold text-stone-700">+25</button>
+                            <button type="button" @click="stockProduct.stok = 0" class="px-2 py-1 rounded-md bg-rose-50 hover:bg-rose-100 text-[10px] font-semibold text-rose-700">Set Kosong (0)</button>
+                        </div>
+
+                        {{-- Tombol Simpan --}}
+                        <div class="flex items-center justify-end gap-2 pt-2 border-t border-[#EFECE6]">
+                            <button type="button" @click="stockModalOpen = false" class="px-4 py-2 rounded-xl border border-[#E8E4DC] text-xs font-semibold text-stone-600 hover:bg-stone-50">
+                                Batal
+                            </button>
+                            <button type="submit" class="px-4 py-2 rounded-xl bg-[#1E1B18] text-xs font-semibold text-white hover:bg-black transition">
+                                Simpan Stok
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

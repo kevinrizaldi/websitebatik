@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Kategori;
 use App\Models\Produk;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -53,10 +54,12 @@ class ProdukController extends Controller
             default => $query->latest(),
         };
 
-        $produks = $query->paginate(5)->withQueryString();
+        $produks = $query->paginate(10)->withQueryString();
         $totalProduk = Produk::count();
         $lowStockCount = Produk::whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD])->count();
         $outOfStockCount = Produk::where('stok', '<=', 0)->count();
+        $stokAmanCount = Produk::where('stok', '>', Produk::LOW_STOCK_THRESHOLD)->count();
+        $totalItemFisik = (int) (Produk::sum('stok') ?: 0);
         $totalKategori = Schema::hasTable('categories') ? Kategori::count() : 4;
         $kategorisList = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
         $totalValuasi = (float) (Produk::query()->selectRaw('SUM(harga * stok) as total')->value('total') ?? 128400000);
@@ -68,6 +71,8 @@ class ProdukController extends Controller
             'lowStockCount',
             'outOfStockOnly',
             'outOfStockCount',
+            'stokAmanCount',
+            'totalItemFisik',
             'totalProduk',
             'totalKategori',
             'kategorisList',
@@ -312,5 +317,25 @@ class ProdukController extends Controller
         return redirect()
             ->route('produk.index')
             ->with('success', 'Produk berhasil dihapus.');
+    }
+
+    /**
+     * Update stok produk secara cepat
+     */
+    public function updateStock(Request $request, Produk $produk): RedirectResponse
+    {
+        $validated = $request->validate([
+            'stok' => 'required|integer|min:0|max:100000',
+        ], [
+            'stok.required' => 'Jumlah stok wajib diisi.',
+            'stok.integer' => 'Stok harus berupa bilangan bulat.',
+            'stok.min' => 'Stok tidak boleh bernilai negatif.',
+            'stok.max' => 'Stok maksimal 100.000 unit.',
+        ]);
+
+        $stokLama = $produk->stok;
+        $produk->update(['stok' => $validated['stok']]);
+
+        return redirect()->back()->with('success', "Stok untuk produk \"{$produk->nama}\" berhasil disesuaikan dari {$stokLama} menjadi {$validated['stok']} unit.");
     }
 }
