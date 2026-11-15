@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ShippingController;
 use Illuminate\Support\Facades\Route;
 
 // Public endpoints
@@ -39,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::get('/orders', [OrderController::class, 'index']);
     Route::post('/checkout', [OrderController::class, 'checkout']);
+    Route::post('/shipping/costs', [ShippingController::class, 'costs']);
     Route::get('/orders/{order}', [OrderController::class, 'show']);
     Route::get('/orders/{order}/payment', [OrderController::class, 'payment']);
     Route::post('/orders/{order}/confirm', [OrderController::class, 'confirm']);
