@@ -339,15 +339,6 @@ class ApiCheckoutOrderTest extends TestCase
         $this->assertSame('cancelled', $order->payment_status);
     }
 
-    public function test_cancel_paid_order_returns_422(): void
-    {
-        $user = User::factory()->create();
-        $token = $this->tokenFor($user);
-        $order = Order::factory()->for($user)->diproses()->create();
-
-        $response = $this->withToken($token)->postJson("/api/orders/{$order->id}/cancel");
-
-        $response->assertStatus(422)->assertJsonStructure(['message']);
-        $this->assertSame('Diproses', $order->refresh()->status);
-    }
+    // Spec pindah: pesanan dibayar (Diproses) kini mengajukan pembatalan
+    // yang disetujui admin — lihat ApiOrderCancellationTest.
 }

@@ -258,7 +258,8 @@ class OrderController extends Controller
     }
 
     /**
-     * Customer cancels an unpaid order (restocks inventory).
+     * Customer cancels an unpaid order directly, or submits a cancellation
+     * request for a paid-but-not-yet-shipped order (admin must approve).
      */
     public function cancel(Request $request, Order $order, OrderLifecycleService $lifecycle): JsonResponse
     {
@@ -266,18 +267,36 @@ class OrderController extends Controller
             return response()->json(['message' => 'Tidak diizinkan.'], 403);
         }
 
-        if (! $lifecycle->cancelUnpaid($order)) {
+        // Belum dibayar: batalkan langsung oleh customer (stok dikembalikan).
+        if ($lifecycle->cancelUnpaid($order)) {
+            $order->load(['items.product', 'shipment', 'reviews']);
+
             return response()->json([
-                'message' => 'Pesanan tidak dapat dibatalkan pada status ini.',
+                'message' => 'Pesanan berhasil dibatalkan.',
+                'data' => $this->formatOrder($order),
+            ]);
+        }
+
+        // Sudah diajukan sebelumnya: tunggu keputusan admin.
+        if ($order->cancel_requested_at !== null) {
+            return response()->json([
+                'message' => 'Permintaan pembatalan sudah diajukan. Menunggu persetujuan admin.',
             ], 422);
         }
 
-        $order->load(['items.product', 'shipment', 'reviews']);
+        // Sudah dibayar, belum dikirim: ajukan pembatalan ke admin.
+        if ($lifecycle->requestCancellation($order)) {
+            $order->load(['items.product', 'shipment', 'reviews']);
+
+            return response()->json([
+                'message' => 'Permintaan pembatalan berhasil diajukan. Menunggu persetujuan admin.',
+                'data' => $this->formatOrder($order),
+            ]);
+        }
 
         return response()->json([
-            'message' => 'Pesanan berhasil dibatalkan.',
-            'data' => $this->formatOrder($order),
-        ]);
+            'message' => 'Pesanan tidak dapat dibatalkan pada status ini.',
+        ], 422);
     }
 
     /**
@@ -413,6 +432,7 @@ class OrderController extends Controller
             'courier' => $order->shipment?->courier ?? $order->shipment?->ekspedisi ?? 'JNE Reguler',
             'tracking_number' => $order->tracking_number ?: $order->shipment?->tracking_number,
             'has_review' => $order->reviews->isNotEmpty(),
+            'cancel_requested' => $order->cancel_requested_at !== null,
             'created_at' => $order->created_at?->toIso8601String(),
             'payment_deadline' => $order->payment_deadline?->toIso8601String(),
             'items' => $items,

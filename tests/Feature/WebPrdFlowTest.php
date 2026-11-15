@@ -1095,17 +1095,31 @@ class WebPrdFlowTest extends TestCase
         $response->assertDontSee('Hendra W.');
     }
 
-    public function test_admin_cannot_cancel_paid_order(): void
+    public function test_admin_cannot_cancel_shipped_order(): void
     {
+        // PRD baru: pesanan boleh dibatalkan sebelum Dikirim; sesudah Dikirim final.
         $admin = $this->admin();
         $user = $this->customer();
         $produk = $this->sampleProduk('V');
-        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ADM-002', 'Diproses');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ADM-002', 'Dikirim');
 
         $response = $this->actingAs($admin)->patch(route('admin.orders.cancel', $order));
 
         $response->assertSessionHasErrors('status');
-        $this->assertSame('Diproses', $order->refresh()->status);
+        $this->assertSame('Dikirim', $order->refresh()->status);
+    }
+
+    public function test_admin_can_cancel_paid_order_before_shipping(): void
+    {
+        $admin = $this->admin();
+        $user = $this->customer();
+        $produk = $this->sampleProduk('V');
+        $order = $this->createOrderWithProduct($user, $produk, 'ORD-ADM-004', 'Diproses');
+
+        $response = $this->actingAs($admin)->patch(route('admin.orders.cancel', $order));
+
+        $response->assertSessionHas('success');
+        $this->assertSame('Dibatalkan', $order->refresh()->status);
     }
 
     public function test_admin_can_still_cancel_unpaid_order(): void

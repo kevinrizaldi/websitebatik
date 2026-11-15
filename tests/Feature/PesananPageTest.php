@@ -182,4 +182,30 @@ class PesananPageTest extends TestCase
         $this->assertContains($order->status, [Order::STATUS_CANCELLED, 'Dibatalkan']);
         $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
     }
+
+    /**
+     * Pesanan sudah dibayar (Diproses): customer mengajukan pembatalan
+     * dan menunggu persetujuan admin — status tidak berubah.
+     */
+    public function test_web_customer_can_request_cancellation_for_paid_order(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'code' => 'ORD-WEB-REQ-01',
+            'status' => 'Diproses',
+            'payment_status' => Order::PAYMENT_PAID,
+        ]);
+
+        $response = $this->actingAs($user)->patch(route('pesanan.batal', $order));
+
+        $response->assertRedirect(route('pesanan.index'));
+        $response->assertSessionHas('success', function (string $message): bool {
+            return str_contains(strtolower($message), 'menunggu persetujuan admin');
+        });
+
+        $order->refresh();
+        $this->assertSame('Diproses', $order->status);
+        $this->assertNotNull($order->cancel_requested_at);
+    }
 }

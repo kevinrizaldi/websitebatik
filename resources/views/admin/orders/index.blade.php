@@ -277,6 +277,11 @@
                                     <a href="{{ route('admin.orders.show', $order) }}" class="font-extrabold text-xs text-[#1E1B18] hover:text-[#A86544] hover:underline block">
                                         #{{ $order->code }}
                                     </a>
+                                    @if ($order->cancel_requested_at)
+                                        <span class="mt-1 inline-flex items-center gap-1 rounded-full border border-[#FFCDD2] bg-[#FFEBEE] px-2 py-0.5 text-[9px] font-bold text-[#C62828]">
+                                            Ajukan Pembatalan
+                                        </span>
+                                    @endif
                                     <p class="text-[10px] text-stone-400 mt-1 font-sans">
                                         {{ $order->created_at->format('d M Y') }} • {{ $order->created_at->format('H:i') }} WIB
                                     </p>

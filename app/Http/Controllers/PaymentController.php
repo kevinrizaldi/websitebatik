@@ -234,7 +234,8 @@ class PaymentController extends Controller
 
     /**
      * Customer cancels their own order.
-     * Hanya pesanan yang belum dibayar yang boleh dibatalkan customer.
+     * Belum dibayar: batalkan langsung. Sudah dibayar & belum dikirim:
+     * ajukan pembatalan, menunggu persetujuan admin.
      */
     public function cancelOrder(Request $request, Order $order): RedirectResponse
     {
@@ -242,11 +243,20 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        if (! $this->orderLifecycle->cancelUnpaid($order)) {
-            return back()->with('error', 'Pesanan tidak dapat dibatalkan pada status ini.');
+        if ($this->orderLifecycle->cancelUnpaid($order)) {
+            return redirect()->route('pesanan.index')
+                ->with('success', "Pesanan #{$order->code} berhasil dibatalkan.");
         }
 
-        return redirect()->route('pesanan.index')
-            ->with('success', "Pesanan #{$order->code} berhasil dibatalkan.");
+        if ($order->cancel_requested_at !== null) {
+            return back()->with('error', 'Permintaan pembatalan sudah diajukan. Menunggu persetujuan admin.');
+        }
+
+        if ($this->orderLifecycle->requestCancellation($order)) {
+            return redirect()->route('pesanan.index')
+                ->with('success', "Permintaan pembatalan pesanan #{$order->code} berhasil diajukan. Menunggu persetujuan admin.");
+        }
+
+        return back()->with('error', 'Pesanan tidak dapat dibatalkan pada status ini.');
     }
 }

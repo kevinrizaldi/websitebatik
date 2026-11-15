@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Pengiriman;
 use App\Services\MidtransService;
+use App\Services\OrderLifecycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -17,15 +18,16 @@ class OrderController extends Controller
     /**
      * State machine transisi status pesanan (PRD: Menunggu Pembayaran, Diproses, Dikirim, Selesai, Dibatalkan).
      * Status lama (Belum Dibayar/Sudah Dibayar/dll) tetap ditoleransi sebagai alias.
-     * Pesanan yang sudah dibayar TIDAK dapat dibatalkan (belum ada alur refund).
+     * Pesanan boleh dibatalkan sebelum Dikirim (customer mengajukan, admin menyetujui);
+     * refund diproses manual di luar sistem (Midtrans Dashboard/transfer).
      */
     protected array $allowedTransitions = [
         'Menunggu Pembayaran' => ['Diproses', 'Sudah Dibayar', 'Dibatalkan'],
         'Belum Dibayar' => ['Menunggu Pembayaran', 'Diproses', 'Dibatalkan'],
         'Menunggu Konfirmasi' => ['Menunggu Pembayaran', 'Diproses', 'Dibatalkan'],
-        'Menunggu Verifikasi' => ['Diproses', 'Sudah Dibayar'],
-        'Sudah Dibayar' => ['Diproses'],
-        'Diproses' => ['Dikirim'],
+        'Menunggu Verifikasi' => ['Diproses', 'Sudah Dibayar', 'Dibatalkan'],
+        'Sudah Dibayar' => ['Diproses', 'Dibatalkan'],
+        'Diproses' => ['Dikirim', 'Dibatalkan'],
         'Dikirim' => ['Selesai'],
         'Selesai' => [],
         'Batal' => [],
@@ -249,7 +251,8 @@ class OrderController extends Controller
     public function cancel(Order $order)
     {
         try {
-            $allowed = $this->allowedTransitions[$order->status] ?? [];
+            $currentStatus = $this->normalizeStatus($order->status);
+            $allowed = $this->allowedTransitions[$currentStatus] ?? [];
 
             if (! in_array('Dibatalkan', $allowed) && ! in_array('Batal', $allowed)) {
                 return redirect()->back()->withErrors([
@@ -274,6 +277,7 @@ class OrderController extends Controller
                 $order->update([
                     'status' => 'Dibatalkan',
                     'payment_status' => Order::PAYMENT_CANCELLED,
+                    'cancel_requested_at' => null,
                 ]);
 
                 // Cancel pending payment attempts locally and on Midtrans
@@ -294,6 +298,29 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
                 'status' => "Gagal membatalkan pesanan #{$order->code}: ".$e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Admin menolak permintaan pembatalan customer — status pesanan tetap berjalan.
+     */
+    public function rejectCancellation(Order $order, OrderLifecycleService $lifecycle)
+    {
+        try {
+            if (! $lifecycle->rejectCancellation($order)) {
+                return redirect()->back()->withErrors([
+                    'status' => "Pesanan #{$order->code} tidak memiliki permintaan pembatalan yang perlu ditolak.",
+                ]);
+            }
+
+            return redirect()->back()->with(
+                'success',
+                "✓ Permintaan pembatalan pesanan #{$order->code} ditolak. Pesanan tetap diproses."
+            );
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors([
+                'status' => "Gagal menolak permintaan pembatalan pesanan #{$order->code}: ".$e->getMessage(),
             ]);
         }
     }

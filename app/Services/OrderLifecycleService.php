@@ -46,6 +46,56 @@ class OrderLifecycleService
             return false;
         }
 
+        $this->applyCancellation($order);
+
+        return true;
+    }
+
+    /**
+     * Customer submits a cancellation request for a paid-but-not-yet-shipped
+     * order (PRD: boleh dibatalkan sebelum Dikirim, disetujui admin).
+     *
+     * Returns false when the order is not requestable (already shipped,
+     * already cancelled, or the request was already submitted).
+     */
+    public function requestCancellation(Order $order): bool
+    {
+        if (! in_array($order->status, ['Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi'], true)) {
+            return false;
+        }
+
+        if ($order->cancel_requested_at !== null) {
+            return false;
+        }
+
+        $order->update(['cancel_requested_at' => now()]);
+
+        return true;
+    }
+
+    /**
+     * Admin rejects a pending cancellation request — order keeps moving.
+     * Returns false when there is nothing to reject.
+     */
+    public function rejectCancellation(Order $order): bool
+    {
+        if ($order->cancel_requested_at === null) {
+            return false;
+        }
+
+        $order->update(['cancel_requested_at' => null]);
+
+        return true;
+    }
+
+    /**
+     * Apply a cancellation: restock inventory, void pending payment attempts,
+     * and mark the order (and any pending payment) cancelled. Shared by the
+     * unpaid direct cancel and the admin approval paths so restock rules
+     * stay identical everywhere.
+     */
+    private function applyCancellation(Order $order): void
+    {
         DB::transaction(function () use ($order): void {
             // Kembalikan stok produk yang sempat terpotong saat checkout.
             foreach ($order->items as $item) {
@@ -58,7 +108,10 @@ class OrderLifecycleService
                 }
             }
 
-            $order->update(['status' => 'Dibatalkan']);
+            $order->update([
+                'status' => 'Dibatalkan',
+                'cancel_requested_at' => null,
+            ]);
 
             if ($order->payment_status === Order::PAYMENT_PENDING) {
                 $order->update(['payment_status' => Order::PAYMENT_CANCELLED]);
@@ -77,7 +130,5 @@ class OrderLifecycleService
                 }
             }
         });
-
-        return true;
     }
 }
