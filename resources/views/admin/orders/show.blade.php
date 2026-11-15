@@ -227,7 +227,7 @@
                             <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#E9DFD0] bg-[#FAF0E4] py-3 text-xs font-bold text-[#A86544] hover:bg-[#F3E6D5] transition">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#C62828] py-3 text-xs font-bold text-white shadow-xs hover:bg-[#B71C1C] transition">
                                     <span>✕</span>
                                     <span>Batalkan Pesanan (Expire)</span>
                                 </button>

@@ -155,4 +155,17 @@ class OrderCancellationRequestTest extends TestCase
             ->assertSee('Setujui Pembatalan')
             ->assertSee('Tolak Pembatalan');
     }
+
+    public function test_unpaid_cancel_button_on_show_page_is_red(): void
+    {
+        $customer = $this->createCustomer();
+        $admin = $this->createAdmin();
+        $order = Order::factory()->for($customer)->belumDibayar()->create();
+
+        $response = $this->actingAs($admin)->get(route('admin.orders.show', $order));
+
+        $response->assertOk()
+            ->assertSee('Batalkan Pesanan (Expire)')
+            ->assertSee('bg-[#C62828]', false);
+    }
 }
