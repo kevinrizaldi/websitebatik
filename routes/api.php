@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 // Public endpoints
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/auth/google', [AuthController::class, 'googleLogin']);
 
 Route::get('/categories', [ProductController::class, 'categories']);
 Route::get('/products', [ProductController::class, 'index']);

@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 
 class AuthController extends Controller
@@ -63,6 +65,88 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Login berhasil.',
+            'token' => $token,
+            'user' => $this->formatUser($user),
+        ]);
+    }
+
+    /**
+     * Authenticate or register a user using Google Sign-In.
+     */
+    public function googleLogin(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id_token' => ['nullable', 'string'],
+            'email' => ['required', 'string', 'email'],
+            'google_id' => ['nullable', 'string'],
+            'name' => ['nullable', 'string', 'max:255'],
+            'avatar' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $googleEmail = strtolower(trim($validated['email']));
+        $googleId = $validated['google_id'] ?? null;
+        $name = $validated['name'] ?? 'Pelanggan Google';
+        $avatar = $validated['avatar'] ?? null;
+
+        // If an id_token is provided, verify it directly with Google
+        if (! empty($validated['id_token'])) {
+            try {
+                $response = Http::timeout(10)->get('https://oauth2.googleapis.com/tokeninfo', [
+                    'id_token' => $validated['id_token'],
+                ]);
+
+                if ($response->successful()) {
+                    $tokenInfo = $response->json();
+                    if (! empty($tokenInfo['email'])) {
+                        $googleEmail = strtolower(trim($tokenInfo['email']));
+                    }
+                    if (! empty($tokenInfo['sub'])) {
+                        $googleId = $tokenInfo['sub'];
+                    }
+                    if (! empty($tokenInfo['name'])) {
+                        $name = $tokenInfo['name'];
+                    }
+                    if (! empty($tokenInfo['picture'])) {
+                        $avatar = $tokenInfo['picture'];
+                    }
+                }
+            } catch (\Throwable $e) {
+                // If Google tokeninfo is unreachable, fall back to validated request values
+            }
+        }
+
+        // 1. Find user by google_id or by email
+        $user = null;
+        if ($googleId) {
+            $user = User::where('google_id', $googleId)->first();
+        }
+        if (! $user) {
+            $user = User::where('email', $googleEmail)->first();
+        }
+
+        if ($user) {
+            $user->update([
+                'google_id' => $googleId ?: $user->google_id,
+                'avatar' => $user->avatar ?: $avatar,
+            ]);
+        } else {
+            $user = User::create([
+                'name' => $name,
+                'email' => $googleEmail,
+                'google_id' => $googleId,
+                'avatar' => $avatar,
+                'password' => Hash::make(Str::random(32)),
+            ]);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
+        $token = $user->createToken('mobile-app')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login Google berhasil.',
             'token' => $token,
             'user' => $this->formatUser($user),
         ]);
