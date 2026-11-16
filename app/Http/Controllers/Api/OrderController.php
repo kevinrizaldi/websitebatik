@@ -62,7 +62,6 @@ class OrderController extends Controller
             'shipping_option' => ['nullable', 'string', 'max:100'],
             'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'payment_method' => ['nullable', 'string', 'max:100'],
-            'voucher' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:500'],
             'cart_item_ids' => ['nullable', 'array'],
             'cart_item_ids.*' => ['integer'],
@@ -116,7 +115,7 @@ class OrderController extends Controller
 
         $totals = $checkoutService->calculateOrderTotals(
             $cartItems,
-            $validated['voucher'] ?? null,
+            null,
             isset($validated['shipping_cost']) ? (float) $validated['shipping_cost'] : null,
             $user,
         );
@@ -128,7 +127,6 @@ class OrderController extends Controller
                 $cartItems,
                 $totals['grand_total'],
                 $totals['shipping'],
-                $totals['voucher'],
             );
         } catch (InvalidArgumentException $e) {
             return response()->json([
