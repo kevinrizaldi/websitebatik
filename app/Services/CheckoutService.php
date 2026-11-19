@@ -98,6 +98,20 @@ class CheckoutService
         }
 
         $discount = 0.0;
+        $voucherInput = strtoupper(trim((string) $voucher));
+        if (in_array($voucherInput, ['SIRKULAR50K', 'LESTARI50K', 'LESTARICAPSULE'], true) && $subtotal >= 200000) {
+            $alreadyUsed = false;
+            if ($user && $user->exists) {
+                $alreadyUsed = Order::where('user_id', $user->id)
+                    ->where('address', 'like', "%[Voucher: {$voucherInput}]%")
+                    ->whereNotIn('status', [Order::STATUS_CANCELLED, 'Dibatalkan'])
+                    ->exists();
+            }
+
+            if (! $alreadyUsed) {
+                $discount = 50000.0;
+            }
+        }
 
         $isFreeShipping = ($subtotal >= 955000);
 
@@ -116,10 +130,10 @@ class CheckoutService
 
         return [
             'subtotal' => $subtotal,
-            'discount' => 0.0,
+            'discount' => $discount,
             'shipping' => $shipping,
             'grand_total' => $grandTotal,
-            'voucher' => null,
+            'voucher' => $discount > 0 ? $voucherInput : null,
         ];
     }
 
@@ -156,7 +170,7 @@ class CheckoutService
      * @param  array<string, mixed>  $validated
      * @param  Collection<int, CartItem>  $cartItems
      */
-    public function createOrder(User $user, array $validated, Collection $cartItems, float $grandTotal, float $shipping): Order
+    public function createOrder(User $user, array $validated, Collection $cartItems, float $grandTotal, float $shipping, ?string $appliedVoucher = null): Order
     {
         do {
             $orderCode = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(6));
@@ -164,9 +178,10 @@ class CheckoutService
 
         $shippingOption = $validated['shipping_option'] ?? 'JNE Reguler';
 
-        return DB::transaction(function () use ($user, $validated, $cartItems, $grandTotal, $orderCode, $shippingOption, $shipping) {
+        return DB::transaction(function () use ($user, $validated, $cartItems, $grandTotal, $orderCode, $shippingOption, $shipping, $appliedVoucher) {
             $notesText = ! empty($validated['notes']) ? ' (Catatan: '.$validated['notes'].')' : '';
-            $fullAddress = $validated['address'].$notesText.' [Kurir: '.$shippingOption.']';
+            $voucherTag = ! empty($appliedVoucher) ? ' [Voucher: '.$appliedVoucher.']' : '';
+            $fullAddress = $validated['address'].$notesText.$voucherTag.' [Kurir: '.$shippingOption.']';
 
             // Lock and re-validate stock for each unique product to prevent race conditions / overselling
             $lockedProducts = [];

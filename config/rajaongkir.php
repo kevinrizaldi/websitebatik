@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'api_key' => env('RAJAONGKIR_API_KEY', '1FsGgWTJ63b4681c1cd32c5dTJRdnYyt'),
+    'api_key' => env('RAJAONGKIR_API_KEY', ''),
 
     'base_url' => env('RAJAONGKIR_BASE_URL', 'https://rajaongkir.komerce.id/api/v1'),
 

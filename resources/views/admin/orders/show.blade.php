@@ -184,7 +184,33 @@
                     </div>
 
                     {{-- Action Buttons: Setujui / Tolak --}}
-                    @if (in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi']))
+                    @if ($order->cancel_requested_at)
+                        <div class="rounded-xl border border-[#FFCDD2] bg-[#FFEBEE] p-3 text-xs text-[#C62828] space-y-1 mb-2">
+                            <strong>Permintaan pembatalan dari customer</strong>
+                            <span class="block text-[11px]">Diajukan {{ $order->cancel_requested_at->diffForHumans() }} — stok dikembalikan bila disetujui.</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            {{-- Form Setujui Pembatalan --}}
+                            <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Setujui pembatalan pesanan ini? Stok akan dikembalikan dan refund diproses manual.')">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#C62828] py-3 text-xs font-bold text-white shadow-xs hover:bg-[#B71C1C] transition">
+                                    <span>✓</span>
+                                    <span>Setujui Pembatalan</span>
+                                </button>
+                            </form>
+
+                            {{-- Form Tolak Pembatalan --}}
+                            <form action="{{ route('admin.orders.reject-cancellation', $order) }}" method="POST">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 py-3 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition">
+                                    <span>✕</span>
+                                    <span>Tolak Pembatalan</span>
+                                </button>
+                            </form>
+                        </div>
+                    @elseif (in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi']))
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                             {{-- Form Setujui --}}
                             <form action="{{ route('admin.orders.update-status', $order) }}" method="POST">
@@ -201,7 +227,7 @@
                             <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#E9DFD0] bg-[#FAF0E4] py-3 text-xs font-bold text-[#A86544] hover:bg-[#F3E6D5] transition">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#C62828] py-3 text-xs font-bold text-white shadow-xs hover:bg-[#B71C1C] transition">
                                     <span>✕</span>
                                     <span>Batalkan Pesanan (Expire)</span>
                                 </button>

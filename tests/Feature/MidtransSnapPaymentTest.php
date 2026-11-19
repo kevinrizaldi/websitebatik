@@ -443,9 +443,9 @@ class MidtransSnapPaymentTest extends TestCase
         $this->postJson('/midtrans/notification', $payload)->assertStatus(404);
     }
 
-    // ── Test 13 (renamed): expire on pending attempt marks attempt expired and leaves order pending
+    // ── Test 13 (renamed): expire on pending attempt marks attempt expired and cancels order
 
-    public function test_expire_on_pending_attempt_marks_attempt_expired_and_leaves_order_pending(): void
+    public function test_expire_on_pending_attempt_marks_attempt_expired_and_cancels_order(): void
     {
         $this->setTestServerKey();
         $user = User::factory()->create(['role' => 'customer']);
@@ -472,8 +472,8 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Payment::STATUS_EXPIRED, $payment->status);
 
         $order->refresh();
-        $this->assertSame(Order::PAYMENT_PENDING, $order->payment_status);
-        $this->assertSame(Order::STATUS_UNPAID, $order->status);
+        $this->assertSame('Dibatalkan', $order->status);
+        $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
     }
 
     // ── HT-1: buildItemDetails returns correct gross_amount and item rows ─────
@@ -1084,9 +1084,9 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Order::PAYMENT_PAID, $order->payment_status);
     }
 
-    // ── 9. Webhook expire and cancel on an active attempt -> attempt expired/cancelled, order still payable ──
+    // ── 9. Webhook expire and cancel on an active attempt -> attempts marked dead, order cancelled ──
 
-    public function test_webhook_expire_and_cancel_on_active_attempt_leaves_order_payable(): void
+    public function test_webhook_cancel_and_expire_on_active_attempt_marks_attempts_dead_and_cancels_order(): void
     {
         $this->setTestServerKey();
         $user = User::factory()->create(['role' => 'customer']);
@@ -1114,8 +1114,8 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Payment::STATUS_CANCELLED, $payment1->status);
 
         $order->refresh();
-        $this->assertSame(Order::STATUS_UNPAID, $order->status);
-        $this->assertSame(Order::PAYMENT_PENDING, $order->payment_status);
+        $this->assertSame('Dibatalkan', $order->status);
+        $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
 
         // Expire notification on a second attempt
         $payment2 = Payment::factory()->create([
@@ -1138,8 +1138,8 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Payment::STATUS_EXPIRED, $payment2->status);
 
         $order->refresh();
-        $this->assertSame(Order::STATUS_UNPAID, $order->status);
-        $this->assertSame(Order::PAYMENT_PENDING, $order->payment_status);
+        $this->assertSame('Dibatalkan', $order->status);
+        $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
     }
 
     // ── 10. Replaced attempt logic: cancel/expire ignored; settlement handles local cancellation or mismatch ──
@@ -1223,7 +1223,7 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Order::PAYMENT_PENDING, $order2->fresh()->payment_status);
     }
 
-    // ── 11. Settlement for an order with status 'Batal' -> attempt paid, order untouched, warning logged ──
+    // ── 11. Settlement for an order with status 'Batal' -> attempt paid, order untouched, critical logged ──
 
     public function test_settlement_for_cancelled_order_marks_attempt_paid_and_leaves_order_untouched(): void
     {
@@ -1251,10 +1251,12 @@ class MidtransSnapPaymentTest extends TestCase
             'transaction_status' => 'settlement',
         ])->assertStatus(200);
 
-        Log::shouldHaveReceived('warning')
-            ->with('Midtrans: payment received for cancelled order', [
+        Log::shouldHaveReceived('critical')
+            ->with('Midtrans: payment received for CANCELLED order - customer funds deducted without active order!', [
                 'order_id' => $order->id,
+                'order_code' => $order->code,
                 'payment_id' => $payment->id,
+                'gross_amount' => $payment->gross_amount,
             ]);
 
         $payment->refresh();
@@ -1421,7 +1423,7 @@ class MidtransSnapPaymentTest extends TestCase
         $this->artisan('orders:expire-overdue')->assertExitCode(0);
 
         $order->refresh();
-        $this->assertSame(Order::STATUS_CANCELLED, $order->status);
+        $this->assertSame('Dibatalkan', $order->status);
         $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
 
         $this->assertDatabaseHas('payments', [
@@ -1539,8 +1541,8 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Order::STATUS_PAID, $order->status);
     }
 
-    /** COMMIT 2d: expire via sync marks attempt expired, order untouched. */
-    public function test_sync_expire_marks_attempt_expired_order_untouched(): void
+    /** COMMIT 2d: expire via sync marks attempt expired and cancels the order. */
+    public function test_sync_expire_marks_attempt_expired_and_cancels_order(): void
     {
         $this->setTestServerKey();
         $user = User::factory()->create(['role' => 'customer']);
@@ -1566,8 +1568,8 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertSame(Payment::STATUS_EXPIRED, $payment->status);
 
         $order->refresh();
-        $this->assertSame(Order::PAYMENT_PENDING, $order->payment_status);
-        $this->assertSame(Order::STATUS_UNPAID, $order->status);
+        $this->assertSame('Dibatalkan', $order->status);
+        $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
     }
 
     /** COMMIT 2d: pending with va_numbers → payment_details stored. */
@@ -1934,8 +1936,8 @@ class MidtransSnapPaymentTest extends TestCase
         $this->assertDatabaseCount('payments', 1);
     }
 
-    /** COMMIT 2d: expired/denied → cancel NOT called, old marked accordingly, new attempt created. */
-    public function test_change_method_dead_status_does_not_cancel_and_creates_new_attempt(): void
+    /** COMMIT 2d: expired/denied → cancel NOT called, old attempt expired, order cancelled by lifecycle, 422. */
+    public function test_change_method_dead_status_cancels_order_and_returns_422(): void
     {
         config(['midtrans.payment_deadline_hours' => 24]);
         $user = User::factory()->create(['role' => 'customer']);
@@ -1966,15 +1968,18 @@ class MidtransSnapPaymentTest extends TestCase
 
         $this->actingAs($user)
             ->postJson('/payment/change-method', ['order_id' => $order->id])
-            ->assertOk()
-            ->assertJsonPath('snap_token', 'new-after-dead-token');
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Pesanan ini tidak dapat diubah metode pembayarannya saat ini.');
 
         $this->assertSame(Payment::STATUS_EXPIRED, $existing->fresh()->status);
-        $this->assertDatabaseHas('payments', ['status' => Payment::STATUS_PENDING, 'snap_token' => 'new-after-dead-token']);
+        $order->refresh();
+        $this->assertSame('Dibatalkan', $order->status);
+        $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
+        $this->assertDatabaseCount('payments', 1);
     }
 
-    /** COMMIT 2d: 412 then expire → new attempt. */
-    public function test_change_method_412_then_expire_creates_new_attempt(): void
+    /** COMMIT 2d: 412 then expire → order cancelled by lifecycle, 422. */
+    public function test_change_method_412_then_expire_cancels_order_and_returns_422(): void
     {
         config(['midtrans.payment_deadline_hours' => 24]);
         $user = User::factory()->create(['role' => 'customer']);
@@ -2005,10 +2010,14 @@ class MidtransSnapPaymentTest extends TestCase
 
         $this->actingAs($user)
             ->postJson('/payment/change-method', ['order_id' => $order->id])
-            ->assertOk()
-            ->assertJsonPath('snap_token', 'token-after-412-expire');
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Pesanan ini tidak dapat diubah metode pembayarannya saat ini.');
 
-        $this->assertDatabaseHas('payments', ['status' => Payment::STATUS_PENDING, 'snap_token' => 'token-after-412-expire']);
+        $this->assertDatabaseHas('payments', ['midtrans_order_id' => 'ORD-412-EXPIRE', 'status' => Payment::STATUS_EXPIRED]);
+        $this->assertDatabaseCount('payments', 1);
+        $order->refresh();
+        $this->assertSame('Dibatalkan', $order->status);
+        $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
     }
 
     /** COMMIT 2d: 412 then settlement → paid persisted, 409. */
@@ -2587,7 +2596,7 @@ class MidtransSnapPaymentTest extends TestCase
         $this->artisan('orders:expire-overdue')->assertExitCode(0);
 
         $order->refresh();
-        $this->assertSame(Order::STATUS_CANCELLED, $order->status);
+        $this->assertSame('Dibatalkan', $order->status);
         $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
     }
 

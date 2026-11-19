@@ -187,12 +187,10 @@ Route::get('/midtrans/finish', [PaymentController::class, 'finish'])->name('midt
 
 // Midtrans webhook / notification (tidak perlu auth, diverifikasi via signature)
 Route::post('/midtrans/notification', [MidtransWebhookController::class, 'handle'])
-    ->name('midtrans.notification')
-    ->withoutMiddleware(['App\Http\Middleware\PreventRequestForgery']);
+    ->name('midtrans.notification');
 
 Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
-    ->name('midtrans.webhook')
-    ->withoutMiddleware(['App\Http\Middleware\PreventRequestForgery']);
+    ->name('midtrans.webhook');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -248,13 +246,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Route Khusus Admin: Kelola Produk, Kelola Pesanan, & Kelola Ulasan
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::resource('produk', ProdukController::class);
-    Route::patch('/produk/{produk}/stok', [ProdukController::class, 'updateStock'])->name('produk.update-stock');
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
         Route::patch('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+        Route::patch('/orders/{order}/reject-cancellation', [OrderController::class, 'rejectCancellation'])->name('orders.reject-cancellation');
 
         // Kelola Ulasan
         Route::get('/ulasans', [UlasanController::class, 'index'])->name('ulasans.index');
@@ -284,10 +282,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
         // Kelola Pengiriman & Logistik RajaOngkir
         Route::get('/pengiriman', [PengirimanController::class, 'index'])->name('pengiriman.index');
 
-        // Update Pengiriman & Sync Pembayaran Per-Order & Massal
+        // Update Pengiriman & Sync Pembayaran Per-Order
         Route::patch('/orders/{order}/pengiriman', [OrderController::class, 'updatePengiriman'])->name('orders.update-pengiriman');
         Route::post('/orders/{order}/sync-payment', [OrderController::class, 'syncPayment'])->name('orders.sync-payment');
-        Route::post('/orders/sync-payments', [OrderController::class, 'syncAllPayments'])->name('orders.sync-all-payments');
 
         // Pengaturan Toko
         Route::get('/pengaturan', [StoreSettingController::class, 'index'])->name('pengaturan.index');

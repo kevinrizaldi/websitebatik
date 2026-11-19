@@ -2,7 +2,10 @@
     $isDashboard = request()->routeIs('dashboard');
     $isProduk = request()->routeIs('produk.*') && !request()->has('stok_menipis');
     $isKategori = request()->routeIs('admin.kategori.*');
-    $isPesanan = request()->routeIs('admin.orders.*') || request()->routeIs('admin.pembayaran.*') || request()->routeIs('admin.pengiriman.*');
+    $isStok = request()->routeIs('admin.stok.*') || request()->has('stok_menipis');
+    $isPesanan = request()->routeIs('admin.orders.*') && !request()->has('status');
+    $isPembayaran = request()->routeIs('admin.pembayaran.*') || (request()->routeIs('admin.orders.*') && request()->query('status') === 'Menunggu Verifikasi');
+    $isPengiriman = request()->routeIs('admin.pengiriman.*') || (request()->routeIs('admin.orders.*') && request()->query('status') === 'Diproses');
     $isPelanggan = request()->routeIs('admin.pelanggan.*');
     $isUlasan = request()->routeIs('admin.ulasans.*');
     $isLaporan = request()->routeIs('admin.laporan.*');
@@ -97,7 +100,18 @@
                 <span class="transition-colors {{ $st['text'] }}" style="{{ $st['textStyle'] }}">Kategori</span>
             </a>
 
-            {{-- 4. Pesanan --}}
+            {{-- 4. Stok --}}
+            @php $st = $navStyle($isStok); @endphp
+            <a href="{{ route('admin.stok.index') }}"
+               class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition focus:outline-none {{ $st['link'] }}"
+               style="{{ $st['style'] }}">
+                <svg class="w-4 h-4 shrink-0 transition-colors {{ $st['icon'] }}" style="{{ $st['textStyle'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <span class="transition-colors {{ $st['text'] }}" style="{{ $st['textStyle'] }}">Stok</span>
+            </a>
+
+            {{-- 5. Pesanan --}}
             @php $st = $navStyle($isPesanan); @endphp
             <a href="{{ route('admin.orders.index') }}"
                class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition focus:outline-none {{ $st['link'] }}"
@@ -109,7 +123,30 @@
                 <span class="sr-only">Kelola Pesanan</span>
             </a>
 
-            {{-- 5. Pelanggan --}}
+            {{-- 6. Pembayaran --}}
+            @php $st = $navStyle($isPembayaran); @endphp
+            <a href="{{ route('admin.pembayaran.index') }}"
+               class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition focus:outline-none {{ $st['link'] }}"
+               style="{{ $st['style'] }}">
+                <svg class="w-4 h-4 shrink-0 transition-colors {{ $st['icon'] }}" style="{{ $st['textStyle'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="2" y="5" width="20" height="14" rx="2" stroke-width="2" />
+                    <line x1="2" y1="10" x2="22" y2="10" stroke-width="2" />
+                </svg>
+                <span class="transition-colors {{ $st['text'] }}" style="{{ $st['textStyle'] }}">Pembayaran</span>
+            </a>
+
+            {{-- 7. Pengiriman --}}
+            @php $st = $navStyle($isPengiriman); @endphp
+            <a href="{{ route('admin.pengiriman.index') }}"
+               class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition focus:outline-none {{ $st['link'] }}"
+               style="{{ $st['style'] }}">
+                <svg class="w-4 h-4 shrink-0 transition-colors {{ $st['icon'] }}" style="{{ $st['textStyle'] }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 17a2 2 0 100-4 2 2 0 000 4zm10 0a2 2 0 100-4 2 2 0 000 4zM3 9h11v8H3V9zm11 3h4l3 3v2h-7v-5z" />
+                </svg>
+                <span class="transition-colors {{ $st['text'] }}" style="{{ $st['textStyle'] }}">Pengiriman</span>
+            </a>
+
+            {{-- 8. Pelanggan --}}
             @php $st = $navStyle($isPelanggan); @endphp
             <a href="{{ route('admin.pelanggan.index') }}"
                class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition focus:outline-none {{ $st['link'] }}"
@@ -120,7 +157,7 @@
                 <span class="transition-colors {{ $st['text'] }}" style="{{ $st['textStyle'] }}">Pelanggan</span>
             </a>
 
-            {{-- 6. Ulasan --}}
+            {{-- 9. Ulasan --}}
             @php $st = $navStyle($isUlasan); @endphp
             <a href="{{ route('admin.ulasans.index') }}"
                class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition focus:outline-none {{ $st['link'] }}"
@@ -131,7 +168,7 @@
                 <span class="transition-colors {{ $st['text'] }}" style="{{ $st['textStyle'] }}">Ulasan</span>
             </a>
 
-            {{-- 7. Laporan --}}
+            {{-- 10. Laporan --}}
             @php $st = $navStyle($isLaporan); @endphp
             <a href="{{ route('admin.laporan.index') }}"
                class="group flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition focus:outline-none {{ $st['link'] }}"

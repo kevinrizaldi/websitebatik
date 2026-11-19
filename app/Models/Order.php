@@ -75,6 +75,7 @@ class Order extends Model
         'transaction_id',
         'paid_at',
         'payment_deadline',
+        'cancel_requested_at',
         'raw_notification',
     ];
 
@@ -83,6 +84,7 @@ class Order extends Model
         'shipping_cost' => 'decimal:2',
         'paid_at' => 'datetime',
         'payment_deadline' => 'datetime',
+        'cancel_requested_at' => 'datetime',
         'raw_notification' => 'array',
     ];
 
