@@ -265,7 +265,7 @@
             <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
                 {{-- Kolom Kiri: Sidebar Profil & Navigasi --}}
                 <div class="lg:col-span-4">
-                    <x-customer-sidebar active="pesanan" :user="Auth::user()" :alamatCount="Auth::check() ? Auth::user()->alamats()->count() : 2" :pesananAktif="4" />
+                    <x-customer-sidebar active="pesanan" :user="Auth::user()" :alamatCount="Auth::check() ? Auth::user()->alamats()->count() : 0" :pesananAktif="$pesananAktif ?? (Auth::check() ? Auth::user()->orders()->whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi', 'Diproses', 'Sudah Dibayar', 'Dikirim', 'sedang dikirim', 'sedang diproses'])->count() : 0)" />
                 </div>
 
                 {{-- Kolom Kanan: Pesanan Saya --}}
