@@ -434,7 +434,7 @@ class OrderController extends Controller
             'has_review' => $order->reviews->isNotEmpty(),
             'cancel_requested' => $order->cancel_requested_at !== null,
             'created_at' => $order->created_at?->toIso8601String(),
-            'payment_deadline' => $order->payment_deadline?->toIso8601String(),
+            'payment_deadline' => ($order->payment_deadline ?: $order->getEffectivePaymentDeadline())?->toIso8601String(),
             'items' => $items,
             // Plan-canonical payment block: {payment: {status}} on order detail.
             'payment' => [
