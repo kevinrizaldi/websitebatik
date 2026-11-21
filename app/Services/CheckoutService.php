@@ -208,6 +208,7 @@ class CheckoutService
                 }
             }
 
+            $deadlineHours = max(1, (int) config('midtrans.payment_deadline_hours', 24));
             $order = Order::create([
                 'user_id' => $user->id,
                 'code' => $orderCode,
@@ -219,6 +220,7 @@ class CheckoutService
                 'payment_method' => $validated['payment_method'] ?? 'Midtrans Gateway',
                 'status' => 'Menunggu Pembayaran',
                 'payment_status' => Order::PAYMENT_PENDING,
+                'payment_deadline' => now()->addHours($deadlineHours),
             ]);
 
             foreach ($cartItems as $item) {

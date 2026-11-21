@@ -160,6 +160,12 @@ Route::get('/pesanan', function () {
                     }
                 }
 
+                $pesananAktif = Order::where('user_id', Auth::id())
+                    ->whereIn('status', [
+                        'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi',
+                        'Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi', 'Dikirim', 'sedang dikirim', 'sedang diproses'
+                    ])->count();
+
                 if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
                     $myReviews = Ulasan::where('user_id', Auth::id())->get(['id', 'order_id', 'produk_id', 'rating', 'comment']);
                     $reviewedIds = $myReviews->pluck('produk_id')->all();
@@ -178,13 +184,15 @@ Route::get('/pesanan', function () {
                 }
             } else {
                 $orders = collect();
+                $pesananAktif = 0;
             }
         }
     } catch (Throwable $e) {
         $orders = collect();
+        $pesananAktif = 0;
     }
 
-    return view('pesanan', compact('orders', 'reviewedIds', 'reviewedPairs', 'reviewMap'));
+    return view('pesanan', compact('orders', 'reviewedIds', 'reviewedPairs', 'reviewMap', 'pesananAktif'));
 })->name('pesanan.index');
 
 Route::get('/pembayaran/{id}', [PaymentController::class, 'show'])->name('pembayaran');
