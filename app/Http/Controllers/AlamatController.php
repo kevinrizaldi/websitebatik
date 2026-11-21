@@ -51,11 +51,14 @@ class AlamatController extends Controller
         if ($request->has('label_alamat') && trim((string) $request->input('label_alamat')) === '') {
             $request->merge(['label_alamat' => null]);
         }
+        if ($request->has('no_telepon')) {
+            $request->merge(['no_telepon' => preg_replace('/\D/', '', (string) $request->input('no_telepon'))]);
+        }
 
         $validated = $request->validate([
             'label_alamat' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
             'penerima' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.()\-]+$/u'],
-            'no_telepon' => ['required', 'string', 'regex:/^[0-9+\- ]{10,20}$/'],
+            'no_telepon' => ['required', 'string', 'regex:/^[0-9]{10,15}$/'],
             'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()\[\]#&\'":;]+$/u'],
             'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
             'kecamatan' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
@@ -72,7 +75,7 @@ class AlamatController extends Controller
             'penerima.regex' => 'Nama penerima hanya boleh berupa huruf, spasi, titik, tanda petik, atau tanda kurung.',
             'label_alamat.regex' => 'Label alamat hanya boleh berupa huruf, angka, titik, dan spasi.',
             'no_telepon.required' => 'Nomor WhatsApp / HP wajib diisi.',
-            'no_telepon.regex' => 'Nomor WhatsApp / HP harus berupa nomor telepon 10 sampai 15 digit.',
+            'no_telepon.regex' => 'Nomor WhatsApp / HP hanya boleh berisi angka (10 sampai 15 digit).',
             'alamat_lengkap.required' => 'Alamat lengkap wajib diisi.',
             'alamat_lengkap.regex' => 'Alamat lengkap tidak boleh mengandung simbol khusus yang tidak wajar.',
             'kota.required' => 'Kabupaten / Kota wajib diisi.',
@@ -139,11 +142,14 @@ class AlamatController extends Controller
         if ($request->has('label_alamat') && trim((string) $request->input('label_alamat')) === '') {
             $request->merge(['label_alamat' => null]);
         }
+        if ($request->has('no_telepon')) {
+            $request->merge(['no_telepon' => preg_replace('/\D/', '', (string) $request->input('no_telepon'))]);
+        }
 
         $validated = $request->validate([
             'label_alamat' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
             'penerima' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.()\-]+$/u'],
-            'no_telepon' => ['required', 'string', 'regex:/^[0-9+\- ]{10,20}$/'],
+            'no_telepon' => ['required', 'string', 'regex:/^[0-9]{10,15}$/'],
             'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()\[\]#&\'":;]+$/u'],
             'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
             'kecamatan' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
@@ -160,7 +166,7 @@ class AlamatController extends Controller
             'penerima.regex' => 'Nama penerima hanya boleh berupa huruf, spasi, titik, tanda petik, atau tanda kurung.',
             'label_alamat.regex' => 'Label alamat hanya boleh berupa huruf, angka, titik, dan spasi.',
             'no_telepon.required' => 'Nomor WhatsApp / HP wajib diisi.',
-            'no_telepon.regex' => 'Nomor WhatsApp / HP harus berupa nomor telepon 10 sampai 15 digit.',
+            'no_telepon.regex' => 'Nomor WhatsApp / HP hanya boleh berisi angka (10 sampai 15 digit).',
             'alamat_lengkap.required' => 'Alamat lengkap wajib diisi.',
             'alamat_lengkap.regex' => 'Alamat lengkap tidak boleh mengandung simbol khusus yang tidak wajar.',
             'kota.required' => 'Kabupaten / Kota wajib diisi.',

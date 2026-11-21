@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ShippingController;
+use App\Http\Controllers\RajaOngkirController;
 use Illuminate\Support\Facades\Route;
 
 // Public endpoints
@@ -20,6 +21,14 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{product}', [ProductController::class, 'show']);
 Route::get('/products/{product}/reviews', [ProductController::class, 'reviews']);
 Route::get('/media/{path}', [MediaController::class, 'show'])->where('path', '.*');
+
+// RajaOngkir region & postal code endpoints for address picker
+Route::prefix('rajaongkir')->group(function (): void {
+    Route::get('/provinces', [RajaOngkirController::class, 'provinces']);
+    Route::get('/cities', [RajaOngkirController::class, 'cities']);
+    Route::get('/districts', [RajaOngkirController::class, 'districts']);
+    Route::get('/postal-codes', [RajaOngkirController::class, 'postalCodes']);
+});
 
 // Protected endpoints (require Bearer token from Sanctum)
 Route::middleware('auth:sanctum')->group(function (): void {

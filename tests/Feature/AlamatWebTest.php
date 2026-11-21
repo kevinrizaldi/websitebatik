@@ -115,9 +115,8 @@ class AlamatWebTest extends TestCase
     public function test_rajaongkir_postal_codes_endpoint_returns_success(): void
     {
         $response = $this->getJson(route('rajaongkir.postal-codes', [
-            'district_name' => 'Pasar Kliwon',
-            'city_name' => 'Surakarta',
-            'city_id' => 444,
+            'district_name' => 'Kaliwates',
+            'city_name' => 'Kabupaten Jember',
         ]));
 
         $response->assertOk()
@@ -127,6 +126,9 @@ class AlamatWebTest extends TestCase
                 'postal_codes',
                 'items',
             ]);
+
+        $data = $response->json();
+        $this->assertGreaterThanOrEqual(5, count($data['items']));
     }
 
     public function test_alamat_geocode_endpoint_returns_json(): void
@@ -154,5 +156,25 @@ class AlamatWebTest extends TestCase
             ->assertJsonStructure([
                 'success',
             ]);
+    }
+
+    public function test_regional_data_is_sorted_alphabetically_and_numerically(): void
+    {
+        // 1. Test Provinces sorted A-Z
+        $provRes = $this->getJson(route('rajaongkir.provinces'))->assertOk()->json();
+        $provinces = array_column($provRes['provinces'], 'province');
+        $sortedProvinces = $provinces;
+        natcasesort($sortedProvinces);
+        $this->assertSame(array_values($sortedProvinces), $provinces);
+
+        // 2. Test Postal codes sorted numerically
+        $postalRes = $this->getJson(route('rajaongkir.postal-codes', [
+            'district_name' => 'Kaliwates',
+            'city_name' => 'Kabupaten Jember',
+        ]))->assertOk()->json();
+        $postalCodes = array_map('intval', array_column($postalRes['items'], 'postal_code'));
+        $sortedPostalCodes = $postalCodes;
+        sort($sortedPostalCodes);
+        $this->assertSame($sortedPostalCodes, $postalCodes);
     }
 }

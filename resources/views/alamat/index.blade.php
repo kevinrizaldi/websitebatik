@@ -114,11 +114,21 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                             <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-stone-500">Nama Lengkap <span class="text-rose-500">*</span></label>
-                            <input type="text" x-model="addrForm.penerima" placeholder="Nama Lengkap" class="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <input type="text" 
+                                   x-model="addrForm.penerima" 
+                                   @input="addrForm.penerima = addrForm.penerima.replace(/[^a-zA-Z\s\'.()\-]/g, '')"
+                                   placeholder="Nama Lengkap" 
+                                   class="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
                         <div>
                             <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-stone-500">Nomor Telepon <span class="text-rose-500">*</span></label>
-                            <input type="tel" x-model="addrForm.phone" placeholder="Nomor Telepon (08xxxxxxxxxx)" class="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                            <input type="tel" 
+                                   inputmode="numeric"
+                                   maxlength="15"
+                                   x-model="addrForm.phone" 
+                                   @input="addrForm.phone = addrForm.phone.replace(/\D/g, '')"
+                                   placeholder="Nomor Telepon (08xxxxxxxxxx)" 
+                                   class="w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                         </div>
                     </div>
 
@@ -126,7 +136,7 @@
                     <div class="space-y-1.5" @click.outside="if (regionPickerOpen && addrForm.kota) regionPickerOpen = false">
                         <div class="flex items-center justify-between mb-0.5">
                             <label class="block text-xs font-bold uppercase tracking-wider text-stone-500">
-                                Provinsi, Kota, Kecamatan, Kode Pos <span class="text-rose-500">*</span>
+                                Provinsi, Kota, Kabupaten, Kecamatan, Kode Pos <span class="text-rose-500">*</span>
                             </label>
                             <button type="button"
                                     x-show="addrForm.provinsi"
@@ -139,7 +149,7 @@
                         <div @click="regionPickerOpen = !regionPickerOpen; if (regionPickerOpen) { loadProvinces(); if (addrForm.city_id && !addrForm.kecamatan) { activeRegionTab = 'kecamatan'; loadDistricts(addrForm.city_id); } else if (addrForm.province_id && !addrForm.kota) { activeRegionTab = 'kota'; } else if (!addrForm.province_id) { activeRegionTab = 'provinsi'; } searchRegion = ''; }"
                              class="flex items-center justify-between w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm cursor-pointer hover:border-stone-400 transition select-none">
                             <span :class="regionDisplay ? 'text-stone-900 font-medium' : 'text-stone-400'"
-                                  x-text="regionDisplay || 'Pilih Provinsi, Kota, Kecamatan, Kode Pos'"></span>
+                                  x-text="regionDisplay || 'Pilih Provinsi, Kota, Kabupaten, Kecamatan, Kode Pos'"></span>
                             <div class="flex items-center gap-1.5 text-stone-400">
                                 <svg class="h-4 w-4 transition-transform duration-200"
                                      :class="regionPickerOpen ? 'rotate-180 text-stone-700' : ''"
@@ -160,47 +170,45 @@
                             <div class="relative mb-2">
                                 <input type="text"
                                        x-model="searchRegion"
-                                       :placeholder="'Cari ' + (activeRegionTab === 'provinsi' ? 'provinsi' : (activeRegionTab === 'kota' ? 'kabupaten / kota' : (activeRegionTab === 'kecamatan' ? 'kecamatan' : 'wilayah'))) + '...'"
+                                       :placeholder="'Cari ' + (activeRegionTab === 'provinsi' ? 'provinsi' : (activeRegionTab === 'kota' ? 'kota atau kabupaten' : (activeRegionTab === 'kecamatan' ? 'kecamatan' : 'kode pos'))) + '...'"
                                        class="w-full rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-800 placeholder-stone-400 focus:border-[#201A17] focus:bg-white focus:outline-none">
                                 <svg class="absolute right-2.5 top-2.5 h-3.5 w-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                             </div>
 
-                            {{-- Header Tab: Provinsi | Kota | Kecamatan | Kode Pos --}}
-                            <div class="flex items-center border-b border-stone-200/80 text-xs font-semibold overflow-x-auto pb-1">
+                            {{-- Header Tab: Provinsi | Kota/Kabupaten | Kecamatan | Kode Pos --}}
+                            <div class="grid grid-cols-4 border-b border-stone-200/80 text-xs font-semibold">
                                 <button type="button"
                                         @click="activeRegionTab = 'provinsi'; searchRegion = '';"
                                         :class="activeRegionTab === 'provinsi' ? 'border-b-2 border-[#201A17] text-[#201A17] font-bold' : 'text-stone-400 hover:text-stone-600'"
-                                        class="pb-1.5 px-2.5 transition whitespace-nowrap shrink-0">
+                                        class="pb-2 px-1 text-center transition">
                                     Provinsi
-                                    <span x-show="addrForm.provinsi" class="ml-1 text-[10px] text-stone-500 font-normal truncate max-w-[70px] inline-block align-bottom" x-text="'(' + addrForm.provinsi + ')'"></span>
                                 </button>
                                 <button type="button"
                                         @click="if (addrForm.province_id) { activeRegionTab = 'kota'; searchRegion = ''; }"
                                         :disabled="!addrForm.province_id"
                                         :class="activeRegionTab === 'kota' ? 'border-b-2 border-[#201A17] text-[#201A17] font-bold' : (addrForm.province_id ? 'text-stone-400 hover:text-stone-600' : 'text-stone-300 cursor-not-allowed')"
-                                        class="pb-1.5 px-2.5 transition whitespace-nowrap shrink-0">
-                                    Kota
-                                    <span x-show="addrForm.kota" class="ml-1 text-[10px] text-stone-500 font-normal truncate max-w-[70px] inline-block align-bottom" x-text="'(' + addrForm.kota + ')'"></span>
+                                        class="pb-2 px-1 text-center transition">
+                                    <span class="hidden sm:inline">Kota/Kabupaten</span>
+                                    <span class="sm:hidden">Kota/Kab</span>
                                 </button>
                                 <button type="button"
                                         @click="if (addrForm.city_id) { activeRegionTab = 'kecamatan'; searchRegion = ''; }"
                                         :disabled="!addrForm.city_id"
                                         :class="activeRegionTab === 'kecamatan' ? 'border-b-2 border-[#201A17] text-[#201A17] font-bold' : (addrForm.city_id ? 'text-stone-400 hover:text-stone-600' : 'text-stone-300 cursor-not-allowed')"
-                                        class="pb-1.5 px-2.5 transition whitespace-nowrap shrink-0">
+                                        class="pb-2 px-1 text-center transition">
                                     Kecamatan
-                                    <span x-show="addrForm.kecamatan" class="ml-1 text-[10px] text-stone-500 font-normal truncate max-w-[70px] inline-block align-bottom" x-text="'(' + addrForm.kecamatan + ')'"></span>
                                 </button>
                                 <button type="button"
                                         @click="if (addrForm.city_id) { activeRegionTab = 'kodepos'; }"
                                         :disabled="!addrForm.city_id"
                                         :class="activeRegionTab === 'kodepos' ? 'border-b-2 border-[#201A17] text-[#201A17] font-bold' : (addrForm.city_id ? 'text-stone-400 hover:text-stone-600' : 'text-stone-300 cursor-not-allowed')"
-                                        class="pb-1.5 px-2.5 transition whitespace-nowrap shrink-0">
+                                        class="pb-2 px-1 text-center transition">
                                     Kode Pos
                                 </button>
                             </div>
 
                             {{-- Tab Provinsi --}}
-                            <div x-show="activeRegionTab === 'provinsi'" class="mt-2 max-h-48 overflow-y-auto space-y-0.5 pr-1">
+                            <div x-show="activeRegionTab === 'provinsi'" class="mt-2 max-h-48 overflow-y-auto overscroll-contain space-y-0.5 pr-1">
                                 <div x-show="loadingProvinces" class="py-6 text-center text-xs text-stone-400">
                                     Memuat daftar provinsi...
                                 </div>
@@ -218,27 +226,27 @@
                                 </div>
                             </div>
 
-                            {{-- Tab Kota --}}
-                            <div x-show="activeRegionTab === 'kota'" class="mt-2 max-h-48 overflow-y-auto space-y-0.5 pr-1">
+                            {{-- Tab Kota/Kabupaten --}}
+                            <div x-show="activeRegionTab === 'kota'" class="mt-2 max-h-48 overflow-y-auto overscroll-contain space-y-0.5 pr-1">
                                 <div x-show="loadingCities" class="py-6 text-center text-xs text-stone-400">
-                                    Memuat daftar kota...
+                                    Memuat daftar kota & kabupaten...
                                 </div>
-                                <template x-for="c in filteredCities" :key="c.city_id">
+                                <template x-for="c in filteredCities" :key="c.city_id + '-' + c.type + '-' + c.city_name">
                                     <button type="button"
                                             @click="selectCity(c)"
-                                            :class="String(addrForm.city_id) === String(c.city_id) ? 'bg-[#FAF3EA] text-[#8C6226] font-bold' : 'text-stone-700 hover:bg-stone-100/70 bg-white'"
+                                            :class="String(addrForm.city_id) === String(c.city_id) && addrForm.kota === ((c.type ? c.type + ' ' : '') + c.city_name) ? 'bg-[#FAF3EA] text-[#8C6226] font-bold' : 'text-stone-700 hover:bg-stone-100/70 bg-white'"
                                             class="w-full text-left px-3 py-2 text-xs rounded-lg transition flex items-center justify-between border border-transparent hover:border-stone-200">
                                         <span x-text="(c.type ? c.type + ' ' : '') + c.city_name"></span>
                                         <span class="text-[10px] text-stone-400 font-mono" x-show="c.postal_code" x-text="c.postal_code"></span>
                                     </button>
                                 </template>
                                 <div x-show="!loadingCities && filteredCities.length === 0" class="py-4 text-center text-xs text-stone-400">
-                                    Tidak ada kota yang cocok.
+                                    Tidak ada kota atau kabupaten yang cocok.
                                 </div>
                             </div>
 
                             {{-- Tab Kecamatan --}}
-                            <div x-show="activeRegionTab === 'kecamatan'" class="mt-2 max-h-48 overflow-y-auto space-y-0.5 pr-1">
+                            <div x-show="activeRegionTab === 'kecamatan'" class="mt-2 max-h-48 overflow-y-auto overscroll-contain space-y-0.5 pr-1">
                                 <div x-show="loadingDistricts" class="py-6 text-center text-xs text-stone-400">
                                     Memuat daftar kecamatan...
                                 </div>
@@ -268,35 +276,48 @@
                             </div>
 
                             {{-- Tab Kode Pos Otomatis ala Shopee --}}
-                            <div x-show="activeRegionTab === 'kodepos'" class="mt-2 p-2 space-y-2.5">
+                            <div x-show="activeRegionTab === 'kodepos'" class="mt-2 space-y-2">
                                 <div x-show="loadingPostalCodes" class="py-6 text-center text-xs text-stone-400">
                                     <svg class="w-4 h-4 animate-spin inline mr-1.5 text-[#B58742]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                                    Memuat pilihan kode pos otomatis...
+                                    Memuat daftar kode pos...
                                 </div>
 
-                                <div x-show="!loadingPostalCodes && postalCodesList.length > 0" class="space-y-1.5">
-                                    <div class="flex items-center justify-between text-xs text-stone-500">
-                                        <span>Pilih kode pos area Anda (klik untuk memilih):</span>
-                                        <span class="text-[11px] text-emerald-700 font-medium">✓ Terisi otomatis</span>
+                                <div x-show="!loadingPostalCodes && postalCodesList.length > 0" class="max-h-48 overflow-y-auto overscroll-contain space-y-0.5 pr-1">
+                                    <template x-for="item in filteredPostalCodes" :key="item.postal_code + '-' + (item.subdistrict || '')">
+                                        <button type="button"
+                                                @click="selectPostalCode(item.postal_code)"
+                                                :class="addrForm.kodepos === item.postal_code ? 'bg-[#FAF3EA] text-[#8C6226] font-bold' : 'text-stone-700 hover:bg-stone-100/70 bg-white'"
+                                                class="w-full text-left px-3 py-2 text-xs rounded-lg transition flex items-center justify-between border border-transparent hover:border-stone-200">
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-mono font-bold" x-text="item.postal_code"></span>
+                                                <span class="text-[11px] font-normal" :class="addrForm.kodepos === item.postal_code ? 'text-[#8C6226]' : 'text-stone-500'" x-show="item.subdistrict" x-text="'(' + item.subdistrict + ')'"></span>
+                                            </div>
+                                            <span x-show="addrForm.kodepos === item.postal_code" class="text-[#8C6226]">✓</span>
+                                        </button>
+                                    </template>
+                                </div>
+
+                                <div x-show="!loadingPostalCodes && filteredPostalCodes.length === 0 && postalCodesList.length > 0" class="py-4 text-center text-xs text-stone-400">
+                                    Tidak ada kode pos yang cocok dengan pencarian.
+                                </div>
+
+                                <div x-show="!loadingPostalCodes && postalCodesList.length === 0" class="py-3 text-center space-y-2">
+                                    <p class="text-xs text-stone-500">Kode pos tidak ditemukan dalam daftar otomatis.</p>
+                                    <div class="flex items-center gap-2 px-2">
+                                        <input type="text"
+                                               x-model="addrForm.kodepos"
+                                               maxlength="5"
+                                               placeholder="Ketik 5 digit kode pos..."
+                                               class="w-full rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs focus:border-stone-400 focus:outline-none">
+                                        <button type="button"
+                                                @click="regionPickerOpen = false;"
+                                                class="rounded-xl bg-[#201A17] text-white px-3 py-1.5 text-xs font-semibold hover:bg-stone-800 transition whitespace-nowrap">
+                                            Pilih
+                                        </button>
                                     </div>
-                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                                        <template x-for="item in postalCodesList" :key="item.postal_code">
-                                            <button type="button"
-                                                    @click="selectPostalCode(item.postal_code)"
-                                                    :class="addrForm.kodepos === item.postal_code ? 'border-[#201A17] bg-[#FAF3EA] text-[#8C6226] font-bold shadow-xs' : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'"
-                                                    class="flex flex-col items-center justify-center p-2 rounded-xl border text-center transition hover:bg-stone-50">
-                                                <span class="text-xs font-bold font-mono" x-text="item.postal_code"></span>
-                                                <span class="text-[10px] text-stone-500 truncate max-w-full" x-show="item.subdistrict" x-text="item.subdistrict"></span>
-                                            </button>
-                                        </template>
-                                    </div>
                                 </div>
 
-                                <div x-show="!loadingPostalCodes && postalCodesList.length === 0" class="space-y-1.5 py-2">
-                                    <p class="text-xs text-stone-600">Kode pos terpasang otomatis dari kota: <strong class="font-mono text-stone-900" x-text="addrForm.kodepos || 'Tidak tersedia'"></strong></p>
-                                </div>
-
-                                <div class="pt-2 border-t border-stone-200/60 flex items-center justify-between text-xs">
+                                <div x-show="!loadingPostalCodes && postalCodesList.length > 0" class="pt-2 border-t border-stone-200/60 flex items-center justify-between text-xs">
                                     <div class="flex items-center gap-1.5">
                                         <span class="text-stone-500 text-[11px]">Kode Pos:</span>
                                         <span class="font-mono font-bold text-stone-900 bg-stone-100 px-2 py-0.5 rounded" x-text="addrForm.kodepos || '-'"></span>
@@ -389,11 +410,6 @@
                                         📍 Koordinat: <span class="font-mono font-semibold text-stone-900" x-text="Number(addrForm.latitude).toFixed(6) + ', ' + Number(addrForm.longitude).toFixed(6)"></span>
                                     </p>
                                 </template>
-                                <template x-if="!addrForm.latitude || !addrForm.longitude">
-                                    <p class="text-amber-700">
-                                        ℹ️ Titik peta bersifat opsional, namun sangat membantu kurir menemukan alamat.
-                                    </p>
-                                </template>
                                 <template x-if="pinAddressHint">
                                     <p class="text-[10px] text-stone-500 line-clamp-1 italic" x-text="'Patokan: ' + pinAddressHint"></p>
                                 </template>
@@ -423,16 +439,14 @@
                             <button type="button" 
                                     @click="addrForm.label = 'Rumah'" 
                                     :class="addrForm.label === 'Rumah' ? 'border-[#201A17] bg-[#201A17] text-white shadow-xs font-bold' : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'"
-                                    class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition">
-                                <span>🏠</span>
-                                <span>Rumah</span>
+                                    class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-xs font-semibold transition">
+                                Rumah
                             </button>
                             <button type="button" 
                                     @click="addrForm.label = 'Kantor'" 
                                     :class="addrForm.label === 'Kantor' ? 'border-[#201A17] bg-[#201A17] text-white shadow-xs font-bold' : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'"
-                                    class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition">
-                                <span>🏢</span>
-                                <span>Kantor</span>
+                                    class="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-xs font-semibold transition">
+                                Kantor
                             </button>
                         </div>
                     </div>
@@ -497,6 +511,14 @@
                     if (!this.searchRegion) return this.districts;
                     const s = this.searchRegion.toLowerCase();
                     return this.districts.filter(d => (d.district_name || '').toLowerCase().includes(s));
+                },
+                get filteredPostalCodes() {
+                    if (!this.searchRegion) return this.postalCodesList;
+                    const s = this.searchRegion.toLowerCase();
+                    return this.postalCodesList.filter(item => 
+                        (item.postal_code || '').toLowerCase().includes(s) || 
+                        (item.subdistrict || '').toLowerCase().includes(s)
+                    );
                 },
                 selectProvince(p) {
                     this.addrForm.province_id = String(p.province_id);
@@ -664,8 +686,8 @@
                     clearTimeout(this.searchDebounceTimer);
                     this.addrForm = {
                         label: 'Rumah',
-                        penerima: {!! json_encode($user->name) !!},
-                        phone: {!! json_encode($user->phone ?? '') !!},
+                        penerima: '',
+                        phone: '',
                         provinsi: '',
                         kota: '',
                         kecamatan: '',
@@ -952,8 +974,8 @@
                     if (!p) this.formErrors.push('Nama penerima wajib diisi.');
                     if (!ph) {
                         this.formErrors.push('Nomor telepon wajib diisi.');
-                    } else if (ph.length < 10 || ph.length > 15) {
-                        this.formErrors.push('Nomor telepon harus antara 10 - 15 digit.');
+                    } else if (!/^[0-9]{10,15}$/.test(ph)) {
+                        this.formErrors.push('Nomor telepon hanya boleh berisi angka (10 - 15 digit).');
                     }
                     if (!provId) this.formErrors.push('Provinsi wajib dipilih.');
                     if (!cityId) this.formErrors.push('Kabupaten/Kota wajib dipilih.');

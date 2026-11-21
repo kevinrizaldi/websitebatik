@@ -68,9 +68,11 @@ class RajaOngkirController extends Controller
 
         $items = [];
         $uniqueZipCodes = [];
+        $seenCombinations = [];
 
         if ($search !== '') {
-            $destinations = $this->rajaOngkirService->searchDestination($search);
+            $destinations = $this->rajaOngkirService->searchDestination($search, 50);
+            $cleanedCityName = trim(preg_replace('/\b(kota|kabupaten|kab\.)\b/i', '', $cityName));
 
             foreach ($destinations as $dest) {
                 $zip = trim($dest['zip_code'] ?? '');
@@ -83,15 +85,26 @@ class RajaOngkirController extends Controller
                 $city = trim($dest['city_name'] ?? '');
 
                 // Filter by city if both are provided to avoid cross-city district collisions
-                if ($cityName !== '' && $city !== '') {
-                    $cleanedCityName = trim(preg_replace('/\b(kota|kabupaten|kab\.)\b/i', '', $cityName));
+                if ($cleanedCityName !== '' && $city !== '') {
                     if (stripos($city, $cleanedCityName) === false && stripos($cleanedCityName, $city) === false) {
                         continue;
                     }
                 }
 
-                if (! in_array($zip, $uniqueZipCodes)) {
-                    $uniqueZipCodes[] = $zip;
+                // If districtName is provided, ensure it matches the district name from destination
+                if ($districtName !== '' && $district !== '') {
+                    if (stripos($district, $districtName) === false && stripos($districtName, $district) === false) {
+                        continue;
+                    }
+                }
+
+                // Deduplicate by postal_code + subdistrict so every kelurahan is included
+                $combinationKey = $zip.'_'.strtolower($subdistrict);
+                if (! isset($seenCombinations[$combinationKey])) {
+                    $seenCombinations[$combinationKey] = true;
+                    if (! in_array($zip, $uniqueZipCodes)) {
+                        $uniqueZipCodes[] = $zip;
+                    }
                     $items[] = [
                         'postal_code' => $zip,
                         'subdistrict' => $subdistrict,
@@ -101,10 +114,20 @@ class RajaOngkirController extends Controller
                     ];
                 }
             }
+
+            usort($items, function ($a, $b) {
+                $numA = (int) $a['postal_code'];
+                $numB = (int) $b['postal_code'];
+                if ($numA !== $numB) {
+                    return $numA <=> $numB;
+                }
+
+                return strcasecmp($a['subdistrict'], $b['subdistrict']);
+            });
         }
 
         // Fallback: If no postal code found via API search, check city's default postal code
-        if (empty($uniqueZipCodes) && $cityId) {
+        if (empty($items) && $cityId) {
             $cities = $this->rajaOngkirService->getCities();
             foreach ($cities as $c) {
                 if ((int) ($c['city_id'] ?? 0) === $cityId && ! empty($c['postal_code'])) {
@@ -126,7 +149,7 @@ class RajaOngkirController extends Controller
             'is_live' => $this->rajaOngkirService->isApiKeyConfigured(),
             'postal_codes' => $uniqueZipCodes,
             'items' => $items,
-            'default_postal_code' => $uniqueZipCodes[0] ?? null,
+            'default_postal_code' => $items[0]['postal_code'] ?? ($uniqueZipCodes[0] ?? null),
         ]);
     }
 
