@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
 class AlamatController extends Controller
@@ -55,12 +56,16 @@ class AlamatController extends Controller
             'label_alamat' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
             'penerima' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.()\-]+$/u'],
             'no_telepon' => ['required', 'string', 'regex:/^[0-9+\- ]{10,20}$/'],
-            'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()]+$/u'],
+            'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()\[\]#&\'":;]+$/u'],
             'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
+            'kecamatan' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
             'provinsi' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
             'province_id' => ['nullable', 'integer'],
             'city_id' => ['nullable', 'integer'],
+            'district_id' => ['nullable', 'integer'],
             'kode_pos' => ['nullable', 'string', 'regex:/^[0-9]{5}$/'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'is_utama' => 'nullable|boolean',
         ], [
             'penerima.required' => 'Nama penerima wajib diisi.',
@@ -93,10 +98,15 @@ class AlamatController extends Controller
             'no_telepon' => $validated['no_telepon'],
             'alamat_lengkap' => $validated['alamat_lengkap'],
             'kota' => $validated['kota'],
+            'kecamatan' => $validated['kecamatan'] ?? null,
+            'district' => $validated['kecamatan'] ?? null,
+            'district_id' => $validated['district_id'] ?? null,
             'provinsi' => $validated['provinsi'] ?? 'Indonesia',
             'province_id' => $validated['province_id'] ?? null,
             'city_id' => $validated['city_id'] ?? null,
             'kode_pos' => $validated['kode_pos'] ?? '',
+            'latitude' => $request->filled('latitude') ? (float) $request->input('latitude') : null,
+            'longitude' => $request->filled('longitude') ? (float) $request->input('longitude') : null,
             'is_utama' => $isUtama,
         ]);
 
@@ -134,12 +144,16 @@ class AlamatController extends Controller
             'label_alamat' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
             'penerima' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'.()\-]+$/u'],
             'no_telepon' => ['required', 'string', 'regex:/^[0-9+\- ]{10,20}$/'],
-            'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()]+$/u'],
+            'alamat_lengkap' => ['required', 'string', 'max:1000', 'regex:/^[\pL0-9\s.,\/\-()\[\]#&\'":;]+$/u'],
             'kota' => ['required', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
+            'kecamatan' => ['nullable', 'string', 'max:100', 'regex:/^[\pL0-9\s.,\-()]+$/u'],
             'provinsi' => ['nullable', 'string', 'max:100', 'regex:/^[\pL\s.,\-()]+$/u'],
             'province_id' => ['nullable', 'integer'],
             'city_id' => ['nullable', 'integer'],
+            'district_id' => ['nullable', 'integer'],
             'kode_pos' => ['nullable', 'string', 'regex:/^[0-9]{5}$/'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'is_utama' => 'nullable|boolean',
         ], [
             'penerima.required' => 'Nama penerima wajib diisi.',
@@ -157,6 +171,13 @@ class AlamatController extends Controller
 
         if (! empty($validated['is_utama'])) {
             Auth::user()->alamats()->where('id', '!=', $alamat->id)->update(['is_utama' => false]);
+        }
+
+        if ($request->has('latitude')) {
+            $validated['latitude'] = $request->filled('latitude') ? (float) $request->input('latitude') : null;
+        }
+        if ($request->has('longitude')) {
+            $validated['longitude'] = $request->filled('longitude') ? (float) $request->input('longitude') : null;
         }
 
         $alamat->update($validated);
@@ -213,5 +234,134 @@ class AlamatController extends Controller
         }
 
         return back()->with('success', 'Alamat berhasil dihapus.');
+    }
+
+    /**
+     * Proxy geocoding to OpenStreetMap Nominatim with server-side User-Agent.
+     */
+    public function geocode(Request $request): JsonResponse
+    {
+        $jalan = trim((string) $request->query('jalan', ''));
+        $kecamatan = trim((string) $request->query('kecamatan', ''));
+        $kota = trim((string) $request->query('kota', ''));
+        $provinsi = trim((string) $request->query('provinsi', ''));
+        $query = trim((string) $request->query('q', ''));
+
+        $cleanedKota = trim((string) preg_replace('~\b(kota|kabupaten|kab\.)\b~i', '', $kota));
+
+        // Build cascading fallback queries from specific to broad
+        $queries = [];
+        if ($query !== '') {
+            $queries[] = $query;
+        }
+
+        if ($jalan !== '') {
+            $cleanedJalan = trim((string) preg_replace('~\b(rt[\s./]*\d+|rw[\s./]*\d+|no[\s./]*\d+|nomor[\s./]*\d+|blok[\s./]*\w+)\b~i', '', $jalan));
+            $cleanedJalan = trim(preg_replace('/\s+/', ' ', $cleanedJalan));
+
+            if ($cleanedJalan !== '' && $cleanedJalan !== $jalan) {
+                if ($kecamatan !== '' && $cleanedKota !== '') {
+                    $queries[] = "{$cleanedJalan}, {$kecamatan}, {$cleanedKota}, Indonesia";
+                }
+                if ($cleanedKota !== '') {
+                    $queries[] = "{$cleanedJalan}, {$cleanedKota}, Indonesia";
+                }
+                $queries[] = "{$cleanedJalan}, Indonesia";
+            }
+
+            if ($kecamatan !== '' && $cleanedKota !== '') {
+                $queries[] = "{$jalan}, {$kecamatan}, {$cleanedKota}, Indonesia";
+            }
+            if ($cleanedKota !== '') {
+                $queries[] = "{$jalan}, {$cleanedKota}, Indonesia";
+            }
+            $queries[] = "{$jalan}, Indonesia";
+        }
+
+        if ($kecamatan !== '' && $cleanedKota !== '') {
+            $queries[] = "{$kecamatan}, {$cleanedKota}, Indonesia";
+        }
+        if ($cleanedKota !== '') {
+            $queries[] = "{$cleanedKota}, Indonesia";
+        }
+
+        $queries = array_values(array_unique(array_filter($queries)));
+
+        foreach ($queries as $q) {
+            try {
+                $response = Http::withHeaders([
+                    'User-Agent' => 'WebsiteBatik-App/1.0 (contact@websitebatik.test)',
+                    'Accept-Language' => 'id',
+                ])->timeout(6)->get('https://nominatim.openstreetmap.org/search', [
+                    'format' => 'json',
+                    'q' => $q,
+                    'countrycodes' => 'id',
+                    'limit' => 1,
+                ]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (! empty($data) && isset($data[0]['lat'], $data[0]['lon'])) {
+                        return response()->json([
+                            'success' => true,
+                            'found' => true,
+                            'latitude' => (float) $data[0]['lat'],
+                            'longitude' => (float) $data[0]['lon'],
+                            'display_name' => $data[0]['display_name'] ?? '',
+                            'matched_query' => $q,
+                        ]);
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Try next query
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'found' => false,
+            'message' => 'Titik lokasi belum ditemukan otomatis di peta.',
+        ]);
+    }
+
+    /**
+     * Proxy reverse geocoding to OpenStreetMap Nominatim with server-side User-Agent.
+     */
+    public function reverseGeocode(Request $request): JsonResponse
+    {
+        $lat = (float) $request->query('lat');
+        $lon = (float) $request->query('lng', $request->query('lon'));
+
+        if (! $lat || ! $lon) {
+            return response()->json(['success' => false, 'message' => 'Koordinat tidak valid.'], 422);
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => 'WebsiteBatik-App/1.0 (contact@websitebatik.test)',
+                'Accept-Language' => 'id',
+            ])->timeout(6)->get('https://nominatim.openstreetmap.org/reverse', [
+                'format' => 'json',
+                'lat' => $lat,
+                'lon' => $lon,
+                'zoom' => 18,
+                'addressdetails' => 1,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                return response()->json([
+                    'success' => true,
+                    'display_name' => $data['display_name'] ?? '',
+                    'postcode' => $data['address']['postcode'] ?? null,
+                    'address' => $data['address'] ?? [],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            // Non-blocking
+        }
+
+        return response()->json(['success' => false, 'message' => 'Gagal mengambil alamat dari titik koordinat.']);
     }
 }

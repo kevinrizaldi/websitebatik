@@ -460,6 +460,22 @@
                             <p class="font-bold text-[#1E1B18]">{{ $order->customer_name }} (Rumah Utama)</p>
                             <p class="text-stone-600 leading-relaxed">{{ $order->address }}</p>
                             <p class="text-stone-400">Telepon: {{ $order->phone }}</p>
+
+                            @php
+                                $orderAddr = $order->user?->alamats?->first(function($a) use ($order) {
+                                    return !empty($a->alamat_lengkap) && str_contains($order->address, $a->alamat_lengkap);
+                                }) ?? $order->user?->alamats?->where('is_utama', true)->first() ?? $order->user?->alamats?->first();
+                            @endphp
+                            @if ($orderAddr && $orderAddr->latitude && $orderAddr->longitude)
+                                <div class="mt-2 pt-2 border-t border-[#EFECE6] flex flex-wrap items-center justify-between gap-2 text-xs">
+                                    <span class="text-stone-600 flex items-center gap-1">
+                                        📍 Koordinat: <strong class="font-mono text-stone-900">{{ number_format($orderAddr->latitude, 5) }}, {{ number_format($orderAddr->longitude, 5) }}</strong>
+                                    </span>
+                                    <a href="https://www.google.com/maps?q={{ $orderAddr->latitude }},{{ $orderAddr->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-bold text-[#A86544] hover:underline">
+                                        <span>Buka di Google Maps ↗</span>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 

@@ -14,6 +14,10 @@
     <!-- Styles & Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- Leaflet CSS & JS for OpenStreetMap Pin Point -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <!-- Midtrans Snap (popup bawaan Midtrans) -->
     <script src="{{ config('midtrans.snap_js_url') }}" data-client-key="{{ config('midtrans.client_key') }}"></script>
 
@@ -40,6 +44,13 @@
           formMode: 'add',   // 'add' or 'edit'
           editingAddressId: null,
           modalSaving: false,
+          isSearchingLocation: false,
+          locationAutoFound: false,
+          autoFoundLabel: '',
+          searchDebounceTimer: null,
+          regionPickerOpen: false,
+          activeRegionTab: 'provinsi',
+          searchRegion: '',
           toastMessage: '',
           isSubmitting: false,
 
@@ -62,9 +73,13 @@
               address: '{{ $defaultAlamat ? addslashes($defaultAlamat->alamat_lengkap) : '' }}',
               city: '{{ $defaultAlamat ? addslashes($defaultAlamat->kota ?? '') : '' }}',
               cityId: '{{ $defaultAlamat ? ($defaultAlamat->city_id ?? '') : '' }}',
+              district: '{{ $defaultAlamat ? addslashes($defaultAlamat->kecamatan ?? $defaultAlamat->district ?? '') : '' }}',
+              districtId: '{{ $defaultAlamat ? ($defaultAlamat->district_id ?? '') : '' }}',
               province: '{{ $defaultAlamat ? addslashes($defaultAlamat->provinsi ?? '') : '' }}',
               provinceId: '{{ $defaultAlamat ? ($defaultAlamat->province_id ?? '') : '' }}',
               postalCode: '{{ $defaultAlamat ? addslashes($defaultAlamat->kode_pos ?? '') : '' }}',
+              latitude: {{ $defaultAlamat && $defaultAlamat->latitude !== null ? (float)$defaultAlamat->latitude : 'null' }},
+              longitude: {{ $defaultAlamat && $defaultAlamat->longitude !== null ? (float)$defaultAlamat->longitude : 'null' }},
               isUtama: {{ $defaultAlamat && $defaultAlamat->is_utama ? 'true' : 'false' }},
               hasAddress: {{ $defaultAlamat ? 'true' : 'false' }}
           },
@@ -74,11 +89,13 @@
           get fullAddress() {
               if (!this.addressData.address) return '';
               let parts = [this.addressData.address];
+              const dist = (this.addressData.district || '').trim();
               const city = (this.addressData.city || '').trim();
               const prov = (this.addressData.province || '').trim();
               const post = (this.addressData.postalCode || '').trim();
               
               const lowerAddr = this.addressData.address.toLowerCase();
+              if (dist && !lowerAddr.includes(dist.toLowerCase())) parts.push('Kec. ' + dist);
               if (city && !lowerAddr.includes(city.toLowerCase())) parts.push(city);
               if (prov && !lowerAddr.includes(prov.toLowerCase())) parts.push(prov);
               if (post && !lowerAddr.includes(post.toLowerCase())) parts.push(post);
@@ -97,9 +114,13 @@
                       address: '{{ addslashes($alm->alamat_lengkap) }}',
                       city: '{{ addslashes($alm->kota ?? '') }}',
                       cityId: '{{ $alm->city_id ?? '' }}',
+                      district: '{{ addslashes($alm->kecamatan ?? $alm->district ?? '') }}',
+                      districtId: '{{ $alm->district_id ?? '' }}',
                       province: '{{ addslashes($alm->provinsi ?? '') }}',
                       provinceId: '{{ $alm->province_id ?? '' }}',
                       postalCode: '{{ addslashes($alm->kode_pos ?? '') }}',
+                      latitude: {{ $alm->latitude !== null ? (float)$alm->latitude : 'null' }},
+                      longitude: {{ $alm->longitude !== null ? (float)$alm->longitude : 'null' }},
                       isUtama: {{ $alm->is_utama ? 'true' : 'false' }}
                   }@if(!$loop->last),@endif
                   @endforeach
@@ -117,9 +138,13 @@
               this.addressData.address = picked.address;
               this.addressData.city = picked.city;
               this.addressData.cityId = picked.cityId || '';
+              this.addressData.district = picked.district || '';
+              this.addressData.districtId = picked.districtId || '';
               this.addressData.province = picked.province || '';
               this.addressData.provinceId = picked.provinceId || '';
               this.addressData.postalCode = picked.postalCode || '';
+              this.addressData.latitude = picked.latitude || null;
+              this.addressData.longitude = picked.longitude || null;
               this.addressData.isUtama = picked.isUtama;
               this.addressData.hasAddress = true;
               this.fetchRajaOngkirCosts();
@@ -131,17 +156,178 @@
               phone: '',
               city: '',
               cityId: '',
+              district: '',
+              districtId: '',
               province: '',
               provinceId: '',
               postalCode: '',
               address: '',
+              latitude: null,
+              longitude: null,
               isUtama: false
+          },
+
+          checkoutMap: null,
+          checkoutMarker: null,
+          geoLocating: false,
+          resolvingAddress: false,
+          pinAddressHint: '',
+
+          init() {
+              this.$watch('editAddressModal', val => {
+                  if (val && this.modalView === 'form') {
+                      setTimeout(() => this.initOrRefreshCheckoutMap(), 250);
+                  }
+              });
+              this.$watch('modalView', val => {
+                  if (val === 'form') {
+                      setTimeout(() => this.initOrRefreshCheckoutMap(), 250);
+                  }
+              });
+          },
+
+          initOrRefreshCheckoutMap() {
+              const el = document.getElementById('checkout-leaflet-map-picker');
+              if (!el || typeof L === 'undefined') return;
+
+              const hasCoords = this.tempAddress.latitude !== null && this.tempAddress.longitude !== null && !isNaN(this.tempAddress.latitude);
+              const defaultLat = hasCoords ? parseFloat(this.tempAddress.latitude) : -7.5666;
+              const defaultLng = hasCoords ? parseFloat(this.tempAddress.longitude) : 110.8290;
+
+              if (!this.checkoutMap) {
+                  this.checkoutMap = L.map(el, {
+                      center: [defaultLat, defaultLng],
+                      zoom: hasCoords ? 16 : 13,
+                      scrollWheelZoom: false
+                  });
+
+                  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                      attribution: '&copy; OpenStreetMap contributors',
+                      maxZoom: 19
+                  }).addTo(this.checkoutMap);
+
+                  this.checkoutMarker = L.marker([defaultLat, defaultLng], {
+                      draggable: true
+                  }).addTo(this.checkoutMap);
+
+                  if (!hasCoords) {
+                      this.checkoutMarker.setOpacity(0.4);
+                  }
+
+                  this.checkoutMarker.on('dragend', (e) => {
+                      const pos = e.target.getLatLng();
+                      this.setCheckoutCoordinates(pos.lat, pos.lng);
+                  });
+
+                  this.checkoutMap.on('click', (e) => {
+                      this.setCheckoutCoordinates(e.latlng.lat, e.latlng.lng);
+                      this.checkoutMarker.setLatLng(e.latlng);
+                      this.checkoutMarker.setOpacity(1);
+                  });
+              } else {
+                  this.checkoutMap.invalidateSize();
+                  this.checkoutMap.setView([defaultLat, defaultLng], hasCoords ? 16 : 13);
+                  this.checkoutMarker.setLatLng([defaultLat, defaultLng]);
+                  this.checkoutMarker.setOpacity(hasCoords ? 1 : 0.4);
+              }
+          },
+
+          async setCheckoutCoordinates(lat, lng) {
+              this.tempAddress.latitude = Number(lat.toFixed(7));
+              this.tempAddress.longitude = Number(lng.toFixed(7));
+              if (this.checkoutMarker) {
+                  this.checkoutMarker.setOpacity(1);
+              }
+              this.resolvingAddress = true;
+              try {
+                  const res = await fetch(`{{ route('alamat.reverse-geocode') }}?lat=${lat}&lng=${lng}`);
+                  const data = await res.json();
+                  if (data && data.success && data.display_name) {
+                      this.pinAddressHint = data.display_name;
+                      if (!this.tempAddress.postalCode && data.postcode) {
+                          this.tempAddress.postalCode = data.postcode;
+                      }
+                  }
+              } catch (e) {
+                  // Non-blocking
+              } finally {
+                  this.resolvingAddress = false;
+              }
+          },
+
+          getCheckoutCurrentLocation() {
+              if (!navigator.geolocation) {
+                  alert('Browser Anda tidak mendukung deteksi lokasi otomatis.');
+                  return;
+              }
+              this.geoLocating = true;
+
+              const onSuccess = (pos) => {
+                  this.geoLocating = false;
+                  const lat = pos.coords.latitude;
+                  const lng = pos.coords.longitude;
+                  this.setCheckoutCoordinates(lat, lng);
+                  if (this.checkoutMap) {
+                      this.checkoutMap.setView([lat, lng], 17);
+                      if (this.checkoutMarker) {
+                          this.checkoutMarker.setLatLng([lat, lng]);
+                          this.checkoutMarker.setOpacity(1);
+                      }
+                      setTimeout(() => {
+                          if (this.checkoutMap) this.checkoutMap.invalidateSize();
+                      }, 100);
+                  }
+              };
+
+              const onFinalError = (err) => {
+                  this.geoLocating = false;
+                  let msg = 'Tidak dapat mendeteksi lokasi otomatis.';
+                  if (err && err.code === 1) {
+                      msg = 'Izin akses lokasi ditolak oleh browser.\n\nCara mengizinkan:\n1. Klik ikon pengaturan / gembok di samping link localhost:8000.\n2. Ubah "Location" menjadi "Allow" (Izinkan).\n3. Muat ulang halaman.';
+                  } else if (err && err.code === 2) {
+                      msg = 'Layanan lokasi tidak tersedia di perangkat Anda (fitur Location Windows tidak aktif atau PC tidak memiliki modul WiFi/GPS).\n\nTips: Anda tetap bisa menentukan titik dengan langsung mengklik atau menggeser pin merah pada peta.';
+                  } else if (err && err.code === 3) {
+                      msg = 'Waktu pencarian lokasi habis.\n\nTips: Anda dapat langsung mengklik atau menggeser pin merah pada peta di lokasi rumah Anda.';
+                  } else {
+                      msg = 'Gagal mendeteksi lokasi otomatis. Anda dapat langsung mengklik atau menggeser pin pada peta.';
+                  }
+                  this.showToast(msg);
+              };
+
+              navigator.geolocation.getCurrentPosition(
+                  onSuccess,
+                  (err) => {
+                      if (err && (err.code === 2 || err.code === 3)) {
+                          navigator.geolocation.getCurrentPosition(
+                              onSuccess,
+                              onFinalError,
+                              { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
+                          );
+                      } else {
+                          onFinalError(err);
+                      }
+                  },
+                  { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+              );
+          },
+
+          clearCheckoutPin() {
+              this.tempAddress.latitude = null;
+              this.tempAddress.longitude = null;
+              this.pinAddressHint = '';
+              if (this.checkoutMarker) {
+                  this.checkoutMarker.setOpacity(0.4);
+              }
           },
 
           provincesList: [],
           citiesList: [],
+          districtsList: [],
+          postalCodesList: [],
           loadingProvinces: false,
           loadingCities: false,
+          loadingDistricts: false,
+          loadingPostalCodes: false,
 
           async loadProvincesForCheckout() {
               if (this.provincesList.length > 0) return;
@@ -186,6 +372,118 @@
               await this.loadCitiesForCheckout(this.tempAddress.provinceId);
           },
 
+          get checkoutRegionDisplay() {
+              const parts = [];
+              if (this.tempAddress.province) parts.push(this.tempAddress.province);
+              if (this.tempAddress.city) parts.push(this.tempAddress.city);
+              if (this.tempAddress.district) parts.push(this.tempAddress.district);
+              if (this.tempAddress.postalCode) parts.push(this.tempAddress.postalCode);
+              return parts.join(', ');
+          },
+
+          get filteredCheckoutProvinces() {
+              if (!this.searchRegion) return this.provincesList;
+              const s = this.searchRegion.toLowerCase();
+              return this.provincesList.filter(p => (p.province || '').toLowerCase().includes(s));
+          },
+
+          get filteredCheckoutCities() {
+              if (!this.searchRegion) return this.citiesList;
+              const s = this.searchRegion.toLowerCase();
+              return this.citiesList.filter(c => ((c.type || '') + ' ' + (c.city_name || '')).toLowerCase().includes(s));
+          },
+
+          get filteredCheckoutDistricts() {
+              if (!this.searchRegion) return this.districtsList;
+              const s = this.searchRegion.toLowerCase();
+              return this.districtsList.filter(d => (d.district_name || '').toLowerCase().includes(s));
+          },
+
+          async loadDistrictsForCheckout(cityId) {
+              if (!cityId) {
+                  this.districtsList = [];
+                  return;
+              }
+              this.loadingDistricts = true;
+              try {
+                  const res = await fetch('{{ route('rajaongkir.districts') }}?city_id=' + cityId);
+                  const data = await res.json();
+                  if (data.success && Array.isArray(data.districts)) {
+                      this.districtsList = data.districts;
+                  }
+              } catch (e) {
+                  console.error('Failed loading districts for checkout', e);
+              } finally {
+                  this.loadingDistricts = false;
+              }
+          },
+
+          async selectCheckoutProvince(p) {
+              this.tempAddress.provinceId = String(p.province_id);
+              this.tempAddress.province = p.province;
+              this.tempAddress.cityId = '';
+              this.tempAddress.city = '';
+              this.tempAddress.districtId = '';
+              this.tempAddress.district = '';
+              this.tempAddress.postalCode = '';
+              this.postalCodesList = [];
+              this.searchRegion = '';
+              this.activeRegionTab = 'kota';
+              await this.loadCitiesForCheckout(p.province_id);
+          },
+
+          selectCheckoutCity(c) {
+              this.tempAddress.cityId = String(c.city_id);
+              const prefix = c.type ? c.type + ' ' : '';
+              this.tempAddress.city = prefix + c.city_name;
+              this.tempAddress.districtId = '';
+              this.tempAddress.district = '';
+              this.postalCodesList = [];
+              if (c.postal_code) {
+                  this.tempAddress.postalCode = c.postal_code;
+              }
+              this.searchRegion = '';
+              this.activeRegionTab = 'kecamatan';
+              this.loadDistrictsForCheckout(c.city_id);
+          },
+
+          selectCheckoutDistrict(d) {
+              this.tempAddress.districtId = String(d.district_id);
+              this.tempAddress.district = d.district_name;
+              this.searchRegion = '';
+              this.activeRegionTab = 'kodepos';
+              this.loadCheckoutPostalCodes(d.district_name, this.tempAddress.city, this.tempAddress.cityId);
+              this.searchCheckoutAddressLocation(false);
+          },
+
+          async loadCheckoutPostalCodes(districtName, cityName, cityId) {
+              this.loadingPostalCodes = true;
+              try {
+                  const params = new URLSearchParams();
+                  if (districtName) params.append('district_name', districtName);
+                  if (cityName) params.append('city_name', cityName);
+                  if (cityId) params.append('city_id', cityId);
+
+                  const res = await fetch('{{ route('rajaongkir.postal-codes') }}?' + params.toString());
+                  const data = await res.json();
+                  if (data.success && Array.isArray(data.items)) {
+                      this.postalCodesList = data.items;
+                      if (data.default_postal_code) {
+                          this.tempAddress.postalCode = data.default_postal_code;
+                      }
+                  }
+              } catch (e) {
+                  console.error('Failed loading postal codes for checkout', e);
+              } finally {
+                  this.loadingPostalCodes = false;
+              }
+          },
+
+          selectCheckoutPostalCode(code) {
+              this.tempAddress.postalCode = code;
+              this.regionPickerOpen = false;
+          },
+
           onCheckoutCityChange() {
               const selected = this.citiesList.find(c => String(c.city_id) === String(this.tempAddress.cityId));
               if (selected) {
@@ -194,6 +492,69 @@
                   if (selected.postal_code && !this.tempAddress.postalCode) {
                       this.tempAddress.postalCode = selected.postal_code;
                   }
+                  this.searchCheckoutAddressLocation(false);
+              }
+          },
+
+          onCheckoutAddressInput() {
+              clearTimeout(this.searchDebounceTimer);
+              this.locationAutoFound = false;
+              const text = (this.tempAddress.address || '').trim();
+              if (text.length < 3) return;
+
+              this.searchDebounceTimer = setTimeout(() => {
+                  this.searchCheckoutAddressLocation(false);
+              }, 700);
+          },
+
+          async searchCheckoutAddressLocation(isManual = false) {
+              const jalan = (this.tempAddress.address || '').trim();
+              const kec = (this.tempAddress.district || '').trim();
+              const kota = (this.tempAddress.city || '').trim();
+              const prov = (this.tempAddress.province || '').trim();
+
+              if (!jalan && !kec && !kota) return;
+
+              this.isSearchingLocation = true;
+              this.locationAutoFound = false;
+
+              try {
+                  const params = new URLSearchParams();
+                  if (jalan) params.append('jalan', jalan);
+                  if (kec) params.append('kecamatan', kec);
+                  if (kota) params.append('kota', kota);
+                  if (prov) params.append('provinsi', prov);
+
+                  const res = await fetch('{{ route('alamat.geocode') }}?' + params.toString());
+                  const data = await res.json();
+
+                  if (data && data.success && data.found) {
+                      const lat = parseFloat(data.latitude);
+                      const lon = parseFloat(data.longitude);
+                      this.tempAddress.latitude = Number(lat.toFixed(7));
+                      this.tempAddress.longitude = Number(lon.toFixed(7));
+                      this.pinAddressHint = data.display_name;
+                      this.autoFoundLabel = data.display_name;
+                      this.locationAutoFound = true;
+
+                      if (this.checkoutMap) {
+                          const targetZoom = jalan ? 16 : 13;
+                          this.checkoutMap.setView([lat, lon], targetZoom);
+                          if (this.checkoutMarker) {
+                              this.checkoutMarker.setLatLng([lat, lon]);
+                              this.checkoutMarker.setOpacity(1);
+                          }
+                          setTimeout(() => {
+                              if (this.checkoutMap) this.checkoutMap.invalidateSize();
+                          }, 150);
+                      }
+                  } else if (isManual) {
+                      this.showToast('Lokasi jalan belum ditemukan otomatis di peta. Anda dapat langsung mengklik titik lokasi pada peta.');
+                  }
+              } catch (e) {
+                  console.error('Checkout geocoding failed', e);
+              } finally {
+                  this.isSearchingLocation = false;
               }
           },
 
@@ -210,43 +571,74 @@
               this.modalView = 'form';
               this.formMode = 'add';
               this.editingAddressId = null;
+              this.pinAddressHint = '';
+              this.isSearchingLocation = false;
+              this.locationAutoFound = false;
+              this.autoFoundLabel = '';
+              this.regionPickerOpen = false;
+              this.activeRegionTab = 'provinsi';
+              this.searchRegion = '';
+              this.postalCodesList = [];
+              clearTimeout(this.searchDebounceTimer);
               this.tempAddress = {
                   label: 'Rumah',
                   recipient: '{{ Auth::check() ? addslashes(Auth::user()->name) : '' }}',
                   phone: '{{ Auth::check() && Auth::user()->phone ? addslashes(Auth::user()->phone) : '' }}',
                   city: '',
                   cityId: '',
+                  district: '',
+                  districtId: '',
                   province: '',
                   provinceId: '',
                   postalCode: '',
                   address: '',
+                  latitude: null,
+                  longitude: null,
                   isUtama: false
               };
               this.editAddressModal = true;
               await this.loadProvincesForCheckout();
+              setTimeout(() => this.initOrRefreshCheckoutMap(), 250);
           },
 
           async openEditSingleAddress(addr) {
               this.modalView = 'form';
               this.formMode = 'edit';
               this.editingAddressId = addr.id;
+              this.pinAddressHint = '';
+              this.isSearchingLocation = false;
+              this.locationAutoFound = false;
+              this.autoFoundLabel = '';
+              this.regionPickerOpen = false;
+              this.activeRegionTab = 'provinsi';
+              this.searchRegion = '';
+              this.postalCodesList = [];
+              clearTimeout(this.searchDebounceTimer);
               this.tempAddress = {
                   label: addr.label || 'Rumah',
                   recipient: addr.penerima,
                   phone: addr.phone,
                   city: addr.city,
                   cityId: addr.cityId || '',
+                  district: addr.district || '',
+                  districtId: addr.districtId || '',
                   province: addr.province || '',
                   provinceId: addr.provinceId || '',
                   postalCode: addr.postalCode || '',
                   address: addr.address,
+                  latitude: addr.latitude || null,
+                  longitude: addr.longitude || null,
                   isUtama: addr.isUtama
               };
               this.editAddressModal = true;
               await this.loadProvincesForCheckout();
               if (this.tempAddress.provinceId) {
                   await this.loadCitiesForCheckout(this.tempAddress.provinceId);
+                  if (this.tempAddress.cityId) {
+                      await this.loadDistrictsForCheckout(this.tempAddress.cityId);
+                  }
               }
+              setTimeout(() => this.initOrRefreshCheckoutMap(), 250);
           },
 
           saveAddress() {
@@ -284,11 +676,16 @@
                   penerima: recipient,
                   no_telepon: phone,
                   kota: city,
+                  district: this.tempAddress.district || null,
+                  kecamatan: this.tempAddress.district || null,
+                  district_id: this.tempAddress.districtId ? parseInt(this.tempAddress.districtId) : null,
                   provinsi: province || null,
                   province_id: this.tempAddress.provinceId ? parseInt(this.tempAddress.provinceId) : null,
                   city_id: this.tempAddress.cityId ? parseInt(this.tempAddress.cityId) : null,
                   kode_pos: postalCode || null,
                   alamat_lengkap: address,
+                  latitude: this.tempAddress.latitude ? parseFloat(this.tempAddress.latitude) : null,
+                  longitude: this.tempAddress.longitude ? parseFloat(this.tempAddress.longitude) : null,
                   is_utama: isUtama
               };
 
@@ -319,9 +716,13 @@
                           address: data.alamat.alamat_lengkap,
                           city: data.alamat.kota,
                           cityId: data.alamat.city_id || '',
+                          district: data.alamat.kecamatan || data.alamat.district || '',
+                          districtId: data.alamat.district_id || '',
                           province: data.alamat.provinsi || '',
                           provinceId: data.alamat.province_id || '',
                           postalCode: data.alamat.kode_pos || '',
+                          latitude: data.alamat.latitude ? parseFloat(data.alamat.latitude) : null,
+                          longitude: data.alamat.longitude ? parseFloat(data.alamat.longitude) : null,
                           isUtama: !!data.alamat.is_utama
                       };
 
@@ -588,8 +989,11 @@
                       phone: this.addressData.phone,
                       address: this.fullAddress,
                       city: this.addressData.city,
+                      district: this.addressData.district || null,
+                      kecamatan: this.addressData.district || null,
                       province: this.addressData.province,
                       city_id: this.addressData.cityId || null,
+                      district_id: this.addressData.districtId || null,
                       province_id: this.addressData.provinceId || null,
                       postal_code: this.addressData.postalCode,
                       alamat_id: this.selectedAddressId,
@@ -744,7 +1148,13 @@
                                                 <span x-show="addr.isUtama" class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">Utama</span>
                                             </div>
                                             <p class="text-xs text-stone-500 font-medium mt-0.5" x-text="addr.phone"></p>
-                                            <p class="text-xs text-stone-700 leading-relaxed mt-1" x-text="addr.address + (addr.city ? ', ' + addr.city : '') + (addr.province ? ', ' + addr.province : '') + (addr.postalCode ? ' ' + addr.postalCode : '')"></p>
+                                            <p class="text-xs text-stone-700 leading-relaxed mt-1" x-text="addr.address + (addr.district ? ', Kec. ' + addr.district : '') + (addr.city ? ', ' + addr.city : '') + (addr.province ? ', ' + addr.province : '') + (addr.postalCode ? ' ' + addr.postalCode : '')"></p>
+                                            <template x-if="addr.latitude && addr.longitude">
+                                                <div class="mt-1 flex items-center gap-1 text-[11px] text-[#8C6226]">
+                                                    <svg class="h-3.5 w-3.5 text-[#B58742]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                                                    <span>Titik Maps Terpasang</span>
+                                                </div>
+                                            </template>
                                         </div>
                                     </button>
 
@@ -801,92 +1211,335 @@
 
                 <!-- ================= VIEW 2: FORM TAMBAH / UBAH ALAMAT ================= -->
                 <div x-show="modalView === 'form'" class="p-6 space-y-4">
+                    <!-- Baris 1: Nama Penerima & Nomor Telepon -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
-                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                Nama Penerima <span class="text-rose-500">*</span>
+                            <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                                Nama Lengkap <span class="text-rose-500">*</span>
                             </label>
                             <input type="text" 
                                    x-model="tempAddress.recipient"
                                    @input="tempAddress.recipient = tempAddress.recipient.replace(/[^a-zA-Z\s\'.()\-]/g, '')"
-                                   placeholder="Nama lengkap penerima"
+                                   placeholder="Nama Lengkap"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                Label Alamat
-                            </label>
-                            <input type="text" 
-                                   x-model="tempAddress.label"
-                                   @input="tempAddress.label = tempAddress.label.replace(/[^a-zA-Z0-9\s.\-()]/g, '')"
-                                   placeholder="Contoh: Rumah, Kantor, Kos"
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        <div>
-                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                Nomor WhatsApp / HP <span class="text-rose-500">*</span>
+                            <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1.5">
+                                Nomor Telepon <span class="text-rose-500">*</span>
                             </label>
                             <input type="tel" 
                                    inputmode="numeric"
                                    maxlength="20"
                                    x-model="tempAddress.phone"
                                    @input="tempAddress.phone = tempAddress.phone.replace(/[^0-9+\- ]/g, '')"
-                                   placeholder="Contoh: 081234567890 atau +62812..."
-                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                Kode Pos
-                            </label>
-                            <input type="text"
-                                   inputmode="numeric"
-                                   maxlength="5"
-                                   x-model="tempAddress.postalCode"
-                                   @input="tempAddress.postalCode = tempAddress.postalCode.replace(/[^0-9]/g, '')"
-                                   placeholder="Contoh: 51111 (5 digit)"
+                                   placeholder="Nomor Telepon (08xxxxxxxxxx)"
                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                        <div>
-                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                Provinsi <span class="text-rose-500">*</span>
+                    <!-- Baris 2: Pemilih Wilayah Terpadu ala Shopee (Provinsi, Kota, Kecamatan, Kode Pos) -->
+                    <div class="space-y-1.5" @click.outside="if (regionPickerOpen && tempAddress.city) regionPickerOpen = false">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                                Provinsi, Kota, Kecamatan, Kode Pos <span class="text-rose-500">*</span>
                             </label>
-                            <select x-model="tempAddress.provinceId" @change="onCheckoutProvinceChange()"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40">
-                                <option value="" x-text="loadingProvinces ? 'Memuat provinsi...' : '-- Pilih Provinsi --'">-- Pilih Provinsi --</option>
-                                <template x-for="p in provincesList" :key="p.province_id">
-                                    <option :value="p.province_id" x-text="p.province" :selected="String(p.province_id) === String(tempAddress.provinceId)"></option>
-                                </template>
-                            </select>
+                            <button type="button"
+                                    x-show="tempAddress.province"
+                                    @click="tempAddress.provinceId = ''; tempAddress.province = ''; tempAddress.cityId = ''; tempAddress.city = ''; tempAddress.districtId = ''; tempAddress.district = ''; tempAddress.postalCode = ''; regionPickerOpen = true; activeRegionTab = 'provinsi';"
+                                    class="text-[11px] font-medium text-stone-400 hover:text-stone-700">
+                                Reset
+                            </button>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                                Kabupaten / Kota <span class="text-rose-500">*</span>
-                            </label>
-                            <select x-model="tempAddress.cityId" @change="onCheckoutCityChange()" :disabled="!tempAddress.provinceId || loadingCities"
-                                    class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40 disabled:opacity-50">
-                                <option value="" x-text="loadingCities ? 'Memuat kota...' : (tempAddress.provinceId ? '-- Pilih Kabupaten/Kota --' : '-- Pilih Provinsi Dulu --')">-- Pilih Kabupaten/Kota --</option>
-                                <template x-for="c in citiesList" :key="c.city_id">
-                                    <option :value="c.city_id" x-text="(c.type ? c.type + ' ' : '') + c.city_name" :selected="String(c.city_id) === String(tempAddress.cityId)"></option>
+                        
+                        <div @click="regionPickerOpen = !regionPickerOpen; if (regionPickerOpen) { loadProvincesForCheckout(); if (tempAddress.cityId && !tempAddress.district) { activeRegionTab = 'kecamatan'; loadDistrictsForCheckout(tempAddress.cityId); } else if (tempAddress.provinceId && !tempAddress.city) { activeRegionTab = 'kota'; } else if (!tempAddress.provinceId) { activeRegionTab = 'provinsi'; } searchRegion = ''; }"
+                             class="flex items-center justify-between w-full rounded-xl border border-stone-300 bg-[#FAF7F2]/40 px-3.5 py-2.5 text-sm cursor-pointer hover:border-[#B58742] transition select-none">
+                            <span :class="checkoutRegionDisplay ? 'text-stone-900 font-medium' : 'text-stone-400'"
+                                  x-text="checkoutRegionDisplay || 'Pilih Provinsi, Kota, Kecamatan, Kode Pos'"></span>
+                            <div class="flex items-center gap-1.5 text-stone-400">
+                                <svg class="h-4 w-4 transition-transform duration-200"
+                                     :class="regionPickerOpen ? 'rotate-180 text-stone-700' : ''"
+                                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Panel Tab Selector Terbuka secara IN-FLOW / Inline -->
+                        <div x-show="regionPickerOpen"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0 -translate-y-1"
+                             x-transition:enter-end="opacity-100 translate-y-0"
+                             class="w-full rounded-2xl border border-stone-200 bg-[#FAF7F2]/70 p-3 shadow-xs">
+                            
+                            <!-- Input Pencarian di dalam Dropdown -->
+                            <div class="relative mb-2">
+                                <input type="text"
+                                       x-model="searchRegion"
+                                       :placeholder="'Cari ' + (activeRegionTab === 'provinsi' ? 'provinsi' : (activeRegionTab === 'kota' ? 'kabupaten / kota' : (activeRegionTab === 'kecamatan' ? 'kecamatan' : 'wilayah'))) + '...'"
+                                       class="w-full rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-800 placeholder-stone-400 focus:border-[#201A17] focus:bg-white focus:outline-none">
+                                <svg class="absolute right-2.5 top-2.5 h-3.5 w-3.5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            </div>
+
+                            <!-- Header Tab: Provinsi | Kota | Kecamatan | Kode Pos -->
+                            <div class="flex items-center border-b border-stone-200/80 text-xs font-semibold overflow-x-auto pb-1">
+                                <button type="button"
+                                        @click="activeRegionTab = 'provinsi'; searchRegion = '';"
+                                        :class="activeRegionTab === 'provinsi' ? 'border-b-2 border-[#201A17] text-[#201A17] font-bold' : 'text-stone-400 hover:text-stone-600'"
+                                        class="pb-1.5 px-2.5 transition whitespace-nowrap shrink-0">
+                                    Provinsi
+                                    <span x-show="tempAddress.province" class="ml-1 text-[10px] text-stone-500 font-normal truncate max-w-[70px] inline-block align-bottom" x-text="'(' + tempAddress.province + ')'"></span>
+                                </button>
+                                <button type="button"
+                                        @click="if (tempAddress.provinceId) { activeRegionTab = 'kota'; searchRegion = ''; }"
+                                        :disabled="!tempAddress.provinceId"
+                                        :class="activeRegionTab === 'kota' ? 'border-b-2 border-[#201A17] text-[#201A17] font-bold' : (tempAddress.provinceId ? 'text-stone-400 hover:text-stone-600' : 'text-stone-300 cursor-not-allowed')"
+                                        class="pb-1.5 px-2.5 transition whitespace-nowrap shrink-0">
+                                    Kota
+                                    <span x-show="tempAddress.city" class="ml-1 text-[10px] text-stone-500 font-normal truncate max-w-[70px] inline-block align-bottom" x-text="'(' + tempAddress.city + ')'"></span>
+                                </button>
+                                <button type="button"
+                                        @click="if (tempAddress.cityId) { activeRegionTab = 'kecamatan'; searchRegion = ''; }"
+                                        :disabled="!tempAddress.cityId"
+                                        :class="activeRegionTab === 'kecamatan' ? 'border-b-2 border-[#201A17] text-[#201A17] font-bold' : (tempAddress.cityId ? 'text-stone-400 hover:text-stone-600' : 'text-stone-300 cursor-not-allowed')"
+                                        class="pb-1.5 px-2.5 transition whitespace-nowrap shrink-0">
+                                    Kecamatan
+                                    <span x-show="tempAddress.district" class="ml-1 text-[10px] text-stone-500 font-normal truncate max-w-[70px] inline-block align-bottom" x-text="'(' + tempAddress.district + ')'"></span>
+                                </button>
+                                <button type="button"
+                                        @click="if (tempAddress.cityId) { activeRegionTab = 'kodepos'; }"
+                                        :disabled="!tempAddress.cityId"
+                                        :class="activeRegionTab === 'kodepos' ? 'border-b-2 border-[#201A17] text-[#201A17] font-bold' : (tempAddress.cityId ? 'text-stone-400 hover:text-stone-600' : 'text-stone-300 cursor-not-allowed')"
+                                        class="pb-1.5 px-2.5 transition whitespace-nowrap shrink-0">
+                                    Kode Pos
+                                </button>
+                            </div>
+
+                            <!-- Tab Provinsi -->
+                            <div x-show="activeRegionTab === 'provinsi'" class="mt-2 max-h-48 overflow-y-auto space-y-0.5 pr-1">
+                                <div x-show="loadingProvinces" class="py-6 text-center text-xs text-stone-400">
+                                    Memuat daftar provinsi...
+                                </div>
+                                <template x-for="p in filteredCheckoutProvinces" :key="p.province_id">
+                                    <button type="button"
+                                            @click="selectCheckoutProvince(p)"
+                                            :class="String(tempAddress.provinceId) === String(p.province_id) ? 'bg-[#FAF3EA] text-[#8C6226] font-bold' : 'text-stone-700 hover:bg-stone-100/70 bg-white'"
+                                            class="w-full text-left px-3 py-2 text-xs rounded-lg transition flex items-center justify-between border border-transparent hover:border-stone-200">
+                                        <span x-text="p.province"></span>
+                                        <span x-show="String(tempAddress.provinceId) === String(p.province_id)" class="text-[#8C6226]">✓</span>
+                                    </button>
                                 </template>
-                            </select>
+                                <div x-show="!loadingProvinces && filteredCheckoutProvinces.length === 0" class="py-4 text-center text-xs text-stone-400">
+                                    Tidak ada provinsi yang cocok.
+                                </div>
+                            </div>
+
+                            <!-- Tab Kota -->
+                            <div x-show="activeRegionTab === 'kota'" class="mt-2 max-h-48 overflow-y-auto space-y-0.5 pr-1">
+                                <div x-show="loadingCities" class="py-6 text-center text-xs text-stone-400">
+                                    Memuat daftar kota...
+                                </div>
+                                <template x-for="c in filteredCheckoutCities" :key="c.city_id">
+                                    <button type="button"
+                                            @click="selectCheckoutCity(c)"
+                                            :class="String(tempAddress.cityId) === String(c.city_id) ? 'bg-[#FAF3EA] text-[#8C6226] font-bold' : 'text-stone-700 hover:bg-stone-100/70 bg-white'"
+                                            class="w-full text-left px-3 py-2 text-xs rounded-lg transition flex items-center justify-between border border-transparent hover:border-stone-200">
+                                        <span x-text="(c.type ? c.type + ' ' : '') + c.city_name"></span>
+                                        <span class="text-[10px] text-stone-400 font-mono" x-show="c.postal_code" x-text="c.postal_code"></span>
+                                    </button>
+                                </template>
+                                <div x-show="!loadingCities && filteredCheckoutCities.length === 0" class="py-4 text-center text-xs text-stone-400">
+                                    Tidak ada kota yang cocok.
+                                </div>
+                            </div>
+
+                            <!-- Tab Kecamatan -->
+                            <div x-show="activeRegionTab === 'kecamatan'" class="mt-2 max-h-48 overflow-y-auto space-y-0.5 pr-1">
+                                <div x-show="loadingDistricts" class="py-6 text-center text-xs text-stone-400">
+                                    Memuat daftar kecamatan...
+                                </div>
+                                <template x-for="d in filteredCheckoutDistricts" :key="d.district_id">
+                                    <button type="button"
+                                            @click="selectCheckoutDistrict(d)"
+                                            :class="String(tempAddress.districtId) === String(d.district_id) ? 'bg-[#FAF3EA] text-[#8C6226] font-bold' : 'text-stone-700 hover:bg-stone-100/70 bg-white'"
+                                            class="w-full text-left px-3 py-2 text-xs rounded-lg transition flex items-center justify-between border border-transparent hover:border-stone-200">
+                                        <span x-text="d.district_name"></span>
+                                        <span x-show="String(tempAddress.districtId) === String(d.district_id)" class="text-[#8C6226]">✓</span>
+                                    </button>
+                                </template>
+                                <div x-show="!loadingDistricts && filteredCheckoutDistricts.length === 0" class="py-3 text-center space-y-2">
+                                    <p class="text-xs text-stone-500">Kecamatan tidak ditemukan dalam daftar otomatis.</p>
+                                    <div class="flex items-center gap-2 px-2">
+                                        <input type="text"
+                                               x-model="tempAddress.district"
+                                               placeholder="Ketik nama kecamatan..."
+                                               class="w-full rounded-xl border border-stone-200 bg-white px-3 py-1.5 text-xs focus:border-stone-400 focus:outline-none">
+                                        <button type="button"
+                                                @click="activeRegionTab = 'kodepos'; searchCheckoutAddressLocation(false);"
+                                                class="rounded-xl bg-[#201A17] text-white px-3 py-1.5 text-xs font-semibold hover:bg-stone-800 transition whitespace-nowrap">
+                                            Pilih
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tab Kode Pos Otomatis ala Shopee -->
+                            <div x-show="activeRegionTab === 'kodepos'" class="mt-2 p-2 space-y-2.5">
+                                <div x-show="loadingPostalCodes" class="py-6 text-center text-xs text-stone-400">
+                                    <svg class="w-4 h-4 animate-spin inline mr-1.5 text-[#B58742]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                    Memuat pilihan kode pos otomatis...
+                                </div>
+
+                                <div x-show="!loadingPostalCodes && postalCodesList.length > 0" class="space-y-1.5">
+                                    <div class="flex items-center justify-between text-xs text-stone-500">
+                                        <span>Pilih kode pos area Anda (klik untuk memilih):</span>
+                                        <span class="text-[11px] text-emerald-700 font-medium">✓ Terisi otomatis</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                                        <template x-for="item in postalCodesList" :key="item.postal_code">
+                                            <button type="button"
+                                                    @click="selectCheckoutPostalCode(item.postal_code)"
+                                                    :class="tempAddress.postalCode === item.postal_code ? 'border-[#201A17] bg-[#FAF3EA] text-[#8C6226] font-bold shadow-xs' : 'border-stone-200 bg-white text-stone-700 hover:border-stone-300'"
+                                                    class="flex flex-col items-center justify-center p-2 rounded-xl border text-center transition hover:bg-stone-50">
+                                                <span class="text-xs font-bold font-mono" x-text="item.postal_code"></span>
+                                                <span class="text-[10px] text-stone-500 truncate max-w-full" x-show="item.subdistrict" x-text="item.subdistrict"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div x-show="!loadingPostalCodes && postalCodesList.length === 0" class="space-y-1.5 py-2">
+                                    <p class="text-xs text-stone-600">Kode pos terpasang otomatis dari kota: <strong class="font-mono text-stone-900" x-text="tempAddress.postalCode || 'Tidak tersedia'"></strong></p>
+                                </div>
+
+                                <div class="pt-2 border-t border-stone-200/60 flex items-center justify-between text-xs">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-stone-500 text-[11px]">Kode Pos:</span>
+                                        <span class="font-mono font-bold text-stone-900 bg-stone-100 px-2 py-0.5 rounded" x-text="tempAddress.postalCode || '-'"></span>
+                                    </div>
+                                    <button type="button"
+                                            @click="regionPickerOpen = false;"
+                                            class="rounded-xl bg-[#201A17] text-white px-4 py-1.5 text-xs font-semibold hover:bg-stone-800 transition shadow-xs">
+                                        OK / Selesai
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Footer Panel: Tombol Tutup -->
+                            <div class="mt-2 pt-2 border-t border-stone-200/80 flex items-center justify-between text-[11px]">
+                                <span class="text-stone-400">Pilih wilayah dari tab di atas</span>
+                                <button type="button"
+                                        @click="regionPickerOpen = false"
+                                        class="font-semibold text-stone-600 hover:text-stone-900 transition">
+                                    Tutup Pilihan ✕
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
-                            Alamat Lengkap <span class="text-rose-500">*</span>
-                        </label>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-stone-800 uppercase tracking-wider">
+                                Alamat Lengkap <span class="text-rose-500">*</span>
+                            </label>
+                            <button type="button" 
+                                    @click="searchCheckoutAddressLocation(true)" 
+                                    :disabled="isSearchingLocation || !tempAddress.address" 
+                                    class="inline-flex items-center gap-1 text-[11px] font-semibold text-[#8C6226] hover:text-[#B58742] disabled:opacity-40 transition">
+                                <svg class="w-3 h-3 animate-spin" x-show="isSearchingLocation" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                <svg class="w-3 h-3" x-show="!isSearchingLocation" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                                <span x-text="isSearchingLocation ? 'Mencari...' : 'Cari di Peta'"></span>
+                            </button>
+                        </div>
                         <textarea x-model="tempAddress.address"
-                                  @input="tempAddress.address = tempAddress.address.replace(/[^a-zA-Z0-9\s.,\/\-()\[\]#&\'\":;]/g, '')"
+                                  @input="onCheckoutAddressInput()"
                                   rows="3"
                                   placeholder="Nama Jalan, Nomor Gedung/Rumah, RT/RW, Kelurahan, Kecamatan, Patokan"
                                   class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#B58742] bg-[#FAF7F2]/40"></textarea>
+                        
+                        <!-- Notifikasi Otomatis ala Shopee -->
+                        <div x-show="isSearchingLocation" class="mt-1 flex items-center gap-1.5 text-[11px] text-[#8C6226]">
+                            <svg class="h-3 w-3 animate-spin text-[#B58742]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            <span>Menyesuaikan titik peta ke alamat jalan...</span>
+                        </div>
+                        <div x-show="locationAutoFound && !isSearchingLocation" class="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-700">
+                            <svg class="h-3.5 w-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                            <span>Titik peta otomatis disesuaikan ke alamat jalan. Geser pin jika ingin lebih presisi.</span>
+                        </div>
+                    </div>
+
+                    <!-- Titik Pin Peta (OpenStreetMap via Leaflet) -->
+                    <div class="space-y-2 pt-2 border-t border-stone-200/80">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-stone-700">
+                                    Titik Pin Lokasi (Peta)
+                                </label>
+                                <p class="text-[11px] text-stone-500">
+                                    Klik peta atau geser pin merah ke lokasi tujuan pengiriman.
+                                </p>
+                            </div>
+                            <button type="button" 
+                                    @click="getCheckoutCurrentLocation()" 
+                                    :disabled="geoLocating" 
+                                    class="inline-flex items-center gap-1.5 rounded-lg bg-[#FAF3EA] border border-[#DECDB8] px-2.5 py-1 text-[11px] font-semibold text-[#8C6226] hover:bg-[#F2E5D3] transition">
+                                <svg class="w-3.5 h-3.5 animate-spin" x-show="geoLocating" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                <svg class="w-3.5 h-3.5 text-[#B58742]" x-show="!geoLocating" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                                <span x-text="geoLocating ? 'Mencari...' : 'Gunakan Lokasi Saya'"></span>
+                            </button>
+                        </div>
+
+                        <!-- Leaflet Map Container -->
+                        <div class="relative z-0 isolate overflow-hidden rounded-2xl border border-stone-200 bg-stone-100" style="isolation: isolate;">
+                            <div id="checkout-leaflet-map-picker" style="height: 220px; width: 100%; min-height: 200px;" class="w-full z-0"></div>
+                            <div x-show="resolvingAddress" class="absolute top-2 right-2 bg-white/90 backdrop-blur-xs px-2 py-1 rounded text-[10px] font-semibold text-stone-600 shadow-xs border border-stone-200 z-10 flex items-center gap-1">
+                                <span class="animate-pulse">●</span> Mencari nama jalan...
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                            <div class="space-y-0.5">
+                                <template x-if="tempAddress.latitude && tempAddress.longitude">
+                                    <p class="text-stone-700">
+                                        📍 Koordinat: <span class="font-mono font-semibold text-stone-900" x-text="Number(tempAddress.latitude).toFixed(6) + ', ' + Number(tempAddress.longitude).toFixed(6)"></span>
+                                    </p>
+                                </template>
+                                <template x-if="!tempAddress.latitude || !tempAddress.longitude">
+                                    <p class="text-amber-700">
+                                        ℹ️ Titik peta bersifat opsional untuk memudahkan kurir.
+                                    </p>
+                                </template>
+                                <template x-if="pinAddressHint">
+                                    <p class="text-[10px] text-stone-500 line-clamp-1 italic" x-text="'Patokan: ' + pinAddressHint"></p>
+                                </template>
+                            </div>
+                            <button type="button" 
+                                    x-show="tempAddress.latitude && tempAddress.longitude" 
+                                    @click="clearCheckoutPin()" 
+                                    class="text-xs font-medium text-rose-600 hover:underline">
+                                Hapus Pin
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tandai Sebagai (Rumah / Kantor) ala Shopee -->
+                    <div class="pt-1">
+                        <label class="mb-1.5 block text-xs font-bold uppercase tracking-wider text-stone-700">Tandai Sebagai</label>
+                        <div class="flex items-center gap-2.5">
+                            <button type="button" 
+                                    @click="tempAddress.label = 'Rumah'" 
+                                    :class="tempAddress.label === 'Rumah' ? 'border-[#201A17] bg-[#201A17] text-white shadow-xs font-bold' : 'border-stone-300 bg-white text-stone-700 hover:border-stone-400'"
+                                    class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition">
+                                <span>🏠</span>
+                                <span>Rumah</span>
+                            </button>
+                            <button type="button" 
+                                    @click="tempAddress.label = 'Kantor'" 
+                                    :class="tempAddress.label === 'Kantor' ? 'border-[#201A17] bg-[#201A17] text-white shadow-xs font-bold' : 'border-stone-300 bg-white text-stone-700 hover:border-stone-400'"
+                                    class="inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition">
+                                <span>🏢</span>
+                                <span>Kantor</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="pt-1">
@@ -1029,6 +1682,17 @@
                             </div>
 
                             <p class="text-xs sm:text-sm text-stone-700 leading-relaxed font-normal" x-text="fullAddress"></p>
+
+                            <template x-if="addressData.latitude && addressData.longitude">
+                                <div class="flex items-center gap-1.5 text-xs text-[#8C6226]">
+                                    <svg class="h-3.5 w-3.5 shrink-0 text-[#B58742]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                                    <span>Titik Maps Terpasang (<span class="font-mono" x-text="Number(addressData.latitude).toFixed(5) + ', ' + Number(addressData.longitude).toFixed(5)"></span>)</span>
+                                    <a :href="'https://www.google.com/maps?q=' + addressData.latitude + ',' + addressData.longitude" target="_blank" rel="noopener noreferrer" class="ml-1 inline-flex items-center gap-0.5 font-bold text-stone-800 underline hover:text-[#B58742]">
+                                        <span>Buka di Peta</span>
+                                        <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/></svg>
+                                    </a>
+                                </div>
+                            </template>
 
                             <div class="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-[#ECE4D8]/60 text-[11px] text-stone-500">
                                 <span>Pastikan nomor WhatsApp / HP aktif untuk konfirmasi kurir pengiriman.</span>

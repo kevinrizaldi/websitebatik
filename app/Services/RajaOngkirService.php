@@ -209,6 +209,73 @@ class RajaOngkirService
     }
 
     /**
+     * Retrieve districts (kecamatan) by city ID.
+     *
+     * @return array<int, array{district_id: string|int, city_id: string|int, district_name: string}>
+     */
+    public function getDistricts(?int $cityId = null): array
+    {
+        if (! $cityId) {
+            return [];
+        }
+
+        $cacheKey = 'rajaongkir_districts_'.$cityId;
+
+        if ($this->isApiKeyConfigured()) {
+            try {
+                return Cache::remember($cacheKey, $this->cacheDuration, function () use ($cityId) {
+                    if ($this->isKomerce) {
+                        $response = Http::timeout(4)
+                            ->withHeaders(['key' => $this->apiKey])
+                            ->get("{$this->baseUrl}/destination/district/{$cityId}");
+
+                        if ($response->successful()) {
+                            $data = $response->json();
+                            $items = $data['data'] ?? [];
+                            if (! empty($items) && is_array($items)) {
+                                return array_map(function ($item) use ($cityId) {
+                                    return [
+                                        'district_id' => (string) ($item['id'] ?? ''),
+                                        'city_id' => (string) $cityId,
+                                        'district_name' => ucwords(strtolower((string) ($item['name'] ?? ''))),
+                                    ];
+                                }, $items);
+                            }
+                        }
+                    } else {
+                        // V1 Pro API
+                        $response = Http::timeout(4)
+                            ->withHeaders(['key' => $this->apiKey])
+                            ->get("{$this->baseUrl}/subdistrict", ['city' => $cityId]);
+
+                        if ($response->successful()) {
+                            $data = $response->json();
+                            $results = $data['rajaongkir']['results'] ?? [];
+                            if (! empty($results)) {
+                                return array_map(function ($item) use ($cityId) {
+                                    return [
+                                        'district_id' => (string) ($item['subdistrict_id'] ?? ''),
+                                        'city_id' => (string) $cityId,
+                                        'district_name' => (string) ($item['subdistrict_name'] ?? ''),
+                                    ];
+                                }, $results);
+                            }
+                        }
+                    }
+
+                    return $this->getFallbackDistricts($cityId);
+                });
+            } catch (Throwable $e) {
+                Log::warning('RajaOngkir Exception: getDistricts', ['message' => $e->getMessage()]);
+
+                return $this->getFallbackDistricts($cityId);
+            }
+        }
+
+        return $this->getFallbackDistricts($cityId);
+    }
+
+    /**
      * Search domestic destinations via Komerce API.
      *
      * @return array<int, array{id: int, label: string, province_name: string, city_name: string, district_name: string, subdistrict_name: string, zip_code: string}>
@@ -990,5 +1057,62 @@ class RajaOngkirService
         }
 
         return $all;
+    }
+
+    /**
+     * Fallback districts for common cities when API is offline.
+     *
+     * @return array<int, array{district_id: string|int, city_id: string|int, district_name: string}>
+     */
+    protected function getFallbackDistricts(?int $cityId = null): array
+    {
+        $map = [
+            // Surakarta / Solo
+            444 => ['Banjarsari', 'Jebres', 'Laweyan', 'Pasar Kliwon', 'Serengan'],
+            539 => ['Banjarsari', 'Jebres', 'Laweyan', 'Pasar Kliwon', 'Serengan'],
+
+            // Yogyakarta
+            501 => ['Danurejan', 'Gedongtengen', 'Gondokusuman', 'Gondomanan', 'Jetis', 'Kotagede', 'Kraton', 'Mantrijeron', 'Mergangsan', 'Ngampilan', 'Pakualaman', 'Tegalrejo', 'Umbulharjo', 'Wirobrajan'],
+
+            // Semarang
+            399 => ['Banyumanik', 'Candisari', 'Gajahmungkur', 'Gayamsari', 'Genuk', 'Gunungpati', 'Mijen', 'Ngaliyan', 'Pedurungan', 'Semarang Barat', 'Semarang Selatan', 'Semarang Tengah', 'Semarang Timur', 'Semarang Utara', 'Tembalang', 'Tugu'],
+
+            // Sukoharjo
+            427 => ['Baki', 'Bendosari', 'Bulu', 'Gatak', 'Grogol', 'Kartasura', 'Mojolaban', 'Nguter', 'Polokarto', 'Sukoharjo', 'Tawangsari', 'Weru'],
+
+            // Karanganyar
+            196 => ['Colomadu', 'Gondangrejo', 'Jaten', 'Jatipuro', 'Jatiyoso', 'Jenawi', 'Jumapolo', 'Jumantono', 'Karanganyar', 'Karangpandan', 'Kebakkramat', 'Kerjo', 'Matesih', 'Mojogedang', 'Ngargoyoso', 'Tasikmadu', 'Tawangmangu'],
+
+            // Jakarta Barat
+            135 => ['Cengkareng', 'Grogol Petamburan', 'Kalideres', 'Kebon Jeruk', 'Kembangan', 'Palmerah', 'Taman Sari', 'Tambora'],
+            151 => ['Cengkareng', 'Grogol Petamburan', 'Kalideres', 'Kebon Jeruk', 'Kembangan', 'Palmerah', 'Taman Sari', 'Tambora'],
+
+            // Jakarta Pusat
+            137 => ['Cempaka Putih', 'Gambir', 'Johar Baru', 'Kemayoran', 'Menteng', 'Sawah Besar', 'Senen', 'Tanah Abang'],
+            152 => ['Cempaka Putih', 'Gambir', 'Johar Baru', 'Kemayoran', 'Menteng', 'Sawah Besar', 'Senen', 'Tanah Abang'],
+
+            // Jakarta Selatan
+            136 => ['Cilandak', 'Jagakarsa', 'Kebayoran Baru', 'Kebayoran Lama', 'Mampang Prapatan', 'Pancoran', 'Pasar Minggu', 'Pesanggrahan', 'Setiabudi', 'Tebet'],
+            153 => ['Cilandak', 'Jagakarsa', 'Kebayoran Baru', 'Kebayoran Lama', 'Mampang Prapatan', 'Pancoran', 'Pasar Minggu', 'Pesanggrahan', 'Setiabudi', 'Tebet'],
+
+            // Surabaya
+            444 => ['Bubutan', 'Genteng', 'Gubeng', 'Mulyorejo', 'Rungkut', 'Sukolilo', 'Tegalsari', 'Wonokromo'],
+        ];
+
+        $names = $map[$cityId] ?? [];
+        if (empty($names)) {
+            return [];
+        }
+
+        $results = [];
+        foreach ($names as $idx => $name) {
+            $results[] = [
+                'district_id' => (string) (($cityId * 100) + $idx + 1),
+                'city_id' => (string) $cityId,
+                'district_name' => $name,
+            ];
+        }
+
+        return $results;
     }
 }
