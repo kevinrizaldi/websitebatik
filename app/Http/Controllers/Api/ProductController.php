@@ -130,6 +130,10 @@ class ProductController extends Controller
                 'rating' => (int) $review->rating,
                 'comment' => $review->comment ?? $review->komentar ?? '',
                 'status' => $review->status,
+                'photos' => array_map(
+                    fn (string $path): string => url('api/media/storage/'.$path),
+                    $review->photos ?? [],
+                ),
                 'created_at' => $review->created_at?->toIso8601String(),
             ])
             ->values();

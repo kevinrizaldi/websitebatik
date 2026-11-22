@@ -283,6 +283,16 @@
                                 </div>
                             @endif
 
+                            @if ($ulasan->photos)
+                                <div class="flex items-center gap-2 pt-2">
+                                    @foreach ($ulasan->photos as $photo)
+                                        <div class="w-16 h-16 rounded-xl border border-[#ECE5D8] overflow-hidden bg-[#F6F1EA]">
+                                            <img src="{{ $photo }}" alt="Foto Pembeli" class="w-full h-full object-cover">
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
                             {{-- Curator Reply Callout --}}
                             @if ($isApproved)
                                 <div class="p-3.5 rounded-xl bg-[#F6F1EA] border border-[#ECE5D8] text-xs space-y-1">

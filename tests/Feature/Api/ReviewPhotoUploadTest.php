@@ -135,6 +135,51 @@ class ReviewPhotoUploadTest extends TestCase
         )->assertStatus(422)->assertJsonValidationErrors('photos.0');
     }
 
+    public function test_daftar_review_produk_menyertakan_url_foto(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+        $product = $this->product();
+        $order = $this->completedOrder($user, $product);
+
+        $this->withToken($this->tokenFor($user))->post(
+            "/api/orders/{$order->id}/reviews",
+            [
+                'product_id' => $product->id,
+                'rating' => 5,
+                'comment' => str_repeat('f', 40),
+                'photos' => [
+                    UploadedFile::fake()->image('a.jpg', 80, 80),
+                    UploadedFile::fake()->image('b.jpg', 80, 80),
+                    UploadedFile::fake()->image('c.jpg', 80, 80),
+                ],
+            ],
+        )->assertStatus(201);
+
+        $response = $this->getJson("/api/products/{$product->id}/reviews");
+        $response->assertOk()->assertJsonCount(3, 'data.0.photos');
+        foreach ($response->json('data.0.photos') as $url) {
+            $this->assertStringContainsString('api/media/storage/reviews/', $url);
+        }
+    }
+
+    public function test_review_lama_tanpa_foto_mengembalikan_array_kosong(): void
+    {
+        $product = $this->product();
+        \App\Models\Review::create([
+            'product_id' => $product->id,
+            'user_id' => User::factory()->create()->id,
+            'customer_name' => 'Pembeli Lama',
+            'rating' => 4,
+            'comment' => str_repeat('g', 40),
+            'status' => 'Disetujui',
+        ]);
+
+        $this->getJson("/api/products/{$product->id}/reviews")
+            ->assertOk()
+            ->assertJsonPath('data.0.photos', []);
+    }
+
     public function test_user_lain_tidak_bisa_mengulas_pesanan(): void
     {
         $owner = User::factory()->create();

@@ -546,6 +546,14 @@
                                             <img src="{{ asset('storage/' . $u->image_path) }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
                                         </div>
                                     @endif
+
+                                    @if($u->photos)
+                                        <div class="flex items-center gap-2 pt-2">
+                                            @foreach($u->photos as $photo)
+                                                <img src="{{ $photo }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         @endforeach
