@@ -130,10 +130,7 @@ class ProductController extends Controller
                 'rating' => (int) $review->rating,
                 'comment' => $review->comment ?? $review->komentar ?? '',
                 'status' => $review->status,
-                'photos' => array_map(
-                    fn (string $path): string => url('api/media/storage/'.$path),
-                    $review->photos ?? [],
-                ),
+                'photos' => $this->reviewPhotoUrls($review->photos),
                 'created_at' => $review->created_at?->toIso8601String(),
             ])
             ->values();
@@ -195,10 +192,19 @@ class ProductController extends Controller
                 'user_name' => $review->user?->name ?? 'Pelanggan',
                 'rating' => (int) $review->rating,
                 'comment' => $review->comment ?? $review->komentar ?? '',
+                'photos' => $this->reviewPhotoUrls($review->photos),
                 'created_at' => $review->created_at?->toIso8601String(),
             ])->values()->all();
         }
 
         return $data;
+    }
+
+    private function reviewPhotoUrls(mixed $photos): array
+    {
+        return array_map(
+            fn (string $path): string => url('api/media/storage/'.$path),
+            is_array($photos) ? $photos : [],
+        );
     }
 }

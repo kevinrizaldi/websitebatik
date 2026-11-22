@@ -115,6 +115,28 @@ class ReviewPhotoUploadTest extends TestCase
             "/api/orders/{$order->id}/reviews",
             ['product_id' => $product->id, 'rating' => 5, 'comment' => str_repeat('c', 40), 'photos' => $files],
         )->assertStatus(422)->assertJsonValidationErrors('photos');
+        Storage::disk('public')->assertDirectoryEmpty('reviews');
+        $this->assertDatabaseCount('reviews', 0);
+    }
+
+    public function test_foto_lebih_dari_dua_mb_ditolak(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+        $product = $this->product();
+        $order = $this->completedOrder($user, $product);
+
+        $this->withToken($this->tokenFor($user))->post(
+            "/api/orders/{$order->id}/reviews",
+            [
+                'product_id' => $product->id,
+                'rating' => 5,
+                'comment' => str_repeat('i', 40),
+                'photos' => [UploadedFile::fake()->create('besar.jpg', 2049, 'image/jpeg')],
+            ],
+        )->assertStatus(422)->assertJsonValidationErrors('photos.0');
+        Storage::disk('public')->assertDirectoryEmpty('reviews');
+        $this->assertDatabaseCount('reviews', 0);
     }
 
     public function test_file_bukan_gambar_ditolak(): void
@@ -133,6 +155,8 @@ class ReviewPhotoUploadTest extends TestCase
                 'photos' => [UploadedFile::fake()->create('catatan.txt', 4, 'text/plain')],
             ],
         )->assertStatus(422)->assertJsonValidationErrors('photos.0');
+        Storage::disk('public')->assertDirectoryEmpty('reviews');
+        $this->assertDatabaseCount('reviews', 0);
     }
 
     public function test_daftar_review_produk_menyertakan_url_foto(): void
@@ -161,6 +185,31 @@ class ReviewPhotoUploadTest extends TestCase
         foreach ($response->json('data.0.photos') as $url) {
             $this->assertStringContainsString('api/media/storage/reviews/', $url);
         }
+    }
+
+    public function test_detail_produk_juga_menyertakan_foto_review(): void
+    {
+        Storage::fake('public');
+        $user = User::factory()->create();
+        $product = $this->product();
+        $order = $this->completedOrder($user, $product);
+
+        $this->withToken($this->tokenFor($user))->post(
+            "/api/orders/{$order->id}/reviews",
+            [
+                'product_id' => $product->id,
+                'rating' => 5,
+                'comment' => str_repeat('h', 40),
+                'photos' => [
+                    UploadedFile::fake()->image('x.jpg', 80, 80),
+                    UploadedFile::fake()->image('y.jpg', 80, 80),
+                ],
+            ],
+        )->assertStatus(201);
+
+        $this->getJson("/api/products/{$product->id}")
+            ->assertOk()
+            ->assertJsonCount(2, 'data.reviews.0.photos');
     }
 
     public function test_review_lama_tanpa_foto_mengembalikan_array_kosong(): void
