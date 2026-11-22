@@ -330,19 +330,12 @@
                                 <p class="text-sm sm:text-base font-extrabold text-stone-900 mb-3" x-text="item.hargaFormatted"></p>
                             </div>
 
-                            <!-- Action Buttons Row (Lihat Produk + Secondary button) -->
-                            <div class="flex items-center gap-2 pt-1 border-t border-stone-100">
+                            <!-- Action Button: Lihat Produk -->
+                            <div class="pt-1 border-t border-stone-100">
                                 <a :href="item.detailUrl" 
-                                   class="flex-1 py-2 px-3 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition text-center shadow-2xs">
+                                   class="w-full block py-2.5 px-3 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition text-center shadow-2xs">
                                     Lihat Produk
                                 </a>
-                                <button @click="addToCart(item)" 
-                                        class="w-8 h-8 rounded-xl border border-stone-200 hover:bg-stone-100 flex items-center justify-center text-stone-700 transition"
-                                        title="Tambah ke Keranjang">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                    </svg>
-                                </button>
                             </div>
                         </div>
 
