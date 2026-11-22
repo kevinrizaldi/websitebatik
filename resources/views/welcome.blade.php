@@ -331,15 +331,6 @@
                          x-transition
                          class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
                         <a href="{{ route('produk.detail', ['id' => $p->id]) }}" class="relative aspect-square overflow-hidden bg-stone-100 block">
-                            @if($p->status === 'Stok Menipis')
-                                <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-[#5C3D28] text-white">
-                                    Stok Terbatas
-                                </span>
-                            @elseif($p->status === 'Habis')
-                                <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-stone-500 text-white">
-                                    Habis
-                                </span>
-                            @endif
                             <span class="absolute bottom-3 left-3 z-10 bg-[#201A17]/80 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded uppercase tracking-wider">
                                 {{ $p->category_name }}
                             </span>

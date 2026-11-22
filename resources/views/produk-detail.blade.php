@@ -585,15 +585,6 @@
                         @foreach($produksTerkait as $rel)
                             <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-2xs hover:shadow-md transition flex flex-col group">
                                 <a href="{{ route('produk.detail', $rel->id) }}" class="relative aspect-[4/5] overflow-hidden bg-stone-100 block">
-                                    @if($rel->stok <= 0)
-                                        <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-stone-500 text-white uppercase tracking-wider shadow-xs">
-                                            Stok Habis
-                                        </span>
-                                    @elseif($rel->stok <= 10)
-                                        <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-[#4A2D1B] text-white uppercase tracking-wider shadow-xs">
-                                            Stok Terbatas
-                                        </span>
-                                    @endif
                                     <img src="{{ $rel->gambar_url }}" alt="{{ $rel->nama }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 </a>
                                 <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
