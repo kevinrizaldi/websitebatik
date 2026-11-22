@@ -106,16 +106,26 @@ class RajaOngkirService
                         if ($this->isKomerce) {
                             $items = $data['data'] ?? [];
                             if (! empty($items) && is_array($items)) {
-                                return array_map(function ($item) {
+                                $provinces = array_map(function ($item) {
                                     return [
                                         'province_id' => (string) ($item['id'] ?? ''),
                                         'province' => ucwords(strtolower((string) ($item['name'] ?? ''))),
                                     ];
                                 }, $items);
+
+                                usort($provinces, function ($a, $b) {
+                                    return strcasecmp($a['province'], $b['province']);
+                                });
+
+                                return $provinces;
                             }
                         } else {
                             $results = $data['rajaongkir']['results'] ?? [];
                             if (! empty($results)) {
+                                usort($results, function ($a, $b) {
+                                    return strcasecmp($a['province'], $b['province']);
+                                });
+
                                 return $results;
                             }
                         }
@@ -159,20 +169,60 @@ class RajaOngkirService
                                 $data = $response->json();
                                 $items = $data['data'] ?? [];
                                 if (! empty($items) && is_array($items)) {
-                                    return array_map(function ($item) use ($provinceId) {
-                                        $rawName = (string) ($item['name'] ?? '');
-                                        $cityName = ucwords(strtolower($rawName));
-                                        $type = str_contains(strtolower($rawName), 'kabupaten') ? 'Kabupaten' : 'Kota';
+                                    $result = [];
+                                    $dualCities = [
+                                        'BANDUNG', 'BEKASI', 'BOGOR', 'CIREBON', 'SUKABUMI', 'TASIKMALAYA',
+                                        'SEMARANG', 'MAGELANG', 'PEKALONGAN', 'TEGAL',
+                                        'BLITAR', 'KEDIRI', 'MADIUN', 'MALANG', 'MOJOKERTO', 'PASURUAN', 'PROBOLINGGO',
+                                        'SOLOK', 'KUPANG',
+                                    ];
 
-                                        return [
-                                            'city_id' => (string) ($item['id'] ?? ''),
-                                            'province_id' => (string) $provinceId,
-                                            'province' => '',
-                                            'type' => $type,
-                                            'city_name' => $cityName,
-                                            'postal_code' => '',
-                                        ];
-                                    }, $items);
+                                    foreach ($items as $item) {
+                                        $rawName = (string) ($item['name'] ?? '');
+                                        $clean = trim(strtoupper($rawName));
+                                        $cleanName = preg_replace('/^(KOTA|KABUPATEN|KAB\.?)\s+/i', '', $rawName);
+                                        $cityName = ucwords(strtolower(trim((string) $cleanName)));
+
+                                        if (in_array($clean, $dualCities, true)) {
+                                            $result[] = [
+                                                'city_id' => (string) ($item['id'] ?? ''),
+                                                'province_id' => (string) $provinceId,
+                                                'province' => '',
+                                                'type' => 'Kota',
+                                                'city_name' => $cityName,
+                                                'postal_code' => '',
+                                            ];
+                                            $result[] = [
+                                                'city_id' => (string) ($item['id'] ?? ''),
+                                                'province_id' => (string) $provinceId,
+                                                'province' => '',
+                                                'type' => 'Kabupaten',
+                                                'city_name' => $cityName,
+                                                'postal_code' => '',
+                                            ];
+                                        } else {
+                                            $type = $this->determineCityType($rawName);
+                                            $result[] = [
+                                                'city_id' => (string) ($item['id'] ?? ''),
+                                                'province_id' => (string) $provinceId,
+                                                'province' => '',
+                                                'type' => $type,
+                                                'city_name' => $cityName,
+                                                'postal_code' => '',
+                                            ];
+                                        }
+                                    }
+
+                                    usort($result, function ($a, $b) {
+                                        $cmp = strcmp($a['city_name'], $b['city_name']);
+                                        if ($cmp !== 0) {
+                                            return $cmp;
+                                        }
+
+                                        return strcmp($a['type'], $b['type']);
+                                    });
+
+                                    return $result;
                                 }
                             }
                         }
@@ -209,11 +259,148 @@ class RajaOngkirService
     }
 
     /**
+     * Accurately determine whether an Indonesian second-level administrative division is a Kota or Kabupaten.
+     */
+    public function determineCityType(string $rawName): string
+    {
+        $clean = trim(strtoupper($rawName));
+
+        // Explicit prefix/contains checks
+        if (str_starts_with($clean, 'KABUPATEN ') || str_starts_with($clean, 'KAB. ') || str_contains($clean, 'KABUPATEN')) {
+            return 'Kabupaten';
+        }
+
+        if (str_starts_with($clean, 'KOTA ')) {
+            return 'Kota';
+        }
+
+        // Known Autonomous Cities (Kota Otonom) in Indonesia
+        $knownKota = [
+            'BANDA ACEH', 'SABANG', 'LHOKSEUMAWE', 'LANGSA', 'SUBULUSSALAM',
+            'MEDAN', 'BINJAI', 'TEBING TINGGI', 'PEMATANG SIANTAR', 'PEMATANGSIANTAR', 'TANJUNG BALAI', 'TANJUNGBALAI', 'SIBOLGA', 'PADANG SIDEMPUAN', 'PADANGSIDIMPUAN', 'GUNUNGSITOLI',
+            'PADANG', 'SAWAHLUNTO', 'PADANG PANJANG', 'BUKITTINGGI', 'PAYAKUMBUH', 'PARIAMAN',
+            'PEKANBARU', 'DUMAI',
+            'JAMBI', 'SUNGAI PENUH',
+            'PALEMBANG', 'PAGAR ALAM', 'LUBUK LINGGAU', 'LUBUKLINGGAU', 'PRABUMULIH',
+            'BENGKULU',
+            'BANDAR LAMPUNG', 'METRO',
+            'PANGKAL PINANG', 'PANGKALPINANG',
+            'BATAM', 'TANJUNG PINANG', 'TANJUNGPINANG',
+            'JAKARTA BARAT', 'JAKARTA PUSAT', 'JAKARTA SELATAN', 'JAKARTA TIMUR', 'JAKARTA UTARA',
+            'DEPOK', 'CIMAHI', 'BANJAR',
+            'SURAKARTA', 'SURAKARTA (SOLO)', 'SOLO', 'SALATIGA',
+            'YOGYAKARTA',
+            'SURABAYA', 'BATU',
+            'TANGERANG', 'CILEGON', 'SERANG', 'TANGERANG SELATAN',
+            'DENPASAR',
+            'MATARAM', 'BIMA',
+            'PONTIANAK', 'SINGKAWANG',
+            'PALANGKA RAYA', 'PALANGKARAYA',
+            'BANJARMASIN', 'BANJARBARU',
+            'BALIKPAPAN', 'SAMARINDA', 'BONTANG',
+            'TARAKAN',
+            'MANADO', 'BITUNG', 'TOMOHON', 'KOTAMOBAGU',
+            'PALU',
+            'MAKASSAR', 'PAREPARE', 'PARE-PARE', 'PALOPO',
+            'KENDARI', 'BAUBAU', 'BAU-BAU',
+            'GORONTALO',
+            'AMBON', 'TUAL',
+            'TERNATE', 'TIDORE KEPULAUAN',
+            'JAYAPURA', 'SORONG',
+        ];
+
+        if (in_array($clean, $knownKota, true)) {
+            return 'Kota';
+        }
+
+        return 'Kabupaten';
+    }
+
+    /**
+     * Retrieve districts (kecamatan) by city ID.
+     *
+     * @return array<int, array{district_id: string|int, city_id: string|int, district_name: string}>
+     */
+    public function getDistricts(?int $cityId = null): array
+    {
+        if (! $cityId) {
+            return [];
+        }
+
+        $cacheKey = 'rajaongkir_districts_'.$cityId;
+
+        if ($this->isApiKeyConfigured()) {
+            try {
+                return Cache::remember($cacheKey, $this->cacheDuration, function () use ($cityId) {
+                    if ($this->isKomerce) {
+                        $response = Http::timeout(4)
+                            ->withHeaders(['key' => $this->apiKey])
+                            ->get("{$this->baseUrl}/destination/district/{$cityId}");
+
+                        if ($response->successful()) {
+                            $data = $response->json();
+                            $items = $data['data'] ?? [];
+                            if (! empty($items) && is_array($items)) {
+                                $districts = array_map(function ($item) use ($cityId) {
+                                    return [
+                                        'district_id' => (string) ($item['id'] ?? ''),
+                                        'city_id' => (string) $cityId,
+                                        'district_name' => ucwords(strtolower((string) ($item['name'] ?? ''))),
+                                    ];
+                                }, $items);
+
+                                usort($districts, function ($a, $b) {
+                                    return strcasecmp($a['district_name'], $b['district_name']);
+                                });
+
+                                return $districts;
+                            }
+                        }
+                    } else {
+                        // V1 Pro API
+                        $response = Http::timeout(4)
+                            ->withHeaders(['key' => $this->apiKey])
+                            ->get("{$this->baseUrl}/subdistrict", ['city' => $cityId]);
+
+                        if ($response->successful()) {
+                            $data = $response->json();
+                            $results = $data['rajaongkir']['results'] ?? [];
+                            if (! empty($results)) {
+                                $districts = array_map(function ($item) use ($cityId) {
+                                    return [
+                                        'district_id' => (string) ($item['subdistrict_id'] ?? ''),
+                                        'city_id' => (string) $cityId,
+                                        'district_name' => (string) ($item['subdistrict_name'] ?? ''),
+                                    ];
+                                }, $results);
+
+                                usort($districts, function ($a, $b) {
+                                    return strcasecmp($a['district_name'], $b['district_name']);
+                                });
+
+                                return $districts;
+                            }
+                        }
+                    }
+
+                    return $this->getFallbackDistricts($cityId);
+                });
+            } catch (Throwable $e) {
+                Log::warning('RajaOngkir Exception: getDistricts', ['message' => $e->getMessage()]);
+
+                return $this->getFallbackDistricts($cityId);
+            }
+        }
+
+        return $this->getFallbackDistricts($cityId);
+    }
+
+    /**
      * Search domestic destinations via Komerce API.
      *
      * @return array<int, array{id: int, label: string, province_name: string, city_name: string, district_name: string, subdistrict_name: string, zip_code: string}>
      */
-    public function searchDestination(string $search): array
+    public function searchDestination(string $search, int $limit = 50): array
     {
         $search = trim($search);
         if (strlen($search) < 2) {
@@ -222,13 +409,14 @@ class RajaOngkirService
 
         if ($this->isApiKeyConfigured() && $this->isKomerce) {
             try {
-                $cacheKey = 'rajaongkir_dest_'.md5(strtolower($search));
+                $cacheKey = 'rajaongkir_dest_'.md5(strtolower($search).'_'.$limit);
 
-                return Cache::remember($cacheKey, $this->cacheDuration, function () use ($search) {
+                return Cache::remember($cacheKey, $this->cacheDuration, function () use ($search, $limit) {
                     $response = Http::timeout(4)
                         ->withHeaders(['key' => $this->apiKey])
                         ->get("{$this->baseUrl}/destination/domestic-destination", [
                             'search' => $search,
+                            'limit' => $limit,
                         ]);
 
                     if ($response->successful()) {
@@ -815,6 +1003,12 @@ class RajaOngkirService
             ['province_id' => '33', 'province' => 'Sumatera Selatan'],
             ['province_id' => '34', 'province' => 'Sumatera Utara'],
         ];
+
+        usort($all, function ($a, $b) {
+            return strcasecmp($a['province'], $b['province']);
+        });
+
+        return $all;
     }
 
     /**
@@ -886,11 +1080,20 @@ class RajaOngkirService
                 ['city_id' => '178', 'province_id' => '18', 'province' => 'Jawa Timur', 'type' => 'Kota', 'city_name' => 'Kediri', 'postal_code' => '64121'],
             ];
 
-            if ($provinceId !== null) {
-                return array_values(array_filter($komerceCities, fn ($city) => (string) $city['province_id'] === (string) $provinceId));
-            }
+            $filteredKomerce = $provinceId !== null
+                ? array_values(array_filter($komerceCities, fn ($city) => (string) $city['province_id'] === (string) $provinceId))
+                : $komerceCities;
 
-            return $komerceCities;
+            usort($filteredKomerce, function ($a, $b) {
+                $cmp = strcasecmp($a['city_name'], $b['city_name']);
+                if ($cmp !== 0) {
+                    return $cmp;
+                }
+
+                return strcasecmp($a['type'], $b['type']);
+            });
+
+            return $filteredKomerce;
         }
 
         $all = [
@@ -985,10 +1188,79 @@ class RajaOngkirService
             ['city_id' => '19', 'province_id' => '15', 'province' => 'Kalimantan Timur', 'type' => 'Kota', 'city_name' => 'Balikpapan', 'postal_code' => '76111'],
         ];
 
-        if ($provinceId !== null) {
-            return array_values(array_filter($all, fn ($city) => (string) $city['province_id'] === (string) $provinceId));
+        $filteredAll = $provinceId !== null
+            ? array_values(array_filter($all, fn ($city) => (string) $city['province_id'] === (string) $provinceId))
+            : $all;
+
+        usort($filteredAll, function ($a, $b) {
+            $cmp = strcasecmp($a['city_name'], $b['city_name']);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+
+            return strcasecmp($a['type'], $b['type']);
+        });
+
+        return $filteredAll;
+    }
+
+    /**
+     * Fallback districts for common cities when API is offline.
+     *
+     * @return array<int, array{district_id: string|int, city_id: string|int, district_name: string}>
+     */
+    protected function getFallbackDistricts(?int $cityId = null): array
+    {
+        $map = [
+            // Surakarta / Solo
+            444 => ['Banjarsari', 'Jebres', 'Laweyan', 'Pasar Kliwon', 'Serengan'],
+            539 => ['Banjarsari', 'Jebres', 'Laweyan', 'Pasar Kliwon', 'Serengan'],
+
+            // Yogyakarta
+            501 => ['Danurejan', 'Gedongtengen', 'Gondokusuman', 'Gondomanan', 'Jetis', 'Kotagede', 'Kraton', 'Mantrijeron', 'Mergangsan', 'Ngampilan', 'Pakualaman', 'Tegalrejo', 'Umbulharjo', 'Wirobrajan'],
+
+            // Semarang
+            399 => ['Banyumanik', 'Candisari', 'Gajahmungkur', 'Gayamsari', 'Genuk', 'Gunungpati', 'Mijen', 'Ngaliyan', 'Pedurungan', 'Semarang Barat', 'Semarang Selatan', 'Semarang Tengah', 'Semarang Timur', 'Semarang Utara', 'Tembalang', 'Tugu'],
+
+            // Sukoharjo
+            427 => ['Baki', 'Bendosari', 'Bulu', 'Gatak', 'Grogol', 'Kartasura', 'Mojolaban', 'Nguter', 'Polokarto', 'Sukoharjo', 'Tawangsari', 'Weru'],
+
+            // Karanganyar
+            196 => ['Colomadu', 'Gondangrejo', 'Jaten', 'Jatipuro', 'Jatiyoso', 'Jenawi', 'Jumapolo', 'Jumantono', 'Karanganyar', 'Karangpandan', 'Kebakkramat', 'Kerjo', 'Matesih', 'Mojogedang', 'Ngargoyoso', 'Tasikmadu', 'Tawangmangu'],
+
+            // Jakarta Barat
+            135 => ['Cengkareng', 'Grogol Petamburan', 'Kalideres', 'Kebon Jeruk', 'Kembangan', 'Palmerah', 'Taman Sari', 'Tambora'],
+            151 => ['Cengkareng', 'Grogol Petamburan', 'Kalideres', 'Kebon Jeruk', 'Kembangan', 'Palmerah', 'Taman Sari', 'Tambora'],
+
+            // Jakarta Pusat
+            137 => ['Cempaka Putih', 'Gambir', 'Johar Baru', 'Kemayoran', 'Menteng', 'Sawah Besar', 'Senen', 'Tanah Abang'],
+            152 => ['Cempaka Putih', 'Gambir', 'Johar Baru', 'Kemayoran', 'Menteng', 'Sawah Besar', 'Senen', 'Tanah Abang'],
+
+            // Jakarta Selatan
+            136 => ['Cilandak', 'Jagakarsa', 'Kebayoran Baru', 'Kebayoran Lama', 'Mampang Prapatan', 'Pancoran', 'Pasar Minggu', 'Pesanggrahan', 'Setiabudi', 'Tebet'],
+            153 => ['Cilandak', 'Jagakarsa', 'Kebayoran Baru', 'Kebayoran Lama', 'Mampang Prapatan', 'Pancoran', 'Pasar Minggu', 'Pesanggrahan', 'Setiabudi', 'Tebet'],
+
+            // Surabaya
+            444 => ['Bubutan', 'Genteng', 'Gubeng', 'Mulyorejo', 'Rungkut', 'Sukolilo', 'Tegalsari', 'Wonokromo'],
+        ];
+
+        $names = $map[$cityId] ?? [];
+        if (empty($names)) {
+            return [];
         }
 
-        return $all;
+        natcasesort($names);
+        $names = array_values($names);
+
+        $results = [];
+        foreach ($names as $idx => $name) {
+            $results[] = [
+                'district_id' => (string) (($cityId * 100) + $idx + 1),
+                'city_id' => (string) $cityId,
+                'district_name' => $name,
+            ];
+        }
+
+        return $results;
     }
 }

@@ -28,8 +28,13 @@ class Address extends Model
         'provinsi',
         'province_id',
         'city_id',
+        'district_id',
+        'district',
+        'kecamatan',
         'postal_code',
         'kode_pos',
+        'latitude',
+        'longitude',
         'is_primary',
         'is_utama',
     ];
@@ -39,6 +44,9 @@ class Address extends Model
         'is_utama' => 'boolean',
         'province_id' => 'integer',
         'city_id' => 'integer',
+        'district_id' => 'integer',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     protected static function booted(): void
@@ -64,6 +72,10 @@ class Address extends Model
             $a->attributes['city'] = $city;
             $a->attributes['kota'] = $city;
 
+            $district = $a->attributes['district'] ?? $a->attributes['kecamatan'] ?? null;
+            $a->attributes['district'] = $district;
+            $a->attributes['kecamatan'] = $district;
+
             $prov = $a->attributes['province'] ?? $a->attributes['provinsi'] ?? null;
             $a->attributes['province'] = $prov;
             $a->attributes['provinsi'] = $prov;
@@ -76,6 +88,18 @@ class Address extends Model
             $a->attributes['is_primary'] = $primary;
             $a->attributes['is_utama'] = $primary;
         });
+    }
+
+    public function setKecamatanAttribute(mixed $value): void
+    {
+        $this->attributes['kecamatan'] = $value;
+        $this->attributes['district'] = $value;
+    }
+
+    public function setDistrictAttribute(mixed $value): void
+    {
+        $this->attributes['district'] = $value;
+        $this->attributes['kecamatan'] = $value;
     }
 
     public function user(): BelongsTo

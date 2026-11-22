@@ -128,7 +128,6 @@ class CartService
             ];
         }
 
-        $qty = min($requestedQty, $availableStock);
         $userId = Auth::id();
         $sessionId = session()->getId();
 
@@ -144,13 +143,21 @@ class CartService
             ->first();
 
         if ($existing) {
-            $newQty = min($existing->qty + $qty, $availableStock);
+            if ($existing->qty >= $availableStock) {
+                return [
+                    'success' => false,
+                    'message' => "Jumlah di keranjang sudah mencapai batas stok yang tersedia ({$availableStock} pcs).",
+                ];
+            }
+
+            $newQty = min($existing->qty + $requestedQty, $availableStock);
             $existing->update([
                 'qty' => $newQty,
                 'selected' => true,
             ]);
             $item = $existing;
         } else {
+            $qty = min($requestedQty, $availableStock);
             $item = CartItem::create([
                 'user_id' => $userId,
                 'session_id' => $sessionId,
@@ -191,7 +198,7 @@ class CartService
         $this->authorizeAccess($cartItem);
 
         if ($qty !== null) {
-            $maxStock = $cartItem->produk ? (int) $cartItem->produk->stok : 0;
+            $maxStock = $cartItem->produk ? (int) $cartItem->produk->getStokForUkuran($cartItem->ukuran) : 0;
 
             if ($maxStock <= 0) {
                 $cartItem->delete();
@@ -206,7 +213,20 @@ class CartService
                 ];
             }
 
-            $cartItem->qty = min($qty, $maxStock);
+            if ($qty > $maxStock) {
+                $cartItem->qty = $maxStock;
+                $cartItem->save();
+
+                return [
+                    'success' => false,
+                    'message' => "Jumlah melebihi stok yang tersedia. Disesuaikan ke maksimal {$maxStock} pcs.",
+                    'qty' => $cartItem->qty,
+                    'selected' => $cartItem->selected,
+                    'cartCount' => $this->getCartCount(),
+                ];
+            }
+
+            $cartItem->qty = max(1, $qty);
         }
 
         if ($selected !== null) {

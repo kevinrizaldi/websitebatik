@@ -82,10 +82,14 @@ class ProfileController extends Controller
             'full_address' => ['required_without:street', 'nullable', 'string', 'max:1000'],
             'street' => ['nullable', 'string', 'max:1000'],
             'city' => ['nullable', 'string', 'max:100'],
+            'district' => ['nullable', 'string', 'max:100'],
+            'kecamatan' => ['nullable', 'string', 'max:100'],
+            'district_id' => ['nullable', 'integer'],
             'province' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:10'],
             'province_id' => ['nullable', 'integer'],
             'city_id' => ['nullable', 'integer'],
+>>> 9a9ee45dead25d6bb1566e8db5a2e99ce2ff553d
             'is_primary' => ['nullable', 'boolean'],
         ]);
 
@@ -107,10 +111,14 @@ class ProfileController extends Controller
             'phone' => $validated['phone'],
             'full_address' => $validated['full_address'],
             'city' => $validated['city'] ?: 'Indonesia',
+            'district' => $validated['district'] ?? $validated['kecamatan'] ?? null,
+            'kecamatan' => $validated['kecamatan'] ?? $validated['district'] ?? null,
+            'district_id' => $validated['district_id'] ?? null,
             'province' => $validated['province'] ?: 'Indonesia',
             'postal_code' => $validated['postal_code'] ?: '',
             'province_id' => $validated['province_id'] ?? null,
             'city_id' => $validated['city_id'] ?? null,
+>>> 9a9ee45dead25d6bb1566e8db5a2e99ce2ff553d
             'is_primary' => $isPrimary,
         ]);
 
@@ -136,10 +144,14 @@ class ProfileController extends Controller
             'full_address' => ['sometimes', 'string', 'max:1000'],
             'street' => ['sometimes', 'string', 'max:1000'],
             'city' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'district' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'kecamatan' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'district_id' => ['sometimes', 'nullable', 'integer'],
             'province' => ['sometimes', 'nullable', 'string', 'max:100'],
             'postal_code' => ['sometimes', 'nullable', 'string', 'max:10'],
             'province_id' => ['sometimes', 'nullable', 'integer'],
             'city_id' => ['sometimes', 'nullable', 'integer'],
+>>> 9a9ee45dead25d6bb1566e8db5a2e99ce2ff553d
             'is_primary' => ['sometimes', 'boolean'],
         ]);
 
@@ -198,8 +210,12 @@ class ProfileController extends Controller
             'phone' => $addr->phone ?: $addr->no_telepon,
             'full_address' => $addr->full_address ?: $addr->alamat_lengkap,
             'city' => $addr->city ?: $addr->kota,
+            'district' => $addr->district ?: $addr->kecamatan,
+            'kecamatan' => $addr->kecamatan ?: $addr->district,
             'province' => $addr->province ?: $addr->provinsi,
             'postal_code' => $addr->postal_code ?: $addr->kode_pos,
+            'latitude' => $addr->latitude !== null ? (float) $addr->latitude : null,
+            'longitude' => $addr->longitude !== null ? (float) $addr->longitude : null,
             'is_primary' => (bool) ($addr->is_primary ?? $addr->is_utama),
         ];
     }

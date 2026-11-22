@@ -8,10 +8,10 @@
     <title>{{ $title ? $title . ' — HAMZAH STYLE OFFICIAL' : 'HAMZAH STYLE OFFICIAL — Warisan Batik Nusantara Modern' }}</title>
     <meta name="description" content="{{ $description ?? 'Koleksi busana batik modern dan autentik Indonesia karya pengrajin lokal pilihan. Elegan dalam setiap motif untuk momen berharga Anda.' }}">
 
-    <!-- Google Fonts: Playfair Display (Serif) & Plus Jakarta Sans (Sans) -->
+    <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
 
     <!-- Styles & Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -19,13 +19,13 @@
     <style>
         [x-cloak] { display: none !important; }
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Poppins', sans-serif;
             background-color: #FAF7F2;
             color: #26211D;
             -webkit-font-smoothing: antialiased;
         }
         .font-serif-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Poppins', sans-serif;
         }
         .no-scrollbar::-webkit-scrollbar {
             display: none;

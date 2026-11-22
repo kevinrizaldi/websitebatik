@@ -17,7 +17,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
             background-color: #FFF8F5;
             color: #110703;
             -webkit-font-smoothing: antialiased;
@@ -88,7 +88,7 @@
             font-weight: 700;
             color: #110703;
             margin-bottom: 8px;
-            font-family: Georgia, 'Times New Roman', serif;
+            font-family: 'Poppins', 'Poppins', 'Segoe UI', Arial, sans-serif;
         }
         .subtext {
             font-size: 14px;

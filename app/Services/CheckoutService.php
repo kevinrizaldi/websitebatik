@@ -142,7 +142,7 @@ class CheckoutService
      *
      * @param  array<string, mixed>  $validated
      */
-    public function syncDefaultAddress(User $user, array $validated, ?string $city = null, ?string $province = null, ?string $postalCode = null, ?int $cityId = null, ?int $provinceId = null): void
+    public function syncDefaultAddress(User $user, array $validated, ?string $city = null, ?string $province = null, ?string $postalCode = null, ?int $cityId = null, ?int $provinceId = null, ?string $district = null, ?int $districtId = null): void
     {
         if ($user->alamats()->count() === 0 && ! empty($validated['address'])) {
             try {
@@ -153,6 +153,9 @@ class CheckoutService
                     'alamat_lengkap' => $validated['address'],
                     'kota' => $city ?: 'Indonesia',
                     'provinsi' => $province ?: 'Indonesia',
+                    'district' => $district,
+                    'kecamatan' => $district,
+                    'district_id' => $districtId,
                     'city_id' => $cityId,
                     'province_id' => $provinceId,
                     'kode_pos' => $postalCode ?: '',
@@ -205,6 +208,7 @@ class CheckoutService
                 }
             }
 
+            $deadlineHours = max(1, (int) config('midtrans.payment_deadline_hours', 24));
             $order = Order::create([
                 'user_id' => $user->id,
                 'code' => $orderCode,
@@ -216,6 +220,7 @@ class CheckoutService
                 'payment_method' => $validated['payment_method'] ?? 'Midtrans Gateway',
                 'status' => 'Menunggu Pembayaran',
                 'payment_status' => Order::PAYMENT_PENDING,
+                'payment_deadline' => now()->addHours($deadlineHours),
             ]);
 
             foreach ($cartItems as $item) {

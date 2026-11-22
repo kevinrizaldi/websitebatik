@@ -131,9 +131,15 @@ Route::post('/checkout/process', [CartController::class, 'checkout'])
 Route::prefix('rajaongkir')->name('rajaongkir.')->group(function () {
     Route::get('/provinces', [RajaOngkirController::class, 'provinces'])->name('provinces');
     Route::get('/cities', [RajaOngkirController::class, 'cities'])->name('cities');
+    Route::get('/districts', [RajaOngkirController::class, 'districts'])->name('districts');
+    Route::get('/postal-codes', [RajaOngkirController::class, 'postalCodes'])->name('postal-codes');
     Route::get('/destinations', [RajaOngkirController::class, 'destinations'])->name('destinations');
     Route::post('/cost', [RajaOngkirController::class, 'calculateCost'])->name('cost');
 });
+
+// Geocoding & Reverse Geocoding Proxy (OpenStreetMap Nominatim)
+Route::get('/alamat/geocode', [AlamatController::class, 'geocode'])->name('alamat.geocode');
+Route::get('/alamat/reverse-geocode', [AlamatController::class, 'reverseGeocode'])->name('alamat.reverse-geocode');
 
 Route::get('/pesanan', function () {
     $orders = collect();
@@ -154,6 +160,12 @@ Route::get('/pesanan', function () {
                     }
                 }
 
+                $pesananAktif = Order::where('user_id', Auth::id())
+                    ->whereIn('status', [
+                        'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi',
+                        'Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi', 'Dikirim', 'sedang dikirim', 'sedang diproses'
+                    ])->count();
+
                 if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
                     $myReviews = Ulasan::where('user_id', Auth::id())->get(['id', 'order_id', 'produk_id', 'rating', 'comment']);
                     $reviewedIds = $myReviews->pluck('produk_id')->all();
@@ -172,13 +184,15 @@ Route::get('/pesanan', function () {
                 }
             } else {
                 $orders = collect();
+                $pesananAktif = 0;
             }
         }
     } catch (Throwable $e) {
         $orders = collect();
+        $pesananAktif = 0;
     }
 
-    return view('pesanan', compact('orders', 'reviewedIds', 'reviewedPairs', 'reviewMap'));
+    return view('pesanan', compact('orders', 'reviewedIds', 'reviewedPairs', 'reviewMap', 'pesananAktif'));
 })->name('pesanan.index');
 
 Route::get('/pembayaran/{id}', [PaymentController::class, 'show'])->name('pembayaran');

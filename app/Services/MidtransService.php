@@ -80,6 +80,9 @@ class MidtransService
             ];
         }
 
+        $deadline = $order->getEffectivePaymentDeadline();
+        $minutesLeft = max(1, (int) ceil(now()->diffInSeconds($deadline, false) / 60));
+
         $params = [
             'transaction_details' => [
                 'order_id' => $order->code,
@@ -96,10 +99,19 @@ class MidtransService
                     'address' => $order->address,
                 ],
             ],
+            'expiry' => [
+                'start_time' => $order->created_at ? $order->created_at->format('Y-m-d H:i:s O') : now()->format('Y-m-d H:i:s O'),
+                'unit' => 'minutes',
+                'duration' => $minutesLeft,
+            ],
             'callbacks' => [
                 'finish' => route('midtrans.finish', ['order_id' => $order->code]),
             ],
         ];
+
+        if ($order->payment_deadline === null) {
+            $order->update(['payment_deadline' => $deadline]);
+        }
 
         // Attempt actual API call if server key is configured
         $token = null;
