@@ -331,9 +331,6 @@
                          x-transition
                          class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
                         <a href="{{ route('produk.detail', ['id' => $p->id]) }}" class="relative aspect-square overflow-hidden bg-stone-100 block">
-                            <span class="absolute bottom-3 left-3 z-10 bg-[#201A17]/80 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded uppercase tracking-wider">
-                                {{ $p->category_name }}
-                            </span>
                             <img src="{{ $p->gambar_url }}" 
                                  alt="{{ $p->nama }}" 
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">

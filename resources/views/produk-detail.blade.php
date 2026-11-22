@@ -589,9 +589,6 @@
                                 </a>
                                 <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                                     <div>
-                                        <span class="text-[10px] uppercase font-bold tracking-wider text-stone-400 block mb-1">
-                                            {{ strtoupper($rel->kategoriRelasi?->nama_kategori ?? $rel->kategori ?? 'BATIK') }}
-                                        </span>
                                         <a href="{{ route('produk.detail', $rel->id) }}">
                                             <h3 class="font-bold text-stone-900 text-sm leading-snug mb-1 hover:text-amber-800 transition line-clamp-1">
                                                 {{ $rel->nama }}

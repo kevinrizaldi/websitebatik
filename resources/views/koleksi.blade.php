@@ -80,7 +80,6 @@
                       nama: {{ json_encode($p->nama) }},
                       fullName: {{ json_encode($p->nama) }},
                       kategori: {{ json_encode($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'Koleksi Batik') }},
-                      subkategori: {{ json_encode(strtoupper($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'BATIK')) }},
                       harga: {{ (float) $p->harga }},
                       hargaFormatted: {{ json_encode('Rp ' . number_format($p->harga, 0, ',', '.')) }},
                       rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '5.0' }}',
@@ -297,14 +296,11 @@
                         <!-- Card Body -->
                         <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                             <div>
-                                <!-- Category & Rating Row -->
-                                <div class="flex items-center justify-between text-[10px] mb-1">
-                                    <span class="font-bold tracking-wider uppercase text-stone-400" x-text="item.subkategori"></span>
-                                    <div class="flex items-center gap-1 font-semibold text-stone-700">
-                                        <span class="text-amber-500 text-xs">★</span>
-                                        <span x-text="item.rating"></span>
-                                        <span class="text-stone-400 font-normal" x-text="'(' + item.reviews + ')'"></span>
-                                    </div>
+                                <!-- Rating Row -->
+                                <div class="flex items-center gap-1 text-[10px] font-semibold text-stone-700 mb-1">
+                                    <span class="text-amber-500 text-xs">★</span>
+                                    <span x-text="item.rating"></span>
+                                    <span class="text-stone-400 font-normal" x-text="'(' + item.reviews + ')'"></span>
                                 </div>
 
                                 <!-- Product Title -->
