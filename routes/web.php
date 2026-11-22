@@ -95,7 +95,7 @@ Route::get('/', function () {
     return view('welcome', compact('produks', 'produkTerbaru', 'produkRating', 'bannerProduk', 'kategoris'));
 })->name('home');
 
-Route::get('/koleksi', function () {
+$catalogHandler = function () {
     $produks = collect();
     $kategoris = collect();
     try {
@@ -106,13 +106,16 @@ Route::get('/koleksi', function () {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
-        Log::warning('Error loading koleksi data: '.$e->getMessage(), ['exception' => $e]);
+        Log::warning('Error loading produk catalog: '.$e->getMessage(), ['exception' => $e]);
         $produks = collect();
         $kategoris = collect();
     }
 
     return view('koleksi', compact('produks', 'kategoris'));
-})->name('koleksi.index');
+};
+
+Route::get('/produk', $catalogHandler)->name('koleksi.index');
+Route::get('/koleksi', fn () => redirect()->route('koleksi.index', request()->query()));
 
 Route::get('/produk-detail/{id?}', function ($id = null) {
     if (! $id) {
@@ -301,8 +304,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Route Khusus Admin: Kelola Produk, Kelola Pesanan, & Kelola Ulasan
 Route::middleware(['auth', 'admin'])->group(function () {
-    Route::resource('produk', ProdukController::class);
-    Route::patch('/produk/{produk}/stok', [ProdukController::class, 'updateStock'])->name('produk.update-stock');
+    Route::prefix('admin')->group(function () {
+        Route::resource('produk', ProdukController::class);
+        Route::patch('/produk/{produk}/stok', [ProdukController::class, 'updateStock'])->name('produk.update-stock');
+    });
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');

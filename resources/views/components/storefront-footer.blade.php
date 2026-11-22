@@ -24,7 +24,7 @@
                     <li><a href="{{ url('/') }}" class="hover:text-stone-900 transition">Home</a></li>
                     <li><a href="{{ url('/#tentang-kami') }}" class="hover:text-stone-900 transition">Tentang Kami</a></li>
                     <li><a href="{{ route('koleksi.index') }}" class="hover:text-stone-900 transition">Produk</a></li>
-                    <li><a href="{{ url('/#koleksi') }}" class="hover:text-stone-900 transition">Kategori</a></li>
+                    <li><a href="{{ url('/#kategori') }}" class="hover:text-stone-900 transition">Kategori</a></li>
                     <li><a href="{{ url('/#kontak') }}" class="hover:text-stone-900 transition">Kontak</a></li>
                 </ul>
             </div>

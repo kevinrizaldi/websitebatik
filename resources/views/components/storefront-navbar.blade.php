@@ -9,9 +9,62 @@
         x-data="{
             mobileNavOpen: false,
             userDropdownOpen: false,
-            navCartCount: {{ (int) $currentCartCount }}
+            navCartCount: {{ (int) $currentCartCount }},
+            activeNav: '{{ request()->is('produk*') || request()->routeIs('koleksi.*') ? 'produk' : (request()->is('kategori*') ? 'kategori' : 'home') }}',
+            initNav() {
+                const isHome = '{{ request()->is('/') ? 'true' : 'false' }}' === 'true';
+                
+                const updateActive = () => {
+                    if (window.location.hash === '#kategori' || window.location.hash === '#koleksi') {
+                        this.activeNav = 'kategori';
+                        return;
+                    }
+                    if (window.location.hash === '#tentang-kami') {
+                        this.activeNav = 'tentang-kami';
+                        return;
+                    }
+                    if (isHome) {
+                        const kategoriEl = document.getElementById('kategori') || document.getElementById('koleksi');
+                        const tentangEl = document.getElementById('tentang-kami');
+                        const scrollY = window.scrollY;
+
+                        if (scrollY < 200) {
+                            this.activeNav = 'home';
+                        } else if (tentangEl && scrollY + 300 >= tentangEl.offsetTop) {
+                            this.activeNav = 'tentang-kami';
+                        } else if (kategoriEl && scrollY + 300 >= kategoriEl.offsetTop) {
+                            this.activeNav = 'kategori';
+                        } else {
+                            this.activeNav = 'home';
+                        }
+                    }
+                };
+
+                updateActive();
+
+                window.addEventListener('hashchange', () => {
+                    updateActive();
+                });
+
+                if (isHome) {
+                    window.addEventListener('scroll', () => {
+                        const kategoriEl = document.getElementById('kategori') || document.getElementById('koleksi');
+                        const tentangEl = document.getElementById('tentang-kami');
+                        const scrollY = window.scrollY;
+
+                        if (scrollY < 200) {
+                            this.activeNav = 'home';
+                        } else if (tentangEl && scrollY + 300 >= tentangEl.offsetTop) {
+                            this.activeNav = 'tentang-kami';
+                        } else if (kategoriEl && scrollY + 300 >= kategoriEl.offsetTop) {
+                            this.activeNav = 'kategori';
+                        }
+                    }, { passive: true });
+                }
+            }
         }"
-        x-init="if (typeof cartCount !== 'undefined') { $watch('cartCount', val => navCartCount = val); };
+        x-init="initNav();
+                if (typeof cartCount !== 'undefined') { $watch('cartCount', val => navCartCount = val); };
                 window.addEventListener('cart-updated', e => { if (e.detail?.count !== undefined) navCartCount = e.detail.count; });">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-20">
@@ -27,30 +80,27 @@
             <!-- Navigation Links (Desktop) -->
             <nav class="hidden md:flex items-center gap-8">
                 <a href="{{ url('/') }}"
-                   @class([
-                       'text-sm font-semibold transition',
-                       'text-stone-950 border-b-2 border-stone-900 pb-0.5' => request()->is('/') && !request()->routeIs('koleksi.*'),
-                       'text-stone-600 hover:text-stone-900' => ! (request()->is('/') && !request()->routeIs('koleksi.*')),
-                   ])>
+                   @click="if (window.location.pathname === '/' || window.location.pathname === '') { window.scrollTo({top: 0, behavior: 'smooth'}); history.pushState(null, '', '/'); activeNav = 'home'; }"
+                   :class="activeNav === 'home' ? 'text-stone-950 border-b-2 border-stone-900 pb-0.5' : 'text-stone-600 hover:text-stone-900 border-b-2 border-transparent pb-0.5'"
+                   class="text-sm font-semibold transition">
                     Home
                 </a>
-                <a href="{{ url('/#koleksi') }}"
-                   @class([
-                       'text-sm font-semibold transition',
-                       'text-stone-950 border-b-2 border-stone-900 pb-0.5' => request()->routeIs('koleksi.*') && request('kategori'),
-                       'text-stone-600 hover:text-stone-900' => ! (request()->routeIs('koleksi.*') && request('kategori')),
-                   ])>
+                <a href="{{ url('/#kategori') }}"
+                   @click="activeNav = 'kategori'"
+                   :class="activeNav === 'kategori' ? 'text-stone-950 border-b-2 border-stone-900 pb-0.5' : 'text-stone-600 hover:text-stone-900 border-b-2 border-transparent pb-0.5'"
+                   class="text-sm font-semibold transition">
                     Kategori
                 </a>
                 <a href="{{ route('koleksi.index') }}"
-                   @class([
-                       'text-sm font-semibold transition',
-                       'text-stone-950 border-b-2 border-stone-900 pb-0.5' => request()->routeIs('koleksi.*') && ! request('kategori'),
-                       'text-stone-600 hover:text-stone-900' => ! (request()->routeIs('koleksi.*') && ! request('kategori')),
-                   ])>
+                   @click="activeNav = 'produk'"
+                   :class="activeNav === 'produk' ? 'text-stone-950 border-b-2 border-stone-900 pb-0.5' : 'text-stone-600 hover:text-stone-900 border-b-2 border-transparent pb-0.5'"
+                   class="text-sm font-semibold transition">
                     Produk
                 </a>
-                <a href="{{ url('/#tentang-kami') }}" class="text-sm font-medium text-stone-600 hover:text-stone-900 transition">
+                <a href="{{ url('/#tentang-kami') }}"
+                   @click="activeNav = 'tentang-kami'"
+                   :class="activeNav === 'tentang-kami' ? 'text-stone-950 border-b-2 border-stone-900 pb-0.5' : 'text-stone-600 hover:text-stone-900 border-b-2 border-transparent pb-0.5'"
+                   class="text-sm font-semibold transition">
                     Tentang Kami
                 </a>
             </nav>
@@ -166,10 +216,10 @@
          x-transition:leave-start="opacity-100 translate-y-0"
          x-transition:leave-end="opacity-0 -translate-y-2"
          class="md:hidden border-t border-[#ECE4D8] bg-[#FAF7F2] px-4 py-4 space-y-2">
-        <a href="{{ url('/') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Home</a>
-        <a href="{{ url('/#koleksi') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Kategori</a>
-        <a href="{{ route('koleksi.index') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Produk</a>
-        <a href="{{ url('/#tentang-kami') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Tentang Kami</a>
+        <a href="{{ url('/') }}" @click="activeNav = 'home'; mobileNavOpen = false" :class="activeNav === 'home' ? 'bg-stone-200/60 text-stone-950 font-bold' : 'text-stone-800'" class="block px-3 py-2 rounded-xl text-sm font-semibold hover:bg-stone-200/40">Home</a>
+        <a href="{{ url('/#kategori') }}" @click="activeNav = 'kategori'; mobileNavOpen = false" :class="activeNav === 'kategori' ? 'bg-stone-200/60 text-stone-950 font-bold' : 'text-stone-800'" class="block px-3 py-2 rounded-xl text-sm font-semibold hover:bg-stone-200/40">Kategori</a>
+        <a href="{{ route('koleksi.index') }}" @click="activeNav = 'produk'; mobileNavOpen = false" :class="activeNav === 'produk' ? 'bg-stone-200/60 text-stone-950 font-bold' : 'text-stone-800'" class="block px-3 py-2 rounded-xl text-sm font-semibold hover:bg-stone-200/40">Produk</a>
+        <a href="{{ url('/#tentang-kami') }}" @click="activeNav = 'tentang-kami'; mobileNavOpen = false" :class="activeNav === 'tentang-kami' ? 'bg-stone-200/60 text-stone-950 font-bold' : 'text-stone-800'" class="block px-3 py-2 rounded-xl text-sm font-semibold hover:bg-stone-200/40">Tentang Kami</a>
         <div class="border-t border-stone-200 my-2 pt-2"></div>
         <a href="{{ route('pesanan.index') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Pesanan Saya</a>
         <a href="{{ route('keranjang.index') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Keranjang Belanja</a>
