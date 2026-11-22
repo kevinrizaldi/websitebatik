@@ -38,6 +38,7 @@ class Review extends Model
         'rating',
         'comment',
         'image_path',
+        'photos',
         'status',
         // Indonesian compatibility fillables:
         'produk_id',
@@ -45,6 +46,7 @@ class Review extends Model
 
     protected $casts = [
         'rating' => 'integer',
+        'photos' => 'array',
     ];
 
     protected static function booted(): void
