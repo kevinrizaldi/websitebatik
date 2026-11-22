@@ -9,7 +9,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
 
     <!-- Styles & Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -17,12 +17,12 @@
     <style>
         [x-cloak] { display: none !important; }
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Poppins', sans-serif;
             background-color: #FAF7F2;
             color: #26211D;
         }
         .font-serif-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Poppins', sans-serif;
         }
         .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -331,9 +331,15 @@
                          x-transition
                          class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
                         <a href="{{ route('produk.detail', ['id' => $p->id]) }}" class="relative aspect-square overflow-hidden bg-stone-100 block">
-                            <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs {{ $p->status === 'Stok Menipis' ? 'bg-[#5C3D28] text-white' : 'bg-white/95 text-stone-800 border-stone-200' }}">
-                                {{ $p->status === 'Stok Menipis' ? 'Stok Terbatas' : ($p->status === 'Habis' ? 'Habis' : 'Ready Stock') }}
-                            </span>
+                            @if($p->status === 'Stok Menipis')
+                                <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-[#5C3D28] text-white">
+                                    Stok Terbatas
+                                </span>
+                            @elseif($p->status === 'Habis')
+                                <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-stone-500 text-white">
+                                    Habis
+                                </span>
+                            @endif
                             <span class="absolute bottom-3 left-3 z-10 bg-[#201A17]/80 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded uppercase tracking-wider">
                                 {{ $p->category_name }}
                             </span>

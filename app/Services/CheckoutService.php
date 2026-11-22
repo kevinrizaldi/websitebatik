@@ -98,6 +98,20 @@ class CheckoutService
         }
 
         $discount = 0.0;
+        $voucherInput = strtoupper(trim((string) $voucher));
+        if (in_array($voucherInput, ['SIRKULAR50K', 'LESTARI50K', 'LESTARICAPSULE'], true) && $subtotal >= 200000) {
+            $alreadyUsed = false;
+            if ($user && $user->exists) {
+                $alreadyUsed = Order::where('user_id', $user->id)
+                    ->where('address', 'like', "%[Voucher: {$voucherInput}]%")
+                    ->whereNotIn('status', [Order::STATUS_CANCELLED, 'Dibatalkan'])
+                    ->exists();
+            }
+
+            if (! $alreadyUsed) {
+                $discount = 50000.0;
+            }
+        }
 
         $isFreeShipping = ($subtotal >= 955000);
 
@@ -116,10 +130,10 @@ class CheckoutService
 
         return [
             'subtotal' => $subtotal,
-            'discount' => 0.0,
+            'discount' => $discount,
             'shipping' => $shipping,
             'grand_total' => $grandTotal,
-            'voucher' => null,
+            'voucher' => $discount > 0 ? $voucherInput : null,
         ];
     }
 
@@ -128,7 +142,7 @@ class CheckoutService
      *
      * @param  array<string, mixed>  $validated
      */
-    public function syncDefaultAddress(User $user, array $validated, ?string $city = null, ?string $province = null, ?string $postalCode = null, ?int $cityId = null, ?int $provinceId = null): void
+    public function syncDefaultAddress(User $user, array $validated, ?string $city = null, ?string $province = null, ?string $postalCode = null, ?int $cityId = null, ?int $provinceId = null, ?string $district = null, ?int $districtId = null): void
     {
         if ($user->alamats()->count() === 0 && ! empty($validated['address'])) {
             try {
@@ -139,6 +153,9 @@ class CheckoutService
                     'alamat_lengkap' => $validated['address'],
                     'kota' => $city ?: 'Indonesia',
                     'provinsi' => $province ?: 'Indonesia',
+                    'district' => $district,
+                    'kecamatan' => $district,
+                    'district_id' => $districtId,
                     'city_id' => $cityId,
                     'province_id' => $provinceId,
                     'kode_pos' => $postalCode ?: '',
@@ -156,7 +173,7 @@ class CheckoutService
      * @param  array<string, mixed>  $validated
      * @param  Collection<int, CartItem>  $cartItems
      */
-    public function createOrder(User $user, array $validated, Collection $cartItems, float $grandTotal, float $shipping): Order
+    public function createOrder(User $user, array $validated, Collection $cartItems, float $grandTotal, float $shipping, ?string $appliedVoucher = null): Order
     {
         do {
             $orderCode = 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(6));
@@ -164,9 +181,10 @@ class CheckoutService
 
         $shippingOption = $validated['shipping_option'] ?? 'JNE Reguler';
 
-        return DB::transaction(function () use ($user, $validated, $cartItems, $grandTotal, $orderCode, $shippingOption, $shipping) {
+        return DB::transaction(function () use ($user, $validated, $cartItems, $grandTotal, $orderCode, $shippingOption, $shipping, $appliedVoucher) {
             $notesText = ! empty($validated['notes']) ? ' (Catatan: '.$validated['notes'].')' : '';
-            $fullAddress = $validated['address'].$notesText.' [Kurir: '.$shippingOption.']';
+            $voucherTag = ! empty($appliedVoucher) ? ' [Voucher: '.$appliedVoucher.']' : '';
+            $fullAddress = $validated['address'].$notesText.$voucherTag.' [Kurir: '.$shippingOption.']';
 
             // Lock and re-validate stock for each unique product to prevent race conditions / overselling
             $lockedProducts = [];
@@ -190,6 +208,7 @@ class CheckoutService
                 }
             }
 
+            $deadlineHours = max(1, (int) config('midtrans.payment_deadline_hours', 24));
             $order = Order::create([
                 'user_id' => $user->id,
                 'code' => $orderCode,
@@ -201,6 +220,7 @@ class CheckoutService
                 'payment_method' => $validated['payment_method'] ?? 'Midtrans Gateway',
                 'status' => 'Menunggu Pembayaran',
                 'payment_status' => Order::PAYMENT_PENDING,
+                'payment_deadline' => now()->addHours($deadlineHours),
             ]);
 
             foreach ($cartItems as $item) {

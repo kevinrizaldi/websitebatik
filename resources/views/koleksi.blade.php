@@ -9,7 +9,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
 
     <!-- Styles & Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -17,13 +17,13 @@
     <style>
         [x-cloak] { display: none !important; }
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Poppins', sans-serif;
             background-color: #FAF7F2;
             color: #26211D;
             -webkit-font-smoothing: antialiased;
         }
         .font-serif-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Poppins', sans-serif;
         }
     </style>
 </head>
@@ -81,8 +81,8 @@
                       fullName: {{ json_encode($p->nama) }},
                       kategori: {{ json_encode($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'Koleksi Batik') }},
                       subkategori: {{ json_encode(strtoupper($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'BATIK')) }},
-                      badge: {{ json_encode($p->stok > 0 ? ($p->stok <= 10 ? 'Stok Terbatas' : 'Ready Stock') : 'Stok Habis') }},
-                      badgeColor: {{ json_encode($p->stok <= 0 ? 'bg-stone-500 text-white' : ($p->stok <= 10 ? 'bg-[#4A2D1B] text-white' : 'bg-white/95 text-stone-800 border border-stone-200')) }},
+                      badge: {{ json_encode($p->stok > 0 ? ($p->stok <= 10 ? 'Stok Terbatas' : '') : 'Stok Habis') }},
+                      badgeColor: {{ json_encode($p->stok <= 0 ? 'bg-stone-500 text-white' : ($p->stok <= 10 ? 'bg-[#4A2D1B] text-white' : '')) }},
                       harga: {{ (float) $p->harga }},
                       hargaFormatted: {{ json_encode('Rp ' . number_format($p->harga, 0, ',', '.')) }},
                       rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '5.0' }}',
@@ -292,7 +292,8 @@
                         <!-- Image Container with badges -->
                         <a :href="item.detailUrl" class="relative aspect-square overflow-hidden bg-stone-100 block">
                             <!-- Top-left Stock/Edition Badge -->
-                            <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded shadow-xs"
+                            <span x-show="item.badge"
+                                  class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded shadow-xs"
                                   :class="item.badgeColor"
                                   x-text="item.badge">
                             </span>
@@ -330,19 +331,12 @@
                                 <p class="text-sm sm:text-base font-extrabold text-stone-900 mb-3" x-text="item.hargaFormatted"></p>
                             </div>
 
-                            <!-- Action Buttons Row (Lihat Produk + Secondary button) -->
-                            <div class="flex items-center gap-2 pt-1 border-t border-stone-100">
+                            <!-- Action Button: Lihat Produk -->
+                            <div class="pt-1 border-t border-stone-100">
                                 <a :href="item.detailUrl" 
-                                   class="flex-1 py-2 px-3 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition text-center shadow-2xs">
+                                   class="w-full block py-2.5 px-3 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition text-center shadow-2xs">
                                     Lihat Produk
                                 </a>
-                                <button @click="addToCart(item)" 
-                                        class="w-8 h-8 rounded-xl border border-stone-200 hover:bg-stone-100 flex items-center justify-center text-stone-700 transition"
-                                        title="Tambah ke Keranjang">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                    </svg>
-                                </button>
                             </div>
                         </div>
 

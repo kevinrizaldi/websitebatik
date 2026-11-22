@@ -30,8 +30,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['"Plus Jakarta Sans"', 'Figtree', ...defaultTheme.fontFamily.sans],
-                serif: ['"Playfair Display"', ...defaultTheme.fontFamily.serif],
+                sans: ['Poppins', ...defaultTheme.fontFamily.sans],
+                serif: ['Poppins', ...defaultTheme.fontFamily.serif],
             },
         },
     },

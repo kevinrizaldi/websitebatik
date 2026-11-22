@@ -35,16 +35,19 @@ class ProfileController extends Controller
         $user->fill($validated);
         $user->save();
 
+        $formatted = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'avatar' => $user->avatar,
+            'role' => $user->role ?? 'user',
+        ];
+
         return response()->json([
             'message' => 'Profil berhasil diperbarui.',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'phone' => $user->phone,
-                'avatar' => $user->avatar,
-                'role' => $user->role ?? 'user',
-            ],
+            'data' => ['user' => $formatted],
+            'user' => $formatted,
         ]);
     }
 
@@ -75,12 +78,24 @@ class ProfileController extends Controller
             'label' => ['nullable', 'string', 'max:100'],
             'recipient_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'full_address' => ['required', 'string', 'max:1000'],
+            // Plan canonical uses street; Flutter sends full_address.
+            'full_address' => ['required_without:street', 'nullable', 'string', 'max:1000'],
+            'street' => ['nullable', 'string', 'max:1000'],
             'city' => ['nullable', 'string', 'max:100'],
+            'district' => ['nullable', 'string', 'max:100'],
+            'kecamatan' => ['nullable', 'string', 'max:100'],
+            'district_id' => ['nullable', 'integer'],
             'province' => ['nullable', 'string', 'max:100'],
             'postal_code' => ['nullable', 'string', 'max:10'],
+            'province_id' => ['nullable', 'integer'],
+            'city_id' => ['nullable', 'integer'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'is_primary' => ['nullable', 'boolean'],
         ]);
+
+        $validated['full_address'] = $validated['full_address'] ?? $validated['street'] ?? null;
+        unset($validated['street']);
 
         $user = $request->user();
         $isPrimary = $request->has('is_primary')
@@ -97,8 +112,15 @@ class ProfileController extends Controller
             'phone' => $validated['phone'],
             'full_address' => $validated['full_address'],
             'city' => $validated['city'] ?: 'Indonesia',
+            'district' => $validated['district'] ?? $validated['kecamatan'] ?? null,
+            'kecamatan' => $validated['kecamatan'] ?? $validated['district'] ?? null,
+            'district_id' => $validated['district_id'] ?? null,
             'province' => $validated['province'] ?: 'Indonesia',
             'postal_code' => $validated['postal_code'] ?: '',
+            'province_id' => $validated['province_id'] ?? null,
+            'city_id' => $validated['city_id'] ?? null,
+            'latitude' => $request->filled('latitude') ? (float) $request->input('latitude') : null,
+            'longitude' => $request->filled('longitude') ? (float) $request->input('longitude') : null,
             'is_primary' => $isPrimary,
         ]);
 
@@ -122,11 +144,24 @@ class ProfileController extends Controller
             'recipient_name' => ['sometimes', 'string', 'max:255'],
             'phone' => ['sometimes', 'string', 'max:20'],
             'full_address' => ['sometimes', 'string', 'max:1000'],
+            'street' => ['sometimes', 'string', 'max:1000'],
             'city' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'district' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'kecamatan' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'district_id' => ['sometimes', 'nullable', 'integer'],
             'province' => ['sometimes', 'nullable', 'string', 'max:100'],
             'postal_code' => ['sometimes', 'nullable', 'string', 'max:10'],
+            'province_id' => ['sometimes', 'nullable', 'integer'],
+            'city_id' => ['sometimes', 'nullable', 'integer'],
+            'latitude' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
             'is_primary' => ['sometimes', 'boolean'],
         ]);
+
+        if (array_key_exists('street', $validated)) {
+            $validated['full_address'] = $validated['full_address'] ?? $validated['street'];
+            unset($validated['street']);
+        }
 
         if ($request->boolean('is_primary')) {
             $request->user()->addresses()->where('id', '!=', $address->id)->update([
@@ -178,10 +213,13 @@ class ProfileController extends Controller
             'phone' => $addr->phone ?: $addr->no_telepon,
             'full_address' => $addr->full_address ?: $addr->alamat_lengkap,
             'city' => $addr->city ?: $addr->kota,
+            'district' => $addr->district ?: $addr->kecamatan,
+            'kecamatan' => $addr->kecamatan ?: $addr->district,
             'province' => $addr->province ?: $addr->provinsi,
             'postal_code' => $addr->postal_code ?: $addr->kode_pos,
+            'latitude' => $addr->latitude !== null ? (float) $addr->latitude : null,
+            'longitude' => $addr->longitude !== null ? (float) $addr->longitude : null,
             'is_primary' => (bool) ($addr->is_primary ?? $addr->is_utama),
         ];
     }
 }
-

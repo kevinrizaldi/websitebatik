@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
 
@@ -20,7 +21,9 @@ class GoogleAuthController extends Controller
             return redirect()->route('login')->with('error', 'Fitur Login Google belum aktif karena GOOGLE_CLIENT_ID dan GOOGLE_CLIENT_SECRET belum diisi di file .env.');
         }
 
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')
+            ->with(['prompt' => 'consent select_account'])
+            ->redirect();
     }
 
     /**
@@ -63,11 +66,15 @@ class GoogleAuthController extends Controller
             request()->session()->regenerate();
 
             if ($user->isAdmin()) {
-                return redirect()->intended(route('dashboard', absolute: false));
+                return redirect()->intended(route('dashboard', absolute: false))->with('status', 'Berhasil masuk sebagai Admin.');
             }
 
-            return redirect()->intended('/');
+            return redirect()->intended('/')->with('status', 'Berhasil masuk dengan akun Google.');
         } catch (Throwable $e) {
+            Log::error('Google Auth Callback Error: '.$e->getMessage(), [
+                'exception' => $e,
+            ]);
+
             return redirect()->route('login')->withErrors([
                 'email' => 'Gagal masuk dengan Google. Silakan pastikan akun dan koneksi Google Anda aktif.',
             ]);

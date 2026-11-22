@@ -157,7 +157,9 @@ class CartController extends Controller
             province: $request->input('province'),
             postalCode: $request->input('postal_code'),
             cityId: $request->filled('city_id') ? (int) $request->input('city_id') : null,
-            provinceId: $request->filled('province_id') ? (int) $request->input('province_id') : null
+            provinceId: $request->filled('province_id') ? (int) $request->input('province_id') : null,
+            district: $request->input('district') ?: $request->input('kecamatan'),
+            districtId: $request->filled('district_id') ? (int) $request->input('district_id') : null
         );
 
         $cartItems = $this->cartService->getVisitorSelectedCartItems();
@@ -183,6 +185,7 @@ class CartController extends Controller
 
         $totals = $this->checkoutService->calculateOrderTotals(
             cartItems: $cartItems,
+            voucher: $request->input('voucher'),
             shippingCost: isset($validated['shipping_cost']) ? (float) $validated['shipping_cost'] : null,
             user: $user
         );
@@ -193,7 +196,8 @@ class CartController extends Controller
                 validated: $validated,
                 cartItems: $cartItems,
                 grandTotal: $totals['grand_total'],
-                shipping: $totals['shipping']
+                shipping: $totals['shipping'],
+                appliedVoucher: $totals['voucher'] ?? null
             );
         } catch (\Throwable $e) {
             if ($request->wantsJson()) {

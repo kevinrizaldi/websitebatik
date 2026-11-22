@@ -43,6 +43,15 @@
                          $otherItemsCount = max(0, $ord->items->count() - 1);
                          $categoryTag = $firstItem?->produk?->kategori?->nama_kategori ?? 'BATIK KATUN PRIMISSIMA';
                          $categoryTag = strtoupper($categoryTag);
+                         $deadline = $ord->getEffectivePaymentDeadline();
+                         $diff = now()->diff($deadline);
+                         $isPast = $deadline->isPast() || $isExpired;
+                         if ($isPast) {
+                             $initialBatasBayar = 'Waktu pembayaran telah habis';
+                         } else {
+                             $totalHours = ($diff->d * 24) + $diff->h;
+                             $initialBatasBayar = sprintf('%02d jam %02d menit', $totalHours, $diff->i);
+                         }
                      @endphp
                      {
                          id: '{{ $ord->code }}',
@@ -56,7 +65,8 @@
                          extraItemsCount: {{ $otherItemsCount }},
                          extraItemsText: '{{ $otherItemsCount > 0 ? "+ {$otherItemsCount} produk lainnya" : "" }}',
                          total: {{ (float) $ord->total_price }},
-                         batasBayarText: '05 jam 22 menit',
+                         batasBayarText: '{{ $initialBatasBayar }}',
+                         deadlineTimestamp: {{ $deadline->getTimestamp() * 1000 }},
                          kurir: '{{ addslashes($ordCourier) }}',
                          noResi: '{{ addslashes($trackingNo) }}',
                          estimasi: 'Estimasi tiba besok di Jakarta Selatan',
@@ -208,7 +218,31 @@
                  @endif
              ],
 
-             get filteredOrders() {
+             nowTime: Date.now(),
+            init() {
+                setInterval(() => {
+                    this.nowTime = Date.now();
+                }, 1000);
+            },
+
+            getBatasBayar(order) {
+                if (!order.deadlineTimestamp) {
+                    return order.batasBayarText || 'Waktu pembayaran telah habis';
+                }
+                const diff = Math.floor((order.deadlineTimestamp - this.nowTime) / 1000);
+                if (diff <= 0) {
+                    return 'Waktu pembayaran telah habis';
+                }
+                const hours = Math.floor(diff / 3600);
+                const minutes = Math.floor((diff % 3600) / 60);
+                const seconds = diff % 60;
+                if (hours > 0) {
+                    return `${String(hours).padStart(2, '0')} jam ${String(minutes).padStart(2, '0')} menit`;
+                }
+                return `${String(minutes).padStart(2, '0')} menit ${String(seconds).padStart(2, '0')} detik`;
+            },
+
+            get filteredOrders() {
                  return this.orders.filter(order => {
                      const matchTab = (this.activeTab === 'semua') || (order.status === this.activeTab);
                      const q = this.searchQuery.trim().toLowerCase();
@@ -265,7 +299,7 @@
             <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
                 {{-- Kolom Kiri: Sidebar Profil & Navigasi --}}
                 <div class="lg:col-span-4">
-                    <x-customer-sidebar active="pesanan" :user="Auth::user()" :alamatCount="Auth::check() ? Auth::user()->alamats()->count() : 2" :pesananAktif="4" />
+                    <x-customer-sidebar active="pesanan" :user="Auth::user()" :alamatCount="Auth::check() ? Auth::user()->alamats()->count() : 0" :pesananAktif="$pesananAktif ?? (Auth::check() ? Auth::user()->orders()->whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi', 'Diproses', 'Sudah Dibayar', 'Dikirim', 'sedang dikirim', 'sedang diproses'])->count() : 0)" />
                 </div>
 
                 {{-- Kolom Kanan: Pesanan Saya --}}
@@ -445,7 +479,7 @@
                                         <template x-if="order.status === 'menunggu_pembayaran'">
                                             <div class="flex items-center gap-2 text-stone-600">
                                                 <svg class="h-4 w-4 text-amber-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2"/></svg>
-                                                <span>Batas pembayaran tersisa <strong class="text-stone-800" x-text="order.batasBayarText || '05 jam 22 menit'"></strong></span>
+                                                <span>Batas pembayaran tersisa <strong class="text-stone-800" x-text="getBatasBayar(order)"></strong></span>
                                             </div>
                                         </template>
 

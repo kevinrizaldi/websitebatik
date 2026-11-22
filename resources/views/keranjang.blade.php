@@ -23,6 +23,7 @@
                          varian: {{ json_encode($ci->varian ?: ($ci->ukuran ? 'Ukuran: ' . $ci->ukuran : 'Standar')) }},
                          harga: {{ (float) ($ci->produk->harga ?? 0) }},
                          qty: {{ (int) $ci->qty }},
+                         stok: {{ (int) ($ci->produk ? $ci->produk->getStokForUkuran($ci->ukuran) : 0) }},
                          gambar: {{ json_encode($ci->produk ? $ci->produk->gambar_url : asset('images/beranda/folded-shirts.jpg')) }}
                      }@if(!$loop->last),@endif
                      @endforeach
@@ -50,6 +51,10 @@
              },
 
              increaseQty(item) {
+                 if (item.stok !== undefined && item.qty >= item.stok) {
+                     this.showToast('Jumlah mencapai batas stok yang tersedia (' + item.stok + ' pcs)');
+                     return;
+                 }
                  item.qty++;
                  this.syncQtyToServer(item);
              },
@@ -73,6 +78,18 @@
                      },
                      credentials: 'same-origin',
                      body: JSON.stringify({ qty: item.qty })
+                 })
+                 .then(res => res.json())
+                 .then(data => {
+                     if (data.qty !== undefined) {
+                         item.qty = data.qty;
+                     }
+                     if (!data.success && data.message) {
+                         this.showToast(data.message);
+                     }
+                 })
+                 .catch(() => {
+                     this.showToast('Gagal menghubungi server');
                  });
              },
 
@@ -352,7 +369,9 @@
                                             </button>
                                             <span class="w-8 text-center text-xs font-bold text-stone-900" x-text="item.qty"></span>
                                             <button @click="increaseQty(item)" 
-                                                    class="w-7 h-7 rounded-lg hover:bg-white flex items-center justify-center text-stone-600 font-bold transition text-xs cursor-pointer">
+                                                    :disabled="item.stok !== undefined && item.qty >= item.stok"
+                                                    :class="item.stok !== undefined && item.qty >= item.stok ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white cursor-pointer'"
+                                                    class="w-7 h-7 rounded-lg flex items-center justify-center text-stone-600 font-bold transition text-xs">
                                                 +
                                             </button>
                                         </div>

@@ -7,6 +7,7 @@
     <div x-data="{
         snapToken: '{{ $snapToken ?? '' }}',
         orderCode: '{{ $order->code ?? '' }}',
+        isProduction: @js((bool) config('midtrans.is_production')),
         isPaying: false,
 
         copyText(txt, label) {
@@ -41,9 +42,12 @@
                         this.isPaying = false;
                     }
                 });
-            } else {
-                // Sandbox fallback simulation
+            } else if (this.snapToken.startsWith('MOCK_SNAP_') && !this.isProduction) {
+                // Sandbox fallback simulation — never auto-navigate to mock=1 in production.
                 window.location.href = '{{ route('midtrans.finish') }}?order_id=' + encodeURIComponent(this.orderCode) + '&mock=1';
+            } else {
+                window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Token pembayaran Midtrans tidak valid.' }));
+                this.isPaying = false;
             }
         }
     }">

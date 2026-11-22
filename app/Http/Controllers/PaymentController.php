@@ -7,11 +7,11 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Pembayaran;
 use App\Services\Midtrans\MidtransService;
+use App\Services\OrderLifecycleService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -19,7 +19,8 @@ use InvalidArgumentException;
 class PaymentController extends Controller
 {
     public function __construct(
-        private readonly MidtransService $midtransService
+        private readonly MidtransService $midtransService,
+        private readonly OrderLifecycleService $orderLifecycle
     ) {}
 
     /**
@@ -187,7 +188,8 @@ class PaymentController extends Controller
         $order->refresh();
 
         // Mode simulasi Sandbox untuk testing: tandai lunas lalu ke pesanan.
-        if ($request->query('mock') && in_array($order->payment_status, [null, Order::PAYMENT_PENDING], true)) {
+        // `?mock=1` hanya berlaku di luar production — production mengikuti status normal.
+        if ($request->query('mock') && ! config('midtrans.is_production') && in_array($order->payment_status, [null, Order::PAYMENT_PENDING], true)) {
             $order->update(['status' => 'Diproses']);
             Pembayaran::updateOrCreate(
                 ['order_id' => $order->id],
@@ -222,12 +224,9 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        if ($order->status !== 'Dikirim') {
+        if (! $this->orderLifecycle->confirmReceived($order)) {
             return back()->with('error', 'Pesanan tidak dapat dikonfirmasi pada status saat ini.');
         }
-
-        $order->update(['status' => 'Selesai']);
-        $order->getOrInitPengiriman()->update(['status_pengiriman' => 'Diterima']);
 
         return redirect()->route('pesanan.index')
             ->with('success', "Pesanan #{$order->code} telah dikonfirmasi diterima. Terima kasih!");
@@ -235,7 +234,8 @@ class PaymentController extends Controller
 
     /**
      * Customer cancels their own order.
-     * Hanya pesanan yang belum dibayar yang boleh dibatalkan customer.
+     * Belum dibayar: batalkan langsung. Sudah dibayar & belum dikirim:
+     * ajukan pembatalan, menunggu persetujuan admin.
      */
     public function cancelOrder(Request $request, Order $order): RedirectResponse
     {
@@ -243,43 +243,20 @@ class PaymentController extends Controller
             abort(403);
         }
 
-        if (! in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar'])) {
-            return back()->with('error', 'Pesanan tidak dapat dibatalkan pada status ini.');
+        if ($this->orderLifecycle->cancelUnpaid($order)) {
+            return redirect()->route('pesanan.index')
+                ->with('success', "Pesanan #{$order->code} berhasil dibatalkan.");
         }
 
-        DB::transaction(function () use ($order): void {
-            // Kembalikan stok produk yang sempat terpotong saat checkout.
-            foreach ($order->items as $item) {
-                if ($item->produk) {
-                    $extractedUkuran = null;
-                    if (preg_match('/\((S|M|L|XL|XXL|All Size)\)$/i', (string) $item->produk_name, $m)) {
-                        $extractedUkuran = strtoupper($m[1]);
-                    }
-                    $item->produk->incrementStokForUkuran($extractedUkuran, $item->quantity);
-                }
-            }
+        if ($order->cancel_requested_at !== null) {
+            return back()->with('error', 'Permintaan pembatalan sudah diajukan. Menunggu persetujuan admin.');
+        }
 
-            $order->update(['status' => 'Dibatalkan']);
+        if ($this->orderLifecycle->requestCancellation($order)) {
+            return redirect()->route('pesanan.index')
+                ->with('success', "Permintaan pembatalan pesanan #{$order->code} berhasil diajukan. Menunggu persetujuan admin.");
+        }
 
-            if ($order->payment_status === Order::PAYMENT_PENDING) {
-                $order->update(['payment_status' => Order::PAYMENT_CANCELLED]);
-            }
-
-            // Cancel any pending payment attempts locally and on Midtrans to prevent phantom payments
-            $pendingPayments = $order->payments()->where('status', Payment::STATUS_PENDING)->get();
-            foreach ($pendingPayments as $pendingPayment) {
-                $pendingPayment->status = Payment::STATUS_CANCELLED;
-                $pendingPayment->save();
-
-                try {
-                    $this->midtransService->cancelTransaction($pendingPayment->midtrans_order_id);
-                } catch (\Throwable) {
-                    // Ignore if transaction is already closed or not created on Midtrans
-                }
-            }
-        });
-
-        return redirect()->route('pesanan.index')
-            ->with('success', "Pesanan #{$order->code} berhasil dibatalkan.");
+        return back()->with('error', 'Pesanan tidak dapat dibatalkan pada status ini.');
     }
 }

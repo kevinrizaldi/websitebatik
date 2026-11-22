@@ -16,10 +16,11 @@
     } else {
         $initials = strtoupper(substr($name, 0, 2));
     }
-    $alamatCount = $alamatCount ?? ($currentUser ? $currentUser->alamats()->count() : 2);
-    if ($alamatCount === 0) $alamatCount = 2;
-    $pesananAktif = $pesananAktif ?? ($currentUser ? $currentUser->orders()->whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Diproses', 'Sudah Dibayar', 'Dikirim'])->count() : 4);
-    if ($pesananAktif === 0) $pesananAktif = 4;
+    $alamatCount = $alamatCount ?? ($currentUser ? $currentUser->alamats()->count() : 0);
+    $pesananAktif = $pesananAktif ?? ($currentUser ? $currentUser->orders()->whereIn('status', [
+        'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi',
+        'Diproses', 'Sudah Dibayar', 'Dikirim', 'sedang dikirim', 'sedang diproses'
+    ])->count() : 0);
 @endphp
 
 <div class="space-y-4">

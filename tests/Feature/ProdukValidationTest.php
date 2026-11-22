@@ -111,13 +111,13 @@ class ProdukValidationTest extends TestCase
         $this->assertDatabaseHas('products', ['id' => $product->id, 'status' => 'Tersedia']);
     }
 
-    public function test_create_fails_when_price_exceeds_one_million(): void
+    public function test_create_fails_when_price_exceeds_one_hundred_million(): void
     {
         $response = $this->actingAs($this->admin)->post(route('produk.store'), [
             'nama' => 'Batik Mahal',
             'sku' => 'BTK-003',
             'kategori' => 'Kain Batik',
-            'harga' => 1000001,
+            'harga' => 100000001,
             'stok' => 10,
             'status' => 'Tersedia',
         ]);
@@ -139,14 +139,14 @@ class ProdukValidationTest extends TestCase
         $response->assertSessionHasErrors(['harga']);
     }
 
-    public function test_create_fails_when_stock_exceeds_one_thousand(): void
+    public function test_create_fails_when_stock_exceeds_one_hundred_thousand(): void
     {
         $response = $this->actingAs($this->admin)->post(route('produk.store'), [
             'nama' => 'Batik Stok Melimpah',
             'sku' => 'BTK-005',
             'kategori' => 'Kain Batik',
             'harga' => 50000,
-            'stok' => 1001,
+            'stok' => 100001,
             'status' => 'Tersedia',
         ]);
 
@@ -178,12 +178,12 @@ class ProdukValidationTest extends TestCase
             'status' => 'Tersedia',
         ]);
 
-        // Price > 1jt
+        // Price > 100jt
         $response = $this->actingAs($this->admin)->put(route('produk.update', $produk), [
             'nama' => 'Batik Awal',
             'sku' => 'BTK-007',
             'kategori' => 'Kain Batik',
-            'harga' => 1200000,
+            'harga' => 100000001,
             'stok' => 50,
             'status' => 'Tersedia',
         ]);
@@ -200,13 +200,13 @@ class ProdukValidationTest extends TestCase
         ]);
         $response->assertSessionHasErrors(['harga']);
 
-        // Stock > 1000
+        // Stock > 100k
         $response = $this->actingAs($this->admin)->put(route('produk.update', $produk), [
             'nama' => 'Batik Awal',
             'sku' => 'BTK-007',
             'kategori' => 'Kain Batik',
             'harga' => 200000,
-            'stok' => 1005,
+            'stok' => 100001,
             'status' => 'Tersedia',
         ]);
         $response->assertSessionHasErrors(['stok']);

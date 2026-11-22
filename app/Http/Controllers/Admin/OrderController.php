@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Pengiriman;
 use App\Services\MidtransService;
-use App\Services\RajaOngkirService;
+use App\Services\OrderLifecycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -18,15 +18,16 @@ class OrderController extends Controller
     /**
      * State machine transisi status pesanan (PRD: Menunggu Pembayaran, Diproses, Dikirim, Selesai, Dibatalkan).
      * Status lama (Belum Dibayar/Sudah Dibayar/dll) tetap ditoleransi sebagai alias.
-     * Pesanan yang sudah dibayar TIDAK dapat dibatalkan (belum ada alur refund).
+     * Pesanan boleh dibatalkan sebelum Dikirim (customer mengajukan, admin menyetujui);
+     * refund diproses manual di luar sistem (Midtrans Dashboard/transfer).
      */
     protected array $allowedTransitions = [
         'Menunggu Pembayaran' => ['Diproses', 'Sudah Dibayar', 'Dibatalkan'],
         'Belum Dibayar' => ['Menunggu Pembayaran', 'Diproses', 'Dibatalkan'],
         'Menunggu Konfirmasi' => ['Menunggu Pembayaran', 'Diproses', 'Dibatalkan'],
-        'Menunggu Verifikasi' => ['Diproses', 'Sudah Dibayar'],
-        'Sudah Dibayar' => ['Diproses'],
-        'Diproses' => ['Dikirim'],
+        'Menunggu Verifikasi' => ['Diproses', 'Sudah Dibayar', 'Dibatalkan'],
+        'Sudah Dibayar' => ['Diproses', 'Dibatalkan'],
+        'Diproses' => ['Dikirim', 'Dibatalkan'],
         'Dikirim' => ['Selesai'],
         'Selesai' => [],
         'Batal' => [],
@@ -54,35 +55,8 @@ class OrderController extends Controller
             'dibatalkan' => Order::whereIn('status', ['Batal', 'Dibatalkan'])->count(),
         ];
 
-        // Metrik Keuangan & Pembayaran Midtrans Gateway
-        $pendingCount = Order::whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi'])->count();
-        $pendingAmount = (float) Order::whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi'])->sum('total_price');
-        $successCount = Order::whereIn('status', ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai'])->count();
-        $successAmount = (float) Order::whereIn('status', ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai'])->sum('total_price');
-        $gatewayAmount = (float) Payment::whereIn('status', [Payment::STATUS_PAID, 'settlement', 'capture'])->sum('gross_amount');
-        if ($gatewayAmount <= 0) {
-            $gatewayAmount = $successAmount;
-        }
+        $query = Order::with(['items.produk', 'pembayaran', 'pengiriman'])->latest();
 
-        // Metrik Logistik & Ekspedisi Pengiriman RajaOngkir
-        $siapDikemasCount = Order::whereIn('status', ['Diproses', 'Menunggu Pembayaran', 'Belum Dibayar'])
-            ->where(function ($sub): void {
-                $sub->whereNull('tracking_number')->orWhere('tracking_number', '');
-            })->count();
-
-        $siapSerahCount = Order::where('status', 'Diproses')
-            ->whereNotNull('tracking_number')
-            ->where('tracking_number', '!=', '')
-            ->count();
-
-        $dalamPerjalananCount = Order::where('status', 'Dikirim')->count();
-        $diterimaCount = Order::where('status', 'Selesai')->count();
-
-        $originInfo = app(RajaOngkirService::class)->getOriginInfo();
-
-        $query = Order::with(['items.produk', 'pembayaran', 'pengiriman', 'user'])->latest();
-
-        // Filter Status Pesanan Utama
         if ($request->filled('status')) {
             $status = $request->status;
             if ($status === 'Menunggu Pembayaran') {
@@ -96,84 +70,19 @@ class OrderController extends Controller
             }
         }
 
-        // Filter Status Logistik Pengiriman
-        if ($request->filled('logistik')) {
-            $logistik = $request->logistik;
-            if ($logistik === 'siap_dikemas') {
-                $query->whereIn('status', ['Diproses', 'Menunggu Pembayaran', 'Belum Dibayar'])
-                    ->where(function ($sub): void {
-                        $sub->whereNull('tracking_number')->orWhere('tracking_number', '');
-                    });
-            } elseif ($logistik === 'siap_serah') {
-                $query->where('status', 'Diproses')
-                    ->whereNotNull('tracking_number')
-                    ->where('tracking_number', '!=', '');
-            } elseif ($logistik === 'dalam_perjalanan') {
-                $query->where('status', 'Dikirim');
-            } elseif ($logistik === 'diterima') {
-                $query->where('status', 'Selesai');
-            }
-        }
-
-        // Filter Ekspedisi Kurir (JNE, POS, TIKI)
-        if ($request->filled('ekspedisi') && $request->ekspedisi !== 'all') {
-            $ekspedisi = $request->ekspedisi;
-            $query->where(function ($q) use ($ekspedisi): void {
-                $q->where('payment_method', 'like', "%{$ekspedisi}%")
-                    ->orWhereHas('pengiriman', function ($sq) use ($ekspedisi): void {
-                        $sq->where('ekspedisi', 'like', "%{$ekspedisi}%")
-                            ->orWhere('no_resi', 'like', "%{$ekspedisi}%");
-                    });
-            });
-        }
-
-        // Filter Status Pembayaran Midtrans Gateway
-        if ($request->filled('pembayaran')) {
-            $pembayaran = $request->pembayaran;
-            if ($pembayaran === 'pending') {
-                $query->whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi']);
-            } elseif ($pembayaran === 'settlement' || $pembayaran === 'success') {
-                $query->whereIn('status', ['Sudah Dibayar', 'Diproses', 'Dikirim', 'Selesai']);
-            } elseif ($pembayaran === 'failed') {
-                $query->whereIn('status', ['Batal', 'Dibatalkan']);
-            }
-        }
-
-        // Pencarian Terpadu (Order ID, Pelanggan, Telepon, Alamat, Resi, Metode)
         if ($request->filled('search')) {
-            $search = trim((string) $request->search);
-            $query->where(function ($q) use ($search): void {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
                 $q->where('code', 'like', "%{$search}%")
                     ->orWhere('customer_name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('address', 'like', "%{$search}%")
-                    ->orWhere('tracking_number', 'like', "%{$search}%")
-                    ->orWhere('payment_method', 'like', "%{$search}%")
-                    ->orWhereHas('pengiriman', function ($sq) use ($search): void {
-                        $sq->where('no_resi', 'like', "%{$search}%")
-                            ->orWhere('ekspedisi', 'like', "%{$search}%");
-                    });
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
         $orders = $query->paginate(10)->withQueryString();
         $allowedTransitions = $this->allowedTransitions;
 
-        return view('admin.orders.index', compact(
-            'orders',
-            'counts',
-            'allowedTransitions',
-            'pendingAmount',
-            'pendingCount',
-            'successAmount',
-            'successCount',
-            'gatewayAmount',
-            'siapDikemasCount',
-            'siapSerahCount',
-            'dalamPerjalananCount',
-            'diterimaCount',
-            'originInfo'
-        ));
+        return view('admin.orders.index', compact('orders', 'counts', 'allowedTransitions'));
     }
 
     public function show(Order $order)
@@ -197,7 +106,7 @@ class OrderController extends Controller
                 'tracking_number' => [
                     'nullable',
                     'string',
-                    'max:30',
+                    'max:15',
                     'regex:/^[A-Za-z0-9\-]+$/',
                     Rule::unique('orders', 'tracking_number')
                         ->ignore($order->id)
@@ -300,7 +209,7 @@ class OrderController extends Controller
             'no_resi' => [
                 'required',
                 'string',
-                'max:30',
+                'max:15',
                 'regex:/^[A-Za-z0-9\-]+$/',
                 Rule::unique('orders', 'tracking_number')
                     ->ignore($order->id)
@@ -342,7 +251,8 @@ class OrderController extends Controller
     public function cancel(Order $order)
     {
         try {
-            $allowed = $this->allowedTransitions[$order->status] ?? [];
+            $currentStatus = $this->normalizeStatus($order->status);
+            $allowed = $this->allowedTransitions[$currentStatus] ?? [];
 
             if (! in_array('Dibatalkan', $allowed) && ! in_array('Batal', $allowed)) {
                 return redirect()->back()->withErrors([
@@ -367,6 +277,7 @@ class OrderController extends Controller
                 $order->update([
                     'status' => 'Dibatalkan',
                     'payment_status' => Order::PAYMENT_CANCELLED,
+                    'cancel_requested_at' => null,
                 ]);
 
                 // Cancel pending payment attempts locally and on Midtrans
@@ -392,6 +303,29 @@ class OrderController extends Controller
     }
 
     /**
+     * Admin menolak permintaan pembatalan customer — status pesanan tetap berjalan.
+     */
+    public function rejectCancellation(Order $order, OrderLifecycleService $lifecycle)
+    {
+        try {
+            if (! $lifecycle->rejectCancellation($order)) {
+                return redirect()->back()->withErrors([
+                    'status' => "Pesanan #{$order->code} tidak memiliki permintaan pembatalan yang perlu ditolak.",
+                ]);
+            }
+
+            return redirect()->back()->with(
+                'success',
+                "✓ Permintaan pembatalan pesanan #{$order->code} ditolak. Pesanan tetap diproses."
+            );
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors([
+                'status' => "Gagal menolak permintaan pembatalan pesanan #{$order->code}: ".$e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
      * Sinkronisasi status transaksi pembayaran secara langsung dari gateway Midtrans.
      */
     public function syncPayment(Request $request, Order $order)
@@ -409,34 +343,6 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([
                 'status' => 'Gagal menyinkronkan status Midtrans: '.$e->getMessage(),
-            ]);
-        }
-    }
-
-    /**
-     * Sinkronisasi massal status transaksi Midtrans untuk seluruh pesanan pending/aktif.
-     */
-    public function syncAllPayments(Request $request)
-    {
-        try {
-            /** @var MidtransService $midtransService */
-            $midtransService = app(MidtransService::class);
-            $pendingOrders = Order::whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi', 'Menunggu Verifikasi'])
-                ->latest()
-                ->take(25)
-                ->get();
-
-            $updatedCount = 0;
-            foreach ($pendingOrders as $order) {
-                if ($midtransService->refreshFromMidtrans($order)) {
-                    $updatedCount++;
-                }
-            }
-
-            return redirect()->back()->with('success', '✓ Sinkronisasi gateway Midtrans untuk seluruh pesanan aktif berhasil diperiksa.');
-        } catch (\Exception $e) {
-            return redirect()->back()->withErrors([
-                'status' => 'Gagal menyinkronkan gateway Midtrans: '.$e->getMessage(),
             ]);
         }
     }

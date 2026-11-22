@@ -55,8 +55,8 @@ class PesananPageTest extends TestCase
         $response->assertViewHas('orders', function ($orders) {
             return $orders->isEmpty();
         });
-        $response->assertSee('Anda Belum Masuk Akun');
-        $response->assertSee('Pesanan Kosong');
+        $response->assertSee('Pesanan Saya');
+        $response->assertSee('Masuk ke Akun');
         $response->assertDontSee($order->code);
     }
 
@@ -105,7 +105,8 @@ class PesananPageTest extends TestCase
             return $orders->isEmpty();
         });
         $response->assertDontSee($order->code);
-        $response->assertSee('Belum Ada Pesanan yang Sesuai');
+        $response->assertSee('Pesanan Saya');
+        $response->assertSee($freshUser->name);
     }
 
     /**
@@ -180,5 +181,31 @@ class PesananPageTest extends TestCase
         $order->refresh();
         $this->assertContains($order->status, [Order::STATUS_CANCELLED, 'Dibatalkan']);
         $this->assertSame(Order::PAYMENT_EXPIRED, $order->payment_status);
+    }
+
+    /**
+     * Pesanan sudah dibayar (Diproses): customer mengajukan pembatalan
+     * dan menunggu persetujuan admin — status tidak berubah.
+     */
+    public function test_web_customer_can_request_cancellation_for_paid_order(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'code' => 'ORD-WEB-REQ-01',
+            'status' => 'Diproses',
+            'payment_status' => Order::PAYMENT_PAID,
+        ]);
+
+        $response = $this->actingAs($user)->patch(route('pesanan.batal', $order));
+
+        $response->assertRedirect(route('pesanan.index'));
+        $response->assertSessionHas('success', function (string $message): bool {
+            return str_contains(strtolower($message), 'menunggu persetujuan admin');
+        });
+
+        $order->refresh();
+        $this->assertSame('Diproses', $order->status);
+        $this->assertNotNull($order->cancel_requested_at);
     }
 }

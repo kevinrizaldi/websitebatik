@@ -10,6 +10,3 @@ Artisan::command('inspire', function () {
 
 // Jadwal otomatis membatalkan pesanan yang melewati batas pembayaran 24 jam
 Schedule::command('orders:expire-overdue')->everyFifteenMinutes();
-
-// Jadwal otomatis menyelesaikan pesanan yang berstatus Dikirim berdasarkan durasi kurir (Opsi A)
-Schedule::command('orders:auto-complete')->hourly();

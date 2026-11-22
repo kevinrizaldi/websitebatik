@@ -184,7 +184,33 @@
                     </div>
 
                     {{-- Action Buttons: Setujui / Tolak --}}
-                    @if (in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi']))
+                    @if ($order->cancel_requested_at)
+                        <div class="rounded-xl border border-[#FFCDD2] bg-[#FFEBEE] p-3 text-xs text-[#C62828] space-y-1 mb-2">
+                            <strong>Permintaan pembatalan dari customer</strong>
+                            <span class="block text-[11px]">Diajukan {{ $order->cancel_requested_at->diffForHumans() }} — stok dikembalikan bila disetujui.</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                            {{-- Form Setujui Pembatalan --}}
+                            <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Setujui pembatalan pesanan ini? Stok akan dikembalikan dan refund diproses manual.')">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#C62828] py-3 text-xs font-bold text-white shadow-xs hover:bg-[#B71C1C] transition">
+                                    <span>✓</span>
+                                    <span>Setujui Pembatalan</span>
+                                </button>
+                            </form>
+
+                            {{-- Form Tolak Pembatalan --}}
+                            <form action="{{ route('admin.orders.reject-cancellation', $order) }}" method="POST">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 py-3 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition">
+                                    <span>✕</span>
+                                    <span>Tolak Pembatalan</span>
+                                </button>
+                            </form>
+                        </div>
+                    @elseif (in_array($order->status, ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi']))
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                             {{-- Form Setujui --}}
                             <form action="{{ route('admin.orders.update-status', $order) }}" method="POST">
@@ -201,7 +227,7 @@
                             <form action="{{ route('admin.orders.cancel', $order) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#E9DFD0] bg-[#FAF0E4] py-3 text-xs font-bold text-[#A86544] hover:bg-[#F3E6D5] transition">
+                                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#C62828] py-3 text-xs font-bold text-white shadow-xs hover:bg-[#B71C1C] transition">
                                     <span>✕</span>
                                     <span>Batalkan Pesanan (Expire)</span>
                                 </button>
@@ -434,6 +460,22 @@
                             <p class="font-bold text-[#1E1B18]">{{ $order->customer_name }} (Rumah Utama)</p>
                             <p class="text-stone-600 leading-relaxed">{{ $order->address }}</p>
                             <p class="text-stone-400">Telepon: {{ $order->phone }}</p>
+
+                            @php
+                                $orderAddr = $order->user?->alamats?->first(function($a) use ($order) {
+                                    return !empty($a->alamat_lengkap) && str_contains($order->address, $a->alamat_lengkap);
+                                }) ?? $order->user?->alamats?->where('is_utama', true)->first() ?? $order->user?->alamats?->first();
+                            @endphp
+                            @if ($orderAddr && $orderAddr->latitude && $orderAddr->longitude)
+                                <div class="mt-2 pt-2 border-t border-[#EFECE6] flex flex-wrap items-center justify-between gap-2 text-xs">
+                                    <span class="text-stone-600 flex items-center gap-1">
+                                        📍 Koordinat: <strong class="font-mono text-stone-900">{{ number_format($orderAddr->latitude, 5) }}, {{ number_format($orderAddr->longitude, 5) }}</strong>
+                                    </span>
+                                    <a href="https://www.google.com/maps?q={{ $orderAddr->latitude }},{{ $orderAddr->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-bold text-[#A86544] hover:underline">
+                                        <span>Buka di Google Maps ↗</span>
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
 
