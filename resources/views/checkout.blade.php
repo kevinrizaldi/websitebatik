@@ -283,7 +283,7 @@
                   this.geoLocating = false;
                   let msg = 'Tidak dapat mendeteksi lokasi otomatis.';
                   if (err && err.code === 1) {
-                      msg = 'Izin akses lokasi ditolak oleh browser.\n\nCara mengizinkan:\n1. Klik ikon pengaturan / gembok di samping link localhost:8000.\n2. Ubah "Location" menjadi "Allow" (Izinkan).\n3. Muat ulang halaman.';
+                      msg = 'Izin akses lokasi ditolak oleh browser.\n\nCara mengizinkan:\n1. Klik ikon pengaturan / gembok di samping link localhost:8000.\n2. Ubah izin Location menjadi Allow (Izinkan).\n3. Muat ulang halaman.';
                   } else if (err && err.code === 2) {
                       msg = 'Layanan lokasi tidak tersedia di perangkat Anda (fitur Location Windows tidak aktif atau PC tidak memiliki modul WiFi/GPS).\n\nTips: Anda tetap bisa menentukan titik dengan langsung mengklik atau menggeser pin merah pada peta.';
                   } else if (err && err.code === 3) {
