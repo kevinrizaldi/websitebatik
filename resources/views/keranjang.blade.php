@@ -223,7 +223,7 @@
          }">
 
         <!-- Local Toast Notification -->
-        <div x-cloak x-show="toastMessage" 
+        <div x-cloak x-show="toastMessage"
              x-transition:enter="transition ease-out duration-300 transform"
              x-transition:enter-start="opacity-0 translate-y-4"
              x-transition:enter-end="opacity-100 translate-y-0"
@@ -238,7 +238,7 @@
         </div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            
+
             <!-- Breadcrumbs / Steps Navigation -->
             <nav class="flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-6">
                 <a href="{{ url('/') }}" class="hover:text-stone-700 transition">BERANDA</a>
@@ -252,10 +252,6 @@
 
             <!-- Page Title Row -->
             <div class="mb-6">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F5ECE5] text-[#8D5B4C] text-[10px] font-bold uppercase tracking-wider mb-2">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#8D5B4C]"></span>
-                    <span>KOLEKSI PILIHAN ANDA</span>
-                </div>
                 <h1 class="font-serif-title text-3xl sm:text-4xl font-bold text-stone-900">
                     Keranjang Belanja <span class="font-sans font-normal text-stone-500 text-2xl sm:text-3xl" x-text="'(' + items.length + ' Item)'"></span>
                 </h1>
@@ -282,15 +278,15 @@
 
             <!-- Active Cart: 2 Columns Layout (when items exist) -->
             <div x-cloak x-show="items.length > 0" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                
+
                 <!-- Left Column: Items List & Actions (8 Cols) -->
                 <div class="lg:col-span-8 space-y-4">
-                    
+
                     <!-- Table Header Row: Select All & Delete Selected -->
                     <div class="flex items-center justify-between pb-1 text-xs font-semibold text-stone-700">
                         <label class="flex items-center gap-2.5 cursor-pointer select-none">
-                            <input type="checkbox" 
-                                   :checked="allSelected" 
+                            <input type="checkbox"
+                                   :checked="allSelected"
                                    @change="toggleSelectAll()"
                                    class="w-4 h-4 rounded text-stone-900 focus:ring-stone-900 border-stone-300 accent-[#201A17] cursor-pointer">
                             <span class="text-xs font-bold text-stone-800">
@@ -298,7 +294,7 @@
                             </span>
                         </label>
 
-                        <button @click="removeSelected()" 
+                        <button @click="removeSelected()"
                                 class="inline-flex items-center gap-1.5 text-stone-400 hover:text-rose-600 transition text-xs font-medium cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
@@ -311,11 +307,11 @@
                     <div class="space-y-4">
                         <template x-for="item in items" :key="item.id">
                             <div class="bg-white rounded-3xl p-5 border border-[#ECE4D8] shadow-xs hover:border-stone-300 transition-all flex items-center gap-4">
-                                
+
                                 <!-- Checkbox (Centered vertically beside image) -->
                                 <div class="shrink-0">
-                                    <input type="checkbox" 
-                                           x-model="item.selected" 
+                                    <input type="checkbox"
+                                           x-model="item.selected"
                                            @change="toggleItem(item)"
                                            class="w-4 h-4 rounded text-stone-900 focus:ring-stone-900 border-stone-300 accent-[#201A17] cursor-pointer">
                                 </div>
@@ -334,9 +330,9 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-start justify-between gap-2">
                                         <div>
-                                            <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-stone-400 block" 
+                                            <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-stone-400 block"
                                                   x-text="item.kategoriSub"></span>
-                                            <h3 class="font-bold text-stone-900 text-sm sm:text-base leading-snug mt-0.5" 
+                                            <h3 class="font-bold text-stone-900 text-sm sm:text-base leading-snug mt-0.5"
                                                 x-text="item.nama"></h3>
                                             <div class="mt-1">
                                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF4ED] border border-[#ECE4D8] text-stone-600 text-[11px] font-medium"
@@ -345,8 +341,8 @@
                                         </div>
 
                                         <!-- Trash Button in Top-Right -->
-                                        <button @click="removeItem(item.id)" 
-                                                class="text-stone-300 hover:text-rose-600 p-1 rounded-lg transition cursor-pointer" 
+                                        <button @click="removeItem(item.id)"
+                                                class="text-stone-300 hover:text-rose-600 p-1 rounded-lg transition cursor-pointer"
                                                 title="Hapus Barang">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
@@ -363,12 +359,12 @@
 
                                         <!-- Stepper -->
                                         <div class="inline-flex items-center rounded-xl bg-[#FAF7F2] border border-stone-200 p-0.5">
-                                            <button @click="decreaseQty(item)" 
+                                            <button @click="decreaseQty(item)"
                                                     class="w-7 h-7 rounded-lg hover:bg-white flex items-center justify-center text-stone-600 font-bold transition text-xs cursor-pointer">
                                                 -
                                             </button>
                                             <span class="w-8 text-center text-xs font-bold text-stone-900" x-text="item.qty"></span>
-                                            <button @click="increaseQty(item)" 
+                                            <button @click="increaseQty(item)"
                                                     :disabled="item.stok !== undefined && item.qty >= item.stok"
                                                     :class="item.stok !== undefined && item.qty >= item.stok ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white cursor-pointer'"
                                                     class="w-7 h-7 rounded-lg flex items-center justify-center text-stone-600 font-bold transition text-xs">
@@ -391,13 +387,13 @@
 
                 <!-- Right Column: Order Summary (4 Cols) -->
                 <div class="lg:col-span-4 sticky top-28 space-y-5">
-                    
+
                     <div class="bg-white rounded-3xl p-6 sm:p-7 border border-[#ECE4D8] shadow-xs space-y-5">
                         <div class="flex items-center justify-between pb-1">
                             <h2 class="font-bold text-stone-900 text-base">
                                 Ringkasan Belanja
                             </h2>
-                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FAF3EA] text-stone-600" 
+                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FAF3EA] text-stone-600"
                                   x-text="totalSelectedQty + ' Barang'">
                             </span>
                         </div>
@@ -426,13 +422,13 @@
                                         Termasuk PPN & Kemasan Ramah Lingkungan
                                     </p>
                                 </div>
-                                <span class="font-serif-title text-2xl sm:text-3xl font-extrabold text-stone-900" 
+                                <span class="font-serif-title text-2xl sm:text-3xl font-extrabold text-stone-900"
                                       x-text="formatRupiah(grandTotal)"></span>
                             </div>
                         </div>
 
                         <!-- Main Checkout CTA -->
-                        <button @click="proceedCheckout()" 
+                        <button @click="proceedCheckout()"
                                 :disabled="totalSelectedQty === 0"
                                 :class="totalSelectedQty === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-stone-800'"
                                 class="w-full py-3.5 px-6 rounded-2xl bg-[#201A17] text-white font-semibold text-sm transition duration-200 shadow-sm flex items-center justify-center gap-2 group">
@@ -496,9 +492,7 @@
             <section x-cloak x-show="recommendations.length > 0" class="mt-20 pt-10 border-t border-[#ECE4D8]">
                 <div class="flex items-end justify-between mb-8">
                     <div>
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-stone-400 block mb-1">
-                            HARMONI BUSANA
-                        </span>
+
                         <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-stone-900">
                             Lengkapi Penampilan Anda
                         </h2>
@@ -506,11 +500,11 @@
 
                     <!-- Carousel Navigation Arrows -->
                     <div class="flex items-center gap-2">
-                        <button @click="showToast('Rekomendasi sebelumnya')" 
+                        <button @click="showToast('Rekomendasi sebelumnya')"
                                 class="w-9 h-9 rounded-xl border border-[#ECE4D8] hover:border-stone-400 bg-white flex items-center justify-center text-stone-700 transition shadow-2xs cursor-pointer">
                             &lt;
                         </button>
-                        <button @click="showToast('Rekomendasi berikutnya')" 
+                        <button @click="showToast('Rekomendasi berikutnya')"
                                 class="w-9 h-9 rounded-xl border border-[#ECE4D8] hover:border-stone-400 bg-white flex items-center justify-center text-stone-700 transition shadow-2xs cursor-pointer">
                             &gt;
                         </button>
@@ -521,7 +515,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <template x-for="(prod, idx) in recommendations" :key="idx">
                         <div class="bg-white rounded-3xl p-3 border border-[#ECE4D8] shadow-xs hover:shadow-md transition flex flex-col group">
-                            
+
                             <!-- Image area: tall aspect ratio with rounded-2xl -->
                             <div class="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[#FAF2EA] border border-[#ECE4D8]/60 flex items-center justify-center">
                                 <span class="absolute top-2.5 left-2.5 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-white/95 text-stone-700 uppercase tracking-wider shadow-2xs"
@@ -540,8 +534,8 @@
 
                                 <div class="flex items-center justify-between pt-3 mt-1">
                                     <span class="text-sm sm:text-base font-bold text-stone-900" x-text="formatRupiah(prod.harga)"></span>
-                                    
-                                    <button @click="addRecommendation(prod)" 
+
+                                    <button @click="addRecommendation(prod)"
                                             class="w-8 h-8 rounded-full bg-[#FAF3EA] hover:bg-[#201A17] hover:text-white text-stone-800 flex items-center justify-center font-bold text-sm transition shadow-2xs cursor-pointer"
                                             title="Tambahkan ke Keranjang">
                                         +

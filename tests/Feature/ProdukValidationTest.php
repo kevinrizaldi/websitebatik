@@ -139,6 +139,20 @@ class ProdukValidationTest extends TestCase
         $response->assertSessionHasErrors(['harga']);
     }
 
+    public function test_create_rejects_crossed_out_price_not_higher_than_sale_price(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Batik Harga Coret Tidak Valid',
+            'sku' => 'BTK-PRICE-CROSS-INVALID',
+            'kategori' => 'Kain Batik',
+            'harga' => 100000,
+            'harga_coret' => 90000,
+            'stok' => 10,
+        ]);
+
+        $response->assertSessionHasErrors(['harga_coret']);
+    }
+
     public function test_create_fails_when_stock_exceeds_one_hundred_thousand(): void
     {
         $response = $this->actingAs($this->admin)->post(route('produk.store'), [

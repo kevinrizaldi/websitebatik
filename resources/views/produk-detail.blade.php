@@ -445,21 +445,13 @@
                 <!-- Header Title -->
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                     <div>
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-stone-500 block mb-1">
-                            TESTIMONI NYATA
-                        </span>
+
                         <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
                             Ulasan Pelanggan
                         </h2>
                     </div>
 
-                    <button @click="writeReviewModal = true"
-                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs sm:text-sm font-semibold transition shadow-xs">
-                        <svg class="w-4 h-4 text-stone-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/>
-                        </svg>
-                        <span>Tulis Ulasan Anda</span>
-                    </button>
+
                 </div>
 
                 <!-- Rating Scorecard Banner -->
@@ -559,7 +551,7 @@
 
                 @if($ratingCount > 6)
                     <div class="text-center mt-8">
-                        <button @click="showToast('Menampilkan semua ulasan')" 
+                        <button @click="showToast('Menampilkan semua ulasan')"
                                 class="inline-block px-7 py-3 rounded-full bg-white border border-[#EAE1D3] text-stone-800 text-xs sm:text-sm font-semibold hover:border-stone-400 hover:bg-stone-50 transition shadow-2xs">
                             Lihat Semua {{ $ratingCount }} Ulasan
                         </button>
@@ -602,7 +594,7 @@
                                         <span class="text-sm font-extrabold text-stone-900">
                                             Rp {{ number_format($rel->harga, 0, ',', '.') }}
                                         </span>
-                                        <a href="{{ route('produk.detail', $rel->id) }}" 
+                                        <a href="{{ route('produk.detail', $rel->id) }}"
                                            class="w-8 h-8 rounded-full bg-stone-100 hover:bg-[#201A17] hover:text-white text-stone-800 flex items-center justify-center transition shadow-2xs"
                                            title="Lihat Detail">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
