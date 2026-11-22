@@ -81,8 +81,8 @@
                       fullName: {{ json_encode($p->nama) }},
                       kategori: {{ json_encode($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'Koleksi Batik') }},
                       subkategori: {{ json_encode(strtoupper($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'BATIK')) }},
-                      badge: {{ json_encode($p->stok > 0 ? ($p->stok <= 10 ? 'Stok Terbatas' : 'Ready Stock') : 'Stok Habis') }},
-                      badgeColor: {{ json_encode($p->stok <= 0 ? 'bg-stone-500 text-white' : ($p->stok <= 10 ? 'bg-[#4A2D1B] text-white' : 'bg-white/95 text-stone-800 border border-stone-200')) }},
+                      badge: {{ json_encode($p->stok > 0 ? ($p->stok <= 10 ? 'Stok Terbatas' : '') : 'Stok Habis') }},
+                      badgeColor: {{ json_encode($p->stok <= 0 ? 'bg-stone-500 text-white' : ($p->stok <= 10 ? 'bg-[#4A2D1B] text-white' : '')) }},
                       harga: {{ (float) $p->harga }},
                       hargaFormatted: {{ json_encode('Rp ' . number_format($p->harga, 0, ',', '.')) }},
                       rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '5.0' }}',
@@ -292,7 +292,8 @@
                         <!-- Image Container with badges -->
                         <a :href="item.detailUrl" class="relative aspect-square overflow-hidden bg-stone-100 block">
                             <!-- Top-left Stock/Edition Badge -->
-                            <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded shadow-xs"
+                            <span x-show="item.badge"
+                                  class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded shadow-xs"
                                   :class="item.badgeColor"
                                   x-text="item.badge">
                             </span>
