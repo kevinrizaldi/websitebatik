@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Alamat;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AlamatWebTest extends TestCase
@@ -114,6 +115,21 @@ class AlamatWebTest extends TestCase
 
     public function test_rajaongkir_postal_codes_endpoint_returns_success(): void
     {
+        Http::fake([
+            '*/destination/domestic-destination*' => Http::response([
+                'meta' => ['code' => 200, 'status' => 'success'],
+                'data' => [
+                    ['id' => 1001, 'subdistrict_name' => 'Jember Kidul', 'district_name' => 'Kaliwates', 'city_name' => 'Kabupaten Jember', 'zip_code' => '68131'],
+                    ['id' => 1002, 'subdistrict_name' => 'Tegal Besar', 'district_name' => 'Kaliwates', 'city_name' => 'Kabupaten Jember', 'zip_code' => '68132'],
+                    ['id' => 1003, 'subdistrict_name' => 'Kaliwates', 'district_name' => 'Kaliwates', 'city_name' => 'Kabupaten Jember', 'zip_code' => '68133'],
+                    ['id' => 1004, 'subdistrict_name' => 'Sempusari', 'district_name' => 'Kaliwates', 'city_name' => 'Kabupaten Jember', 'zip_code' => '68135'],
+                    ['id' => 1005, 'subdistrict_name' => 'Mangli', 'district_name' => 'Kaliwates', 'city_name' => 'Kabupaten Jember', 'zip_code' => '68136'],
+                    ['id' => 1006, 'subdistrict_name' => 'Kebon Agung', 'district_name' => 'Kaliwates', 'city_name' => 'Kabupaten Jember', 'zip_code' => '68137'],
+                    ['id' => 1007, 'subdistrict_name' => 'Kepatihan', 'district_name' => 'Kaliwates', 'city_name' => 'Kabupaten Jember', 'zip_code' => '68137'],
+                ],
+            ], 200),
+        ]);
+
         $response = $this->getJson(route('rajaongkir.postal-codes', [
             'district_name' => 'Kaliwates',
             'city_name' => 'Kabupaten Jember',
