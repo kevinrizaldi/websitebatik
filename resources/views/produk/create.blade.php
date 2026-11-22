@@ -240,13 +240,14 @@
 
                             <div>
                                 <label class="block text-xs font-bold text-[#7A7269] mb-1.5">
-                                    Harga Coret / Modal
+                                    Harga Coret (IDR)
                                 </label>
                                 <input type="number"
-                                       name="harga_modal"
-                                       value="{{ old('harga_modal') }}"
+                                       name="harga_coret"
+                                       value="{{ old('harga_coret') }}"
                                        placeholder="475000"
                                        min="0"
+                                       max="100000000"
                                        class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#7A7269] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
                             </div>
 

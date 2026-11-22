@@ -9,12 +9,13 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ShippingController;
 use App\Http\Controllers\RajaOngkirController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\PasswordResetController;
 
 // Public endpoints
 Route::get('/health', fn (): array => ['ok' => true]);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/auth/google', [AuthController::class, 'google']);
+Route::post('/auth/google', [AuthController::class, 'googleLogin']);
 
 Route::get('/categories', [ProductController::class, 'categories']);
 Route::get('/products', [ProductController::class, 'index']);

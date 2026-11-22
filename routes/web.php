@@ -36,10 +36,49 @@ Route::get('/', function () {
     }
 
     $produks = collect();
+    $produkTerbaru = collect();
+    $produkRating = collect();
+    $bannerProduk = collect();
     $kategoris = collect();
     try {
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
             $produks = Produk::latest()->take(12)->get();
+        }
+        if (Schema::hasTable('products')) {
+            $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
+
+            $produkTerbaru = Produk::query()
+                ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                ->latest()
+                ->take(2)
+                ->get();
+
+            $produkRating = Produk::query()
+                ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
+                ->whereHas('reviews', $approvedReviews)
+                ->orderByDesc('avg_rating')
+                ->orderByDesc('approved_reviews_count')
+                ->latest()
+                ->take(2)
+                ->get();
+
+            $bannerProduk = $produkTerbaru
+                ->concat($produkRating)
+                ->unique('id')
+                ->values();
+
+            if ($bannerProduk->count() < 4) {
+                $bannerProduk = $bannerProduk
+                    ->concat(Produk::query()
+                        ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                        ->whereNotIn('id', $bannerProduk->modelKeys())
+                        ->latest()
+                        ->take(4 - $bannerProduk->count())
+                        ->get())
+                    ->unique('id')
+                    ->values();
+            }
         }
         if (Schema::hasTable('categories') || Schema::hasTable('kategoris')) {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
@@ -47,10 +86,13 @@ Route::get('/', function () {
     } catch (Throwable $e) {
         Log::warning('Error loading homepage data: '.$e->getMessage(), ['exception' => $e]);
         $produks = collect();
+        $produkTerbaru = collect();
+        $produkRating = collect();
+        $bannerProduk = collect();
         $kategoris = collect();
     }
 
-    return view('welcome', compact('produks', 'kategoris'));
+    return view('welcome', compact('produks', 'produkTerbaru', 'produkRating', 'bannerProduk', 'kategoris'));
 })->name('home');
 
 Route::get('/koleksi', function () {
@@ -163,7 +205,7 @@ Route::get('/pesanan', function () {
                 $pesananAktif = Order::where('user_id', Auth::id())
                     ->whereIn('status', [
                         'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi',
-                        'Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi', 'Dikirim', 'sedang dikirim', 'sedang diproses'
+                        'Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi', 'Dikirim', 'sedang dikirim', 'sedang diproses',
                     ])->count();
 
                 if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
