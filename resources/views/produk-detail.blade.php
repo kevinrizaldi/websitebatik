@@ -515,9 +515,6 @@
                                             </div>
                                             <div>
                                                 <h4 class="font-bold text-sm text-stone-900">{{ $u->customer_name }}</h4>
-                                                <span class="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
-                                                    <span>✓</span> Pembeli Terverifikasi
-                                                </span>
                                             </div>
                                         </div>
                                         <span class="text-[11px] text-stone-400">{{ $u->created_at ? $u->created_at->diffForHumans() : 'Baru saja' }}</span>
