@@ -82,8 +82,8 @@
                       kategori: {{ json_encode($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'Koleksi Batik') }},
                       harga: {{ (float) $p->harga }},
                       hargaFormatted: {{ json_encode('Rp ' . number_format($p->harga, 0, ',', '.')) }},
-                      rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '5.0' }}',
-                      reviews: {{ $p->ulasans()->where('status', 'Disetujui')->count() }},
+                      rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '-' }}',
+                      reviews: {{ $p->reviews_count }},
                       detailUrl: '{{ route('produk.detail', $p->id) }}',
                       gambar: '{{ $p->gambar_url }}'
                   }@if(!$loop->last),@endif
@@ -297,11 +297,19 @@
                         <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                             <div>
                                 <!-- Rating Row -->
-                                <div class="flex items-center gap-1 text-[10px] font-semibold text-stone-700 mb-1">
-                                    <span class="text-amber-500 text-xs">★</span>
-                                    <span x-text="item.rating"></span>
-                                    <span class="text-stone-400 font-normal" x-text="'(' + item.reviews + ')'"></span>
-                                </div>
+                                <template x-if="item.reviews > 0">
+                                    <div class="flex items-center gap-1 text-[10px] font-semibold text-stone-700 mb-1">
+                                        <span class="text-amber-500 text-xs">★</span>
+                                        <span x-text="item.rating"></span>
+                                        <span class="text-stone-400 font-normal" x-text="'(' + item.reviews + ')'"></span>
+                                    </div>
+                                </template>
+                                <template x-if="item.reviews === 0">
+                                    <div class="flex items-center gap-1 text-[10px] text-stone-400 mb-1">
+                                        <span class="text-amber-500 text-xs">★</span>
+                                        <span class="font-normal text-stone-500">Belum ada ulasan</span>
+                                    </div>
+                                </template>
 
                                 <!-- Product Title -->
                                 <h3 class="font-bold text-stone-900 text-sm leading-snug line-clamp-1 mb-1.5">

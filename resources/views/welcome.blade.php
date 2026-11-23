@@ -384,11 +384,18 @@
                         <div class="p-5 flex-1 flex flex-col justify-between">
                             <div>
                                 <!-- Star Rating -->
-                                <div class="flex items-center gap-1 mb-2">
-                                    <span class="text-amber-500 text-xs">★</span>
-                                    <span class="text-xs font-bold text-stone-800">5.0</span>
-                                    <span class="text-[11px] text-stone-400">({{ 15 + (($p->id * 4) % 25) }})</span>
-                                </div>
+                                @if(($p->reviews_count ?? 0) > 0)
+                                    <div class="flex items-center gap-1 mb-2">
+                                        <span class="text-amber-500 text-xs">★</span>
+                                        <span class="text-xs font-bold text-stone-800">{{ number_format($p->avg_rating, 1) }}</span>
+                                        <span class="text-[11px] text-stone-400">({{ $p->reviews_count }})</span>
+                                    </div>
+                                @else
+                                    <div class="flex items-center gap-1 mb-2 text-stone-400 text-xs">
+                                        <span class="text-amber-500 text-xs">★</span>
+                                        <span class="text-[11px] text-stone-500">Belum ada ulasan</span>
+                                    </div>
+                                @endif
                                 <!-- Title -->
                                 <h4 class="font-bold text-stone-900 text-sm leading-snug line-clamp-2 mb-2 group-hover:text-amber-800 transition">
                                     <a href="{{ route('produk.detail', ['id' => $p->id]) }}">
