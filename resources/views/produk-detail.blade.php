@@ -550,7 +550,7 @@
                                     @if($u->photos)
                                         <div class="flex items-center gap-2 pt-2">
                                             @foreach($u->photos as $photo)
-                                                <img src="{{ $photo }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                                <img src="{{ \App\Support\MediaUrl::resolve($photo) ?: $photo }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
                                             @endforeach
                                         </div>
                                     @endif

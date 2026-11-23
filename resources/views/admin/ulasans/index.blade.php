@@ -287,7 +287,7 @@
                                 <div class="flex items-center gap-2 pt-2">
                                     @foreach ($ulasan->photos as $photo)
                                         <div class="w-16 h-16 rounded-xl border border-[#ECE5D8] overflow-hidden bg-[#F6F1EA]">
-                                            <img src="{{ $photo }}" alt="Foto Pembeli" class="w-full h-full object-cover">
+                                            <img src="{{ \App\Support\MediaUrl::resolve($photo) ?: $photo }}" alt="Foto Pembeli" class="w-full h-full object-cover">
                                         </div>
                                     @endforeach
                                 </div>
