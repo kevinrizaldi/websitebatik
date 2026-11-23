@@ -224,6 +224,7 @@
                  canScrollRight: true,
                  progress: 0,
                  isDown: false,
+                 moved: false,
                  startX: 0,
                  scrollLeftPos: 0,
                  checkScroll() {
@@ -243,6 +244,7 @@
                  },
                  startDrag(e) {
                      this.isDown = true;
+                     this.moved = false;
                      this.startX = e.pageX - this.$refs.slider.offsetLeft;
                      this.scrollLeftPos = this.$refs.slider.scrollLeft;
                  },
@@ -251,9 +253,11 @@
                  },
                  onDrag(e) {
                      if (!this.isDown) return;
-                     e.preventDefault();
                      const x = e.pageX - this.$refs.slider.offsetLeft;
                      const walk = (x - this.startX) * 1.4;
+                     if (Math.abs(walk) > 5) {
+                         this.moved = true;
+                     }
                      this.$refs.slider.scrollLeft = this.scrollLeftPos - walk;
                      this.checkScroll();
                  }
@@ -281,7 +285,9 @@
                      @mousemove="onDrag($event)"
                      class="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory pb-5 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 cursor-grab active:cursor-grabbing">
                     @forelse($kategoris as $kat)
-                        <div class="category-card w-[210px] sm:w-[230px] md:w-[250px] shrink-0 snap-start group bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between select-none">
+                        <a href="{{ route('koleksi.index', ['kategori' => $kat->nama_kategori]) }}"
+                           @click="if (moved) $event.preventDefault()"
+                           class="category-card w-[210px] sm:w-[230px] md:w-[250px] shrink-0 snap-start group bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between select-none block cursor-pointer">
                             <div>
                                 <div class="relative aspect-[4/5] overflow-hidden bg-stone-100">
                                     <span class="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-md text-stone-900 text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs border border-white/60">
@@ -302,15 +308,14 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4 sm:px-5 sm:pb-5 pt-0">
-                                <a href="{{ route('koleksi.index', ['kategori' => $kat->nama_kategori]) }}"
-                                   class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
+                                <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
                                     <span>Lihat Koleksi</span>
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
                                     </svg>
-                                </a>
+                                </span>
                             </div>
-                        </div>
+                        </a>
                     @empty
                         <div class="w-full py-12 text-center text-stone-500 bg-white rounded-3xl border border-dashed border-stone-300">
                             Belum ada kategori yang ditambahkan.
