@@ -31,7 +31,7 @@
       x-data="{
           mobileMenuOpen: false,
           searchQuery: '',
-          activeCategory: 'Semua Produk',
+          activeCategory: {{ json_encode(request('kategori') ?: 'Semua Produk') }},
           priceRange: 'Semua',
           sortBy: 'paling-sesuai',
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
@@ -93,7 +93,8 @@
 
           get filteredProducts() {
               return this.products.filter(item => {
-                  const matchCategory = this.activeCategory === 'Semua Produk' || item.kategori === this.activeCategory;
+                  const matchCategory = this.activeCategory === 'Semua Produk' ||
+                      (item.kategori && item.kategori.toLowerCase().trim() === this.activeCategory.toLowerCase().trim());
                   const q = this.searchQuery.toLowerCase().trim();
                   const matchSearch = !q || item.nama.toLowerCase().includes(q) || item.kategori.toLowerCase().includes(q);
                   let matchPrice = true;
@@ -150,15 +151,23 @@
             
             <!-- Breadcrumb -->
             <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-3">
-                <a href="{{ url('/') }}" class="hover:text-stone-700 transition">KOLEKSI</a>
+                <a href="{{ url('/') }}" class="hover:text-stone-700 transition">BERANDA</a>
                 <span>/</span>
-                <span class="text-stone-900 font-extrabold">SEMUA PRODUK</span>
+                <span :class="activeCategory === 'Semua Produk' ? 'text-stone-900 font-extrabold' : 'hover:text-stone-700 cursor-pointer'"
+                      @click="activeCategory = 'Semua Produk'; resetPage()">KOLEKSI</span>
+                <template x-if="activeCategory !== 'Semua Produk'">
+                    <span class="flex items-center gap-2">
+                        <span>/</span>
+                        <span class="text-stone-900 font-extrabold uppercase" x-text="activeCategory"></span>
+                    </span>
+                </template>
             </nav>
 
             <!-- Page Title & Subtitle -->
             <div class="mb-6">
-                <h1 class="font-serif-title text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
-                    Semua Produk
+                <h1 class="font-serif-title text-3xl sm:text-4xl font-bold text-stone-900 leading-tight"
+                    x-text="activeCategory === 'Semua Produk' ? 'Semua Produk' : activeCategory">
+                    {{ request('kategori') ?: 'Semua Produk' }}
                 </h1>
                 <p class="text-stone-600 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
                     Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi.
@@ -241,31 +250,31 @@
                     <!-- Category Pills -->
                     <div class="flex flex-wrap items-center gap-2">
                         <button @click="activeCategory = 'Semua Produk'; resetPage()" 
-                                :class="activeCategory === 'Semua Produk' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                :class="(activeCategory === 'Semua Produk' || !activeCategory) ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                 class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                             Semua Produk
                         </button>
                         @if(isset($kategoris) && $kategoris->isNotEmpty())
                             @foreach($kategoris as $kat)
                                 <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'; resetPage()" 
-                                        :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                        :class="(activeCategory.toLowerCase().trim() === '{{ strtolower(addslashes($kat->nama_kategori)) }}') ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                         class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                                     {{ $kat->nama_kategori }} ({{ $kat->produks_count }})
                                 </button>
                             @endforeach
                         @else
                             <button @click="activeCategory = 'Baju Batik'; resetPage()" 
-                                    :class="activeCategory === 'Baju Batik' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    :class="(activeCategory.toLowerCase().trim() === 'baju batik') ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                     class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                                 Baju Batik
                             </button>
                             <button @click="activeCategory = 'Kain Batik'; resetPage()" 
-                                    :class="activeCategory === 'Kain Batik' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    :class="(activeCategory.toLowerCase().trim() === 'kain batik') ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                     class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                                 Kain Batik
                             </button>
                             <button @click="activeCategory = 'Olahan Kain Sisa'; resetPage()" 
-                                    :class="activeCategory === 'Olahan Kain Sisa' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    :class="(activeCategory.toLowerCase().trim() === 'olahan kain sisa') ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                     class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                                 Olahan Kain Sisa
                             </button>
