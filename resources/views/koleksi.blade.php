@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Semua Produk — HAMZAH STYLE OFFICIAL</title>
+    <title>Katalog Produk — HAMZAH STYLE OFFICIAL</title>
     <meta name="description" content="Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi di Hamzah Style Official.">
 
     <!-- Google Fonts -->
@@ -153,21 +153,13 @@
             <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-3">
                 <a href="{{ url('/') }}" class="hover:text-stone-700 transition">BERANDA</a>
                 <span>/</span>
-                <span :class="activeCategory === 'Semua Produk' ? 'text-stone-900 font-extrabold' : 'hover:text-stone-700 cursor-pointer'"
-                      @click="activeCategory = 'Semua Produk'; resetPage()">KOLEKSI</span>
-                <template x-if="activeCategory !== 'Semua Produk'">
-                    <span class="flex items-center gap-2">
-                        <span>/</span>
-                        <span class="text-stone-900 font-extrabold uppercase" x-text="activeCategory"></span>
-                    </span>
-                </template>
+                <span class="text-stone-900 font-extrabold">SEMUA PRODUK</span>
             </nav>
 
             <!-- Page Title & Subtitle -->
             <div class="mb-6">
-                <h1 class="font-serif-title text-3xl sm:text-4xl font-bold text-stone-900 leading-tight"
-                    x-text="activeCategory === 'Semua Produk' ? 'Semua Produk' : activeCategory">
-                    {{ request('kategori') ?: 'Semua Produk' }}
+                <h1 class="font-serif-title text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
+                    Semua Produk
                 </h1>
                 <p class="text-stone-600 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
                     Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi.
@@ -189,7 +181,7 @@
                         <input type="text" 
                                x-ref="searchInput"
                                x-model="searchQuery" 
-                               placeholder="Cari busana, jenis motif, atau olahan kriya..."
+                               placeholder="Cari produk batik, kemeja, jenis motif, atau olahan kriya..."
                                class="w-full bg-[#FAF4EC] border border-[#EFE8DE] rounded-xl pl-11 pr-10 py-2.5 text-xs sm:text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:bg-white transition">
                         <button x-show="searchQuery" 
                                 @click="searchQuery = ''; resetPage()" 

@@ -101,7 +101,7 @@ Route::get('/', function () {
     return view('welcome', compact('produks', 'produkTerbaru', 'produkRating', 'bannerProduk', 'kategoris'));
 })->name('home');
 
-Route::get('/koleksi', function () {
+$catalogHandler = function () {
     $produks = collect();
     $kategoris = collect();
     try {
@@ -117,13 +117,16 @@ Route::get('/koleksi', function () {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
-        Log::warning('Error loading koleksi data: '.$e->getMessage(), ['exception' => $e]);
+        Log::warning('Error loading produk catalog: '.$e->getMessage(), ['exception' => $e]);
         $produks = collect();
         $kategoris = collect();
     }
 
     return view('koleksi', compact('produks', 'kategoris'));
-})->name('koleksi.index');
+};
+
+Route::get('/produk', $catalogHandler)->name('koleksi.index');
+Route::get('/koleksi', fn () => redirect()->route('koleksi.index', request()->query()));
 
 Route::get('/produk-detail/{id?}', function ($id = null) {
     if (! $id) {
@@ -312,7 +315,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Route Khusus Admin: Kelola Produk, Kelola Pesanan, & Kelola Ulasan
 Route::middleware(['auth', 'admin'])->group(function () {
-    Route::resource('produk', ProdukController::class);
+    Route::prefix('admin')->group(function () {
+        Route::resource('produk', ProdukController::class);
+        Route::patch('/produk/{produk}/stok', [ProdukController::class, 'updateStock'])->name('produk.update-stock');
+    });
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -349,9 +355,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
         // Kelola Pengiriman & Logistik RajaOngkir
         Route::get('/pengiriman', [PengirimanController::class, 'index'])->name('pengiriman.index');
 
-        // Update Pengiriman & Sync Pembayaran Per-Order
+        // Update Pengiriman & Sync Pembayaran Per-Order & Massal
         Route::patch('/orders/{order}/pengiriman', [OrderController::class, 'updatePengiriman'])->name('orders.update-pengiriman');
         Route::post('/orders/{order}/sync-payment', [OrderController::class, 'syncPayment'])->name('orders.sync-payment');
+        Route::post('/orders/sync-payments', [OrderController::class, 'syncAllPayments'])->name('orders.sync-all-payments');
 
         // Pengaturan Toko
         Route::get('/pengaturan', [StoreSettingController::class, 'index'])->name('pengaturan.index');

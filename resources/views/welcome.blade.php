@@ -69,7 +69,7 @@
     <x-storefront-navbar />
 
     <!-- ================= HERO SECTION ================= -->
-    <section class="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-24">
+    <section id="home" class="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
@@ -92,9 +92,9 @@
                            class="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-[#201A17] text-white font-medium hover:bg-stone-800 transition duration-200 shadow-md hover:shadow-lg text-sm sm:text-base">
                             Belanja Sekarang
                         </a>
-                        <a href="#koleksi"
+                        <a href="#kategori"
                            class="inline-flex items-center justify-center px-8 py-3.5 rounded-full bg-white text-stone-800 border border-stone-300 font-medium hover:bg-stone-50 hover:border-stone-400 transition duration-200 text-sm sm:text-base shadow-xs">
-                            Lihat Koleksi
+                            Lihat Kategori
                         </a>
                     </div>
                 </div>
@@ -151,8 +151,8 @@
                                     class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                                     @if($loop->index > 0) loading="lazy" @endif
                                 >
-                                <div class="absolute inset-0 bg-gradient-to-t from-[#1F1916]/90 via-[#1F1916]/10 to-transparent"></div>
-                                <div class="absolute inset-x-0 bottom-0 p-6 text-white sm:p-8">
+                                <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(31, 25, 22, 0.95) 0%, rgba(31, 25, 22, 0.45) 35%, transparent 70%);"></div>
+                                <div class="absolute inset-x-0 bottom-0 text-white" style="padding: 1.5rem 1.75rem 3.5rem 1.75rem;">
                                     <h2 class="max-w-lg text-2xl font-bold leading-tight drop-shadow sm:text-3xl lg:text-4xl">
                                         {{ $produk->nama }}
                                     </h2>
@@ -178,34 +178,43 @@
                         @endforelse
 
                         @if($bannerProduk->count() > 1)
+                            {{-- Tombol Panah Kiri (Previous) --}}
                             <button
                                 type="button"
                                 @click="goToSlide(activeSlide - 1)"
-                                class="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/50 bg-black/35 text-white backdrop-blur-md transition hover:bg-[#201A17] sm:left-5 sm:h-12 sm:w-12"
+                                class="flex h-10 w-10 items-center justify-center rounded-full border border-white/60 text-white backdrop-blur-md transition hover:scale-105 hover:bg-[#201A17] sm:h-12 sm:w-12 shadow-lg"
+                                style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); z-index: 20; background-color: rgba(32, 26, 23, 0.55);"
                                 aria-label="Produk sebelumnya"
                             >
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/>
                                 </svg>
                             </button>
+
+                            {{-- Tombol Panah Kanan (Next) --}}
                             <button
                                 type="button"
                                 @click="goToSlide(activeSlide + 1)"
-                                class="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/50 bg-black/35 text-white backdrop-blur-md transition hover:bg-[#201A17] sm:right-5 sm:h-12 sm:w-12"
+                                class="flex h-10 w-10 items-center justify-center rounded-full border border-white/60 text-white backdrop-blur-md transition hover:scale-105 hover:bg-[#201A17] sm:h-12 sm:w-12 shadow-lg"
+                                style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); z-index: 20; background-color: rgba(32, 26, 23, 0.55);"
                                 aria-label="Produk berikutnya"
                             >
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/>
                                 </svg>
                             </button>
-                            <div class="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 sm:bottom-5">
+
+                            {{-- Indikator Slide (Dots/Pills di Tengah Bawah) --}}
+                            <div
+                                style="position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; align-items: center; gap: 0.5rem;"
+                            >
                                 @foreach($bannerProduk as $produk)
                                     <button
                                         type="button"
                                         @click="goToSlide({{ $loop->index }})"
                                         :aria-current="activeSlide === {{ $loop->index }} ? 'true' : 'false'"
-                                        :class="activeSlide === {{ $loop->index }} ? 'w-7 bg-white' : 'w-2 bg-white/55 hover:bg-white/80'"
-                                        class="h-2 rounded-full transition-all duration-300"
+                                        :style="activeSlide === {{ $loop->index }} ? 'width: 1.75rem; background-color: #ffffff;' : 'width: 0.5rem; background-color: rgba(255, 255, 255, 0.5);'"
+                                        class="h-2 rounded-full transition-all duration-300 hover:bg-white cursor-pointer"
                                         aria-label="Tampilkan slide {{ $loop->iteration }}"
                                     ></button>
                                 @endforeach
@@ -217,8 +226,8 @@
         </div>
     </section>
 
-    <!-- ================= SECTION: JELAJAHI KOLEKSI ================= -->
-    <section id="koleksi" class="py-12 md:py-16 bg-white/60 border-t border-b border-[#EFE8DE] relative"
+    <!-- ================= SECTION: JELAJAHI KATEGORI ================= -->
+    <section id="kategori" class="scroll-mt-20 py-12 md:py-16 bg-white/60 border-t border-b border-[#EFE8DE] relative"
              x-data="{
                  canScrollLeft: false,
                  canScrollRight: true,
@@ -263,16 +272,44 @@
                  }
              }"
              x-init="$nextTick(() => checkScroll()); window.addEventListener('resize', () => checkScroll())">
+        <a id="koleksi" class="sr-only"></a>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <!-- Section Header -->
-            <div class="mb-8">
-                <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
-                    Jelajahi Koleksi
-                </h2>
-                <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
-                    Menghadirkan pesona wastra nusantara dalam potongan tren masa kini.
-                </p>
+            <!-- Section Header & Navigation Buttons -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+                <div>
+                    <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
+                        Jelajahi Koleksi
+                    </h2>
+                    <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
+                        Menghadirkan pesona wastra nusantara dalam potongan tren masa kini.
+                    </p>
+                </div>
+
+                <!-- Navigation Controls (Slider Buttons) -->
+                <div class="flex items-center gap-3 shrink-0">
+                    <span class="text-xs text-stone-400 font-medium hidden sm:inline-block">Geser koleksi</span>
+                    <button type="button"
+                            @click="scroll('left')"
+                            :disabled="!canScrollLeft"
+                            :class="!canScrollLeft ? 'opacity-35 cursor-not-allowed border-stone-200 text-stone-300' : 'hover:bg-[#201A17] hover:text-white hover:border-[#201A17] text-stone-800 border-stone-300 shadow-2xs'"
+                            class="w-10 h-10 rounded-full border bg-white flex items-center justify-center transition duration-200"
+                            aria-label="Geser ke kiri">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                        </svg>
+                    </button>
+                    <button type="button"
+                            @click="scroll('right')"
+                            :disabled="!canScrollRight"
+                            :class="!canScrollRight ? 'opacity-35 cursor-not-allowed border-stone-200 text-stone-300' : 'hover:bg-[#201A17] hover:text-white hover:border-[#201A17] text-stone-800 border-stone-300 shadow-2xs'"
+                            class="w-10 h-10 rounded-full border bg-white flex items-center justify-center transition duration-200"
+                            aria-label="Geser ke kanan">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- Dynamic Collection Cards Carousel (Horizontally Scrollable) -->
@@ -308,7 +345,8 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4 sm:px-5 sm:pb-5 pt-0">
-                                <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
+                                <a href="{{ route('koleksi.index', ['kategori' => $kat->nama_kategori]) }}"
+                                   class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
                                     <span>Lihat Koleksi</span>
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
@@ -409,7 +447,7 @@
     </section>
 
     <!-- ================= SECTION: TENTANG HAMZAH STYLE OFFICIAL ================= -->
-    <section id="tentang-kami" class="py-16 md:py-24 bg-[#FAF7F2] border-t border-[#ECE4D8]">
+    <section id="tentang-kami" class="scroll-mt-20 py-16 md:py-24 bg-[#FAF7F2] border-t border-[#ECE4D8]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
 
