@@ -91,6 +91,12 @@
                 </div>
             </a>
 
+            <a href="{{ route('produk.index', ['stok_habis' => 1]) }}"
+               aria-label="Lihat {{ $outOfStockCount }} produk dengan stok habis"
+               class="sr-only">
+                Stok habis
+            </a>
+
             {{-- 4. NILAI VALUASI ASET ETALASE --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
