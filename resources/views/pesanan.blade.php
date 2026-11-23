@@ -5,9 +5,9 @@
              searchQuery: '',
              trackingModalOpen: false,
              detailModalOpen: false,
-             reviewModalOpen: false,
              selectedOrder: null,
              reviewOrder: null,
+             reviewItem: null,
              reviewDrafts: {},
 
              orders: [
@@ -76,12 +76,18 @@
                          gambar: '{{ $firstItem?->produk ? $firstItem->produk->gambar_url : asset('images/beranda/folded-shirts.jpg') }}',
                          items: [
                              @foreach($ord->items as $it)
+                             @php
+                                 $itReviewed = isset($reviewMap[$ord->id][$it->produk_id]);
+                                 $itReview = $reviewMap[$ord->id][$it->produk_id] ?? null;
+                             @endphp
                              {
-                                 produk_id: {{ $it->produk_id }},
-                                 nama: '{{ addslashes($it->produk_name) }}',
+                                 produk_id: {{ (int) $it->produk_id }},
+                                 nama: @json($it->produk_name),
                                  harga: {{ (float) $it->price }},
-                                 qty: {{ $it->quantity }},
-                                 gambar: '{{ $it->produk ? $it->produk->gambar_url : asset('images/beranda/folded-shirts.jpg') }}'
+                                 qty: {{ (int) $it->quantity }},
+                                 gambar: @json($it->produk ? $it->produk->gambar_url : asset('images/beranda/folded-shirts.jpg')),
+                                 reviewed: {{ $itReviewed ? 'true' : 'false' }},
+                                 review: @json($itReview)
                              }@if(!$loop->last),@endif
                              @endforeach
                          ]
@@ -283,15 +289,66 @@
                  this.detailModalOpen = true;
              },
 
-             openReview(order) {
+             openReview(order, item) {
                  this.reviewOrder = order;
-                 this.reviewDrafts = { rating: 5, comment: '' };
+                 this.reviewItem = item;
+                 this.reviewDrafts = {
+                     [item.produk_id]: { rating: 5, comment: '', image: null, submitting: false, error: '' }
+                 };
                  this.reviewModalOpen = true;
              },
 
+             setReviewImage(produkId, event) {
+                 const file = event?.target?.files?.[0] ?? null;
+                 if (this.reviewDrafts[produkId]) this.reviewDrafts[produkId].image = file;
+             },
+
+             async submitItemReview(item) {
+                 const draft = this.reviewDrafts[item.produk_id];
+                 if (!draft || draft.submitting) return;
+                 draft.error = '';
+                 if (!draft.comment || draft.comment.trim().length < 3) {
+                     draft.error = 'Komentar minimal 3 karakter.';
+                     return;
+                 }
+                 draft.submitting = true;
+                 const form = new FormData();
+                 form.append('produk_id', item.produk_id);
+                 form.append('order_code', this.reviewOrder.id);
+                 form.append('rating', draft.rating);
+                 form.append('comment', draft.comment.trim());
+                 if (draft.image) form.append('image', draft.image);
+
+                 try {
+                     const res = await fetch(@json(route('ulasan.store')), {
+                         method: 'POST',
+                         headers: {
+                             'X-CSRF-TOKEN': @json(csrf_token()),
+                             'Accept': 'application/json',
+                             'X-Requested-With': 'XMLHttpRequest',
+                         },
+                         body: form,
+                     });
+                     const data = await res.json().catch(() => ({}));
+                     if (!res.ok || data.success === false) {
+                         draft.error = data.message || 'Gagal mengirim ulasan. Coba lagi.';
+                         return;
+                     }
+                     item.reviewed = true;
+                     item.review = { rating: draft.rating, comment: draft.comment.trim() };
+                     delete this.reviewDrafts[item.produk_id];
+                     window.dispatchEvent(new CustomEvent('show-toast', { detail: data.message || 'Ulasan berhasil dikirim.' }));
+                     this.reviewModalOpen = false;
+                 } catch (e) {
+                     draft.error = 'Tidak bisa terhubung. Periksa koneksi lalu coba lagi.';
+                 } finally {
+                     draft.submitting = false;
+                 }
+             },
+
              submitReview() {
-                 window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Terima kasih atas ulasan Anda!' }));
-                 this.reviewModalOpen = false;
+                 const firstPending = (this.reviewOrder?.items || []).find(i => !i.reviewed && this.reviewDrafts[i.produk_id]);
+                 if (firstPending) this.submitItemReview(firstPending);
              }
          }">
 
@@ -542,7 +599,7 @@
                                                    class="inline-flex items-center gap-1.5 rounded-xl bg-[#F5EDE1] px-4 py-2 text-xs font-semibold text-stone-800 transition hover:bg-[#EFE4D5]">
                                                     <span>Beli Lagi</span>
                                                 </a>
-                                                <button @click="openReview(order)"
+                                                <button @click="openReview(order, order.items[0])"
                                                         type="button"
                                                         class="inline-flex items-center gap-1.5 rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-stone-800">
                                                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -735,43 +792,93 @@
              x-transition:leave-end="opacity-0">
             <div class="fixed inset-0 bg-black/50 backdrop-blur-xs" @click="reviewModalOpen = false"></div>
 
-            <div class="relative w-full max-w-md rounded-3xl border border-[#ECE4D8] bg-white p-6 shadow-2xl sm:p-8"
+            <div class="relative w-full max-w-2xl rounded-3xl border border-[#ECE4D8] bg-white p-6 shadow-2xl sm:p-8 max-h-[90vh] overflow-y-auto"
                  @click.stop>
                 <div class="flex items-center justify-between border-b border-stone-100 pb-4">
                     <div>
                         <h3 class="text-lg font-bold text-stone-900">Berikan Ulasan Produk</h3>
-                        <p class="text-xs text-stone-500 mt-0.5">Bagikan pengalaman Anda menggunakan karya batik ini.</p>
+                        <p class="text-xs text-stone-500 mt-0.5">Ulasan hanya bisa dikirim untuk pesanan <span class="font-semibold">Selesai</span>. Satu produk = satu ulasan per pesanan.</p>
+                        <p class="text-[11px] text-stone-400 font-mono mt-1" x-text="reviewOrder ? '#' + reviewOrder.id : ''"></p>
                     </div>
                     <button @click="reviewModalOpen = false" class="rounded-full p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
-                <div class="mt-5 space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Penilaian Bintang</label>
-                        <div class="flex items-center gap-2">
-                            <template x-for="star in [1, 2, 3, 4, 5]" :key="star">
-                                <button type="button" @click="reviewDrafts.rating = star" class="p-1 focus:outline-none">
-                                    <svg class="h-7 w-7 transition" :class="star <= reviewDrafts.rating ? 'text-amber-400 fill-amber-400' : 'text-stone-300 fill-none'" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
-                                    </svg>
-                                </button>
-                            </template>
+                <template x-if="reviewOrder">
+                    <div class="mt-5 space-y-4">
+                        <template x-for="item in reviewOrder.items" :key="item.produk_id">
+                            <div class="rounded-2xl border border-stone-100 p-4">
+                                <div class="flex items-start gap-3">
+                                    <img :src="item.gambar" :alt="item.nama" class="h-14 w-14 rounded-xl object-cover bg-stone-100 border border-stone-100 shrink-0">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <p class="font-bold text-stone-900 text-sm" x-text="item.nama"></p>
+                                            <template x-if="item.reviewed">
+                                                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 border border-emerald-200">Sudah diulas</span>
+                                            </template>
+                                        </div>
+                                        <p class="text-[11px] text-stone-500" x-text="item.qty + ' barang'"></p>
+                                    </div>
+                                </div>
+
+                                <template x-if="item.reviewed">
+                                    <div class="mt-3 rounded-xl bg-stone-50 p-3 text-xs text-stone-600">
+                                        <div class="text-amber-500 text-sm mb-1">
+                                            <template x-for="s in [1,2,3,4,5]" :key="s"><span x-text="s <= (item.review?.rating || 0) ? '★' : '☆'"></span></template>
+                                        </div>
+                                        <p x-text="item.review?.comment || ''"></p>
+                                    </div>
+                                </template>
+
+                                <template x-if="!item.reviewed && !reviewDrafts[item.produk_id]">
+                                    <button @click="openReview(reviewOrder, item)"
+                                            type="button"
+                                            class="mt-3 w-full rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white hover:bg-stone-800">
+                                        <span>Beri Ulasan</span>
+                                    </button>
+                                </template>
+
+                                <template x-if="!item.reviewed && reviewDrafts[item.produk_id]">
+                                    <div class="mt-3 space-y-3">
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1.5">Penilaian</label>
+                                            <div class="flex items-center gap-1">
+                                                <template x-for="star in [1,2,3,4,5]" :key="star">
+                                                    <button type="button" @click="reviewDrafts[item.produk_id].rating = star" class="p-0.5 focus:outline-none">
+                                                        <svg class="h-6 w-6 transition" :class="star <= reviewDrafts[item.produk_id].rating ? 'text-amber-400 fill-amber-400' : 'text-stone-300 fill-none'" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/>
+                                                        </svg>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">Komentar</label>
+                                            <textarea x-model="reviewDrafts[item.produk_id].comment" rows="3" placeholder="Bagikan pengalaman Anda tentang produk ini..."
+                                                      class="w-full rounded-xl border border-stone-200 bg-white p-3 text-sm focus:border-stone-400 focus:outline-none"></textarea>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">Foto (opsional)</label>
+                                            <input type="file" accept="image/jpeg,image/png,image/webp" @change="setReviewImage(item.produk_id, $event)" class="block w-full text-xs text-stone-500 file:mr-3 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-stone-700 hover:file:bg-stone-200">
+                                        </div>
+                                        <p x-show="reviewDrafts[item.produk_id].error" x-text="reviewDrafts[item.produk_id].error" class="text-xs text-rose-600"></p>
+                                        <div class="flex justify-end">
+                                            <button @click="submitItemReview(item)" :disabled="reviewDrafts[item.produk_id].submitting" type="button" class="rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white hover:bg-stone-800 disabled:opacity-60">
+                                                <span x-show="!reviewDrafts[item.produk_id].submitting">Kirim Ulasan Produk Ini</span>
+                                                <span x-show="reviewDrafts[item.produk_id].submitting">Mengirim...</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <div class="flex items-center justify-end gap-3 pt-2 border-t border-stone-100">
+                            <button @click="reviewModalOpen = false" type="button" class="rounded-xl px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100">Tutup</button>
                         </div>
                     </div>
-
-                    <div>
-                        <label for="review-comment" class="block text-xs font-bold uppercase tracking-wider text-stone-400 mb-1">Komentar & Kesan Anda</label>
-                        <textarea id="review-comment" x-model="reviewDrafts.comment" rows="4" placeholder="Kualitas kain sangat lembut dan corak parang sangat rapi..."
-                                  class="w-full rounded-2xl border border-stone-200 bg-white p-3 text-sm focus:border-stone-400 focus:outline-none"></textarea>
-                    </div>
-
-                    <div class="mt-6 flex items-center justify-end gap-3 pt-2">
-                        <button @click="reviewModalOpen = false" type="button" class="rounded-xl px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100">Batal</button>
-                        <button @click="submitReview()" type="button" class="rounded-xl bg-[#201A17] px-6 py-2.5 text-xs font-semibold text-white hover:bg-stone-800">Kirim Ulasan</button>
-                    </div>
-                </div>
+                </template>
             </div>
         </div>
     </div>

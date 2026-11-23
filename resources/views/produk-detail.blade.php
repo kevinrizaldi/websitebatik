@@ -77,7 +77,7 @@
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           sizeGuideModal: false,
           imageZoomModal: false,
-          writeReviewModal: false,
+
           toastMessage: '',
           isAdding: false,
 
@@ -453,13 +453,13 @@
                         </h2>
                     </div>
 
-                    <button @click="writeReviewModal = true"
+                    <a href="{{ route('pesanan.index') }}"
                             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#201A17] hover:bg-stone-800 text-white text-xs sm:text-sm font-semibold transition shadow-xs">
                         <svg class="w-4 h-4 text-stone-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/>
                         </svg>
-                        <span>Tulis Ulasan Anda</span>
-                    </button>
+                        <span>Ulas di Pesanan Saya</span>
+                    </a>
                 </div>
 
                 <!-- Rating Scorecard Banner -->
