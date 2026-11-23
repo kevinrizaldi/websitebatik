@@ -261,41 +261,14 @@
              x-init="$nextTick(() => checkScroll()); window.addEventListener('resize', () => checkScroll())">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <!-- Section Header & Navigation Buttons -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-                <div>
-                    <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
-                        Jelajahi Koleksi
-                    </h2>
-                    <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
-                        Menghadirkan pesona wastra nusantara dalam potongan tren masa kini.
-                    </p>
-                </div>
-
-                <!-- Navigation Controls (Slider Buttons) -->
-                <div class="flex items-center gap-3 shrink-0">
-                    <span class="text-xs text-stone-400 font-medium hidden sm:inline-block">Geser koleksi</span>
-                    <button type="button"
-                            @click="scroll('left')"
-                            :disabled="!canScrollLeft"
-                            :class="!canScrollLeft ? 'opacity-35 cursor-not-allowed border-stone-200 text-stone-300' : 'hover:bg-[#201A17] hover:text-white hover:border-[#201A17] text-stone-800 border-stone-300 shadow-2xs'"
-                            class="w-10 h-10 rounded-full border bg-white flex items-center justify-center transition duration-200"
-                            aria-label="Geser ke kiri">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                        </svg>
-                    </button>
-                    <button type="button"
-                            @click="scroll('right')"
-                            :disabled="!canScrollRight"
-                            :class="!canScrollRight ? 'opacity-35 cursor-not-allowed border-stone-200 text-stone-300' : 'hover:bg-[#201A17] hover:text-white hover:border-[#201A17] text-stone-800 border-stone-300 shadow-2xs'"
-                            class="w-10 h-10 rounded-full border bg-white flex items-center justify-center transition duration-200"
-                            aria-label="Geser ke kanan">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
-                    </button>
-                </div>
+            <!-- Section Header -->
+            <div class="mb-8">
+                <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
+                    Jelajahi Koleksi
+                </h2>
+                <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
+                    Menghadirkan pesona wastra nusantara dalam potongan tren masa kini.
+                </p>
             </div>
 
             <!-- Dynamic Collection Cards Carousel (Horizontally Scrollable) -->
