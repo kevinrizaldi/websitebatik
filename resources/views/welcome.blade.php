@@ -36,7 +36,6 @@
 <body class="antialiased bg-[#FAF7F2] text-[#26211D] min-h-screen selection:bg-[#B58742] selection:text-white"
       x-data="{
           mobileMenuOpen: false,
-          activeCategory: 'Semua',
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           quickViewModal: false,
           selectedProduct: null,
@@ -363,43 +362,20 @@
     <section id="produk-unggulan" class="py-16 md:py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <!-- Header and Filter Tabs -->
-            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
-                <div>
-                    <span class="text-xs font-bold uppercase tracking-widest text-[#B58742] block mb-1">
-
-                    </span>
-                    <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#1F1916]">
-                        Produk Unggulan
-                    </h2>
-                    <p class="text-stone-600 text-sm sm:text-base mt-2 max-w-xl">
-                        Pilihan terbaik yang menggabungkan estetika tradisi dan fesyen modern.
-                    </p>
-                </div>
-
-                <!-- Category Filter Buttons (Dynamic from Database) -->
-                <div class="flex flex-wrap items-center gap-2">
-                    <button @click="activeCategory = 'Semua'"
-                            :class="activeCategory === 'Semua' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                            class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
-                        Semua
-                    </button>
-                    @foreach($kategoris as $kat)
-                        <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'"
-                                :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                                class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
-                            {{ $kat->nama_kategori }}
-                        </button>
-                    @endforeach
-                </div>
+            <!-- Section Header -->
+            <div class="mb-10">
+                <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#1F1916]">
+                    Produk Unggulan
+                </h2>
+                <p class="text-stone-600 text-sm sm:text-base mt-2 max-w-xl">
+                    Pilihan terbaik yang menggabungkan estetika tradisi dan fesyen modern.
+                </p>
             </div>
 
             <!-- Products Grid (Dynamic from Database) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach($produks->take(8) as $p)
-                    <div x-show="activeCategory === 'Semua' || activeCategory === '{{ addslashes($p->category_name) }}'"
-                         x-transition
-                         class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
+                    <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
                         <a href="{{ route('produk.detail', ['id' => $p->id]) }}" class="relative aspect-square overflow-hidden bg-stone-100 block">
                             @if($p->status === 'Stok Menipis')
                                 <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-[#5C3D28] text-white">
