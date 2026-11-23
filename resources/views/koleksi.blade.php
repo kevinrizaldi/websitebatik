@@ -31,7 +31,7 @@
       x-data="{
           mobileMenuOpen: false,
           searchQuery: '',
-          activeCategory: {!! json_encode(request('kategori') ?: 'Semua Produk') !!},
+          activeCategory: '{{ addslashes(request('kategori') ?: 'Semua Produk') }}',
           priceRange: 'Semua',
           sortBy: 'paling-sesuai',
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
