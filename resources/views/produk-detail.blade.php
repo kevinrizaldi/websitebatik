@@ -535,7 +535,7 @@
 
                                     @if($u->image_path)
                                         <div class="flex items-center gap-2 pt-1">
-                                            <img src="{{ asset('storage/' . $u->image_path) }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                            <img src="{{ \App\Support\MediaUrl::resolve($u->image_path) }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
                                         </div>
                                     @endif
 
