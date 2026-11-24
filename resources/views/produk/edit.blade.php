@@ -58,11 +58,11 @@
                 }
             } else {
                 $initialSizes = [
-                    ['name' => 'S', 'stock' => 4],
-                    ['name' => 'M', 'stock' => 4],
-                    ['name' => 'L', 'stock' => 4],
-                    ['name' => 'XL', 'stock' => 4],
-                    ['name' => 'XXL', 'stock' => 2],
+                    ['name' => 'S', 'stock' => 0],
+                    ['name' => 'M', 'stock' => 0],
+                    ['name' => 'L', 'stock' => 0],
+                    ['name' => 'XL', 'stock' => 0],
+                    ['name' => 'XXL', 'stock' => 0],
                 ];
             }
         @endphp
@@ -107,11 +107,11 @@
                   },
                   resetDefaultSizes() {
                       this.sizes = [
-                          { name: 'S', stock: 4 },
-                          { name: 'M', stock: 4 },
-                          { name: 'L', stock: 4 },
-                          { name: 'XL', stock: 4 },
-                          { name: 'XXL', stock: 2 }
+                          { name: 'S', stock: 0 },
+                          { name: 'M', stock: 0 },
+                          { name: 'L', stock: 0 },
+                          { name: 'XL', stock: 0 },
+                          { name: 'XXL', stock: 0 }
                       ];
                   },
                   stokKain: {{ (int) old('stok', $produk->stok) }},

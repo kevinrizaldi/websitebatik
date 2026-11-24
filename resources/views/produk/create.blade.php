@@ -36,11 +36,11 @@
 
         @php
             $defaultSizes = [
-                ['name' => 'S', 'stock' => 4],
-                ['name' => 'M', 'stock' => 4],
-                ['name' => 'L', 'stock' => 4],
-                ['name' => 'XL', 'stock' => 4],
-                ['name' => 'XXL', 'stock' => 2],
+                ['name' => 'S', 'stock' => 0],
+                ['name' => 'M', 'stock' => 0],
+                ['name' => 'L', 'stock' => 0],
+                ['name' => 'XL', 'stock' => 0],
+                ['name' => 'XXL', 'stock' => 0],
             ];
             $oldStokUkuran = old('stok_ukuran');
             if (is_array($oldStokUkuran) && !empty($oldStokUkuran)) {
@@ -93,14 +93,14 @@
                   },
                   resetDefaultSizes() {
                       this.sizes = [
-                          { name: 'S', stock: 4 },
-                          { name: 'M', stock: 4 },
-                          { name: 'L', stock: 4 },
-                          { name: 'XL', stock: 4 },
-                          { name: 'XXL', stock: 2 }
+                          { name: 'S', stock: 0 },
+                          { name: 'M', stock: 0 },
+                          { name: 'L', stock: 0 },
+                          { name: 'XL', stock: 0 },
+                          { name: 'XXL', stock: 0 }
                       ];
                   },
-                  stokKain: {{ (int) old('stok', 18) }},
+                  stokKain: {{ (int) old('stok', 0) }},
                   get totalStok() {
                       if (this.isKain) {
                           return parseInt(this.stokKain) || 0;
@@ -287,7 +287,7 @@
                                            name="stok"
                                            x-model.number="stokKain"
                                            :disabled="!isKain"
-                                           placeholder="18"
+                                           placeholder="0"
                                            min="0"
                                            max="100000"
                                            class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] font-bold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
