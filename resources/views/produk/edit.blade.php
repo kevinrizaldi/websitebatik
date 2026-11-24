@@ -272,12 +272,12 @@
                         </div>
                     </div>
 
-                    {{-- Card 2: Spesifikasi Material & Ukuran --}}
+                    {{-- Card 2: Ukuran Baju & Alokasi Stok --}}
                     <div class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-4">
                         <div class="flex items-center justify-between">
-                            <h3 class="font-bold text-sm text-[#1E1B18]">Spesifikasi Material &amp; Alokasi Ukuran</h3>
+                            <h3 class="font-bold text-sm text-[#1E1B18]">Ukuran Baju &amp; Alokasi Stok</h3>
                             <span class="text-[10px] font-semibold text-[#8C6D58] bg-[#FAF0E4] px-2.5 py-0.5 rounded-full border border-[#E8D9C5]"
-                                  x-text="isKain ? 'Bahan Lembaran Wastra' : 'Stok Tiap Ukuran Busana'">
+                                  x-text="isKain ? 'Bahan Lembaran Wastra' : 'Ukuran Baju'">
                             </span>
                         </div>
 
@@ -339,15 +339,17 @@
                             </div>
                         </div>
 
-                        {{-- Material Row --}}
+                        {{-- Ukuran Baju Row --}}
                         <div>
                             <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
-                                Spesifikasi Bahan &amp; Teknik Canting
+                                Ukuran Baju
                             </label>
                             <input type="text"
-                                   name="material"
-                                   value="{{ old('material', $produk->material ?? 'Katun Primissima Halus 60s, Batik Cap kombinasi Tulis canting tembaga') }}"
-                                   class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                                   name="ukuran"
+                                   value="{{ old('ukuran', $produk->ukuran ?? 'S, M, L, XL, XXL') }}"
+                                   placeholder="Contoh: S, M, L, XL, XXL"
+                                   class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                            <input type="hidden" name="material" value="{{ old('material', $produk->material ?? 'Katun Primissima Halus 60s, Batik Cap kombinasi Tulis canting tembaga') }}">
                         </div>
                     </div>
 

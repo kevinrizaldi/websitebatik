@@ -108,6 +108,7 @@ class ProdukController extends Controller
             'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
+            'ukuran' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'gambar_lainnya' => 'nullable|array|max:9',
             'gambar_lainnya.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -144,6 +145,10 @@ class ProdukController extends Controller
         } elseif ($isKainBatik) {
             $validated['stok_ukuran'] = null;
             $validated['ukuran'] = 'Lembaran Kain';
+        }
+
+        if ($request->filled('ukuran')) {
+            $validated['ukuran'] = $request->input('ukuran');
         }
 
         $validated['stok'] = (int) ($validated['stok'] ?? 0);
@@ -218,6 +223,7 @@ class ProdukController extends Controller
             'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
             'deskripsi' => 'nullable|string|max:255',
             'material' => 'nullable|string|max:255',
+            'ukuran' => 'nullable|string|max:255',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'gambar_lainnya' => 'nullable|array|max:9',
             'gambar_lainnya.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
@@ -260,6 +266,10 @@ class ProdukController extends Controller
             if ($isKainBatik) {
                 $validated['ukuran'] = 'Lembaran Kain';
             }
+        }
+
+        if ($request->filled('ukuran')) {
+            $validated['ukuran'] = $request->input('ukuran');
         }
 
         $validated['stok'] = (int) ($validated['stok'] ?? $produk->stok);
