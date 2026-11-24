@@ -350,12 +350,12 @@
                     <!-- Size Selector -->
                     @if($isKain)
                         <div class="space-y-1.5 pt-1">
-                            <span class="text-stone-900 font-bold text-xs sm:text-sm block">Format Wastra</span>
-                            <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#FAF7F2] border border-[#D5CABB] text-xs font-bold text-stone-800">
+                            <span class="text-stone-900 font-bold text-xs sm:text-sm block">Ukuran Kain</span>
+                            <div class="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl bg-[#FAF7F2] border border-[#D5CABB] text-xs font-bold text-stone-800">
                                 <span>🧵</span>
-                                <span>Lembaran Kain Utuh (2,40 m × 1,15 m)</span>
+                                <span>Lembaran Kain Batik (2,4 m × 1,15 m)</span>
                             </div>
-                            <p class="text-[11px] text-stone-500">Kain batik siap potong dan jahit sesuai selera model busana Anda.</p>
+                            <p class="text-[11px] text-stone-500">Kain batik siap potong dan jahit sesuai selera pakaian Anda.</p>
                         </div>
                     @else
                         <div class="space-y-3 pt-1">
@@ -369,15 +369,15 @@
                                 </button>
                             </div>
 
-                            <!-- Size Buttons from Database -->
-                            <div class="flex flex-wrap items-center gap-2.5">
+                            <!-- Size Buttons from Database (Full Width) -->
+                            <div class="flex flex-wrap items-center gap-2.5 w-full">
                                 @foreach($stokUkuranArray as $sz => $stk)
                                     <button type="button"
                                             @click="selectSize('{{ $sz }}')"
                                             :class="selectedSize === '{{ $sz }}'
                                                 ? 'bg-[#201A17] text-white shadow-xs'
                                                 : '{{ $stk <= 0 ? 'bg-stone-100 text-stone-400 border border-stone-200 opacity-60' : 'bg-[#FAF7F2] text-stone-800 border border-[#D5CABB] hover:border-stone-800 cursor-pointer' }}'"
-                                            class="min-w-12 h-11 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center transition-all duration-150">
+                                            class="flex-1 min-w-[64px] h-11 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center transition-all duration-150">
                                         {{ $sz }}
                                         @if($stk <= 5 && $stk > 0)
                                             <span class="ml-1 text-[9px] text-amber-500">({{ $stk }})</span>
