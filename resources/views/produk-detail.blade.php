@@ -388,14 +388,8 @@
                             </div>
 
                             <!-- Dynamic Size Subtext -->
-                            <div class="text-xs text-stone-500 pt-0.5">
-                                <span x-show="!selectedSize" class="text-[#8C6D58] font-medium flex items-center gap-1.5">
-                                    <svg class="w-3.5 h-3.5 text-[#8C6D58] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    Silakan klik salah satu ukuran di atas untuk memilih
-                                </span>
-                                <span x-show="selectedSize">
-                                    Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong>
-                                </span>
+                            <div x-show="selectedSize" class="text-xs text-stone-500 pt-0.5">
+                                Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong>
                             </div>
                         </div>
                     @endif
