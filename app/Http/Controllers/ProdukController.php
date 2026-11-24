@@ -333,14 +333,21 @@ class ProdukController extends Controller
             'catatan' => 'nullable|string|max:255',
         ]);
 
-        $payload = ['stok' => (int) $validated['stok']];
+        $payload = [
+            'stok' => (int) $validated['stok'],
+            'stock' => (int) $validated['stok'],
+        ];
 
         if ($request->filled('stok_ukuran')) {
             $stokUkuran = $request->input('stok_ukuran');
+            $totalStok = array_sum(array_map('intval', $stokUkuran));
             $payload['stok_ukuran'] = $stokUkuran;
             $payload['size_stock'] = $stokUkuran;
-            $payload['stok'] = array_sum(array_map('intval', $stokUkuran));
+            $payload['stok'] = $totalStok;
+            $payload['stock'] = $totalStok;
         }
+
+        $payload['status'] = \App\Models\Product::statusForStock($payload['stock']);
 
         $produk->update($payload);
 
