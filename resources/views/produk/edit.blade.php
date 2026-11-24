@@ -45,6 +45,26 @@
 
         @php
             $stokUkuran = $produk->getStokUkuranArray();
+            $oldStokUkuran = old('stok_ukuran');
+            if (is_array($oldStokUkuran) && !empty($oldStokUkuran)) {
+                $initialSizes = [];
+                foreach ($oldStokUkuran as $sName => $sStock) {
+                    $initialSizes[] = ['name' => (string) $sName, 'stock' => (int) $sStock];
+                }
+            } elseif (!empty($stokUkuran)) {
+                $initialSizes = [];
+                foreach ($stokUkuran as $sName => $sStock) {
+                    $initialSizes[] = ['name' => (string) $sName, 'stock' => (int) $sStock];
+                }
+            } else {
+                $initialSizes = [
+                    ['name' => 'S', 'stock' => 4],
+                    ['name' => 'M', 'stock' => 4],
+                    ['name' => 'L', 'stock' => 4],
+                    ['name' => 'XL', 'stock' => 4],
+                    ['name' => 'XXL', 'stock' => 2],
+                ];
+            }
         @endphp
         {{-- Main Two-Column Form --}}
         <form action="{{ route('produk.update', $produk) }}" method="POST" enctype="multipart/form-data" class="space-y-6"
@@ -53,21 +73,53 @@
                   get isKain() {
                       return (this.kategori || '').toLowerCase().includes('kain');
                   },
-                  stokS: {{ (int) old('stok_ukuran.S', $stokUkuran['S'] ?? $stokUkuran['s'] ?? 0) }},
-                  stokM: {{ (int) old('stok_ukuran.M', $stokUkuran['M'] ?? $stokUkuran['m'] ?? 0) }},
-                  stokL: {{ (int) old('stok_ukuran.L', $stokUkuran['L'] ?? $stokUkuran['l'] ?? 0) }},
-                  stokXL: {{ (int) old('stok_ukuran.XL', $stokUkuran['XL'] ?? $stokUkuran['xl'] ?? 0) }},
-                  stokXXL: {{ (int) old('stok_ukuran.XXL', $stokUkuran['XXL'] ?? $stokUkuran['xxl'] ?? 0) }},
+                  sizes: {{ json_encode($initialSizes) }},
+                  newSizeInput: '',
+                  bulkStockInput: '',
+                  addSize(name) {
+                      const trimmed = (name || this.newSizeInput || '').trim();
+                      if (!trimmed) return;
+                      const exists = this.sizes.some(s => s.name.toUpperCase() === trimmed.toUpperCase());
+                      if (!exists) {
+                          this.sizes.push({ name: trimmed, stock: 0 });
+                      }
+                      this.newSizeInput = '';
+                  },
+                  hasSize(name) {
+                      return this.sizes.some(s => s.name.toUpperCase() === name.toUpperCase());
+                  },
+                  toggleSize(name) {
+                      const idx = this.sizes.findIndex(s => s.name.toUpperCase() === name.toUpperCase());
+                      if (idx >= 0) {
+                          this.sizes.splice(idx, 1);
+                      } else {
+                          this.sizes.push({ name: name, stock: 0 });
+                      }
+                  },
+                  removeSize(index) {
+                      this.sizes.splice(index, 1);
+                  },
+                  applyBulkStock() {
+                      const val = parseInt(this.bulkStockInput);
+                      if (isNaN(val) || val < 0) return;
+                      this.sizes.forEach(s => s.stock = val);
+                      this.bulkStockInput = '';
+                  },
+                  resetDefaultSizes() {
+                      this.sizes = [
+                          { name: 'S', stock: 4 },
+                          { name: 'M', stock: 4 },
+                          { name: 'L', stock: 4 },
+                          { name: 'XL', stock: 4 },
+                          { name: 'XXL', stock: 2 }
+                      ];
+                  },
                   stokKain: {{ (int) old('stok', $produk->stok) }},
                   get totalStok() {
                       if (this.isKain) {
                           return parseInt(this.stokKain) || 0;
                       }
-                      return (parseInt(this.stokS) || 0) +
-                             (parseInt(this.stokM) || 0) +
-                             (parseInt(this.stokL) || 0) +
-                             (parseInt(this.stokXL) || 0) +
-                             (parseInt(this.stokXXL) || 0);
+                      return this.sizes.reduce((sum, s) => sum + (parseInt(s.stock) || 0), 0);
                   }
               }">
             @csrf
@@ -238,12 +290,8 @@
                                     <label class="block text-xs font-bold text-[#1E1B18]">
                                         <span x-text="isKain ? 'Stok Kain (Lembar) *' : 'Total Stok (Akumulasi) *'">Total Stok *</span>
                                     </label>
-                                    <span class="text-[9px] font-bold px-1.5 py-0.2 rounded"
-                                          :class="totalStok > 5 ? 'text-emerald-700 bg-emerald-50' : (totalStok > 0 ? 'text-[#8C5E28] bg-[#FAF0E4]' : 'text-rose-700 bg-rose-50')"
-                                          x-text="totalStok > 5 ? 'BATAS AMAN' : (totalStok > 0 ? 'MENIPIS' : 'HABIS')">
-                                        BATAS AMAN
-                                    </span>
                                 </div>
+                                
                                 {{-- Jika Bahan Kain: Input manual jumlah lembar kain --}}
                                 <div x-show="isKain">
                                     <input type="number"
@@ -263,64 +311,149 @@
                                            :disabled="isKain"
                                            readonly
                                            class="w-full py-2.5 px-3.5 rounded-xl border border-[#E8DFC8] bg-[#FAF0E4]/70 text-xs text-[#1E1B18] font-bold cursor-not-allowed select-none">
-                                    <p class="text-[10px] text-[#8C6D58] mt-1 flex items-center gap-1">
-                                        <span>✓</span>
-                                        <span>Otomatis dari rincian ukuran di bawah.</span>
-                                    </p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Card 2: Ukuran Baju & Alokasi Stok --}}
-                    <div class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-4">
+                    {{-- Card 2: Ukuran Baju & Alokasi Stok (Variasi) --}}
+                    <div class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-5">
                         <div class="flex items-center justify-between">
-                            <h3 class="font-bold text-sm text-[#1E1B18]">Ukuran Baju &amp; Alokasi Stok</h3>
+                            <div>
+                                <h3 class="font-bold text-sm text-[#1E1B18]">Variasi Ukuran &amp; Alokasi Stok</h3>
+                                <p class="text-[11px] text-[#8C827A] mt-0.5">Pilih atau tambahkan ukuran busana yang tersedia beserta alokasi stok masing-masing.</p>
+                            </div>
                             <span class="text-[10px] font-semibold text-[#8C6D58] bg-[#FAF0E4] px-2.5 py-0.5 rounded-full border border-[#E8D9C5]"
-                                  x-text="isKain ? 'Bahan Lembaran Wastra' : 'Ukuran Baju'">
+                                  x-text="isKain ? 'Bahan Lembaran Wastra' : (sizes.length + ' Variasi Aktif')">
                             </span>
                         </div>
 
-                        {{-- Alokasi Stok Ukuran (Khusus Busana / Bukan Kain) --}}
-                        <div x-show="!isKain" x-transition>
-                            <div class="flex items-center justify-between mb-2">
-                                <label class="block text-xs font-bold text-[#1E1B18]">
-                                    Stok Setiap Ukuran Busana <span class="text-rose-500">*</span>
-                                </label>
-                                <span class="text-[10px] text-stone-500">
-                                    Total: <strong class="text-[#1E1B18]" x-text="totalStok + ' unit'"></strong>
-                                </span>
+                        {{-- Bagian Khusus Busana (Bukan Bahan Kain) --}}
+                        <div x-show="!isKain" x-transition class="space-y-4">
+
+                            {{-- 1. Pilihan / Tambah Opsi Ukuran (Gaya Shopee Variasi) --}}
+                            <div class="rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <label class="block text-xs font-bold text-[#1E1B18]">
+                                        Pilihan Opsi Ukuran <span class="text-rose-500">*</span>
+                                    </label>
+                                    <span class="text-[11px] text-stone-500">Klik untuk mengaktifkan / menonaktifkan ukuran</span>
+                                </div>
+
+                                {{-- Presets / Rekomendasi Ukuran Cepat --}}
+                                <div class="flex flex-wrap items-center gap-1.5">
+                                    <span class="text-[11px] font-semibold text-stone-600 mr-1">Rekomendasi:</span>
+                                    @foreach(['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', 'All Size'] as $presetSize)
+                                        <button type="button"
+                                                @click="toggleSize('{{ $presetSize }}')"
+                                                :class="hasSize('{{ $presetSize }}')
+                                                    ? 'bg-[#1E1B18] text-white border-[#1E1B18] shadow-xs'
+                                                    : 'bg-white text-stone-700 border-[#D9D0C5] hover:border-[#8C6D58] hover:bg-[#FAF0E4]'"
+                                                class="px-2.5 py-1 rounded-lg text-xs font-bold border transition flex items-center gap-1 cursor-pointer">
+                                            <span x-show="hasSize('{{ $presetSize }}')">✓</span>
+                                            <span x-show="!hasSize('{{ $presetSize }}')">+</span>
+                                            <span>{{ $presetSize }}</span>
+                                        </button>
+                                    @endforeach
+                                </div>
+
+                                {{-- Input Tambah Ukuran Kustom --}}
+                                <div class="pt-1 flex items-center gap-2">
+                                    <div class="relative flex-1">
+                                        <input type="text"
+                                               x-model="newSizeInput"
+                                               @keydown.enter.prevent="addSize()"
+                                               placeholder="Tambah ukuran lain (misal: 5XL, Anak, Custom, LD 110)..."
+                                               class="w-full py-2 px-3 rounded-xl border border-[#D9D0C5] bg-white text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] transition">
+                                    </div>
+                                    <button type="button"
+                                            @click="addSize()"
+                                            class="shrink-0 px-3.5 py-2 rounded-xl bg-[#8C6D58] hover:bg-[#735845] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        <span>Tambah Ukuran</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                                @php
-                                    $sizesConfig = [
-                                        'S' => ['ld' => 'LD: 100cm', 'var' => 'stokS'],
-                                        'M' => ['ld' => 'LD: 104cm', 'var' => 'stokM'],
-                                        'L' => ['ld' => 'LD: 108cm', 'var' => 'stokL'],
-                                        'XL' => ['ld' => 'LD: 114cm', 'var' => 'stokXL'],
-                                        'XXL' => ['ld' => 'LD: 120cm', 'var' => 'stokXXL'],
-                                    ];
-                                @endphp
-                                @foreach($sizesConfig as $sz => $cfg)
-                                    <div class="rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] p-3 text-center space-y-2 hover:border-[#8C6D58]/40 transition">
-                                        <div class="flex items-center justify-between">
-                                            <span class="font-serif font-bold text-sm text-[#1E1B18]">{{ $sz }}</span>
-                                            <span class="text-[9px] text-[#8C827A]">{{ $cfg['ld'] }}</span>
-                                        </div>
-                                        <div>
-                                            <label class="block text-[9px] font-semibold text-stone-500 mb-1">Stok {{ $sz }}</label>
-                                            <input type="number"
-                                                   name="stok_ukuran[{{ $sz }}]"
-                                                   x-model.number="{{ $cfg['var'] }}"
-                                                   :disabled="isKain"
-                                                   min="0"
-                                                   max="100000"
-                                                   placeholder="0"
-                                                   class="w-full text-center py-1.5 px-2 rounded-lg border border-[#D9D0C5] bg-white text-xs font-extrabold text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58]">
-                                        </div>
+                            {{-- 2. Daftar & Alokasi Stok Ukuran (Tabel Variasi Gaya Shopee) --}}
+                            <div class="space-y-3">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-[#ECE5D8]">
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="text-xs font-bold text-[#1E1B18]">Daftar Stok Variasi</h4>
+                                        <span class="text-[11px] text-stone-500">
+                                            (Total: <strong class="text-[#8C6D58]" x-text="totalStok + ' unit'"></strong> dari <span x-text="sizes.length"></span> variasi)
+                                        </span>
                                     </div>
-                                @endforeach
+
+                                    {{-- Fitur Cepat 'Terapkan Ke Semua' seperti Shopee --}}
+                                    <div x-show="sizes.length > 1" class="flex items-center gap-1.5 bg-[#FAF7F2] p-1.5 rounded-xl border border-[#ECE5D8]">
+                                        <span class="text-[10px] text-stone-600 font-medium pl-1">Isi serentak:</span>
+                                        <input type="number"
+                                               x-model.number="bulkStockInput"
+                                               min="0"
+                                               placeholder="Qty"
+                                               class="w-16 py-1 px-2 text-center rounded-lg border border-[#D9D0C5] bg-white text-xs font-bold text-[#1E1B18] focus:outline-none focus:ring-1 focus:ring-[#8C6D58]">
+                                        <button type="button"
+                                                @click="applyBulkStock()"
+                                                class="px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-bold transition cursor-pointer">
+                                            Terapkan ke Semua
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {{-- Dynamic Variant Items Grid/Table --}}
+                                <div x-show="sizes.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                    <template x-for="(s, index) in sizes" :key="s.name">
+                                        <div class="relative rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] p-3 text-center space-y-2 hover:border-[#8C6D58]/50 transition group shadow-2xs">
+                                            {{-- Delete Button --}}
+                                            <button type="button"
+                                                    @click="removeSize(index)"
+                                                    title="Hapus variasi ukuran ini"
+                                                    class="absolute top-1.5 right-1.5 w-5 h-5 rounded-md text-stone-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center text-xs transition cursor-pointer">
+                                                &times;
+                                            </button>
+
+                                            <div class="pr-3 text-left">
+                                                <span class="font-serif font-bold text-sm text-[#1E1B18] block truncate" x-text="s.name"></span>
+                                                <span class="text-[9px] text-[#8C827A]"
+                                                      x-text="{
+                                                          'XS': 'LD ~100cm',
+                                                          'S': 'LD ~104cm',
+                                                          'M': 'LD ~108cm',
+                                                          'L': 'LD ~112cm',
+                                                          'XL': 'LD ~116cm',
+                                                          'XXL': 'LD ~120cm',
+                                                          '3XL': 'LD ~124cm',
+                                                          '4XL': 'LD ~128cm',
+                                                          'All Size': 'Semua Ukuran'
+                                                      }[s.name] || 'Variasi Kustom'"></span>
+                                            </div>
+
+                                            <div>
+                                                <label class="block text-[9px] font-semibold text-stone-500 mb-1">Stok Unit</label>
+                                                <input type="number"
+                                                       :name="'stok_ukuran[' + s.name + ']'"
+                                                       x-model.number="s.stock"
+                                                       :disabled="isKain"
+                                                       min="0"
+                                                       max="100000"
+                                                       placeholder="0"
+                                                       class="w-full text-center py-1.5 px-2 rounded-lg border border-[#D9D0C5] bg-white text-xs font-extrabold text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58]">
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                {{-- Empty State when all sizes removed --}}
+                                <div x-show="sizes.length === 0" class="p-6 text-center rounded-xl border border-dashed border-[#D9D0C5] bg-[#FAF7F2] space-y-2">
+                                    <p class="text-xs text-stone-500">Belum ada variasi ukuran yang dipilih untuk busana ini.</p>
+                                    <button type="button"
+                                            @click="resetDefaultSizes()"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0E4] hover:bg-[#F3E5D4] text-[#8C6D58] border border-[#E8D9C5] text-xs font-bold transition cursor-pointer">
+                                        <span>↺</span>
+                                        <span>Gunakan Ukuran Standar (S, M, L, XL, XXL)</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

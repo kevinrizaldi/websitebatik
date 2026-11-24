@@ -67,11 +67,15 @@
           sizeStockMap: {{ json_encode($stokUkuranArray) }},
           totalStock: {{ $stokProduk }},
           sizeDescriptions: {
+              'XS': '100 cm',
               'S': '104 cm',
               'M': '108 cm',
               'L': '112 cm',
               'XL': '116 cm',
-              'XXL': '120 cm'
+              'XXL': '120 cm',
+              '3XL': '124 cm',
+              '4XL': '128 cm',
+              'All Size': 'Semua Ukuran'
           },
           quantity: 1,
           descOpen: true,
@@ -357,7 +361,7 @@
 
                             <!-- Dynamic Size Subtext -->
                             <div class="text-xs text-stone-500 pt-0.5">
-                                Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong> | Lingkar Dada: <span class="font-semibold text-stone-800" x-text="sizeDescriptions[selectedSize] || '108 cm'"></span>
+                                Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong> | Lingkar Dada: <span class="font-semibold text-stone-800" x-text="sizeDescriptions[selectedSize] || 'Standar'"></span>
                             </div>
                         </div>
                     @endif

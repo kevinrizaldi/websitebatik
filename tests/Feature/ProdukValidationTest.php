@@ -529,4 +529,33 @@ class ProdukValidationTest extends TestCase
             'panduan_ukuran' => 'Panduan Baru: LD toleransi 1-2 cm',
         ]);
     }
+
+    public function test_can_create_and_update_product_with_custom_dynamic_sizes(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Outer Batik Etnik Multi Ukuran',
+            'sku' => 'BJU-CUSTOM-SIZES',
+            'kategori' => 'Baju Batik',
+            'harga' => 450000,
+            'stok_ukuran' => [
+                'XS' => 3,
+                'S' => 6,
+                '3XL' => 2,
+                'All Size' => 5,
+            ],
+            'status' => 'Tersedia',
+        ]);
+
+        $response->assertRedirect(route('produk.index'));
+
+        $product = Produk::where('sku', 'BJU-CUSTOM-SIZES')->firstOrFail();
+        $this->assertEquals(16, $product->stok);
+        $this->assertEquals('XS, S, 3XL, All Size', $product->ukuran);
+
+        $stockArray = $product->getStokUkuranArray();
+        $this->assertEquals(3, $stockArray['XS']);
+        $this->assertEquals(6, $stockArray['S']);
+        $this->assertEquals(2, $stockArray['3XL']);
+        $this->assertEquals(5, $stockArray['All Size']);
+    }
 }
