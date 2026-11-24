@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Models\User;
-use App\Notifications\MobileResetPasswordNotification;
+use App\Notifications\ResetPasswordOtpNotification;
 use App\Services\GoogleAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -193,7 +193,7 @@ class AuthController extends Controller
                 'updated_at' => now(),
             ]);
 
-            $user->notify(new MobileResetPasswordNotification($otp));
+            $user->notify(new ResetPasswordOtpNotification($otp));
         }
 
         // Selalu return sukses (keamanan: tidak bocorkan apakah email terdaftar)
