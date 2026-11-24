@@ -10,7 +10,7 @@
                          class="h-7 w-auto object-contain">
                 </div>
                 <p class="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-sm">
-                    Batik Modern & Olahan Kain Sisa Berkelanjutan. Menjaga warisan tekstil Nusantara melalui inovasi kriya beretika dan potongan adibusana ramah lingkungan.
+                    Batik Modern & Kerajinan Ramah Lingkungan. Menjaga warisan budaya Nusantara dengan kualitas bahan terbaik dan jahitan rapi buatan pengrajin lokal.
                 </p>
                 <div class="pt-1">
 
@@ -64,7 +64,7 @@
             <div class="lg:col-span-3 space-y-3">
                 <h4 class="font-bold text-stone-900 text-sm whitespace-nowrap">Media Sosial & Buletin</h4>
                 <p class="text-xs sm:text-sm text-stone-600 leading-relaxed">
-                    Dapatkan akses awal untuk rilisan eksklusif dan seri upcycle terbatas.
+                    Dapatkan informasi produk terbaru dan penawaran menarik dari kami.
                 </p>
                 <div class="flex items-center gap-3 pt-1">
                     <a href="#" class="w-9 h-9 rounded-full bg-white border border-stone-200/90 shadow-2xs flex items-center justify-center text-stone-700 hover:text-stone-950 hover:border-stone-300 transition" title="Instagram">

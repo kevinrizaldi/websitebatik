@@ -7,7 +7,7 @@
         ? 'Rp ' . number_format((float)$produk->harga_coret, 0, ',', '.')
         : null;
     $materialProduk = $produk->material ?: 'Katun Primissima Halus Benang 60s';
-    $deskripsiProduk = $produk->deskripsi ?: 'Koleksi busana batik eksklusif bermutu tinggi berdaya pakai harian dan formal.';
+    $deskripsiProduk = $produk->deskripsi ?: 'Koleksi batik berkualitas tinggi yang nyaman dipakai untuk sehari-hari maupun acara formal.';
     $gambarProduk = $produk ? $produk->gambar_url : asset('images/beranda/folded-shirts.jpg');
     $stokProduk = (int) ($produk->stok ?? 0);
     $isKain = str_contains(strtolower($kategoriProduk), 'kain');
@@ -86,7 +86,7 @@
               'XXL': '120 cm',
               '3XL': '124 cm',
               '4XL': '128 cm',
-              'All Size': 'Semua Ukuran'
+              'All Size': 'Satu Ukuran (All Size)'
           },
           quantity: 1,
           descOpen: true,
@@ -141,7 +141,7 @@
                   return;
               }
               if (this.quantity >= max) {
-                  this.showToast('Maksimal jumlah pesanan adalah ' + max + ' item sesuai stok yang tersedia');
+                  this.showToast('Maksimal pemesanan ' + max + ' pcs sesuai sisa stok');
                   return;
               }
               this.quantity++;
@@ -163,7 +163,7 @@
               }
               if (this.quantity > max) {
                   this.quantity = max;
-                  this.showToast('Jumlah pesanan disesuaikan dengan stok tersedia (' + max + ' pcs)');
+                  this.showToast('Jumlah pesanan disesuaikan dengan sisa stok (' + max + ' pcs)');
                   return;
               }
 
@@ -352,7 +352,7 @@
                                 <span>🧵</span>
                                 <span>Lembaran Kain Batik (2,4 m × 1,15 m)</span>
                             </div>
-                            <p class="text-[11px] text-stone-500">Kain batik siap potong dan jahit sesuai selera pakaian Anda.</p>
+                            <p class="text-[11px] text-stone-500">Kain batik siap dijahit sesuai model pakaian yang Anda inginkan.</p>
                         </div>
                     @else
                         <div class="space-y-3 pt-1">
@@ -422,7 +422,7 @@
                             <svg class="w-4 h-4 text-stone-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                             </svg>
-                            <span x-text="totalStock <= 0 || (selectedSize && currentMaxStock <= 0) ? 'Stok Habis' : (isAdding ? 'Menyimpan...' : 'Tambah ke Keranjang')"></span>
+                            <span x-text="totalStock <= 0 || (selectedSize && currentMaxStock <= 0) ? 'Stok Habis' : (isAdding ? 'Memproses...' : 'Tambah ke Keranjang')"></span>
                         </button>
                     </div>
 
@@ -477,11 +477,11 @@
                     @endif
 
                     <div class="overflow-x-auto">
-                        <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Tabel Acuan Standar</div>
+                        <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Panduan Ukuran Baju (cm)</div>
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="border-b border-stone-200 text-stone-500 font-semibold">
-                                    <th class="py-2.5">Size</th>
+                                    <th class="py-2.5">Ukuran</th>
                                     <th class="py-2.5">Lingkar Dada</th>
                                     <th class="py-2.5">Panjang Baju</th>
                                     <th class="py-2.5">Panjang Lengan</th>
@@ -519,19 +519,19 @@
                     <ul class="space-y-1.5 text-stone-700 text-xs sm:text-sm pt-2">
                         <li class="flex items-start gap-2">
                             <span class="text-stone-400">•</span>
-                            <span><strong>Potongan:</strong> Regular Fit modern kerah kancing tersembunyi</span>
+                            <span><strong>Model:</strong> Regular Fit yang pas di badan, kerah rapi dengan kancing dalam</span>
                         </li>
                         <li class="flex items-start gap-2">
                             <span class="text-stone-400">•</span>
-                            <span><strong>Bahan:</strong> Katun Prima Halus kombinasi soga alam non-alergi</span>
+                            <span><strong>Bahan:</strong> Katun Prima Halus, adem dan nyaman di kulit</span>
                         </li>
                         <li class="flex items-start gap-2">
                             <span class="text-stone-400">•</span>
-                            <span><strong>Kancing:</strong> Tempurung kelapa eksklusif dengan jahitan silang kuat</span>
+                            <span><strong>Kancing:</strong> Kancing batok kelapa alami dengan jahitan kuat dan rapi</span>
                         </li>
                         <li class="flex items-start gap-2">
                             <span class="text-stone-400">•</span>
-                            <span><strong>Saku:</strong> Dada kiri satu pasang dengan motif menyambung sempurna (matching pattern)</span>
+                            <span><strong>Saku:</strong> Satu saku di dada kiri dengan motif batik yang menyatu rapi</span>
                         </li>
                     </ul>
                 </div>
@@ -563,7 +563,7 @@
                             @endfor
                         </div>
                         <span class="font-bold text-stone-900 text-sm block">
-                            {{ $ratingAvg >= 4.5 ? 'Puas Sempurna' : ($ratingAvg >= 4.0 ? 'Sangat Baik' : ($ratingCount > 0 ? 'Cukup Puas' : 'Produk Autentik')) }}
+                            {{ $ratingAvg >= 4.5 ? 'Sangat Puas' : ($ratingAvg >= 4.0 ? 'Sangat Baik' : ($ratingCount > 0 ? 'Cukup Puas' : 'Batik Asli')) }}
                         </span>
                         <span class="text-xs text-stone-400 mt-0.5 block">
                             @if($ratingCount > 0)
@@ -645,7 +645,7 @@
                 @else
                     <div class="bg-white rounded-2xl p-8 border border-dashed border-[#DCD2C3] text-center">
                         <p class="font-bold text-stone-900 text-sm">Belum ada ulasan untuk produk ini</p>
-                        <p class="text-xs text-stone-500 mt-1">Ulasan dapat diberikan setelah pesanan Anda berstatus Selesai melalui menu Pesanan Saya.</p>
+                        <p class="text-xs text-stone-500 mt-1">Ulasan dapat diberikan setelah pesanan selesai diterima melalui menu Pesanan Saya.</p>
                     </div>
                 @endif
 
@@ -687,7 +687,7 @@
                                             </h3>
                                         </a>
                                         <p class="text-[11px] text-stone-500 line-clamp-1 mb-3">
-                                            {{ $rel->deskripsi ?: 'Koleksi busana batik autentik premium.' }}
+                                            {{ $rel->deskripsi ?: 'Koleksi batik berkualitas buatan pengrajin lokal.' }}
                                         </p>
                                     </div>
                                     <div class="flex items-center justify-between pt-2 border-t border-stone-100">
@@ -729,7 +729,7 @@
     <div x-cloak x-show="sizeGuideModal" class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/70 backdrop-blur-sm p-4" @click="sizeGuideModal = false">
         <div class="relative max-w-lg w-full bg-white rounded-3xl p-6 sm:p-8" @click.stop>
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-stone-100">
-                <h3 class="font-serif-title text-xl font-bold text-stone-900">Panduan Ukuran Busana</h3>
+                <h3 class="font-serif-title text-xl font-bold text-stone-900">Panduan Ukuran Baju</h3>
                 <button @click="sizeGuideModal = false" class="text-stone-400 hover:text-stone-800 text-xl font-bold">&times;</button>
             </div>
             @if(!empty($produk->panduan_ukuran))
@@ -742,11 +742,11 @@
                 </div>
             @endif
             <div class="overflow-x-auto text-xs sm:text-sm">
-                <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Tabel Acuan Standar</div>
+                <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Panduan Ukuran Baju (cm)</div>
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-stone-200 text-stone-500 font-semibold">
-                            <th class="py-2.5">Size</th>
+                            <th class="py-2.5">Ukuran</th>
                             <th class="py-2.5">Lingkar Dada</th>
                             <th class="py-2.5">Panjang Baju</th>
                             <th class="py-2.5">Panjang Lengan</th>

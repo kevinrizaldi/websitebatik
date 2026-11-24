@@ -281,7 +281,7 @@
                     Jelajahi Koleksi
                 </h2>
                 <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
-                    Menghadirkan pesona wastra nusantara dalam potongan tren masa kini.
+                    Menghadirkan keindahan batik nusantara dalam model pakaian masa kini.
                 </p>
             </div>
 
@@ -356,7 +356,7 @@
                     Produk Unggulan
                 </h2>
                 <p class="text-stone-600 text-sm sm:text-base mt-2 max-w-xl">
-                    Pilihan terbaik yang menggabungkan estetika tradisi dan fesyen modern.
+                    Pilihan terbaik yang memadukan corak tradisional dengan gaya modern.
                 </p>
             </div>
 
@@ -481,7 +481,7 @@
                     </p>
 
                     <p class="text-stone-600 text-xs sm:text-sm leading-relaxed mb-8">
-                        Hamzah Style hadir sebagai wujud cinta dan dedikasi mendalam terhadap warisan wastra Nusantara. Kami menghadirkan busana batik autentik yang dirancang harmonis dengan sentuhan gaya modern kontemporer, sekaligus memelopori gerakan kriya beretika dengan mengolah kain sisa menjadi karya bernilai artistik tinggi dan ramah lingkungan.
+                        Hamzah Style hadir dengan kecintaan pada batik Indonesia. Kami menghadirkan pakaian batik berkualitas dengan desain modern, sekaligus memanfaatkan sisa kain batik menjadi aneka kerajinan yang bermanfaat dan ramah lingkungan.
                     </p>
 
                     <!-- 3 Feature Cards -->
@@ -494,7 +494,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-bold text-stone-900 text-sm">Warisan Mahakarya Nusantara</h4>
+                                <h4 class="font-bold text-stone-900 text-sm">Batik Asli Warisan Nusantara</h4>
                                 <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
                                     Menjaga keaslian motif batik, ketelitian canting manual, dan teknik cap tradisional warisan leluhur.
                                 </p>
@@ -509,9 +509,9 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-bold text-stone-900 text-sm">Desain Modern Berkelanjutan</h4>
+                                <h4 class="font-bold text-stone-900 text-sm">Ramah Lingkungan & Bermanfaat</h4>
                                 <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
-                                    Mengolah kain sirkular upcycled bernilai estetika premium untuk gaya hidup ramah lingkungan.
+                                    Memanfaatkan sisa kain batik berkualitas menjadi aneka produk yang unik dan ramah lingkungan.
                                 </p>
                             </div>
                         </div>
@@ -526,7 +526,7 @@
                             <div>
                                 <h4 class="font-bold text-stone-900 text-sm">Pemberdayaan Komunitas Pengrajin</h4>
                                 <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
-                                    Bermitra langsung dengan sentra perajin lokal di sentra batik Yogyakarta, Solo, &amp; Pekalongan.
+                                    Bermitra langsung dengan para pengrajin lokal di Yogyakarta, Solo, dan Pekalongan.
                                 </p>
                             </div>
                         </div>
