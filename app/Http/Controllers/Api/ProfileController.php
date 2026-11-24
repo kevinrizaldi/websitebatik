@@ -89,7 +89,6 @@ class ProfileController extends Controller
             'postal_code' => ['nullable', 'string', 'max:10'],
             'province_id' => ['nullable', 'integer'],
             'city_id' => ['nullable', 'integer'],
->>> 9a9ee45dead25d6bb1566e8db5a2e99ce2ff553d
             'is_primary' => ['nullable', 'boolean'],
         ]);
 
@@ -118,7 +117,6 @@ class ProfileController extends Controller
             'postal_code' => $validated['postal_code'] ?: '',
             'province_id' => $validated['province_id'] ?? null,
             'city_id' => $validated['city_id'] ?? null,
->>> 9a9ee45dead25d6bb1566e8db5a2e99ce2ff553d
             'is_primary' => $isPrimary,
         ]);
 
@@ -151,7 +149,6 @@ class ProfileController extends Controller
             'postal_code' => ['sometimes', 'nullable', 'string', 'max:10'],
             'province_id' => ['sometimes', 'nullable', 'integer'],
             'city_id' => ['sometimes', 'nullable', 'integer'],
->>> 9a9ee45dead25d6bb1566e8db5a2e99ce2ff553d
             'is_primary' => ['sometimes', 'boolean'],
         ]);
 

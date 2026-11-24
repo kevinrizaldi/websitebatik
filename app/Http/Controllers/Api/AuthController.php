@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -142,6 +144,66 @@ class AuthController extends Controller
         $request->user()?->currentAccessToken()?->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * Send a password reset link to the given user via email.
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'email'],
+        ]);
+
+        $status = Password::sendResetLink($validated);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return response()->json([
+                'message' => 'Tautan pemulihan kata sandi telah dikirim ke email Anda.',
+            ]);
+        }
+
+        return response()->json([
+            'message' => __($status),
+            'errors' => [
+                'email' => [__($status)],
+            ],
+        ], 422);
+    }
+
+    /**
+     * Reset the given user's password using the token received in email.
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $status = Password::reset(
+            $validated,
+            function (User $user) use ($validated) {
+                $user->forceFill([
+                    'password' => Hash::make($validated['password']),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Kata sandi berhasil diperbarui. Silakan masuk dengan kata sandi baru Anda.',
+            ]);
+        }
+
+        return response()->json([
+            'message' => __($status),
+            'errors' => [
+                'email' => [__($status)],
+            ],
+        ], 422);
     }
 
     private function formatUser(User $user): array

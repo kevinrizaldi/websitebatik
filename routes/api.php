@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ShippingController;
->>> 9a9ee45dead25d6bb1566e8db5a2e99ce2ff553d
+use App\Http\Controllers\RajaOngkirController;
 use Illuminate\Support\Facades\Route;
 
 // Public endpoints
@@ -15,6 +15,8 @@ Route::get('/health', fn (): array => ['ok' => true]);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/auth/google', [AuthController::class, 'google']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::get('/categories', [ProductController::class, 'categories']);
 Route::get('/products', [ProductController::class, 'index']);

@@ -1,356 +1,243 @@
 <x-storefront-layout title="Pesanan Saya — Hamzah Style Official">
-    <div class="min-h-screen bg-[#FAF7F2] py-8 sm:py-10"
-         x-data="{
-             activeTab: 'semua',
-             searchQuery: '',
-             trackingModalOpen: false,
-             detailModalOpen: false,
-             selectedOrder: null,
-             reviewOrder: null,
-             reviewItem: null,
-             reviewDrafts: {},
+@php
+    $ordersData = [];
+    if (isset($orders) && $orders->isNotEmpty()) {
+        foreach ($orders as $ord) {
+            $deadline = $ord->getEffectivePaymentDeadline();
+            $isExpired = $ord->isPaymentExpired();
+            $statusRaw = $isExpired ? 'dibatalkan' : strtolower(trim($ord->status));
+            $statusKey = match($statusRaw) {
+                'belum dibayar', 'menunggu pembayaran' => 'menunggu_pembayaran',
+                'menunggu verifikasi', 'sudah dibayar' => 'diproses',
+                'diproses', 'sedang diproses' => 'diproses',
+                'dikirim', 'sedang dikirim' => 'dikirim',
+                'selesai' => 'selesai',
+                'batal', 'dibatalkan' => 'dibatalkan',
+                default => 'menunggu_pembayaran',
+            };
+            $statusLabel = match($statusRaw) {
+                'menunggu verifikasi' => 'Menunggu Verifikasi',
+                default => match($statusKey) {
+                    'menunggu_pembayaran' => 'Menunggu Pembayaran',
+                    'diproses' => 'Diproses',
+                    'dikirim' => 'Dikirim',
+                    'selesai' => 'Selesai',
+                    'dibatalkan' => 'Dibatalkan',
+                    default => $ord->status,
+                },
+            };
+            $trackingNo = $ord->tracking_number ?: ($ord->shipment?->tracking_number ?: ($ord->shipment?->no_resi ?: 'JNE-88291039912'));
+            $ordCourier = $ord->shipment?->ekspedisi ?: ($ord->shipment?->courier ?: 'JNE Reguler');
+            $firstItem = $ord->items->first();
+            $otherItemsCount = max(0, $ord->items->count() - 1);
+            $categoryTag = $firstItem?->produk?->kategori?->nama_kategori ?? 'BATIK KATUN PRIMISSIMA';
+            $categoryTag = strtoupper($categoryTag);
+            $diff = now()->diff($deadline);
+            $isPast = $deadline->isPast() || $isExpired;
+            if ($isPast) {
+                $initialBatasBayar = 'Waktu pembayaran telah habis';
+            } else {
+                $totalHours = ($diff->d * 24) + $diff->h;
+                $initialBatasBayar = sprintf('%02d jam %02d menit', $totalHours, $diff->i);
+            }
 
-             orders: [
-                 @if(isset($orders) && $orders->isNotEmpty())
-                     @foreach($orders as $ord)
-                     @php
-                         $deadline = $ord->getEffectivePaymentDeadline();
-                         $isExpired = $ord->isPaymentExpired();
-                         $statusRaw = $isExpired ? 'dibatalkan' : strtolower(trim($ord->status));
-                         $statusKey = match($statusRaw) {
-                             'belum dibayar', 'menunggu pembayaran' => 'menunggu_pembayaran',
-                             'menunggu verifikasi', 'sudah dibayar' => 'diproses',
-                             'diproses', 'sedang diproses' => 'diproses',
-                             'dikirim', 'sedang dikirim' => 'dikirim',
-                             'selesai' => 'selesai',
-                             'batal', 'dibatalkan' => 'dibatalkan',
-                             default => 'menunggu_pembayaran'
-                         };
-                         $statusLabel = match($statusRaw) {
-                             'menunggu verifikasi' => 'Menunggu Verifikasi',
-                             default => match($statusKey) {
-                                 'menunggu_pembayaran' => 'Menunggu Pembayaran',
-                                 'diproses' => 'Diproses',
-                                 'dikirim' => 'Dikirim',
-                                 'selesai' => 'Selesai',
-                                 'dibatalkan' => 'Dibatalkan',
-                                 default => $ord->status
-                             }
-                         };
-                         $trackingNo = $ord->tracking_number ?: ($ord->shipment?->tracking_number ?: ($ord->shipment?->no_resi ?: 'JNE-88291039912'));
-                         $ordCourier = $ord->shipment?->ekspedisi ?: ($ord->shipment?->courier ?: 'JNE Reguler');
-                         $firstItem = $ord->items->first();
-                         $otherItemsCount = max(0, $ord->items->count() - 1);
-                         $categoryTag = $firstItem?->produk?->kategori?->nama_kategori ?? 'BATIK KATUN PRIMISSIMA';
-                         $categoryTag = strtoupper($categoryTag);
-                         $deadline = $ord->getEffectivePaymentDeadline();
-                         $diff = now()->diff($deadline);
-                         $isPast = $deadline->isPast() || $isExpired;
-                         if ($isPast) {
-                             $initialBatasBayar = 'Waktu pembayaran telah habis';
-                         } else {
-                             $totalHours = ($diff->d * 24) + $diff->h;
-                             $initialBatasBayar = sprintf('%02d jam %02d menit', $totalHours, $diff->i);
-                         }
-                     @endphp
-                     {
-                         id: '{{ $ord->code }}',
-                         dbId: {{ $ord->id }},
-                         tanggal: '{{ $ord->created_at->format('d M Y, H:i') }} WIB',
-                         status: '{{ $statusKey }}',
-                         statusLabel: '{{ $statusLabel }}',
-                         categoryTag: '{{ addslashes($categoryTag) }}',
-                         nama: '{{ addslashes($firstItem?->produk_name ?? 'Kemeja Batik Premium') }}',
-                         varian: 'Ukuran: L • Lengan Panjang',
-                         extraItemsCount: {{ $otherItemsCount }},
-                         extraItemsText: '{{ $otherItemsCount > 0 ? "+ {$otherItemsCount} produk lainnya" : "" }}',
-                         total: {{ (float) $ord->total_price }},
-                         batasBayarText: '{{ $initialBatasBayar }}',
-                         deadlineTimestamp: {{ $deadline->getTimestamp() * 1000 }},
-                         kurir: '{{ addslashes($ordCourier) }}',
-                         noResi: '{{ addslashes($trackingNo) }}',
-                         estimasi: 'Estimasi tiba besok di Jakarta Selatan',
-                         penerima: '{{ addslashes($ord->customer_name) }}',
-                         metodePembayaran: '{{ addslashes($ord->payment_method ?? 'Transfer Bank') }}',
-                         alamat: '{{ addslashes($ord->address) }}',
-                         gambar: '{{ $firstItem?->produk ? $firstItem->produk->gambar_url : asset('images/beranda/folded-shirts.jpg') }}',
-                         items: [
-                             @foreach($ord->items as $it)
-                             @php
-                                 $itReviewed = isset($reviewMap[$ord->id][$it->produk_id]);
-                                 $itReview = $reviewMap[$ord->id][$it->produk_id] ?? null;
-                             @endphp
-                             {
-                                 produk_id: {{ (int) $it->produk_id }},
-                                 nama: @json($it->produk_name),
-                                 harga: {{ (float) $it->price }},
-                                 qty: {{ (int) $it->quantity }},
-                                 gambar: @json($it->produk ? $it->produk->gambar_url : asset('images/beranda/folded-shirts.jpg')),
-                                 reviewed: {{ $itReviewed ? 'true' : 'false' }},
-                                 review: @json($itReview)
-                             }@if(!$loop->last),@endif
-                             @endforeach
-                         ]
-                     }@if(!$loop->last),@endif
-                     @endforeach
-                 @else
-                     {{-- Mockup Default Data Preserving Exact Visuals from Design Image 2 --}}
-                     {
-                         id: 'HSO-20250218-0849',
-                         dbId: 101,
-                         tanggal: '18 Feb 2025, 14:30 WIB',
-                         status: 'menunggu_pembayaran',
-                         statusLabel: 'Menunggu Pembayaran',
-                         categoryTag: 'BATIK KATUN PRIMISSIMA',
-                         categoryIcon: 'tag',
-                         nama: 'Kemeja Batik Parang Seling Premium',
-                         varian: 'Ukuran: L • Lengan Panjang',
-                         extraItemsCount: 2,
-                         extraItemsText: '+ 2 produk lainnya',
-                         total: 871000,
-                         batasBayarText: '05 jam 22 menit',
-                         kurir: 'JNE Reguler',
-                         noResi: null,
-                         estimasi: 'Estimasi tiba 20 Feb 2025',
-                         penerima: 'Budi Santoso',
-                         metodePembayaran: 'Transfer Bank BCA',
-                         alamat: 'Jl. Senopati No. 42, RT 02 / RW 03, Kel. Senayan, Kec. Kebayoran Baru, Jakarta Selatan',
-                         gambar: '{{ asset('images/beranda/folded-shirts.jpg') }}',
-                         items: [
-                             { produk_id: 1, nama: 'Kemeja Batik Parang Seling Premium', harga: 385000, qty: 1, gambar: '{{ asset('images/beranda/folded-shirts.jpg') }}' },
-                             { produk_id: 2, nama: 'Rompi Kawung Sisa Tenun', harga: 330000, qty: 1, gambar: '{{ asset('images/beranda/folded-shirts.jpg') }}' }
-                         ]
-                     },
-                     {
-                         id: 'HSO-20250218-0842',
-                         dbId: 102,
-                         tanggal: '18 Feb 2025, 09:30 WIB',
-                         status: 'diproses',
-                         statusLabel: 'Diproses',
-                         categoryTag: 'UPCYCLED KRIYA NUSANTARA',
-                         categoryIcon: 'refresh',
-                         nama: 'Rompi Kawung Sisa Tenun Etnik',
-                         varian: 'Ukuran: All Size • Edisi Terbatas',
-                         extraItemsCount: 0,
-                         extraItemsText: '',
-                         total: 485000,
-                         batasBayarText: null,
-                         kurir: 'SiCepat Reguler',
-                         noResi: '002938192831',
-                         estimasi: 'Estimasi tiba 21 Feb 2025',
-                         penerima: 'Budi Santoso',
-                         metodePembayaran: 'Mandiri VA',
-                         alamat: 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                         gambar: '{{ asset('images/beranda/folded-shirts.jpg') }}',
-                         items: [
-                             { produk_id: 3, nama: 'Rompi Kawung Sisa Tenun Etnik', harga: 485000, qty: 1, gambar: '{{ asset('images/beranda/folded-shirts.jpg') }}' }
-                         ]
-                     },
-                     {
-                         id: 'HSO-20250214-0412',
-                         dbId: 103,
-                         tanggal: '14 Feb 2025, 10:15 WIB',
-                         status: 'dikirim',
-                         statusLabel: 'Dikirim',
-                         categoryTag: 'ZERO-WASTE UPCYCLED CRAFT',
-                         categoryIcon: 'refresh',
-                         nama: 'Artisan Patchwork Batik Tote Bag',
-                         varian: 'Varian: Soga Indigo Tan Leather • Edisi Terbatas',
-                         extraItemsCount: 0,
-                         extraItemsText: '',
-                         total: 265000,
-                         batasBayarText: null,
-                         kurir: 'JNE Reguler',
-                         noResi: 'JNE-88291039912',
-                         estimasi: 'Estimasi tiba besok, 20 Feb 2025 di Jakarta Selatan',
-                         penerima: 'Budi Santoso',
-                         metodePembayaran: 'QRIS Gopay',
-                         alamat: 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                         gambar: '{{ asset('images/beranda/bags-accessories.jpg') }}',
-                         items: [
-                             { produk_id: 4, nama: 'Artisan Patchwork Batik Tote Bag', harga: 265000, qty: 1, gambar: '{{ asset('images/beranda/bags-accessories.jpg') }}' }
-                         ]
-                     },
-                     {
-                         id: 'HSO-20250129-0190',
-                         dbId: 104,
-                         tanggal: '29 Jan 2025, 16:40 WIB',
-                         status: 'selesai',
-                         statusLabel: 'Selesai',
-                         categoryTag: 'BATIK TULIS HALUS CANTING',
-                         categoryIcon: 'pen',
-                         nama: 'Kain Batik Tulis Motif Truntum Sutra',
-                         varian: 'Dimensi: 240 x 115 cm • Bahan Sutra ATBM',
-                         extraItemsCount: 0,
-                         extraItemsText: '',
-                         total: 650000,
-                         batasBayarText: null,
-                         kurir: 'JNE YES',
-                         noResi: 'JNE-77182901239',
-                         estimasi: 'Telah Diterima',
-                         penerima: 'Diterima oleh Rian A.',
-                         metodePembayaran: 'Transfer Bank BCA',
-                         alamat: 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                         gambar: '{{ asset('images/beranda/cloth-fabric.jpg') }}',
-                         items: [
-                             { produk_id: 5, nama: 'Kain Batik Tulis Motif Truntum Sutra', harga: 650000, qty: 1, gambar: '{{ asset('images/beranda/cloth-fabric.jpg') }}' }
-                         ]
-                     },
-                     {
-                         id: 'HSO-20250115-0102',
-                         dbId: 105,
-                         tanggal: '15 Jan 2025, 11:20 WIB',
-                         status: 'selesai',
-                         statusLabel: 'Selesai',
-                         categoryTag: 'BATIK KATUN PRIMISSIMA',
-                         categoryIcon: 'tag',
-                         nama: 'Kemeja Batik Katun Parang Seling Kencana',
-                         varian: 'Ukuran: L • Lengan Panjang',
-                         extraItemsCount: 0,
-                         extraItemsText: '',
-                         total: 385000,
-                         batasBayarText: null,
-                         kurir: 'JNE Reguler',
-                         noResi: 'JNE-66152431092',
-                         estimasi: 'Telah Diterima',
-                         penerima: 'Diterima oleh Budi Santoso',
-                         metodePembayaran: 'BCA VA',
-                         alamat: 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                         gambar: '{{ asset('images/beranda/folded-shirts.jpg') }}',
-                         items: [
-                             { produk_id: 6, nama: 'Kemeja Batik Katun Parang Seling Kencana', harga: 385000, qty: 1, gambar: '{{ asset('images/beranda/folded-shirts.jpg') }}' }
-                         ]
-                     }
-                 @endif
-             ],
+            $orderItems = [];
+            foreach ($ord->items as $it) {
+                $itReviewed = isset($reviewMap[$ord->id][$it->produk_id]);
+                $itReview = $reviewMap[$ord->id][$it->produk_id] ?? null;
+                $orderItems[] = [
+                    'produk_id' => (int) $it->produk_id,
+                    'nama' => (string) ($it->produk_name ?? ''),
+                    'harga' => (float) $it->price,
+                    'qty' => (int) $it->quantity,
+                    'gambar' => (string) ($it->produk ? $it->produk->gambar_url : asset('images/beranda/folded-shirts.jpg')),
+                    'reviewed' => (bool) $itReviewed,
+                    'review' => $itReview,
+                ];
+            }
 
-             nowTime: Date.now(),
-            init() {
-                setInterval(() => {
-                    this.nowTime = Date.now();
-                }, 1000);
-            },
+            $ordersData[] = [
+                'id' => (string) $ord->code,
+                'dbId' => (int) $ord->id,
+                'tanggal' => $ord->created_at->format('d M Y, H:i') . ' WIB',
+                'status' => $statusKey,
+                'statusLabel' => $statusLabel,
+                'categoryTag' => $categoryTag,
+                'nama' => (string) ($firstItem?->produk_name ?? 'Kemeja Batik Premium'),
+                'varian' => 'Ukuran: L • Lengan Panjang',
+                'extraItemsCount' => $otherItemsCount,
+                'extraItemsText' => $otherItemsCount > 0 ? "+ {$otherItemsCount} produk lainnya" : '',
+                'total' => (float) $ord->total_price,
+                'batasBayarText' => $initialBatasBayar,
+                'deadlineTimestamp' => $deadline->getTimestamp() * 1000,
+                'kurir' => (string) $ordCourier,
+                'noResi' => (string) $trackingNo,
+                'estimasi' => 'Estimasi tiba besok di Jakarta Selatan',
+                'penerima' => (string) ($ord->customer_name ?? ''),
+                'metodePembayaran' => (string) ($ord->payment_method ?? 'Transfer Bank'),
+                'alamat' => (string) ($ord->address ?? ''),
+                'gambar' => (string) ($firstItem?->produk ? $firstItem->produk->gambar_url : asset('images/beranda/folded-shirts.jpg')),
+                'items' => $orderItems,
+            ];
+        }
+    } else {
+        $ordersData = [
+            [
+                'id' => 'HSO-20250218-0849',
+                'dbId' => 101,
+                'tanggal' => '18 Feb 2025, 14:30 WIB',
+                'status' => 'menunggu_pembayaran',
+                'statusLabel' => 'Menunggu Pembayaran',
+                'categoryTag' => 'BATIK KATUN PRIMISSIMA',
+                'categoryIcon' => 'tag',
+                'nama' => 'Kemeja Batik Parang Seling Premium',
+                'varian' => 'Ukuran: L • Lengan Panjang',
+                'extraItemsCount' => 2,
+                'extraItemsText' => '+ 2 produk lainnya',
+                'total' => 871000,
+                'batasBayarText' => '05 jam 22 menit',
+                'kurir' => 'JNE Reguler',
+                'noResi' => null,
+                'estimasi' => 'Estimasi tiba 20 Feb 2025',
+                'penerima' => 'Budi Santoso',
+                'metodePembayaran' => 'Transfer Bank BCA',
+                'alamat' => 'Jl. Senopati No. 42, RT 02 / RW 03, Kel. Senayan, Kec. Kebayoran Baru, Jakarta Selatan',
+                'gambar' => asset('images/beranda/folded-shirts.jpg'),
+                'items' => [
+                    ['produk_id' => 1, 'nama' => 'Kemeja Batik Parang Seling Premium', 'harga' => 385000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
+                    ['produk_id' => 2, 'nama' => 'Rompi Kawung Sisa Tenun', 'harga' => 330000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
+                ],
+            ],
+            [
+                'id' => 'HSO-20250218-0842',
+                'dbId' => 102,
+                'tanggal' => '18 Feb 2025, 09:30 WIB',
+                'status' => 'diproses',
+                'statusLabel' => 'Diproses',
+                'categoryTag' => 'UPCYCLED KRIYA NUSANTARA',
+                'categoryIcon' => 'refresh',
+                'nama' => 'Rompi Kawung Sisa Tenun Etnik',
+                'varian' => 'Ukuran: All Size • Edisi Terbatas',
+                'extraItemsCount' => 0,
+                'extraItemsText' => '',
+                'total' => 485000,
+                'batasBayarText' => null,
+                'kurir' => 'SiCepat Reguler',
+                'noResi' => '002938192831',
+                'estimasi' => 'Estimasi tiba 21 Feb 2025',
+                'penerima' => 'Budi Santoso',
+                'metodePembayaran' => 'Mandiri VA',
+                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
+                'gambar' => asset('images/beranda/folded-shirts.jpg'),
+                'items' => [
+                    ['produk_id' => 3, 'nama' => 'Rompi Kawung Sisa Tenun Etnik', 'harga' => 485000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
+                ],
+            ],
+            [
+                'id' => 'HSO-20250214-0412',
+                'dbId' => 103,
+                'tanggal' => '14 Feb 2025, 16:45 WIB',
+                'status' => 'dikirim',
+                'statusLabel' => 'Dikirim',
+                'categoryTag' => 'BATIK TULIS ASLI PEKALONGAN',
+                'categoryIcon' => 'tag',
+                'nama' => 'Kain Jarik Tulis Pola Sekar Jagad',
+                'varian' => 'Ukuran: 2.4 x 1.15m • Katun Primissima',
+                'extraItemsCount' => 0,
+                'extraItemsText' => '',
+                'total' => 1250000,
+                'batasBayarText' => null,
+                'kurir' => 'JNE Reguler',
+                'noResi' => 'JNE-88291039912',
+                'estimasi' => 'Estimasi tiba besok di Jakarta Selatan',
+                'penerima' => 'Budi Santoso',
+                'metodePembayaran' => 'BCA Virtual Account',
+                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
+                'gambar' => asset('images/beranda/folded-shirts.jpg'),
+                'items' => [
+                    ['produk_id' => 4, 'nama' => 'Kain Jarik Tulis Pola Sekar Jagad', 'harga' => 1250000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
+                ],
+            ],
+            [
+                'id' => 'HSO-20250210-0231',
+                'dbId' => 104,
+                'tanggal' => '10 Feb 2025, 10:15 WIB',
+                'status' => 'selesai',
+                'statusLabel' => 'Selesai',
+                'categoryTag' => 'BATIK PRINTING PREMIUM',
+                'categoryIcon' => 'tag',
+                'nama' => 'Outer Batik Mega Mendung Modern',
+                'varian' => 'Ukuran: M • Katun Halus',
+                'extraItemsCount' => 0,
+                'extraItemsText' => '',
+                'total' => 275000,
+                'batasBayarText' => null,
+                'kurir' => 'JNE Reguler',
+                'noResi' => 'JNE-99281726152',
+                'estimasi' => 'Telah Diterima',
+                'penerima' => 'Diterima oleh Budi Santoso',
+                'metodePembayaran' => 'GoPay',
+                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
+                'gambar' => asset('images/beranda/folded-shirts.jpg'),
+                'items' => [
+                    ['produk_id' => 5, 'nama' => 'Outer Batik Mega Mendung Modern', 'harga' => 275000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
+                ],
+            ],
+            [
+                'id' => 'HSO-20250115-0102',
+                'dbId' => 105,
+                'tanggal' => '15 Jan 2025, 11:20 WIB',
+                'status' => 'selesai',
+                'statusLabel' => 'Selesai',
+                'categoryTag' => 'BATIK KATUN PRIMISSIMA',
+                'categoryIcon' => 'tag',
+                'nama' => 'Kemeja Batik Katun Parang Seling Kencana',
+                'varian' => 'Ukuran: L • Lengan Panjang',
+                'extraItemsCount' => 0,
+                'extraItemsText' => '',
+                'total' => 385000,
+                'batasBayarText' => null,
+                'kurir' => 'JNE Reguler',
+                'noResi' => 'JNE-66152431092',
+                'estimasi' => 'Telah Diterima',
+                'penerima' => 'Diterima oleh Budi Santoso',
+                'metodePembayaran' => 'BCA VA',
+                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
+                'gambar' => asset('images/beranda/folded-shirts.jpg'),
+                'items' => [
+                    ['produk_id' => 6, 'nama' => 'Kemeja Batik Katun Parang Seling Kencana', 'harga' => 385000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
+                ],
+            ],
+            [
+                'id' => 'HSO-20250105-0019',
+                'dbId' => 106,
+                'tanggal' => '05 Jan 2025, 08:10 WIB',
+                'status' => 'dibatalkan',
+                'statusLabel' => 'Dibatalkan',
+                'categoryTag' => 'BATIK KATUN PRIMISSIMA',
+                'categoryIcon' => 'tag',
+                'nama' => 'Kain Panjang Batik Pola Parang Rusak',
+                'varian' => 'Ukuran: 2.2 x 1.15m • Katun Primissima',
+                'extraItemsCount' => 0,
+                'extraItemsText' => '',
+                'total' => 320000,
+                'batasBayarText' => 'Waktu pembayaran telah habis',
+                'kurir' => 'JNE Reguler',
+                'noResi' => null,
+                'estimasi' => 'Dibatalkan',
+                'penerima' => 'Budi Santoso',
+                'metodePembayaran' => 'BCA Virtual Account',
+                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
+                'gambar' => asset('images/beranda/folded-shirts.jpg'),
+                'items' => [
+                    ['produk_id' => 7, 'nama' => 'Kain Panjang Batik Pola Parang Rusak', 'harga' => 320000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
+                ],
+            ],
+        ];
+    }
+@endphp
 
-            getBatasBayar(order) {
-                if (!order.deadlineTimestamp) {
-                    return order.batasBayarText || 'Waktu pembayaran telah habis';
-                }
-                const diff = Math.floor((order.deadlineTimestamp - this.nowTime) / 1000);
-                if (diff <= 0) {
-                    return 'Waktu pembayaran telah habis';
-                }
-                const hours = Math.floor(diff / 3600);
-                const minutes = Math.floor((diff % 3600) / 60);
-                const seconds = diff % 60;
-                if (hours > 0) {
-                    return `${String(hours).padStart(2, '0')} jam ${String(minutes).padStart(2, '0')} menit`;
-                }
-                return `${String(minutes).padStart(2, '0')} menit ${String(seconds).padStart(2, '0')} detik`;
-            },
-
-            get filteredOrders() {
-                 return this.orders.filter(order => {
-                     const matchTab = (this.activeTab === 'semua') || (order.status === this.activeTab);
-                     const q = this.searchQuery.trim().toLowerCase();
-                     if (!q) return matchTab;
-                     const matchId = order.id.toLowerCase().includes(q);
-                     const matchName = order.nama.toLowerCase().includes(q);
-                     return matchTab && (matchId || matchName);
-                 });
-             },
-
-             get counts() {
-                 return {
-                     semua: this.orders.length,
-                     menunggu_pembayaran: this.orders.filter(o => o.status === 'menunggu_pembayaran').length,
-                     diproses: this.orders.filter(o => o.status === 'diproses').length,
-                     dikirim: this.orders.filter(o => o.status === 'dikirim').length,
-                     selesai: this.orders.filter(o => o.status === 'selesai').length
-                 };
-             },
-
-             formatRupiah(num) {
-                 return 'Rp ' + Number(num).toLocaleString('id-ID');
-             },
-
-             copyText(txt) {
-                 if (!txt) return;
-                 navigator.clipboard.writeText(txt);
-                 window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Berhasil disalin: ' + txt }));
-             },
-
-             openTracking(order) {
-                 this.selectedOrder = order;
-                 this.trackingModalOpen = true;
-             },
-
-             openDetail(order) {
-                 this.selectedOrder = order;
-                 this.detailModalOpen = true;
-             },
-
-             openReview(order, item) {
-                 this.reviewOrder = order;
-                 this.reviewItem = item;
-                 this.reviewDrafts = {
-                     [item.produk_id]: { rating: 5, comment: '', image: null, submitting: false, error: '' }
-                 };
-                 this.reviewModalOpen = true;
-             },
-
-             setReviewImage(produkId, event) {
-                 const file = event?.target?.files?.[0] ?? null;
-                 if (this.reviewDrafts[produkId]) this.reviewDrafts[produkId].image = file;
-             },
-
-             async submitItemReview(item) {
-                 const draft = this.reviewDrafts[item.produk_id];
-                 if (!draft || draft.submitting) return;
-                 draft.error = '';
-                 if (!draft.comment || draft.comment.trim().length < 3) {
-                     draft.error = 'Komentar minimal 3 karakter.';
-                     return;
-                 }
-                 draft.submitting = true;
-                 const form = new FormData();
-                 form.append('produk_id', item.produk_id);
-                 form.append('order_code', this.reviewOrder.id);
-                 form.append('rating', draft.rating);
-                 form.append('comment', draft.comment.trim());
-                 if (draft.image) form.append('image', draft.image);
-
-                 try {
-                     const res = await fetch(@json(route('ulasan.store')), {
-                         method: 'POST',
-                         headers: {
-                             'X-CSRF-TOKEN': @json(csrf_token()),
-                             'Accept': 'application/json',
-                             'X-Requested-With': 'XMLHttpRequest',
-                         },
-                         body: form,
-                     });
-                     const data = await res.json().catch(() => ({}));
-                     if (!res.ok || data.success === false) {
-                         draft.error = data.message || 'Gagal mengirim ulasan. Coba lagi.';
-                         return;
-                     }
-                     item.reviewed = true;
-                     item.review = { rating: draft.rating, comment: draft.comment.trim() };
-                     delete this.reviewDrafts[item.produk_id];
-                     window.dispatchEvent(new CustomEvent('show-toast', { detail: data.message || 'Ulasan berhasil dikirim.' }));
-                     this.reviewModalOpen = false;
-                 } catch (e) {
-                     draft.error = 'Tidak bisa terhubung. Periksa koneksi lalu coba lagi.';
-                 } finally {
-                     draft.submitting = false;
-                 }
-             },
-
-             submitReview() {
-                 const firstPending = (this.reviewOrder?.items || []).find(i => !i.reviewed && this.reviewDrafts[i.produk_id]);
-                 if (firstPending) this.submitItemReview(firstPending);
-             }
-         }">
+    <div class="min-h-screen bg-[#FAF7F2] py-8 sm:py-10" x-data="pesananPage()">
 
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
@@ -400,6 +287,12 @@
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Selesai</span>
                             <span class="text-xs" x-text="counts.selesai">2</span>
+                        </button>
+                        <button @click="activeTab = 'dibatalkan'"
+                                :class="activeTab === 'dibatalkan' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
+                                class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
+                            <span>Dibatalkan</span>
+                            <span class="text-xs" x-text="counts.dibatalkan">0</span>
                         </button>
                     </div>
 
@@ -461,6 +354,12 @@
                                             <span class="inline-flex items-center gap-1.5 rounded-full bg-[#201A17] px-3 py-1 text-xs font-semibold text-white">
                                                 <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
                                                 <span>Selesai</span>
+                                            </span>
+                                        </template>
+                                        <template x-if="order.status === 'dibatalkan'">
+                                            <span class="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-rose-200/80 px-3 py-1 text-xs font-semibold text-rose-700">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+                                                <span>Dibatalkan</span>
                                             </span>
                                         </template>
                                     </div>
@@ -554,6 +453,13 @@
                                         <template x-if="order.status === 'diproses'">
                                             <p class="text-stone-500">Pesanan sedang dalam proses kurasi dan penjahitan oleh pengrajin.</p>
                                         </template>
+
+                                        <template x-if="order.status === 'dibatalkan'">
+                                            <div class="flex items-center gap-2 text-stone-500">
+                                                <svg class="h-4 w-4 text-rose-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 9l-6 6m0-6l6 6"/></svg>
+                                                <span>Pesanan telah dibatalkan</span>
+                                            </div>
+                                        </template>
                                     </div>
 
                                     {{-- Sisi Kanan: Tombol Aksi --}}
@@ -569,14 +475,32 @@
                                             <span>Lihat Detail</span>
                                         </button>
 
-                                        {{-- Tombol Status Menunggu Pembayaran -> Bayar Sekarang --}}
+                                        {{-- Tombol Status Menunggu Pembayaran -> Batalkan & Bayar Sekarang --}}
                                         <template x-if="order.status === 'menunggu_pembayaran'">
-                                            <a :href="'{{ url('/pembayaran') }}/' + order.id"
-                                               class="inline-flex items-center gap-1.5 rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-stone-800">
-                                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/>
-                                                </svg>
-                                                <span>Bayar Sekarang</span>
+                                            <div class="flex items-center gap-2">
+                                                <form :action="'{{ url('/pesanan') }}/' + (order.dbId || order.id) + '/batal'" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pesanan ini?')">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit"
+                                                            class="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-600 transition hover:bg-stone-50 hover:text-rose-600">
+                                                        <span>Batalkan</span>
+                                                    </button>
+                                                </form>
+                                                <a :href="'{{ url('/pembayaran') }}/' + order.id"
+                                                   class="inline-flex items-center gap-1.5 rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-stone-800">
+                                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/>
+                                                    </svg>
+                                                    <span>Bayar Sekarang</span>
+                                                </a>
+                                            </div>
+                                        </template>
+
+                                        {{-- Tombol Status Dibatalkan -> Beli Lagi --}}
+                                        <template x-if="order.status === 'dibatalkan'">
+                                            <a href="{{ route('koleksi.index') }}"
+                                               class="inline-flex items-center gap-1.5 rounded-xl bg-[#F5EDE1] px-4 py-2 text-xs font-semibold text-stone-800 transition hover:bg-[#EFE4D5]">
+                                                <span>Beli Lagi</span>
                                             </a>
                                         </template>
 
@@ -882,4 +806,153 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function pesananPage() {
+            return {
+                activeTab: 'semua',
+                searchQuery: '',
+                trackingModalOpen: false,
+                detailModalOpen: false,
+                reviewModalOpen: false,
+                selectedOrder: null,
+                reviewOrder: null,
+                reviewItem: null,
+                reviewDrafts: {},
+                orders: @json($ordersData),
+                nowTime: Date.now(),
+
+                init() {
+                    setInterval(() => {
+                        this.nowTime = Date.now();
+                    }, 1000);
+                },
+
+                getBatasBayar(order) {
+                    if (!order.deadlineTimestamp) {
+                        return order.batasBayarText || 'Waktu pembayaran telah habis';
+                    }
+                    const diff = Math.floor((order.deadlineTimestamp - this.nowTime) / 1000);
+                    if (diff <= 0) {
+                        return 'Waktu pembayaran telah habis';
+                    }
+                    const hours = Math.floor(diff / 3600);
+                    const minutes = Math.floor((diff % 3600) / 60);
+                    const seconds = diff % 60;
+                    if (hours > 0) {
+                        return `${String(hours).padStart(2, '0')} jam ${String(minutes).padStart(2, '0')} menit`;
+                    }
+                    return `${String(minutes).padStart(2, '0')} menit ${String(seconds).padStart(2, '0')} detik`;
+                },
+
+                get filteredOrders() {
+                    return this.orders.filter(order => {
+                        const matchTab = (this.activeTab === 'semua') || (order.status === this.activeTab);
+                        const q = this.searchQuery.trim().toLowerCase();
+                        if (!q) return matchTab;
+                        const matchId = (order.id || '').toLowerCase().includes(q);
+                        const matchName = (order.nama || '').toLowerCase().includes(q);
+                        return matchTab && (matchId || matchName);
+                    });
+                },
+
+                get counts() {
+                    return {
+                        semua: this.orders.length,
+                        menunggu_pembayaran: this.orders.filter(o => o.status === 'menunggu_pembayaran').length,
+                        diproses: this.orders.filter(o => o.status === 'diproses').length,
+                        dikirim: this.orders.filter(o => o.status === 'dikirim').length,
+                        selesai: this.orders.filter(o => o.status === 'selesai').length,
+                        dibatalkan: this.orders.filter(o => o.status === 'dibatalkan').length
+                    };
+                },
+
+                formatRupiah(num) {
+                    return 'Rp ' + Number(num).toLocaleString('id-ID');
+                },
+
+                copyText(txt) {
+                    if (!txt) return;
+                    navigator.clipboard.writeText(txt);
+                    window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Berhasil disalin: ' + txt }));
+                },
+
+                openTracking(order) {
+                    this.selectedOrder = order;
+                    this.trackingModalOpen = true;
+                },
+
+                openDetail(order) {
+                    this.selectedOrder = order;
+                    this.detailModalOpen = true;
+                },
+
+                openReview(order, item) {
+                    this.reviewOrder = order;
+                    this.reviewItem = item;
+                    this.reviewDrafts = {
+                        [item.produk_id]: { rating: 5, comment: '', image: null, submitting: false, error: '' }
+                    };
+                    this.reviewModalOpen = true;
+                },
+
+                setReviewImage(produkId, event) {
+                    const file = event?.target?.files?.[0] ?? null;
+                    if (this.reviewDrafts[produkId]) this.reviewDrafts[produkId].image = file;
+                },
+
+                async submitItemReview(item) {
+                    const draft = this.reviewDrafts[item.produk_id];
+                    if (!draft || draft.submitting) return;
+                    draft.error = '';
+                    if (!draft.comment || draft.comment.trim().length < 3) {
+                        draft.error = 'Komentar minimal 3 karakter.';
+                        return;
+                    }
+                    draft.submitting = true;
+                    const form = new FormData();
+                    form.append('produk_id', item.produk_id);
+                    form.append('order_code', this.reviewOrder.id);
+                    form.append('rating', draft.rating);
+                    form.append('comment', draft.comment.trim());
+                    if (draft.image) form.append('image', draft.image);
+
+                    try {
+                        const res = await fetch(@json(route('ulasan.store')), {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': @json(csrf_token()),
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                            body: form,
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || data.success === false) {
+                            draft.error = data.message || 'Gagal mengirim ulasan. Coba lagi.';
+                            return;
+                        }
+                        item.reviewed = true;
+                        item.review = { rating: draft.rating, comment: draft.comment.trim() };
+                        delete this.reviewDrafts[item.produk_id];
+                        window.dispatchEvent(new CustomEvent('show-toast', { detail: data.message || 'Ulasan berhasil dikirim.' }));
+                        this.reviewModalOpen = false;
+                    } catch (e) {
+                        draft.error = 'Tidak bisa terhubung. Periksa koneksi lalu coba lagi.';
+                    } finally {
+                        draft.submitting = false;
+                    }
+                },
+
+                submitReview() {
+                    const firstPending = (this.reviewOrder?.items || []).find(i => !i.reviewed && this.reviewDrafts[i.produk_id]);
+                    if (firstPending) this.submitItemReview(firstPending);
+                }
+            };
+        }
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('pesananPage', pesananPage);
+        });
+    </script>
 </x-storefront-layout>
