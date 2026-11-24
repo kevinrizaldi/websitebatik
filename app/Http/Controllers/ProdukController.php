@@ -150,6 +150,8 @@ class ProdukController extends Controller
 
         if ($request->filled('ukuran')) {
             $validated['ukuran'] = $request->input('ukuran');
+        } elseif (empty($validated['ukuran'])) {
+            $validated['ukuran'] = $isKainBatik ? 'Lembaran Kain' : 'S, M, L, XL, XXL';
         }
 
         $validated['stok'] = (int) ($validated['stok'] ?? 0);
@@ -272,6 +274,8 @@ class ProdukController extends Controller
 
         if ($request->filled('ukuran')) {
             $validated['ukuran'] = $request->input('ukuran');
+        } elseif (empty($validated['ukuran'])) {
+            $validated['ukuran'] = $isKainBatik ? 'Lembaran Kain' : 'S, M, L, XL, XXL';
         }
 
         $validated['stok'] = (int) ($validated['stok'] ?? $produk->stok);

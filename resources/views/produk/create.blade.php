@@ -332,18 +332,8 @@
                             </div>
                         </div>
 
-                        {{-- Ukuran Baju Row --}}
-                        <div>
-                            <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
-                                Ukuran Baju
-                            </label>
-                            <input type="text"
-                                   name="ukuran"
-                                   value="{{ old('ukuran', 'S, M, L, XL, XXL') }}"
-                                   placeholder="Contoh: S, M, L, XL, XXL"
-                                   class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
-                            <input type="hidden" name="material" value="{{ old('material', 'Katun Primissima Halus 60s, Batik Cap kombinasi Tulis canting tembaga') }}">
-                        </div>
+                        {{-- Hidden inputs --}}
+                        <input type="hidden" name="material" value="{{ old('material', 'Katun Primissima Halus 60s, Batik Cap kombinasi Tulis canting tembaga') }}">
 
                         {{-- Panduan Ukuran Produk --}}
                         <div x-show="!isKain" x-transition>
