@@ -114,6 +114,109 @@
                           { name: 'XXL', stock: 0 }
                       ];
                   },
+                  heroPreview: '{{ $produk->gambar ? asset('storage/' . $produk->gambar) : '' }}',
+                  dragOverHero: false,
+                  dragOverOther: false,
+                  handleHeroChange(event) {
+                      const file = event.target.files[0];
+                      if (file) {
+                          if (file.size > 2 * 1024 * 1024) {
+                              alert('Ukuran berkas melebihi batas 2 MB.');
+                              event.target.value = '';
+                              return;
+                          }
+                          this.heroPreview = URL.createObjectURL(file);
+                      }
+                  },
+                  handleHeroDrop(event) {
+                      this.dragOverHero = false;
+                      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+                          const file = event.dataTransfer.files[0];
+                          if (!file.type.startsWith('image/')) return;
+                          if (file.size > 2 * 1024 * 1024) {
+                              alert('Ukuran berkas melebihi batas 2 MB.');
+                              return;
+                          }
+                          const input = document.getElementById('heroImageInput');
+                          const dt = new DataTransfer();
+                          dt.items.add(file);
+                          if (input) input.files = dt.files;
+                          this.heroPreview = URL.createObjectURL(file);
+                      }
+                  },
+                  removeHero() {
+                      this.heroPreview = '';
+                      const input = document.getElementById('heroImageInput');
+                      if (input) input.value = '';
+                  },
+                  triggerHeroUpload() {
+                      document.getElementById('heroImageInput').click();
+                  },
+                  otherPreviews: [
+                      @if(!empty($produk->gambar_lainnya) && is_array($produk->gambar_lainnya))
+                          @foreach($produk->gambar_lainnya as $idx => $img)
+                              {
+                                  id: 'existing_{{ $idx }}',
+                                  url: '{{ asset('storage/' . $img) }}',
+                                  path: '{{ $img }}',
+                                  isExisting: true,
+                                  file: null,
+                                  name: 'Foto {{ $idx + 1 }}'
+                              },
+                          @endforeach
+                      @endif
+                  ],
+                  deletedOtherImages: [],
+                  slotLabels: ['Detail Serat', 'Pola Motif', 'Tampak Belakang', 'Ramah Lingkungan'],
+                  handleOtherChange(event) {
+                      this.addOtherFiles(event.target.files);
+                  },
+                  handleOtherDrop(event) {
+                      this.dragOverOther = false;
+                      if (event.dataTransfer && event.dataTransfer.files) {
+                          this.addOtherFiles(event.dataTransfer.files);
+                      }
+                  },
+                  addOtherFiles(fileList) {
+                      const files = Array.from(fileList);
+                      for (const file of files) {
+                          if (!file.type.startsWith('image/')) continue;
+                          if (this.otherPreviews.length >= 9) {
+                              alert('Maksimal foto tambahan yang dapat diunggah adalah 9 foto.');
+                              break;
+                          }
+                          if (file.size > 2 * 1024 * 1024) {
+                              alert('Ukuran file \"' + file.name + '\" melebihi 2 MB.');
+                              continue;
+                          }
+                          this.otherPreviews.push({
+                              id: Date.now() + Math.random().toString(36).substring(2, 7),
+                              url: URL.createObjectURL(file),
+                              file: file,
+                              name: file.name
+                          });
+                      }
+                      this.syncOtherFilesInput();
+                  },
+                  removeOther(index) {
+                      const item = this.otherPreviews[index];
+                      if (item && item.isExisting) {
+                          this.deletedOtherImages.push(item.path);
+                      }
+                      this.otherPreviews.splice(index, 1);
+                      this.syncOtherFilesInput();
+                  },
+                  syncOtherFilesInput() {
+                      const dt = new DataTransfer();
+                      this.otherPreviews.forEach(item => {
+                          if (item.file) dt.items.add(item.file);
+                      });
+                      const input = document.getElementById('otherImagesInput');
+                      if (input) input.files = dt.files;
+                  },
+                  triggerOtherUpload() {
+                      document.getElementById('otherImagesInput').click();
+                  },
                   stokKain: {{ (int) old('stok', $produk->stok) }},
                   get totalStok() {
                       if (this.isKain) {
@@ -142,19 +245,51 @@
                             </svg>
                         </div>
 
-                        {{-- Main Hero Image Slot --}}
-                        <div class="relative rounded-2xl border-2 border-dashed border-[#D9D0C5] bg-[#FAF7F2] p-4 text-center overflow-hidden group">
-                            <input type="file" name="gambar" id="heroImageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="previewHeroImage(this)">
+                        {{-- Hidden File Inputs --}}
+                        <input type="file" name="gambar" id="heroImageInput" accept="image/*" class="hidden" @change="handleHeroChange($event)">
+                        <input type="file" name="gambar_lainnya[]" id="otherImagesInput" multiple accept="image/*" class="hidden" @change="handleOtherChange($event)">
 
-                            <div id="heroPreviewContainer" class="{{ $produk->gambar ? '' : 'hidden' }} relative aspect-4/3 rounded-xl overflow-hidden bg-black/5">
-                                <img id="heroPreviewImg" src="{{ $produk->gambar ? asset('storage/' . $produk->gambar) : '' }}" alt="{{ $produk->nama }}" class="w-full h-full object-cover">
-                                <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-white/90 text-[10px] font-bold text-[#1E1B18] shadow-xs">
-                                    ✓ Foto Utama Aktif
+                        {{-- Form Inputs for Deleted Existing Other Images --}}
+                        <template x-for="delPath in deletedOtherImages" :key="delPath">
+                            <input type="hidden" name="hapus_gambar[]" :value="delPath">
+                        </template>
+
+                        {{-- Main Hero Image Slot --}}
+                        <div class="relative rounded-2xl border-2 border-dashed transition overflow-hidden group"
+                             :class="dragOverHero ? 'border-[#8C6D58] bg-[#F7F2EC]' : (heroPreview ? 'border-[#ECE5D8] bg-[#FAF7F2]' : 'border-[#D9D0C5] bg-[#FAF7F2] hover:border-[#8C6D58] hover:bg-[#F9F5EF]')"
+                             @dragover.prevent="dragOverHero = true"
+                             @dragleave.prevent="dragOverHero = false"
+                             @drop.prevent="handleHeroDrop($event)">
+
+                            {{-- When Hero Preview Exists --}}
+                            <div x-show="heroPreview" class="relative aspect-4/3 sm:aspect-16/10 rounded-xl overflow-hidden bg-black/5 m-2 shadow-2xs">
+                                <img :src="heroPreview" alt="Foto Utama" class="w-full h-full object-cover">
+
+                                {{-- Pill Tag --}}
+                                <div class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-[11px] font-bold text-[#1E1B18] shadow-xs flex items-center gap-1.5 pointer-events-none">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>Foto Utama Aktif</span>
+                                </div>
+
+                                {{-- Action Buttons --}}
+                                <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+                                    <button type="button" @click.stop="triggerHeroUpload()" class="px-2.5 py-1 rounded-lg bg-white/95 hover:bg-white text-[11px] font-semibold text-[#1E1B18] shadow-xs transition flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                        </svg>
+                                        <span>Ganti</span>
+                                    </button>
+                                    <button type="button" @click.stop="removeHero()" class="p-1 rounded-lg bg-rose-50/95 hover:bg-rose-100 text-rose-600 shadow-xs transition" title="Hapus foto utama">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
 
-                            <div id="heroUploadPlaceholder" class="{{ $produk->gambar ? 'hidden' : '' }} py-6 space-y-2">
-                                <div class="w-12 h-12 mx-auto rounded-full bg-[#F3EDE6] flex items-center justify-center text-[#8C6D58]">
+                            {{-- When Hero Empty Placeholder --}}
+                            <div x-show="!heroPreview" @click="triggerHeroUpload()" class="py-7 px-4 text-center cursor-pointer space-y-2 select-none">
+                                <div class="w-12 h-12 mx-auto rounded-full bg-[#F3EDE6] flex items-center justify-center text-[#8C6D58] group-hover:scale-105 transition">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                     </svg>
@@ -171,30 +306,70 @@
                                 <span class="text-[#A89F91]">Maks. 2 MB per berkas</span>
                             </div>
                             <div class="grid grid-cols-4 gap-2">
-                                <div class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] flex flex-col items-center justify-center p-1 text-center">
-                                    <span class="text-[9px] font-semibold text-[#8C827A]">Detail Serat</span>
-                                </div>
-                                <div class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] flex flex-col items-center justify-center p-1 text-center">
-                                    <span class="text-[9px] font-semibold text-[#8C827A]">Pola Motif</span>
-                                </div>
-                                <div class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] flex flex-col items-center justify-center p-1 text-center">
-                                    <span class="text-[9px] font-semibold text-[#8C827A]">Tampak Belakang</span>
-                                </div>
-                                <div class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] flex flex-col items-center justify-center p-1 text-center">
-                                    <span class="text-[9px] font-semibold text-[#8C827A]">Ramah Lingkungan</span>
-                                </div>
+                                <template x-for="i in 4" :key="i">
+                                    <div class="relative">
+                                        {{-- If item exists at (i-1) --}}
+                                        <div x-show="otherPreviews[i - 1]" class="relative aspect-square rounded-xl overflow-hidden border border-[#ECE5D8] bg-[#FAF7F2] group shadow-2xs">
+                                            <img :src="otherPreviews[i - 1]?.url" class="w-full h-full object-cover">
+                                            {{-- Slot Label Overlay at Bottom --}}
+                                            <div class="absolute bottom-1 inset-x-1 px-1 py-0.5 rounded bg-black/60 backdrop-blur text-[8.5px] font-medium text-white text-center truncate pointer-events-none"
+                                                 x-text="slotLabels[i - 1]">
+                                            </div>
+                                            {{-- Delete Button --}}
+                                            <button type="button" @click.stop="removeOther(i - 1)" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition leading-none" title="Hapus foto">
+                                                &times;
+                                            </button>
+                                        </div>
+
+                                        {{-- If slot is empty --}}
+                                        <div x-show="!otherPreviews[i - 1]"
+                                             @click="triggerOtherUpload()"
+                                             class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] hover:bg-[#F3EDE6] hover:border-[#8C6D58] transition cursor-pointer flex flex-col items-center justify-center p-1.5 text-center group select-none">
+                                            <svg class="w-3.5 h-3.5 text-[#A89F91] group-hover:text-[#8C6D58] transition mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            <span class="text-[9px] font-semibold text-[#8C827A] group-hover:text-[#1E1B18] transition line-clamp-2" x-text="slotLabels[i - 1]"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Overflow Grid for items 5-9 --}}
+                        <div x-show="otherPreviews.length > 4" class="pt-1">
+                            <div class="text-[10px] font-bold text-[#8C827A] uppercase tracking-wider mb-1.5">
+                                Foto Tambahan (Slot 5 - 9)
+                            </div>
+                            <div class="grid grid-cols-5 gap-2">
+                                <template x-for="(extra, idx) in otherPreviews.slice(4)" :key="extra.id || idx">
+                                    <div class="relative aspect-square rounded-xl overflow-hidden border border-[#ECE5D8] bg-[#FAF7F2] group shadow-2xs">
+                                        <img :src="extra.url" class="w-full h-full object-cover">
+                                        <button type="button" @click.stop="removeOther(idx + 4)" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition leading-none" title="Hapus foto">
+                                            &times;
+                                        </button>
+                                    </div>
+                                </template>
                             </div>
                         </div>
 
                         {{-- Multi file input dropzone --}}
-                        <div class="relative rounded-xl border border-dashed border-[#D9D0C5] bg-[#FCFAF7] p-4 text-center">
-                            <input type="file" name="gambar_lainnya[]" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div class="relative rounded-xl border border-dashed transition p-4 text-center cursor-pointer select-none"
+                             :class="dragOverOther ? 'border-[#8C6D58] bg-[#F7F2EC]' : 'border-[#D9D0C5] bg-[#FCFAF7] hover:bg-[#F8F4EE] hover:border-[#8C6D58]'"
+                             @click="triggerOtherUpload()"
+                             @dragover.prevent="dragOverOther = true"
+                             @dragleave.prevent="dragOverOther = false"
+                             @drop.prevent="handleOtherDrop($event)">
                             <div class="flex flex-col items-center justify-center space-y-1">
                                 <svg class="w-6 h-6 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                 </svg>
-                                <span class="text-xs font-semibold text-[#1E1B18]">Tarik &amp; Lepaskan Berkas Foto Tambahan</span>
-                                <span class="text-[10px] text-[#8C827A]">Mendukung format JPG, PNG, atau WEBP</span>
+                                <span class="text-xs font-semibold text-[#1E1B18]">Tarik &amp; Lepaskan Berkas Foto Tambahan Di Sini</span>
+                                <span class="text-[10px] text-[#8C827A]">Mendukung format JPG, PNG, atau WEBP (Rekomendasi rasio 4:5 atau 1:1)</span>
+                                <div x-show="otherPreviews.length > 0" class="pt-1">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF4ED] text-[#8C6D58] text-[10px] font-semibold border border-[#E5DDD0]">
+                                        ✓ <span x-text="otherPreviews.length + ' Foto Tambahan Terpilih (Maks. 9)'"></span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -554,17 +729,4 @@
 
     </div>
 
-    <script>
-        function previewHeroImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('heroPreviewImg').src = e.target.result;
-                    document.getElementById('heroPreviewContainer').classList.remove('hidden');
-                    document.getElementById('heroUploadPlaceholder').classList.add('hidden');
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-    </script>
 </x-app-layout>
