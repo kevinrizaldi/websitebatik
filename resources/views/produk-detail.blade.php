@@ -8,6 +8,7 @@
     $deskripsiProduk = $produk->deskripsi ?: 'Koleksi busana batik eksklusif bermutu tinggi berdaya pakai harian dan formal.';
     $gambarProduk = $produk ? $produk->gambar_url : asset('images/beranda/folded-shirts.jpg');
     $stokProduk = (int) ($produk->stok ?? 0);
+    $isKain = str_contains(strtolower($kategoriProduk), 'kain');
     $stokUkuranArray = $produk ? $produk->getStokUkuranArray() : ['All Size' => $stokProduk];
 
     $firstAvailableSize = 'All Size';
@@ -314,41 +315,52 @@
                     </div>
 
                     <!-- Size Selector -->
-                    <div class="space-y-3 pt-1">
-                        <div class="flex items-center justify-between text-xs sm:text-sm font-semibold">
-                            <span class="text-stone-900 font-bold">Pilih Ukuran</span>
-                            <button @click="sizeGuideModal = true" class="text-stone-700 hover:text-stone-950 flex items-center gap-1.5 transition text-xs font-medium">
-                                <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                                </svg>
-                                <span>Panduan Ukuran</span>
-                            </button>
+                    @if($isKain)
+                        <div class="space-y-1.5 pt-1">
+                            <span class="text-stone-900 font-bold text-xs sm:text-sm block">Format Wastra</span>
+                            <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#FAF7F2] border border-[#D5CABB] text-xs font-bold text-stone-800">
+                                <span>🧵</span>
+                                <span>Lembaran Kain Utuh (2,40 m × 1,15 m)</span>
+                            </div>
+                            <p class="text-[11px] text-stone-500">Kain batik siap potong dan jahit sesuai selera model busana Anda.</p>
                         </div>
-
-                        <!-- Size Buttons from Database -->
-                        <div class="flex flex-wrap items-center gap-2.5">
-                            @foreach($stokUkuranArray as $sz => $stk)
-                                <button type="button"
-                                        @click="selectSize('{{ $sz }}')"
-                                        :class="selectedSize === '{{ $sz }}'
-                                            ? 'bg-[#201A17] text-white shadow-xs'
-                                            : '{{ $stk <= 0 ? 'bg-stone-100 text-stone-400 border border-stone-200 opacity-60' : 'bg-[#FAF7F2] text-stone-800 border border-[#D5CABB] hover:border-stone-800 cursor-pointer' }}'"
-                                        class="min-w-12 h-11 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center transition-all duration-150">
-                                    {{ $sz }}
-                                    @if($stk <= 5 && $stk > 0)
-                                        <span class="ml-1 text-[9px] text-amber-500">({{ $stk }})</span>
-                                    @elseif($stk <= 0)
-                                        <span class="ml-1 text-[9px] text-stone-400">(Habis)</span>
-                                    @endif
+                    @else
+                        <div class="space-y-3 pt-1">
+                            <div class="flex items-center justify-between text-xs sm:text-sm font-semibold">
+                                <span class="text-stone-900 font-bold">Pilih Ukuran</span>
+                                <button @click="sizeGuideModal = true" class="text-stone-700 hover:text-stone-950 flex items-center gap-1.5 transition text-xs font-medium">
+                                    <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                                    </svg>
+                                    <span>Panduan Ukuran</span>
                                 </button>
-                            @endforeach
-                        </div>
+                            </div>
 
-                        <!-- Dynamic Size Subtext -->
-                        <div class="text-xs text-stone-500 pt-0.5">
-                            Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong> | Lingkar Dada: <span class="font-semibold text-stone-800" x-text="sizeDescriptions[selectedSize] || '108 cm'"></span>
+                            <!-- Size Buttons from Database -->
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                @foreach($stokUkuranArray as $sz => $stk)
+                                    <button type="button"
+                                            @click="selectSize('{{ $sz }}')"
+                                            :class="selectedSize === '{{ $sz }}'
+                                                ? 'bg-[#201A17] text-white shadow-xs'
+                                                : '{{ $stk <= 0 ? 'bg-stone-100 text-stone-400 border border-stone-200 opacity-60' : 'bg-[#FAF7F2] text-stone-800 border border-[#D5CABB] hover:border-stone-800 cursor-pointer' }}'"
+                                            class="min-w-12 h-11 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center transition-all duration-150">
+                                        {{ $sz }}
+                                        @if($stk <= 5 && $stk > 0)
+                                            <span class="ml-1 text-[9px] text-amber-500">({{ $stk }})</span>
+                                        @elseif($stk <= 0)
+                                            <span class="ml-1 text-[9px] text-stone-400">(Habis)</span>
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            <!-- Dynamic Size Subtext -->
+                            <div class="text-xs text-stone-500 pt-0.5">
+                                Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong> | Lingkar Dada: <span class="font-semibold text-stone-800" x-text="sizeDescriptions[selectedSize] || '108 cm'"></span>
+                            </div>
                         </div>
-                    </div>
+                    @endif
 
                     <!-- Stepper & Add to Cart Row -->
                     <div class="flex items-center gap-3 pt-2">

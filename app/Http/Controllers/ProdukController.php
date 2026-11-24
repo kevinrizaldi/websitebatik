@@ -124,7 +124,9 @@ class ProdukController extends Controller
             'stok.max' => 'Stok produk maksimal adalah 100.000 unit.',
         ]);
 
-        if ($request->has('stok_ukuran') && is_array($request->input('stok_ukuran'))) {
+        $isKainBatik = str_contains(strtolower($validated['kategori'] ?? ''), 'kain');
+
+        if (! $isKainBatik && $request->has('stok_ukuran') && is_array($request->input('stok_ukuran'))) {
             $filtered = [];
             $totalStok = 0;
             foreach ($request->input('stok_ukuran') as $size => $val) {
@@ -139,6 +141,9 @@ class ProdukController extends Controller
                 $validated['stok'] = $totalStok;
                 $validated['ukuran'] = implode(', ', array_keys($filtered));
             }
+        } elseif ($isKainBatik) {
+            $validated['stok_ukuran'] = null;
+            $validated['ukuran'] = 'Lembaran Kain';
         }
 
         $validated['stok'] = (int) ($validated['stok'] ?? 0);
@@ -231,7 +236,9 @@ class ProdukController extends Controller
             'stok.max' => 'Stok produk maksimal adalah 100.000 unit.',
         ]);
 
-        if ($request->has('stok_ukuran') && is_array($request->input('stok_ukuran'))) {
+        $isKainBatik = str_contains(strtolower($validated['kategori'] ?? ''), 'kain');
+
+        if (! $isKainBatik && $request->has('stok_ukuran') && is_array($request->input('stok_ukuran'))) {
             $filtered = [];
             $totalStok = 0;
             foreach ($request->input('stok_ukuran') as $size => $val) {
@@ -250,6 +257,9 @@ class ProdukController extends Controller
             }
         } else {
             $validated['stok_ukuran'] = null;
+            if ($isKainBatik) {
+                $validated['ukuran'] = 'Lembaran Kain';
+            }
         }
 
         $validated['stok'] = (int) ($validated['stok'] ?? $produk->stok);

@@ -43,8 +43,33 @@
             </div>
         @endif
 
+        @php
+            $stokUkuran = $produk->getStokUkuranArray();
+        @endphp
         {{-- Main Two-Column Form --}}
-        <form action="{{ route('produk.update', $produk) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ route('produk.update', $produk) }}" method="POST" enctype="multipart/form-data" class="space-y-6"
+              x-data="{
+                  kategori: '{{ old('kategori', $produk->kategori) }}',
+                  get isKain() {
+                      return (this.kategori || '').toLowerCase().includes('kain');
+                  },
+                  stokS: {{ (int) old('stok_ukuran.S', $stokUkuran['S'] ?? $stokUkuran['s'] ?? 0) }},
+                  stokM: {{ (int) old('stok_ukuran.M', $stokUkuran['M'] ?? $stokUkuran['m'] ?? 0) }},
+                  stokL: {{ (int) old('stok_ukuran.L', $stokUkuran['L'] ?? $stokUkuran['l'] ?? 0) }},
+                  stokXL: {{ (int) old('stok_ukuran.XL', $stokUkuran['XL'] ?? $stokUkuran['xl'] ?? 0) }},
+                  stokXXL: {{ (int) old('stok_ukuran.XXL', $stokUkuran['XXL'] ?? $stokUkuran['xxl'] ?? 0) }},
+                  stokKain: {{ (int) old('stok', $produk->stok) }},
+                  get totalStok() {
+                      if (this.isKain) {
+                          return parseInt(this.stokKain) || 0;
+                      }
+                      return (parseInt(this.stokS) || 0) +
+                             (parseInt(this.stokM) || 0) +
+                             (parseInt(this.stokL) || 0) +
+                             (parseInt(this.stokXL) || 0) +
+                             (parseInt(this.stokXXL) || 0);
+                  }
+              }">
             @csrf
             @method('PUT')
 
@@ -154,7 +179,7 @@
                                 <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
                                     Kategori Wastra <span class="text-rose-500">*</span>
                                 </label>
-                                <select name="kategori" required class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                                <select name="kategori" x-model="kategori" required class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
                                     @if(isset($kategoris) && $kategoris->isNotEmpty())
                                         @foreach($kategoris as $k)
                                             <option value="{{ $k->nama_kategori }}" {{ old('kategori', $produk->kategori) == $k->nama_kategori ? 'selected' : '' }}>
@@ -211,60 +236,106 @@
                             <div>
                                 <div class="flex items-center justify-between mb-1.5">
                                     <label class="block text-xs font-bold text-[#1E1B18]">
-                                        Total Stok <span class="text-rose-500">*</span>
+                                        <span x-text="isKain ? 'Stok Kain (Lembar) *' : 'Total Stok (Akumulasi) *'">Total Stok *</span>
                                     </label>
-                                    <span class="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded">BATAS AMAN</span>
+                                    <span class="text-[9px] font-bold px-1.5 py-0.2 rounded"
+                                          :class="totalStok > 5 ? 'text-emerald-700 bg-emerald-50' : (totalStok > 0 ? 'text-[#8C5E28] bg-[#FAF0E4]' : 'text-rose-700 bg-rose-50')"
+                                          x-text="totalStok > 5 ? 'BATAS AMAN' : (totalStok > 0 ? 'MENIPIS' : 'HABIS')">
+                                        BATAS AMAN
+                                    </span>
                                 </div>
-                                <input type="number"
-                                       name="stok"
-                                       value="{{ old('stok', $produk->stok) }}"
-                                       min="0"
-                                       max="1000"
-                                       required
-                                       class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] font-bold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                                {{-- Jika Bahan Kain: Input manual jumlah lembar kain --}}
+                                <div x-show="isKain">
+                                    <input type="number"
+                                           name="stok"
+                                           x-model.number="stokKain"
+                                           :disabled="!isKain"
+                                           min="0"
+                                           max="100000"
+                                           class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] font-bold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                                    <p class="text-[10px] text-stone-400 mt-1">Jumlah lembar kain wastra fisik.</p>
+                                </div>
+                                {{-- Jika Bukan Kain (Busana): Dihitung otomatis dari alokasi stok per ukuran --}}
+                                <div x-show="!isKain">
+                                    <input type="number"
+                                           name="stok"
+                                           :value="totalStok"
+                                           :disabled="isKain"
+                                           readonly
+                                           class="w-full py-2.5 px-3.5 rounded-xl border border-[#E8DFC8] bg-[#FAF0E4]/70 text-xs text-[#1E1B18] font-bold cursor-not-allowed select-none">
+                                    <p class="text-[10px] text-[#8C6D58] mt-1 flex items-center gap-1">
+                                        <span>✓</span>
+                                        <span>Otomatis dari rincian ukuran di bawah.</span>
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-
-                        {{-- Low stock warning callout --}}
-                        <div class="p-3 rounded-xl bg-[#FAF4ED] border border-[#F3EDE6] flex items-center gap-2.5 text-xs text-[#8C6D58]">
-                            <svg class="w-4 h-4 text-[#B85D3B] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>Notifikasi otomatis akan dikirim ke tim kurator gudang ketika sisa persediaan mencapai di bawah 5 pcs.</span>
                         </div>
                     </div>
 
                     {{-- Card 2: Spesifikasi Material & Ukuran --}}
-                    @php
-                        $currentSizes = $produk->getStokUkuranArray();
-                    @endphp
                     <div class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-4">
-                        <h3 class="font-bold text-sm text-[#1E1B18]">Spesifikasi Material &amp; Ukuran</h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-bold text-sm text-[#1E1B18]">Spesifikasi Material &amp; Alokasi Ukuran</h3>
+                            <span class="text-[10px] font-semibold text-[#8C6D58] bg-[#FAF0E4] px-2.5 py-0.5 rounded-full border border-[#E8D9C5]"
+                                  x-text="isKain ? 'Bahan Lembaran Wastra' : 'Stok Tiap Ukuran Busana'">
+                            </span>
+                        </div>
 
-                        {{-- Ukuran Checkboxes --}}
-                        <div>
-                            <label class="block text-xs font-bold text-[#1E1B18] mb-2">
-                                Pilihan Ukuran Tersedia <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        {{-- Alokasi Stok Ukuran (Khusus Busana / Bukan Kain) --}}
+                        <div x-show="!isKain" x-transition>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-bold text-[#1E1B18]">
+                                    Stok Setiap Ukuran Busana <span class="text-rose-500">*</span>
+                                </label>
+                                <span class="text-[10px] text-stone-500">
+                                    Total: <strong class="text-[#1E1B18]" x-text="totalStok + ' unit'"></strong>
+                                </span>
+                            </div>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                                 @php
-                                    $sizes = [
-                                        'S' => 'LD: 100cm',
-                                        'M' => 'LD: 104cm',
-                                        'L' => 'LD: 108cm',
-                                        'XL' => 'LD: 114cm',
-                                        'XXL' => 'LD: 120cm',
+                                    $sizesConfig = [
+                                        'S' => ['ld' => 'LD: 100cm', 'var' => 'stokS'],
+                                        'M' => ['ld' => 'LD: 104cm', 'var' => 'stokM'],
+                                        'L' => ['ld' => 'LD: 108cm', 'var' => 'stokL'],
+                                        'XL' => ['ld' => 'LD: 114cm', 'var' => 'stokXL'],
+                                        'XXL' => ['ld' => 'LD: 120cm', 'var' => 'stokXXL'],
                                     ];
                                 @endphp
-                                @foreach($sizes as $sz => $ld)
-                                    <label class="flex flex-col p-2.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] hover:bg-white cursor-pointer transition">
-                                        <div class="flex items-center gap-1.5">
-                                            <input type="checkbox" name="stok_ukuran[{{ $sz }}]" value="{{ $currentSizes[$sz] ?? 4 }}" {{ isset($currentSizes[$sz]) || empty($currentSizes) ? 'checked' : '' }} class="rounded border-gray-300 text-[#1E1B18] focus:ring-[#8C6D58]">
-                                            <span class="font-bold text-xs text-[#1E1B18]">{{ $sz }}</span>
+                                @foreach($sizesConfig as $sz => $cfg)
+                                    <div class="rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] p-3 text-center space-y-2 hover:border-[#8C6D58]/40 transition">
+                                        <div class="flex items-center justify-between">
+                                            <span class="font-serif font-bold text-sm text-[#1E1B18]">{{ $sz }}</span>
+                                            <span class="text-[9px] text-[#8C827A]">{{ $cfg['ld'] }}</span>
                                         </div>
-                                        <span class="text-[10px] text-[#8C827A] mt-1">{{ $ld }}</span>
-                                    </label>
+                                        <div>
+                                            <label class="block text-[9px] font-semibold text-stone-500 mb-1">Stok {{ $sz }}</label>
+                                            <input type="number"
+                                                   name="stok_ukuran[{{ $sz }}]"
+                                                   x-model.number="{{ $cfg['var'] }}"
+                                                   :disabled="isKain"
+                                                   min="0"
+                                                   max="100000"
+                                                   placeholder="0"
+                                                   class="w-full text-center py-1.5 px-2 rounded-lg border border-[#D9D0C5] bg-white text-xs font-extrabold text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58]">
+                                        </div>
+                                    </div>
                                 @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Informasi Khusus Bahan Kain (Tanpa Ukuran S/M/L/XL/XXL) --}}
+                        <div x-show="isKain" x-transition>
+                            <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/70 p-4 flex items-start gap-3.5">
+                                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1E1B18] text-[#C59A53] text-sm">
+                                    🧵
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-xs font-bold text-[#1E1B18]">Produk Bahan Kain Lembaran</h4>
+                                    <p class="text-xs text-[#5A544E] mt-1 leading-relaxed">
+                                        Kategori kain batik dijual per lembar potongan wastra utuh (standar 2,4m × 1,15m) sehingga tidak memiliki variasi ukuran busana (S, M, L, XL, XXL). Stok dikelola terpusat pada kolom <strong>Stok Kain</strong> di atas.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
