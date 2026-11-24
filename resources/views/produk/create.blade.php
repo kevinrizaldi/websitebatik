@@ -394,33 +394,20 @@
                                 {{-- Dynamic Variant Items Grid/Table --}}
                                 <div x-show="sizes.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                                     <template x-for="(s, index) in sizes" :key="s.name">
-                                        <div class="relative rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] p-3 text-center space-y-2 hover:border-[#8C6D58]/50 transition group shadow-2xs">
-                                            {{-- Delete Button --}}
-                                            <button type="button"
-                                                    @click="removeSize(index)"
-                                                    title="Hapus variasi ukuran ini"
-                                                    class="absolute top-1.5 right-1.5 w-5 h-5 rounded-md text-stone-400 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center text-xs transition cursor-pointer">
-                                                &times;
-                                            </button>
-
-                                            <div class="pr-3 text-left">
-                                                <span class="font-serif font-bold text-sm text-[#1E1B18] block truncate" x-text="s.name"></span>
-                                                <span class="text-[9px] text-[#8C827A]"
-                                                      x-text="{
-                                                          'XS': 'LD ~100cm',
-                                                          'S': 'LD ~104cm',
-                                                          'M': 'LD ~108cm',
-                                                          'L': 'LD ~112cm',
-                                                          'XL': 'LD ~116cm',
-                                                          'XXL': 'LD ~120cm',
-                                                          '3XL': 'LD ~124cm',
-                                                          '4XL': 'LD ~128cm',
-                                                          'All Size': 'Semua Ukuran'
-                                                      }[s.name] || 'Variasi Kustom'"></span>
+                                        <div class="rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] p-3 space-y-2 hover:border-[#8C6D58]/50 transition shadow-2xs">
+                                            {{-- Size Title and Remove Button in Clean Top Row --}}
+                                            <div class="flex items-center justify-between gap-1 pb-0.5">
+                                                <span class="font-serif font-bold text-sm text-[#1E1B18] truncate" x-text="s.name"></span>
+                                                <button type="button"
+                                                        @click="removeSize(index)"
+                                                        title="Hapus variasi ukuran ini"
+                                                        class="shrink-0 w-6 h-6 rounded-md bg-stone-200/60 hover:bg-rose-100 text-stone-500 hover:text-rose-600 flex items-center justify-center text-sm font-bold transition cursor-pointer">
+                                                    &times;
+                                                </button>
                                             </div>
 
                                             <div>
-                                                <label class="block text-[9px] font-semibold text-stone-500 mb-1">Stok Unit</label>
+                                                <label class="block text-[10px] font-semibold text-stone-500 mb-1 text-center">Stok Unit</label>
                                                 <input type="number"
                                                        :name="'stok_ukuran[' + s.name + ']'"
                                                        x-model.number="s.stock"
