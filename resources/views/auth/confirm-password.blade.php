@@ -34,7 +34,7 @@
                     </svg>
                 </div>
                 <span class="font-bold tracking-wider text-sm sm:text-base text-[#26211D] uppercase font-sans">
-                    Hamzah Style Official
+                    Hamzah Style
                 </span>
             </a>
         </div>

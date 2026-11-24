@@ -51,6 +51,7 @@ class PembayaranController extends Controller
         $failedAmount = (float) Order::whereIn('status', ['Batal', 'Dibatalkan'])->sum('total_price');
 
         $gatewayAmount = (float) Payment::whereIn('status', [Payment::STATUS_PAID, 'settlement', 'capture'])->sum('gross_amount');
+        $gatewayCount = Payment::whereIn('status', [Payment::STATUS_PAID, 'settlement', 'capture'])->count() ?: $successCount;
         $totalPayments = Order::count();
 
         return view('admin.pembayaran.index', [
@@ -60,6 +61,7 @@ class PembayaranController extends Controller
             'pendingCount' => $pendingCount,
             'pendingAmount' => $pendingAmount,
             'gatewayAmount' => $gatewayAmount,
+            'gatewayCount' => $gatewayCount,
             'successCount' => $successCount,
             'successAmount' => $successAmount,
             'failedCount' => $failedCount,

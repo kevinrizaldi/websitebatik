@@ -77,7 +77,7 @@
                 <div class="text-2xl font-serif font-bold text-[#1E1B18] mt-0.5">{{ $siapDikemasCount }} <span class="text-xs font-sans font-medium text-[#736B63]">Paket</span></div>
                 <div class="mt-3 pt-3 border-t border-[#F5F0E8] flex items-center gap-1.5 text-[11px] text-[#A86544] font-medium">
                     <span>⏳</span>
-                    <span>Menunggu bungkus besek</span>
+                    <span>Menunggu pengemasan</span>
                 </div>
             </div>
 
@@ -259,22 +259,14 @@
                         @forelse ($orders as $order)
                             @php
                                 $resi = $order->tracking_number ?? optional($order->shipment)->no_resi;
-                                $ekspedisiName = optional($order->shipment)->ekspedisi ?: 'JNE Reguler';
-                                $addressText = $order->address ?: 'Jakarta Selatan, DKI Jakarta';
-                                $cityText = Str::of($addressText)->afterLast(',')->trim();
+                                $ekspedisiName = optional($order->shipment)->ekspedisi ?: ($order->pengiriman->ekspedisi ?? 'JNE/POS/TIKI');
+                                $addressText = $order->address ?: ($order->alamat ? $order->alamat->alamat_lengkap : 'Alamat Pengiriman');
+                                $cityText = $order->alamat ? ($order->alamat->kota . ', ' . $order->alamat->provinsi) : Str::of($addressText)->afterLast(',')->trim();
                                 if ($cityText->isEmpty()) {
-                                    $cityText = 'Jakarta Selatan, DKI Jakarta';
+                                    $cityText = '-';
                                 }
 
-                                // Format packaging label
-                                $packagingOptions = [
-                                    'Besek Bambu + Tali Rami + Kartu Ucapan',
-                                    'Kotak Daur Ulang + Segel Lilin Batik',
-                                    'Pouch Serat Alam',
-                                    'Besek Edisi Pusaka Masterpiece',
-                                    'Standard Zero Waste',
-                                ];
-                                $packaging = $packagingOptions[$order->id % 5];
+                                $packaging = !empty($order->catatan) ? 'Catatan: '.Str::limit($order->catatan, 25) : 'Kemasan Standar Hamzah Style';
                             @endphp
                             <tr class="hover:bg-[#FAF7F2] transition">
                                 {{-- 1. ORDER ID & TANGGAL --}}
@@ -509,7 +501,7 @@
                     <div class="mt-4 pt-3 border-t border-[#EBE4D8] flex items-center justify-between text-xs text-[#736B63]">
                         <div class="flex items-center gap-1.5">
                             <span>🚚</span>
-                            <span>3 Truk Pengangkut Besek berangkat serentak pukul 17:00 WIB</span>
+                            <span>Armada logistik ekspedisi menjemput paket secara berkala</span>
                         </div>
                         <a href="javascript:void(0)" onclick="alert('Membuka telemetri armada real-time...')" class="font-bold text-[#A86544] hover:underline">
                             Buka Peta Satelit Telemetri →
@@ -520,19 +512,19 @@
                 {{-- 3 Indicators Row --}}
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                     <div class="p-3 rounded-xl bg-[#FCFAF6] border border-[#F5F0E8]">
-                        <div class="text-[10px] font-bold uppercase text-[#8C827A]">Ketepatan Waktu</div>
-                        <div class="text-lg font-serif font-bold text-[#1E1B18] mt-0.5">99.2%</div>
-                        <div class="text-[10px] text-[#2E7D32] mt-0.5">+0.4% dari bulan lalu</div>
+                        <div class="text-[10px] font-bold uppercase text-[#8C827A]">Total Pengiriman</div>
+                        <div class="text-lg font-serif font-bold text-[#1E1B18] mt-0.5">{{ $totalShipments }}</div>
+                        <div class="text-[10px] text-[#2E7D32] mt-0.5">Semua kurir terdata</div>
                     </div>
                     <div class="p-3 rounded-xl bg-[#FCFAF6] border border-[#F5F0E8]">
-                        <div class="text-[10px] font-bold uppercase text-[#8C827A]">Rerata Durasi Kirim</div>
-                        <div class="text-lg font-serif font-bold text-[#1E1B18] mt-0.5">1.8 Hari</div>
-                        <div class="text-[10px] text-[#736B63] mt-0.5">Jawa & Bali</div>
+                        <div class="text-[10px] font-bold uppercase text-[#8C827A]">Dalam Perjalanan</div>
+                        <div class="text-lg font-serif font-bold text-[#1E1B18] mt-0.5">{{ $dalamPerjalananCount }} Paket</div>
+                        <div class="text-[10px] text-[#736B63] mt-0.5">Sedang dikirim ekspedisi</div>
                     </div>
                     <div class="p-3 rounded-xl bg-[#FCFAF6] border border-[#F5F0E8]">
-                        <div class="text-[10px] font-bold uppercase text-[#8C827A]">Bahan Daur Ulang Digunakan</div>
-                        <div class="text-lg font-serif font-bold text-[#1E1B18] mt-0.5">342 kg</div>
-                        <div class="text-[10px] text-[#A86544] mt-0.5">Siklus Februari 2025</div>
+                        <div class="text-[10px] font-bold uppercase text-[#8C827A]">Pesanan Terkirim</div>
+                        <div class="text-lg font-serif font-bold text-[#1E1B18] mt-0.5">{{ $diterimaCount }} Paket</div>
+                        <div class="text-[10px] text-[#A86544] mt-0.5">Telah sampai di tujuan</div>
                     </div>
                 </div>
             </div>
@@ -619,7 +611,7 @@
                 <div>
                     <h2 class="text-sm font-bold font-serif text-[#FAF7F2]">100% Kemasan Tanpa Plastik Sekali Pakai</h2>
                     <p class="text-xs text-[#C5BCB2] mt-0.5 max-w-xl">
-                        Semua produk Hamzah Style dikemas menggunakan besek bambu dan tali serat alami terurai hayati, mendukung keberlanjutan perajin lokal Nusantara.
+                        Semua produk Hamzah Style dikemas secara rapi dan aman dengan standar mutu tinggi khas perajin lokal Nusantara.
                     </p>
                 </div>
             </div>

@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Selesaikan Pembayaran - Hamzah Style Official</title>
-    <meta name="description" content="Selesaikan pembayaran pesanan busana batik autentik ramah lingkungan di Hamzah Style Official dengan metode pembayaran aman dan terenkripsi.">
+    <title>Selesaikan Pembayaran - Hamzah Style</title>
+    <meta name="description" content="Selesaikan pembayaran pesanan busana batik autentik ramah lingkungan di Hamzah Style dengan metode pembayaran aman dan terenkripsi.">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1479,11 +1479,11 @@
                         <!-- Notifikasi Otomatis ala Shopee -->
                         <div x-show="isSearchingLocation" class="mt-1 flex items-center gap-1.5 text-[11px] text-[#8C6226]">
                             <svg class="h-3 w-3 animate-spin text-[#B58742]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                            <span>Menyesuaikan titik peta ke alamat jalan...</span>
+                            <span>Menyesuaikan lokasi peta dengan alamat...</span>
                         </div>
                         <div x-show="locationAutoFound && !isSearchingLocation" class="mt-1 flex items-center gap-1.5 text-[11px] text-emerald-700">
                             <svg class="h-3.5 w-3.5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                            <span>Titik peta otomatis disesuaikan ke alamat jalan. Geser pin jika ingin lebih presisi.</span>
+                            <span>Titik peta disesuaikan otomatis dengan alamat. Geser penanda jika posisi kurang pas.</span>
                         </div>
                     </div>
 
@@ -1607,7 +1607,7 @@
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-[#ECE4D8]/80 mb-8 sm:mb-10">
                 <div>
                     <span class="text-[11px] font-bold uppercase tracking-widest text-[#B58742] block mb-1.5">
-                        PESANAN TERKURASI
+                        RINGKASAN PEMESANAN
                     </span>
                     <h1 class="font-serif-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-stone-900">
                         Selesaikan Pembayaran

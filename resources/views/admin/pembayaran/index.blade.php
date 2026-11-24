@@ -83,7 +83,7 @@
                     Rp {{ number_format($gatewayAmount, 0, ',', '.') }}
                 </p>
                 <div class="mt-2 flex items-center gap-1.5 text-xs">
-                    <span class="font-extrabold text-[#1E1B18]">84 Transaksi</span>
+                    <span class="font-extrabold text-[#1E1B18]">{{ $gatewayCount ?? $successCount }} Transaksi</span>
                     <span class="text-stone-400">• QRIS &amp; Virtual Account</span>
                 </div>
                 <div class="mt-4 pt-3 border-t border-[#EFECE6] flex items-center justify-between text-[11px] text-stone-500">

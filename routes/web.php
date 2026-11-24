@@ -41,11 +41,17 @@ Route::get('/', function () {
     $bannerProduk = collect();
     $kategoris = collect();
     try {
+        $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
+
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
-            $produks = Produk::latest()->take(12)->get();
+            $produks = Produk::query()
+                ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
+                ->latest()
+                ->take(12)
+                ->get();
         }
         if (Schema::hasTable('products')) {
-            $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
 
             $produkTerbaru = Produk::query()
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
@@ -100,7 +106,12 @@ $catalogHandler = function () {
     $kategoris = collect();
     try {
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
-            $produks = Produk::latest()->get();
+            $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
+            $produks = Produk::query()
+                ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
+                ->latest()
+                ->get();
         }
         if (Schema::hasTable('categories') || Schema::hasTable('kategoris')) {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
@@ -114,8 +125,8 @@ $catalogHandler = function () {
     return view('koleksi', compact('produks', 'kategoris'));
 };
 
-Route::get('/produk', $catalogHandler)->name('koleksi.index');
-Route::get('/koleksi', fn () => redirect()->route('koleksi.index', request()->query()));
+Route::get('/koleksi', $catalogHandler)->name('koleksi.index');
+Route::get('/produk', fn () => redirect()->route('koleksi.index', request()->query()));
 
 Route::get('/produk-detail/{id?}', function ($id = null) {
     if (! $id) {

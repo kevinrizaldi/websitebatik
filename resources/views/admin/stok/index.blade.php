@@ -8,13 +8,13 @@
                     <svg class="w-3.5 h-3.5 text-[#B85D3B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span>INVENTARIS SIRKULAR &amp; UPCYCLING • GUDANG UTAMA SURAKARTA</span>
+                    <span>MANAJEMEN STOK PRODUK</span>
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-serif font-bold text-[#1E1B18] tracking-tight">
-                    Manajemen Stok &amp; Inventaris Sirkular
+                    Manajemen Stok Produk
                 </h1>
                 <p class="text-sm text-[#7A7269] mt-1">
-                    Monitoring ketersediaan kain wastra, busana siap kirim, dan peringatan dini stok menipis dengan kurasi restock terpadu.
+                    Pantau ketersediaan stok produk batik dan peringatan produk dengan stok menipis.
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -148,7 +148,12 @@
                            ])>
                             Semua Kategori
                         </a>
-                        @foreach(['Baju Batik', 'Kain Batik', 'Olahan Kain Sisa'] as $kat)
+                        @php
+                            $dynamicKategoris = isset($kategorisList) && $kategorisList->isNotEmpty()
+                                ? $kategorisList->pluck('nama_kategori')
+                                : \App\Models\Produk::whereNotNull('kategori')->pluck('kategori')->unique();
+                        @endphp
+                        @foreach($dynamicKategoris as $kat)
                             <a href="{{ route('admin.stok.index', array_merge(request()->query(), ['kategori' => $kat])) }}"
                                @class([
                                    'px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition',

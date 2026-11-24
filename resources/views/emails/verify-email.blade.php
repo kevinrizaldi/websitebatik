@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Verifikasi Email – Hamzah Style Official</title>
+    <title>Verifikasi Email – Hamzah Style</title>
     <!--[if mso]>
     <noscript>
         <xml>
@@ -172,7 +172,7 @@
                             </div>
                         </td>
                         <td style="vertical-align: middle; text-align: left;">
-                            <div class="header-title">Hamzah Style Official</div>
+                            <div class="header-title">Hamzah Style</div>
                             <div class="header-subtitle">Warisan Batik Nusantara Modern</div>
                         </td>
                     </tr>
@@ -193,7 +193,7 @@
 
                 <p class="subtext">
                     Halo, <strong>{{ $user->name }}</strong>! 👋<br><br>
-                    Terima kasih telah mendaftar di <strong>Hamzah Style Official</strong>.
+                    Terima kasih telah mendaftar di <strong>Hamzah Style</strong>.
                     Untuk mengaktifkan akun Anda dan mulai berbelanja, silakan verifikasi alamat email Anda dengan menekan tombol di bawah ini.
                 </p>
 
@@ -204,7 +204,7 @@
                 </div>
 
                 <p class="subtext" style="margin-bottom: 0;">
-                    Jika Anda tidak mendaftar di Hamzah Style Official, abaikan email ini. Tidak ada tindakan yang diperlukan.
+                    Jika Anda tidak mendaftar di Hamzah Style, abaikan email ini. Tidak ada tindakan yang diperlukan.
                 </p>
 
                 <hr class="divider">
@@ -219,10 +219,10 @@
 
             {{-- Footer --}}
             <div class="footer">
-                <p class="footer-brand">Hamzah Style Official</p>
+                <p class="footer-brand">Hamzah Style</p>
                 <p class="footer-text">
                     Email ini dikirim secara otomatis. Mohon tidak membalas email ini.<br>
-                    © {{ date('Y') }} Hamzah Style Official. Conscious Craftsmanship.
+                    © {{ date('Y') }} Hamzah Style. Conscious Craftsmanship.
                 </p>
             </div>
 

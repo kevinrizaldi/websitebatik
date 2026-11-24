@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hamzah Style Official - Warisan Batik Nusantara Modern</title>
+    <title>Hamzah Style - Warisan Batik Nusantara Modern</title>
     <meta name="description" content="Koleksi busana batik modern dan autentik Indonesia karya pengrajin lokal pilihan. Elegan dalam setiap motif untuk momen berharga Anda.">
 
     <!-- Google Fonts -->
@@ -36,7 +36,6 @@
 <body class="antialiased bg-[#FAF7F2] text-[#26211D] min-h-screen selection:bg-[#B58742] selection:text-white"
       x-data="{
           mobileMenuOpen: false,
-          activeCategory: 'Semua',
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           quickViewModal: false,
           selectedProduct: null,
@@ -84,7 +83,7 @@
 
                     <!-- Paragraph -->
                     <p class="text-stone-600 text-base sm:text-lg leading-relaxed mb-8 max-w-xl">
-                        Temukan keindahan batik autentik Indonesia pilihan Hamzah Style Official. Menggabungkan kemewahan tradisi Nusantara dengan sentuhan modern ramah lingkungan.
+                        Temukan keindahan batik autentik Indonesia pilihan Hamzah Style. Menggabungkan kemewahan tradisi Nusantara dengan sentuhan modern ramah lingkungan.
                     </p>
 
                     <!-- CTA Buttons -->
@@ -234,6 +233,7 @@
                  canScrollRight: true,
                  progress: 0,
                  isDown: false,
+                 moved: false,
                  startX: 0,
                  scrollLeftPos: 0,
                  checkScroll() {
@@ -253,6 +253,7 @@
                  },
                  startDrag(e) {
                      this.isDown = true;
+                     this.moved = false;
                      this.startX = e.pageX - this.$refs.slider.offsetLeft;
                      this.scrollLeftPos = this.$refs.slider.scrollLeft;
                  },
@@ -261,9 +262,11 @@
                  },
                  onDrag(e) {
                      if (!this.isDown) return;
-                     e.preventDefault();
                      const x = e.pageX - this.$refs.slider.offsetLeft;
                      const walk = (x - this.startX) * 1.4;
+                     if (Math.abs(walk) > 5) {
+                         this.moved = true;
+                     }
                      this.$refs.slider.scrollLeft = this.scrollLeftPos - walk;
                      this.checkScroll();
                  }
@@ -272,41 +275,14 @@
         <a id="koleksi" class="sr-only"></a>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <!-- Section Header & Navigation Buttons -->
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-                <div>
-                    <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
-                        Jelajahi Kategori
-                    </h2>
-                    <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
-                        Menghadirkan pesona wastra nusantara dalam potongan tren masa kini.
-                    </p>
-                </div>
-
-                <!-- Navigation Controls (Slider Buttons) -->
-                <div class="flex items-center gap-3 shrink-0">
-                    <span class="text-xs text-stone-400 font-medium hidden sm:inline-block">Geser kategori</span>
-                    <button type="button"
-                            @click="scroll('left')"
-                            :disabled="!canScrollLeft"
-                            :class="!canScrollLeft ? 'opacity-35 cursor-not-allowed border-stone-200 text-stone-300' : 'hover:bg-[#201A17] hover:text-white hover:border-[#201A17] text-stone-800 border-stone-300 shadow-2xs'"
-                            class="w-10 h-10 rounded-full border bg-white flex items-center justify-center transition duration-200"
-                            aria-label="Geser ke kiri">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                        </svg>
-                    </button>
-                    <button type="button"
-                            @click="scroll('right')"
-                            :disabled="!canScrollRight"
-                            :class="!canScrollRight ? 'opacity-35 cursor-not-allowed border-stone-200 text-stone-300' : 'hover:bg-[#201A17] hover:text-white hover:border-[#201A17] text-stone-800 border-stone-300 shadow-2xs'"
-                            class="w-10 h-10 rounded-full border bg-white flex items-center justify-center transition duration-200"
-                            aria-label="Geser ke kanan">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                        </svg>
-                    </button>
-                </div>
+            <!-- Section Header -->
+            <div class="mb-8">
+                <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
+                    Jelajahi Koleksi
+                </h2>
+                <p class="text-stone-600 text-xs sm:text-sm mt-1.5 max-w-xl leading-relaxed">
+                    Menghadirkan keindahan batik nusantara dalam model pakaian masa kini.
+                </p>
             </div>
 
             <!-- Dynamic Collection Cards Carousel (Horizontally Scrollable) -->
@@ -319,7 +295,9 @@
                      @mousemove="onDrag($event)"
                      class="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory pb-5 pt-1 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 cursor-grab active:cursor-grabbing">
                     @forelse($kategoris as $kat)
-                        <div class="category-card w-[210px] sm:w-[230px] md:w-[250px] shrink-0 snap-start group bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between select-none">
+                        <a href="{{ route('koleksi.index', ['kategori' => $kat->nama_kategori]) }}"
+                           @click="if (moved) $event.preventDefault()"
+                           class="category-card w-[210px] sm:w-[230px] md:w-[250px] shrink-0 snap-start group bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between select-none block cursor-pointer">
                             <div>
                                 <div class="relative aspect-[4/5] overflow-hidden bg-stone-100">
                                     <span class="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-md text-stone-900 text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-xs border border-white/60">
@@ -340,15 +318,14 @@
                                 </div>
                             </div>
                             <div class="px-4 pb-4 sm:px-5 sm:pb-5 pt-0">
-                                <a href="{{ route('koleksi.index', ['kategori' => $kat->nama_kategori]) }}"
-                                   class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
-                                    <span>Lihat Produk</span>
+                                <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-stone-900 group-hover:text-amber-800 group-hover:translate-x-1 transition-all">
+                                    <span>Lihat Koleksi</span>
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/>
                                     </svg>
-                                </a>
+                                </span>
                             </div>
-                        </div>
+                        </a>
                     @empty
                         <div class="w-full py-12 text-center text-stone-500 bg-white rounded-3xl border border-dashed border-stone-300">
                             Belum ada kategori yang ditambahkan.
@@ -373,56 +350,21 @@
     <section id="produk-unggulan" class="py-16 md:py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-            <!-- Header and Filter Tabs -->
-            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10">
-                <div>
-                    <span class="text-xs font-bold uppercase tracking-widest text-[#B58742] block mb-1">
-
-                    </span>
-                    <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#1F1916]">
-                        Produk Unggulan
-                    </h2>
-                    <p class="text-stone-600 text-sm sm:text-base mt-2 max-w-xl">
-                        Pilihan terbaik yang menggabungkan estetika tradisi dan fesyen modern.
-                    </p>
-                </div>
-
-                <!-- Category Filter Buttons (Dynamic from Database) -->
-                <div class="flex flex-wrap items-center gap-2">
-                    <button @click="activeCategory = 'Semua'"
-                            :class="activeCategory === 'Semua' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                            class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
-                        Semua
-                    </button>
-                    @foreach($kategoris as $kat)
-                        <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'"
-                                :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-sm' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
-                                class="px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition">
-                            {{ $kat->nama_kategori }}
-                        </button>
-                    @endforeach
-                </div>
+            <!-- Section Header -->
+            <div class="mb-10">
+                <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#1F1916]">
+                    Produk Unggulan
+                </h2>
+                <p class="text-stone-600 text-sm sm:text-base mt-2 max-w-xl">
+                    Pilihan terbaik yang memadukan corak tradisional dengan gaya modern.
+                </p>
             </div>
 
             <!-- Products Grid (Dynamic from Database) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach($produks->take(8) as $p)
-                    <div x-show="activeCategory === 'Semua' || activeCategory === '{{ addslashes($p->category_name) }}'"
-                         x-transition
-                         class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
+                    <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group">
                         <a href="{{ route('produk.detail', ['id' => $p->id]) }}" class="relative aspect-square overflow-hidden bg-stone-100 block">
-                            @if($p->status === 'Stok Menipis')
-                                <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-[#5C3D28] text-white">
-                                    Stok Terbatas
-                                </span>
-                            @elseif($p->status === 'Habis')
-                                <span class="absolute top-3 left-3 z-10 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-xs bg-stone-500 text-white">
-                                    Habis
-                                </span>
-                            @endif
-                            <span class="absolute bottom-3 left-3 z-10 bg-[#201A17]/80 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded uppercase tracking-wider">
-                                {{ $p->category_name }}
-                            </span>
                             <img src="{{ $p->gambar_url }}"
                                  alt="{{ $p->nama }}"
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -430,11 +372,18 @@
                         <div class="p-5 flex-1 flex flex-col justify-between">
                             <div>
                                 <!-- Star Rating -->
-                                <div class="flex items-center gap-1 mb-2">
-                                    <span class="text-amber-500 text-xs">★</span>
-                                    <span class="text-xs font-bold text-stone-800">5.0</span>
-                                    <span class="text-[11px] text-stone-400">({{ 15 + (($p->id * 4) % 25) }})</span>
-                                </div>
+                                @if(($p->reviews_count ?? 0) > 0)
+                                    <div class="flex items-center gap-1 mb-2">
+                                        <span class="text-amber-500 text-xs">★</span>
+                                        <span class="text-xs font-bold text-stone-800">{{ number_format($p->avg_rating, 1) }}</span>
+                                        <span class="text-[11px] text-stone-400">({{ $p->reviews_count }})</span>
+                                    </div>
+                                @else
+                                    <div class="flex items-center gap-1 mb-2 text-stone-400 text-xs">
+                                        <span class="text-amber-500 text-xs">★</span>
+                                        <span class="text-[11px] text-stone-500">Belum ada ulasan</span>
+                                    </div>
+                                @endif
                                 <!-- Title -->
                                 <h4 class="font-bold text-stone-900 text-sm leading-snug line-clamp-2 mb-2 group-hover:text-amber-800 transition">
                                     <a href="{{ route('produk.detail', ['id' => $p->id]) }}">
@@ -442,9 +391,16 @@
                                     </a>
                                 </h4>
                                 <!-- Price -->
-                                <p class="text-base font-extrabold text-stone-900 mb-4">
-                                    Rp {{ number_format($p->harga, 0, ',', '.') }}
-                                </p>
+                                <div class="flex items-baseline gap-2 mb-4">
+                                    <p class="text-base font-extrabold text-stone-900">
+                                        Rp {{ number_format($p->harga, 0, ',', '.') }}
+                                    </p>
+                                    @if(!empty($p->harga_coret) && (float)$p->harga_coret > (float)$p->harga)
+                                        <p class="text-xs text-stone-400 line-through">
+                                            Rp {{ number_format($p->harga_coret, 0, ',', '.') }}
+                                        </p>
+                                    @endif
+                                </div>
                             </div>
                             <a href="{{ route('produk.detail', ['id' => $p->id]) }}"
                                class="w-full py-2.5 px-4 rounded-full bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition duration-200 shadow-xs flex items-center justify-center gap-1.5 text-center">
@@ -469,7 +425,7 @@
         </div>
     </section>
 
-    <!-- ================= SECTION: TENTANG HAMZAH STYLE OFFICIAL ================= -->
+    <!-- ================= SECTION: TENTANG Hamzah Style ================= -->
     <section id="tentang-kami" class="scroll-mt-20 py-16 md:py-24 bg-[#FAF7F2] border-t border-[#ECE4D8]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
@@ -517,7 +473,7 @@
                     </div>
 
                     <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#1F1916] leading-tight mb-2">
-                        Tentang Hamzah Style Official
+                        Tentang Hamzah Style
                     </h2>
 
                     <p class="text-sm sm:text-base font-semibold text-[#8C5E35] mb-4">
@@ -525,7 +481,7 @@
                     </p>
 
                     <p class="text-stone-600 text-xs sm:text-sm leading-relaxed mb-8">
-                        Hamzah Style Official hadir sebagai wujud cinta dan dedikasi mendalam terhadap warisan wastra Nusantara. Kami menghadirkan busana batik autentik yang dirancang harmonis dengan sentuhan gaya modern kontemporer, sekaligus memelopori gerakan kriya beretika dengan mengolah kain sisa menjadi karya bernilai artistik tinggi dan ramah lingkungan.
+                        Hamzah Style hadir dengan kecintaan pada batik Indonesia. Kami menghadirkan pakaian batik berkualitas dengan desain modern, sekaligus memanfaatkan sisa kain batik menjadi aneka kerajinan yang bermanfaat dan ramah lingkungan.
                     </p>
 
                     <!-- 3 Feature Cards -->
@@ -538,7 +494,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-bold text-stone-900 text-sm">Warisan Mahakarya Nusantara</h4>
+                                <h4 class="font-bold text-stone-900 text-sm">Batik Asli Warisan Nusantara</h4>
                                 <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
                                     Menjaga keaslian motif batik, ketelitian canting manual, dan teknik cap tradisional warisan leluhur.
                                 </p>
@@ -553,9 +509,9 @@
                                 </svg>
                             </div>
                             <div>
-                                <h4 class="font-bold text-stone-900 text-sm">Desain Modern Berkelanjutan</h4>
+                                <h4 class="font-bold text-stone-900 text-sm">Ramah Lingkungan & Bermanfaat</h4>
                                 <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
-                                    Mengolah kain sirkular upcycled bernilai estetika premium untuk gaya hidup ramah lingkungan.
+                                    Memanfaatkan sisa kain batik berkualitas menjadi aneka produk yang unik dan ramah lingkungan.
                                 </p>
                             </div>
                         </div>
@@ -570,7 +526,7 @@
                             <div>
                                 <h4 class="font-bold text-stone-900 text-sm">Pemberdayaan Komunitas Pengrajin</h4>
                                 <p class="text-xs text-stone-500 mt-0.5 leading-relaxed">
-                                    Bermitra langsung dengan sentra perajin lokal di sentra batik Yogyakarta, Solo, &amp; Pekalongan.
+                                    Bermitra langsung dengan para pengrajin lokal di Yogyakarta, Solo, dan Pekalongan.
                                 </p>
                             </div>
                         </div>
@@ -595,7 +551,7 @@
 
                 <!-- Subtitle -->
                 <p class="text-stone-300 text-xs sm:text-sm md:text-base max-w-2xl mx-auto leading-relaxed mb-8">
-                    Belanja produk batik premium dan olahan kain sisa ramah lingkungan dari Hamzah Style Official. Tampil percaya diri seraya ikut menjaga kelestarian bumi dan kebudayaan Nusantara.
+                    Belanja produk batik premium dan olahan kain sisa ramah lingkungan dari Hamzah Style. Tampil percaya diri seraya ikut menjaga kelestarian bumi dan kebudayaan Nusantara.
                 </p>
 
                 <!-- Action Buttons -->

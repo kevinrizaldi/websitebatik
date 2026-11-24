@@ -19,7 +19,7 @@
                     </span>
                 </div>
                 <p class="text-sm text-[#7A7269] mt-1">
-                    Kelola identitas kurator utama, kredensial otentikasi dua langkah (2FA), serta hak akses staf atelier Hamzah Style Official.
+                    Kelola identitas kurator utama, kredensial otentikasi dua langkah (2FA), serta hak akses staf atelier Hamzah Style.
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -256,10 +256,10 @@
                             <div>
                                 <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">Jabatan / Hak Akses</label>
                                 <div class="relative">
-                                    <input type="text" value="Master Artisan &amp; Lead Curator" disabled
+                                    <input type="text" value="{{ $user->role ? ucfirst($user->role).' Hamzah Style' : 'Administrator' }}" disabled
                                            class="w-full py-2.5 px-3.5 pr-10 rounded-xl border border-[#ECE5D8] bg-[#F6F1EA] text-xs text-[#5A544E] font-medium cursor-not-allowed">
                                     <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-[#B85D3B] bg-[#FAF4ED] px-1.5 py-0.5 rounded border border-[#E5DDD0]">
-                                        Terkunci: Super Admin
+                                        Terkunci: {{ $user->role ? ucfirst($user->role) : 'Admin' }}
                                     </span>
                                 </div>
                             </div>

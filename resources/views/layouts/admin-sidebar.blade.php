@@ -32,11 +32,8 @@
     {{-- LOGO & BRANDING --}}
     <div class="border-b border-[#EFECE6]/80 p-5">
         <div class="flex items-center justify-between">
-            <a href="{{ route('dashboard') }}" class="flex flex-col gap-1">
-                <img src="{{ asset('images/logo.png') }}" alt="HAMZAH STYLE OFFICIAL" class="h-7 w-auto object-contain object-left">
-                <span class="inline-block w-fit rounded bg-[#F7EFE6] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#A86544]">
-                    ADMIN PORTAL
-                </span>
+            <a href="{{ route('dashboard') }}" class="flex items-center">
+                <img src="{{ asset('images/logo.png') }}" alt="Hamzah Style" class="h-8 w-auto object-contain object-left">
                 <span class="sr-only">Panel Toko</span>
             </a>
             @if(!empty($isMobile))
@@ -46,12 +43,6 @@
                     </svg>
                 </button>
             @endif
-        </div>
-
-        {{-- PORTAL MODE BADGE --}}
-        <div class="mt-4 flex items-center justify-between rounded-xl bg-[#FAF7F2] px-3 py-1.5 border border-[#EFECE6]/80 text-[11px]">
-            <span class="font-semibold text-stone-500 uppercase tracking-wider text-[10px]">PORTAL MODE</span>
-            <span class="font-medium text-[#A86544] bg-[#F7EFE6] px-2 py-0.5 rounded-md text-[10px]">Kurasi Batik</span>
         </div>
     </div>
 
@@ -153,7 +144,7 @@
                 {{ strtoupper(substr(Auth::user()->name ?? 'AK', 0, 2)) }}
             </div>
             <div class="min-w-0">
-                <p class="truncate text-xs font-bold text-[#1E1B18] group-hover:text-[#A86544] transition-colors">{{ Auth::user()->name ?? 'Admin Kurator' }}</p>
+                <p class="truncate text-xs font-bold text-[#1E1B18] group-hover:text-[#A86544] transition-colors">{{ Auth::user()->name ?? 'Administrator' }}</p>
                 <p class="text-[10px] text-stone-400">Super Admin</p>
             </div>
         </a>

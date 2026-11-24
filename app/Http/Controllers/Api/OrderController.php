@@ -14,6 +14,7 @@ use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 
 class OrderController extends Controller
@@ -312,6 +313,8 @@ class OrderController extends Controller
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['required', 'string', 'max:1000'],
+            'photos' => ['nullable', 'array', 'max:3'],
+            'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         $order->load('items');
@@ -346,6 +349,11 @@ class OrderController extends Controller
             ], 422);
         }
 
+        $paths = [];
+        foreach ($request->file('photos', []) as $photo) {
+            $paths[] = Storage::disk('public')->putFile('reviews', $photo);
+        }
+
         $review = Review::create([
             'order_id' => $order->id,
             'product_id' => $productId,
@@ -353,6 +361,7 @@ class OrderController extends Controller
             'customer_name' => $request->user()->name,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
+            'photos' => $paths ?: null,
             'status' => 'Disetujui',
         ]);
 
@@ -362,6 +371,10 @@ class OrderController extends Controller
                 'id' => $review->id,
                 'rating' => $review->rating,
                 'comment' => $review->comment,
+                'photos' => array_map(
+                    fn (string $path): string => url('api/media/storage/'.$path),
+                    $paths,
+                ),
             ],
         ], 201);
     }

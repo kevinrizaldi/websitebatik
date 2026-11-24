@@ -37,6 +37,7 @@ class Product extends Model
         'material',
         'size',
         'ukuran',
+        'panduan_ukuran',
         'size_stock',
         'stok_ukuran',
         'image',
@@ -365,7 +366,20 @@ class Product extends Model
 
     public function getAvgRatingAttribute(): float
     {
-        return (float) ($this->reviews()->where('status', 'Disetujui')->avg('rating') ?: 0.0);
+        if (array_key_exists('avg_rating', $this->attributes) && $this->attributes['avg_rating'] !== null) {
+            return round((float) $this->attributes['avg_rating'], 1);
+        }
+
+        return round((float) ($this->reviews()->where('status', 'Disetujui')->avg('rating') ?: 0.0), 1);
+    }
+
+    public function getReviewsCountAttribute(): int
+    {
+        if (array_key_exists('approved_reviews_count', $this->attributes) && $this->attributes['approved_reviews_count'] !== null) {
+            return (int) $this->attributes['approved_reviews_count'];
+        }
+
+        return (int) $this->reviews()->where('status', 'Disetujui')->count();
     }
 
     public function getDiscountPercentageAttribute(): int
@@ -455,7 +469,7 @@ class Product extends Model
 
         if ($isClothing) {
             if ($total <= 0) {
-                return ['S' => 0, 'M' => 0, 'L' => 0, 'XL' => 0, 'XXL' => 0, 'All Size' => 0];
+                return ['S' => 0, 'M' => 0, 'L' => 0, 'XL' => 0, 'XXL' => 0];
             }
 
             $base = intdiv($total, 5);
@@ -467,7 +481,6 @@ class Product extends Model
                 'L' => $base + ($remainder > 2 ? 1 : 0),
                 'XL' => $base + ($remainder > 3 ? 1 : 0),
                 'XXL' => $base,
-                'All Size' => $base,
             ];
         }
 

@@ -130,6 +130,7 @@ class ProductController extends Controller
                 'rating' => (int) $review->rating,
                 'comment' => $review->comment ?? $review->komentar ?? '',
                 'status' => $review->status,
+                'photos' => $this->reviewPhotoUrls($review->photos),
                 'created_at' => $review->created_at?->toIso8601String(),
             ])
             ->values();
@@ -149,7 +150,9 @@ class ProductController extends Controller
             ->values()
             ->all();
 
-        $sizeStock = $product->size_stock ?? $product->stok_ukuran ?? [];
+        $sizeStock = method_exists($product, 'getSizeStockArray')
+            ? $product->getSizeStockArray()
+            : ($product->size_stock ?? $product->stok_ukuran ?? []);
         $sizeStock = is_array($sizeStock) ? $sizeStock : [];
 
         $categoryRelation = $product->relationLoaded('category') ? $product->getRelation('category') : null;
@@ -191,10 +194,19 @@ class ProductController extends Controller
                 'user_name' => $review->user?->name ?? 'Pelanggan',
                 'rating' => (int) $review->rating,
                 'comment' => $review->comment ?? $review->komentar ?? '',
+                'photos' => $this->reviewPhotoUrls($review->photos),
                 'created_at' => $review->created_at?->toIso8601String(),
             ])->values()->all();
         }
 
         return $data;
+    }
+
+    private function reviewPhotoUrls(mixed $photos): array
+    {
+        return array_map(
+            fn (string $path): string => url('api/media/storage/'.$path),
+            is_array($photos) ? $photos : [],
+        );
     }
 }

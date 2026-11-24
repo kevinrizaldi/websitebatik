@@ -3,20 +3,31 @@
     $kategoriProduk = $produk->kategoriRelasi?->nama_kategori ?? $produk->kategori ?? 'Koleksi Batik';
     $hargaProduk = (float) ($produk->harga ?? 0);
     $hargaFormatted = 'Rp ' . number_format($hargaProduk, 0, ',', '.');
-    $hargaCoret = $hargaProduk > 0 ? 'Rp ' . number_format($hargaProduk * 1.15, 0, ',', '.') : '';
+    $hargaCoret = (!empty($produk->harga_coret) && (float)$produk->harga_coret > $hargaProduk)
+        ? 'Rp ' . number_format((float)$produk->harga_coret, 0, ',', '.')
+        : null;
     $materialProduk = $produk->material ?: 'Katun Primissima Halus Benang 60s';
-    $deskripsiProduk = $produk->deskripsi ?: 'Koleksi busana batik eksklusif bermutu tinggi berdaya pakai harian dan formal.';
+    $deskripsiProduk = $produk->deskripsi ?: 'Koleksi batik berkualitas tinggi yang nyaman dipakai untuk sehari-hari maupun acara formal.';
     $gambarProduk = $produk ? $produk->gambar_url : asset('images/beranda/folded-shirts.jpg');
     $stokProduk = (int) ($produk->stok ?? 0);
+    $isKain = str_contains(strtolower($kategoriProduk), 'kain');
     $stokUkuranArray = $produk ? $produk->getStokUkuranArray() : ['All Size' => $stokProduk];
 
-    $firstAvailableSize = 'All Size';
-    foreach ($stokUkuranArray as $sz => $stk) {
-        if ($stk > 0) {
-            $firstAvailableSize = (string) $sz;
+    // Jika produk memiliki ukuran spesifik (S, M, L, dll), jangan tampilkan opsi 'All Size'
+    $hasSpecificSizes = false;
+    foreach (array_keys($stokUkuranArray) as $k) {
+        if (in_array(strtoupper($k), ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'])) {
+            $hasSpecificSizes = true;
             break;
         }
     }
+    if ($hasSpecificSizes && isset($stokUkuranArray['All Size'])) {
+        unset($stokUkuranArray['All Size']);
+    }
+
+    // Untuk busana/baju: awal buka halaman TIDAK otomatis memilih ukuran (kosong)
+    // Untuk kain: otomatis 'All Size'
+    $firstAvailableSize = $isKain ? 'All Size' : '';
     $produkId = $produk->id ?? 1;
 
     // Foto asli produk dari database
@@ -34,8 +45,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $namaProduk }} — HAMZAH STYLE OFFICIAL</title>
-    <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style Official. Warisan batik nusantara modern berkualitas premium.">
+    <title>{{ $namaProduk }} — Hamzah Style</title>
+    <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style. Warisan batik nusantara modern berkualitas premium.">
 
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -65,19 +76,25 @@
           selectedSize: '{{ $firstAvailableSize }}',
           sizeStockMap: {{ json_encode($stokUkuranArray) }},
           totalStock: {{ $stokProduk }},
+          isKain: {{ $isKain ? 'true' : 'false' }},
           sizeDescriptions: {
+              'XS': '100 cm',
               'S': '104 cm',
               'M': '108 cm',
               'L': '112 cm',
               'XL': '116 cm',
-              'XXL': '120 cm'
+              'XXL': '120 cm',
+              '3XL': '124 cm',
+              '4XL': '128 cm',
+              'All Size': 'Satu Ukuran (All Size)'
           },
           quantity: 1,
           descOpen: true,
+          guideOpen: true,
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           sizeGuideModal: false,
           imageZoomModal: false,
-          writeReviewModal: false,
+
           toastMessage: '',
           isAdding: false,
 
@@ -93,6 +110,17 @@
               setTimeout(() => { this.toastMessage = ''; }, 3200);
           },
           selectSize(sz) {
+              // Jika ukuran yang sama diklik lagi, batalkan pilihan (toggle / unselect)
+              if (this.selectedSize === sz) {
+                  this.selectedSize = '';
+                  this.quantity = 1;
+                  return;
+              }
+
+              if (this.sizeStockMap && this.sizeStockMap[sz] <= 0) {
+                  this.showToast('Maaf, stok ukuran ' + sz + ' sedang habis');
+                  return;
+              }
               this.selectedSize = sz;
               const max = this.currentMaxStock;
               if (max <= 0) {
@@ -103,13 +131,17 @@
               }
           },
           increaseQty() {
+              if (!this.isKain && !this.selectedSize) {
+                  this.showToast('Silakan pilih ukuran terlebih dahulu');
+                  return;
+              }
               const max = this.currentMaxStock;
               if (max <= 0) {
                   this.showToast('Maaf, stok untuk ukuran ini sedang habis');
                   return;
               }
               if (this.quantity >= max) {
-                  this.showToast('Maksimal jumlah pesanan adalah ' + max + ' item sesuai stok yang tersedia');
+                  this.showToast('Maksimal pemesanan ' + max + ' pcs sesuai sisa stok');
                   return;
               }
               this.quantity++;
@@ -120,6 +152,10 @@
               }
           },
           addToCart(redirect = false) {
+              if (!this.isKain && !this.selectedSize) {
+                  this.showToast('Silakan pilih ukuran terlebih dahulu');
+                  return;
+              }
               const max = this.currentMaxStock;
               if (max <= 0) {
                   this.showToast('Maaf, stok produk untuk ukuran ini sedang habis');
@@ -127,7 +163,7 @@
               }
               if (this.quantity > max) {
                   this.quantity = max;
-                  this.showToast('Jumlah pesanan disesuaikan dengan stok tersedia (' + max + ' pcs)');
+                  this.showToast('Jumlah pesanan disesuaikan dengan sisa stok (' + max + ' pcs)');
                   return;
               }
 
@@ -206,10 +242,10 @@
             <!-- Product Showcase (2 Columns) -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
 
-                <!-- Left Column: Gallery -->
+                <!-- Left Column: Gallery (Square 1:1 Aspect Ratio) -->
                 <div class="lg:col-span-5 space-y-4">
-                    <!-- Main Image Frame -->
-                    <div class="relative aspect-[4/5] rounded-2xl overflow-hidden bg-stone-100 border border-[#EAE1D3] shadow-sm group">
+                    <!-- Main Image Frame (Square 1:1) -->
+                    <div class="relative aspect-square rounded-2xl overflow-hidden bg-stone-100 border border-[#EAE1D3] shadow-sm group">
                         <img :src="activeImage"
                              alt="{{ $namaProduk }}"
                              class="w-full h-full object-cover transition-all duration-500 group-hover:scale-105 cursor-pointer"
@@ -227,7 +263,7 @@
 
                     <!-- Thumbnails Gallery -->
                     @if(count($galleryThumbnails) > 1)
-                    <div class="grid grid-cols-4 gap-3">
+                    <div class="grid grid-cols-5 gap-2.5">
                         @foreach($galleryThumbnails as $idx => $thumb)
                             <button @click="activeImage = '{{ $thumb }}'"
                                     :class="activeImage === '{{ $thumb }}' ? 'ring-2 ring-[#201A17] border-transparent opacity-100' : 'opacity-70 hover:opacity-100 border-[#EAE1D3]'"
@@ -278,115 +314,123 @@
                     <!-- Price Card -->
                     <div class="bg-[#FAF4EC] rounded-2xl p-5 border border-[#EFE5D6] flex items-center justify-between shadow-2xs">
                         <div>
-                            <span class="text-[10px] text-stone-500 uppercase tracking-widest font-bold block">HARGA TERBAIK</span>
+                            <span class="text-[10px] text-stone-500 uppercase tracking-widest font-bold block">HARGA</span>
                             <div class="flex items-baseline gap-3 mt-1">
                                 <span class="text-3xl sm:text-4xl font-extrabold text-[#1F1916] tracking-tight">
                                     {{ $hargaFormatted }}
                                 </span>
-                                <span class="text-sm sm:text-base text-stone-400 line-through">
-                                    {{ $hargaCoret }}
-                                </span>
+                                @if(!empty($hargaCoret))
+                                    <span class="text-sm sm:text-base text-stone-400 line-through">
+                                        {{ $hargaCoret }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
 
                         <!-- Stock Badge -->
                         <div class="text-right">
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-stone-200 text-stone-800 shadow-2xs">
-                                <span class="w-2 h-2 rounded-full" :class="currentMaxStock > 0 ? 'bg-emerald-500' : 'bg-red-500'"></span>
-                                <span x-text="currentMaxStock > 0 ? 'Stok Tersedia' : 'Stok Habis'"></span>
+                                <span class="w-2 h-2 rounded-full" :class="(selectedSize ? currentMaxStock : totalStock) > 0 ? 'bg-emerald-500' : 'bg-red-500'"></span>
+                                <span x-text="(selectedSize ? currentMaxStock : totalStock) > 0 ? 'Stok Tersedia' : 'Stok Habis'"></span>
                             </span>
                             <span class="block text-xs text-stone-500 mt-1 font-medium">
-                                Sisa <strong class="text-stone-800" x-text="currentMaxStock"></strong> pcs
+                                <span x-show="!selectedSize && !isKain">
+                                    Total stok: <strong class="text-stone-800" x-text="totalStock"></strong> pcs
+                                </span>
+                                <span x-show="selectedSize || isKain">
+                                    Sisa <strong class="text-stone-800" x-text="currentMaxStock"></strong> pcs <span class="text-[11px] text-stone-400" x-show="selectedSize && !isKain">(Ukuran <span x-text="selectedSize"></span>)</span>
+                                </span>
                             </span>
                         </div>
-                    </div>
-
-                    <!-- Value Proposition Card -->
-                    <div class="bg-[#FAF5EF]/80 border border-[#ECE2D2] rounded-2xl p-4 flex items-start gap-3.5 text-xs text-stone-700 leading-relaxed">
-                        <div class="w-8 h-8 rounded-lg bg-[#EFE8DD] text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
-                            <svg class="w-4 h-4 text-stone-800" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"/>
-                            </svg>
-                        </div>
-                        <p>
-                            <strong>{{ $materialProduk }}.</strong> {{ $deskripsiProduk }}
-                        </p>
                     </div>
 
                     <!-- Size Selector -->
-                    <div class="space-y-3 pt-1">
-                        <div class="flex items-center justify-between text-xs sm:text-sm font-semibold">
-                            <span class="text-stone-900 font-bold">Pilih Ukuran</span>
-                            <button @click="sizeGuideModal = true" class="text-stone-700 hover:text-stone-950 flex items-center gap-1.5 transition text-xs font-medium">
-                                <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-                                </svg>
-                                <span>Panduan Ukuran</span>
-                            </button>
+                    @if($isKain)
+                        <div class="space-y-1.5 pt-1">
+                            <span class="text-stone-900 font-bold text-xs sm:text-sm block">Ukuran Kain</span>
+                            <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#FAF7F2] border border-[#D5CABB] text-xs font-bold text-stone-800">
+                                <span>🧵</span>
+                                <span>Lembaran Kain Batik (2,4 m × 1,15 m)</span>
+                            </div>
+                            <p class="text-[11px] text-stone-500">Kain batik siap dijahit sesuai model pakaian yang Anda inginkan.</p>
                         </div>
-
-                        <!-- Size Buttons from Database -->
-                        <div class="flex flex-wrap items-center gap-2.5">
-                            @foreach($stokUkuranArray as $sz => $stk)
+                    @else
+                        <div class="space-y-3 pt-1">
+                            <div class="flex items-center justify-between text-xs sm:text-sm font-semibold">
+                                <span class="text-stone-900 font-bold">Pilih Ukuran</span>
                                 <button type="button"
-                                        @click="selectSize('{{ $sz }}')"
-                                        :class="selectedSize === '{{ $sz }}'
-                                            ? 'bg-[#201A17] text-white shadow-xs'
-                                            : '{{ $stk <= 0 ? 'bg-stone-100 text-stone-400 border border-stone-200 opacity-60' : 'bg-[#FAF7F2] text-stone-800 border border-[#D5CABB] hover:border-stone-800 cursor-pointer' }}'"
-                                        class="min-w-12 h-11 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center transition-all duration-150">
-                                    {{ $sz }}
-                                    @if($stk <= 5 && $stk > 0)
-                                        <span class="ml-1 text-[9px] text-amber-500">({{ $stk }})</span>
-                                    @elseif($stk <= 0)
-                                        <span class="ml-1 text-[9px] text-stone-400">(Habis)</span>
-                                    @endif
+                                        @click="guideOpen = true; document.getElementById('panduan-ukuran-card')?.scrollIntoView({ behavior: 'smooth' })"
+                                        class="text-stone-700 hover:text-stone-950 flex items-center gap-1.5 transition text-xs font-medium cursor-pointer">
+                                    <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                                    </svg>
+                                    <span>Panduan Ukuran</span>
                                 </button>
-                            @endforeach
-                        </div>
+                            </div>
 
-                        <!-- Dynamic Size Subtext -->
-                        <div class="text-xs text-stone-500 pt-0.5">
-                            Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong> | Lingkar Dada: <span class="font-semibold text-stone-800" x-text="sizeDescriptions[selectedSize] || '108 cm'"></span>
+                            <!-- Size Buttons from Database -->
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                @foreach($stokUkuranArray as $sz => $stk)
+                                    <button type="button"
+                                            @click="selectSize('{{ $sz }}')"
+                                            :class="selectedSize === '{{ $sz }}'
+                                                ? 'bg-[#201A17] text-white shadow-xs'
+                                                : '{{ $stk <= 0 ? 'bg-stone-100 text-stone-400 border border-stone-200 opacity-60' : 'bg-[#FAF7F2] text-stone-800 border border-[#D5CABB] hover:border-stone-800 cursor-pointer' }}'"
+                                            class="min-w-12 h-11 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center transition-all duration-150">
+                                        {{ $sz }}
+                                        @if($stk <= 5 && $stk > 0)
+                                            <span class="ml-1 text-[9px] text-amber-500">({{ $stk }})</span>
+                                        @elseif($stk <= 0)
+                                            <span class="ml-1 text-[9px] text-stone-400">(Habis)</span>
+                                        @endif
+                                    </button>
+                                @endforeach
+                            </div>
+
+                            <!-- Dynamic Size Subtext -->
+                            <div x-show="selectedSize" class="text-xs text-stone-500 pt-0.5">
+                                Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong>
+                            </div>
                         </div>
-                    </div>
+                    @endif
 
                     <!-- Stepper & Add to Cart Row -->
                     <div class="flex items-center gap-3 pt-2">
                         <!-- Stepper -->
                         <div class="inline-flex items-center rounded-xl bg-white border border-[#D5CABB] p-1 shadow-2xs">
                             <button @click="decreaseQty()"
-                                    :disabled="quantity <= 1 || currentMaxStock <= 0"
-                                    :class="quantity <= 1 || currentMaxStock <= 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
+                                    :disabled="quantity <= 1"
+                                    :class="quantity <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
                                     class="w-10 h-10 rounded-lg flex items-center justify-center text-stone-700 font-bold text-base transition">
                                 −
                             </button>
                             <span class="w-10 text-center text-sm font-bold text-stone-900" x-text="quantity"></span>
                             <button @click="increaseQty()"
-                                    :disabled="quantity >= currentMaxStock || currentMaxStock <= 0"
-                                    :class="quantity >= currentMaxStock || currentMaxStock <= 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
+                                    :disabled="quantity >= currentMaxStock || (selectedSize ? currentMaxStock <= 0 : totalStock <= 0)"
+                                    :class="quantity >= currentMaxStock || (selectedSize ? currentMaxStock <= 0 : totalStock <= 0) ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
                                     class="w-10 h-10 rounded-lg flex items-center justify-center text-stone-700 font-bold text-base transition"
-                                    :title="quantity >= currentMaxStock ? 'Maksimal stok tercapai (' + currentMaxStock + ')' : 'Tambah jumlah'">
+                                    :title="!selectedSize ? 'Pilih ukuran terlebih dahulu' : (quantity >= currentMaxStock ? 'Maksimal stok tercapai (' + currentMaxStock + ')' : 'Tambah jumlah')">
                                 +
                             </button>
                         </div>
 
                         <!-- Primary CTA Button: Tambah ke Keranjang -->
                         <button @click="addToCart(false)"
-                                :disabled="isAdding || currentMaxStock <= 0"
-                                :class="currentMaxStock <= 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed shadow-none' : 'bg-[#201A17] hover:bg-stone-800 text-white shadow-md cursor-pointer'"
+                                :disabled="isAdding || totalStock <= 0 || (selectedSize && currentMaxStock <= 0)"
+                                :class="totalStock <= 0 || (selectedSize && currentMaxStock <= 0) ? 'bg-stone-300 text-stone-500 cursor-not-allowed shadow-none' : 'bg-[#201A17] hover:bg-stone-800 text-white shadow-md cursor-pointer'"
                                 class="flex-1 py-3.5 px-6 rounded-xl font-semibold text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-2">
                             <svg class="w-4 h-4 text-stone-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                             </svg>
-                            <span x-text="currentMaxStock <= 0 ? 'Stok Habis' : (isAdding ? 'Menyimpan...' : 'Tambah ke Keranjang')"></span>
+                            <span x-text="totalStock <= 0 || (selectedSize && currentMaxStock <= 0) ? 'Stok Habis' : (isAdding ? 'Memproses...' : 'Tambah ke Keranjang')"></span>
                         </button>
                     </div>
 
                     <!-- Secondary Row: Beli Sekarang & WhatsApp -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                         <button @click="addToCart(true)"
-                                :disabled="isAdding || currentMaxStock <= 0"
-                                :class="currentMaxStock <= 0 ? 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none' : 'bg-[#EFE8DD] hover:bg-[#E5DBCB] text-stone-900 cursor-pointer shadow-2xs'"
+                                :disabled="isAdding || totalStock <= 0 || (selectedSize && currentMaxStock <= 0)"
+                                :class="totalStock <= 0 || (selectedSize && currentMaxStock <= 0) ? 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none' : 'bg-[#EFE8DD] hover:bg-[#E5DBCB] text-stone-900 cursor-pointer shadow-2xs'"
                                 class="py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition text-center">
                             Beli Sekarang
                         </button>
@@ -399,49 +443,102 @@
                         </a>
                     </div>
 
-                    <!-- Accordion: Deskripsi Produk -->
-                    <div class="border border-[#EAE1D3] rounded-2xl bg-white overflow-hidden shadow-2xs mt-4">
-                        <button @click="descOpen = !descOpen"
-                                class="w-full p-4 sm:p-5 flex items-center justify-between font-bold text-stone-900 text-sm sm:text-base hover:bg-[#FAF7F2] transition">
-                            <span>Deskripsi Produk</span>
-                            <svg class="w-4 h-4 text-stone-500 transition-transform duration-200"
-                                 :class="descOpen ? 'rotate-180' : ''"
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-
-                        <div x-show="descOpen" class="px-5 pb-5 text-xs sm:text-sm text-stone-600 leading-relaxed space-y-3 border-t border-[#EAE1D3]/70 pt-4">
-                            <p class="text-stone-800 leading-relaxed">
-                                {{ $deskripsiProduk }}
-                            </p>
-                            <ul class="space-y-1.5 text-stone-700 text-xs sm:text-sm pt-2">
-                                <li class="flex items-start gap-2">
-                                    <span class="text-stone-400">•</span>
-                                    <span><strong>Potongan:</strong> Regular Fit modern kerah kancing tersembunyi</span>
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-stone-400">•</span>
-                                    <span><strong>Bahan:</strong> Katun Prima Halus kombinasi soga alam non-alergi</span>
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-stone-400">•</span>
-                                    <span><strong>Kancing:</strong> Tempurung kelapa eksklusif dengan jahitan silang kuat</span>
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-stone-400">•</span>
-                                    <span><strong>Saku:</strong> Dada kiri satu pasang dengan motif menyambung sempurna (matching pattern)</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
                 </div>
 
             </div>
 
+            <!-- Accordion: Panduan Ukuran (Diletakkan di atas Deskripsi Produk) -->
+            @if(!$isKain)
+            <div id="panduan-ukuran-card" class="mt-8 border border-[#EAE1D3] rounded-2xl bg-white overflow-hidden shadow-2xs">
+                <button @click="guideOpen = !guideOpen"
+                        class="w-full p-4 sm:p-5 flex items-center justify-between font-bold text-stone-900 text-sm sm:text-base hover:bg-[#FAF7F2] transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-stone-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                        </svg>
+                        <span>Panduan Ukuran</span>
+                    </span>
+                    <svg class="w-4 h-4 text-stone-500 transition-transform duration-200"
+                         :class="guideOpen ? 'rotate-180' : ''"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div x-show="guideOpen" class="px-5 pb-5 text-xs sm:text-sm text-stone-600 leading-relaxed space-y-4 border-t border-[#EAE1D3]/70 pt-4">
+                    @if(!empty($produk->panduan_ukuran))
+                        <div class="bg-[#FAF7F2] border border-[#ECE5D8] rounded-xl p-4 text-xs sm:text-sm text-stone-700 whitespace-pre-line leading-relaxed font-sans">
+                            <div class="text-[11px] font-bold tracking-wider text-[#8C6D58] uppercase mb-1.5 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Panduan Khusus Produk Ini
+                            </div>
+                            {{ $produk->panduan_ukuran }}
+                        </div>
+                    @endif
+
+                    <div class="overflow-x-auto">
+                        <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Panduan Ukuran Baju (cm)</div>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-stone-200 text-stone-500 font-semibold">
+                                    <th class="py-2.5">Ukuran</th>
+                                    <th class="py-2.5">Lingkar Dada</th>
+                                    <th class="py-2.5">Panjang Baju</th>
+                                    <th class="py-2.5">Panjang Lengan</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-100 text-stone-700">
+                                <tr><td class="py-2.5 font-bold">S</td><td>104 cm</td><td>72 cm</td><td>60 cm</td></tr>
+                                <tr><td class="py-2.5 font-bold">M</td><td>108 cm</td><td>74 cm</td><td>61 cm</td></tr>
+                                <tr><td class="py-2.5 font-bold">L</td><td>112 cm</td><td>76 cm</td><td>62 cm</td></tr>
+                                <tr><td class="py-2.5 font-bold">XL</td><td>116 cm</td><td>78 cm</td><td>63 cm</td></tr>
+                                <tr><td class="py-2.5 font-bold">XXL</td><td>120 cm</td><td>80 cm</td><td>64 cm</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Accordion: Deskripsi Produk (Tampilan Lebar Penuh / Full Width) -->
+            <div class="mt-4 border border-[#EAE1D3] rounded-2xl bg-white overflow-hidden shadow-2xs">
+                <button @click="descOpen = !descOpen"
+                        class="w-full p-4 sm:p-5 flex items-center justify-between font-bold text-stone-900 text-sm sm:text-base hover:bg-[#FAF7F2] transition">
+                    <span>Deskripsi Produk</span>
+                    <svg class="w-4 h-4 text-stone-500 transition-transform duration-200"
+                         :class="descOpen ? 'rotate-180' : ''"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div x-show="descOpen" class="px-5 pb-5 text-xs sm:text-sm text-stone-600 leading-relaxed space-y-3 border-t border-[#EAE1D3]/70 pt-4">
+                    <p class="text-stone-800 leading-relaxed">
+                        {{ $deskripsiProduk }}
+                    </p>
+                    <ul class="space-y-1.5 text-stone-700 text-xs sm:text-sm pt-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-stone-400">•</span>
+                            <span><strong>Model:</strong> Regular Fit yang pas di badan, kerah rapi dengan kancing dalam</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-stone-400">•</span>
+                            <span><strong>Bahan:</strong> Katun Prima Halus, adem dan nyaman di kulit</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-stone-400">•</span>
+                            <span><strong>Kancing:</strong> Kancing batok kelapa alami dengan jahitan kuat dan rapi</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-stone-400">•</span>
+                            <span><strong>Saku:</strong> Satu saku di dada kiri dengan motif batik yang menyatu rapi</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
             <!-- ================= REVIEWS SECTION (ULASAN PELANGGAN) ================= -->
-            <section id="ulasan-section" class="mt-20 pt-12 border-t border-[#EAE1D3]">
+            <section id="ulasan-section" class="mt-14 pt-12 border-t border-[#EAE1D3]">
                 <!-- Header Title -->
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                     <div>
@@ -450,8 +547,6 @@
                             Ulasan Pelanggan
                         </h2>
                     </div>
-
-
                 </div>
 
                 <!-- Rating Scorecard Banner -->
@@ -468,7 +563,7 @@
                             @endfor
                         </div>
                         <span class="font-bold text-stone-900 text-sm block">
-                            {{ $ratingAvg >= 4.5 ? 'Puas Sempurna' : ($ratingAvg >= 4.0 ? 'Sangat Baik' : ($ratingCount > 0 ? 'Cukup Puas' : 'Produk Autentik')) }}
+                            {{ $ratingAvg >= 4.5 ? 'Sangat Puas' : ($ratingAvg >= 4.0 ? 'Sangat Baik' : ($ratingCount > 0 ? 'Cukup Puas' : 'Batik Asli')) }}
                         </span>
                         <span class="text-xs text-stone-400 mt-0.5 block">
                             @if($ratingCount > 0)
@@ -515,12 +610,9 @@
                                             </div>
                                             <div>
                                                 <h4 class="font-bold text-sm text-stone-900">{{ $u->customer_name }}</h4>
-                                                <span class="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
-                                                    <span>✓</span> Pembeli Terverifikasi
-                                                </span>
                                             </div>
                                         </div>
-                                        <span class="text-[11px] text-stone-400">{{ $u->created_at ? $u->created_at->diffForHumans() : 'Baru saja' }}</span>
+                                        <span class="text-[11px] text-stone-400">{{ $u->created_at ? $u->created_at->translatedFormat('j M Y') : '-' }}</span>
                                     </div>
 
                                     <div class="flex text-amber-500 text-xs mb-3">
@@ -535,7 +627,15 @@
 
                                     @if($u->image_path)
                                         <div class="flex items-center gap-2 pt-1">
-                                            <img src="{{ asset('storage/' . $u->image_path) }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                            <img src="{{ \App\Support\MediaUrl::resolve($u->image_path) }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                        </div>
+                                    @endif
+
+                                    @if($u->photos)
+                                        <div class="flex items-center gap-2 pt-2">
+                                            @foreach($u->photos as $photo)
+                                                <img src="{{ \App\Support\MediaUrl::resolve($photo) ?: $photo }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                            @endforeach
                                         </div>
                                     @endif
                                 </div>
@@ -545,7 +645,7 @@
                 @else
                     <div class="bg-white rounded-2xl p-8 border border-dashed border-[#DCD2C3] text-center">
                         <p class="font-bold text-stone-900 text-sm">Belum ada ulasan untuk produk ini</p>
-                        <p class="text-xs text-stone-500 mt-1">Ulasan dapat diberikan setelah pesanan Anda berstatus Selesai melalui menu Pesanan Saya.</p>
+                        <p class="text-xs text-stone-500 mt-1">Ulasan dapat diberikan setelah pesanan selesai diterima melalui menu Pesanan Saya.</p>
                     </div>
                 @endif
 
@@ -577,29 +677,17 @@
                         @foreach($produksTerkait as $rel)
                             <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-2xs hover:shadow-md transition flex flex-col group">
                                 <a href="{{ route('produk.detail', $rel->id) }}" class="relative aspect-[4/5] overflow-hidden bg-stone-100 block">
-                                    @if($rel->stok <= 0)
-                                        <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-stone-500 text-white uppercase tracking-wider shadow-xs">
-                                            Stok Habis
-                                        </span>
-                                    @elseif($rel->stok <= 10)
-                                        <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-[#4A2D1B] text-white uppercase tracking-wider shadow-xs">
-                                            Stok Terbatas
-                                        </span>
-                                    @endif
                                     <img src="{{ $rel->gambar_url }}" alt="{{ $rel->nama }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 </a>
                                 <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                                     <div>
-                                        <span class="text-[10px] uppercase font-bold tracking-wider text-stone-400 block mb-1">
-                                            {{ strtoupper($rel->kategoriRelasi?->nama_kategori ?? $rel->kategori ?? 'BATIK') }}
-                                        </span>
                                         <a href="{{ route('produk.detail', $rel->id) }}">
                                             <h3 class="font-bold text-stone-900 text-sm leading-snug mb-1 hover:text-amber-800 transition line-clamp-1">
                                                 {{ $rel->nama }}
                                             </h3>
                                         </a>
                                         <p class="text-[11px] text-stone-500 line-clamp-1 mb-3">
-                                            {{ $rel->deskripsi ?: 'Koleksi busana batik autentik premium.' }}
+                                            {{ $rel->deskripsi ?: 'Koleksi batik berkualitas buatan pengrajin lokal.' }}
                                         </p>
                                     </div>
                                     <div class="flex items-center justify-between pt-2 border-t border-stone-100">
@@ -641,14 +729,24 @@
     <div x-cloak x-show="sizeGuideModal" class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/70 backdrop-blur-sm p-4" @click="sizeGuideModal = false">
         <div class="relative max-w-lg w-full bg-white rounded-3xl p-6 sm:p-8" @click.stop>
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-stone-100">
-                <h3 class="font-serif-title text-xl font-bold text-stone-900">Panduan Ukuran Kemeja Pria</h3>
+                <h3 class="font-serif-title text-xl font-bold text-stone-900">Panduan Ukuran Baju</h3>
                 <button @click="sizeGuideModal = false" class="text-stone-400 hover:text-stone-800 text-xl font-bold">&times;</button>
             </div>
+            @if(!empty($produk->panduan_ukuran))
+                <div class="mb-5 bg-[#FAF7F2] border border-[#ECE5D8] rounded-2xl p-4 text-xs sm:text-sm text-stone-700 whitespace-pre-line leading-relaxed font-sans">
+                    <div class="text-[11px] font-bold tracking-wider text-[#8C6D58] uppercase mb-1.5 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Panduan Khusus Produk Ini
+                    </div>
+                    {{ $produk->panduan_ukuran }}
+                </div>
+            @endif
             <div class="overflow-x-auto text-xs sm:text-sm">
+                <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Panduan Ukuran Baju (cm)</div>
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-stone-200 text-stone-500 font-semibold">
-                            <th class="py-2.5">Size</th>
+                            <th class="py-2.5">Ukuran</th>
                             <th class="py-2.5">Lingkar Dada</th>
                             <th class="py-2.5">Panjang Baju</th>
                             <th class="py-2.5">Panjang Lengan</th>

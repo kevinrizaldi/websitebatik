@@ -476,4 +476,86 @@ class ProdukValidationTest extends TestCase
             ->assertSee('Reset')
             ->assertDontSee('Tampilkan semua produk');
     }
+
+    public function test_can_store_and_update_product_with_size_guide(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Kemeja Batik Keraton',
+            'sku' => 'BJU-GUIDE-001',
+            'kategori' => 'Baju Batik',
+            'harga' => 350000,
+            'stok' => 25,
+            'ukuran' => 'S, M, L, XL, XXL',
+            'panduan_ukuran' => "S: LD 104 cm, PB 72 cm\nM: LD 108 cm, PB 74 cm",
+            'stok_ukuran' => [
+                'S' => 5,
+                'M' => 5,
+                'L' => 5,
+                'XL' => 5,
+                'XXL' => 5,
+            ],
+            'status' => 'Tersedia',
+        ]);
+
+        $response->assertRedirect(route('produk.index'));
+        $this->assertDatabaseHas('products', [
+            'sku' => 'BJU-GUIDE-001',
+            'panduan_ukuran' => "S: LD 104 cm, PB 72 cm\nM: LD 108 cm, PB 74 cm",
+        ]);
+
+        $product = Produk::where('sku', 'BJU-GUIDE-001')->firstOrFail();
+
+        $updateResponse = $this->actingAs($this->admin)->put(route('produk.update', $product), [
+            'nama' => 'Kemeja Batik Keraton Edisi Revisi',
+            'sku' => 'BJU-GUIDE-001',
+            'kategori' => 'Baju Batik',
+            'harga' => 375000,
+            'stok' => 20,
+            'ukuran' => 'S, M, L, XL, XXL',
+            'panduan_ukuran' => "Panduan Baru: LD toleransi 1-2 cm",
+            'stok_ukuran' => [
+                'S' => 4,
+                'M' => 4,
+                'L' => 4,
+                'XL' => 4,
+                'XXL' => 4,
+            ],
+            'status' => 'Tersedia',
+        ]);
+
+        $updateResponse->assertRedirect(route('produk.index'));
+        $this->assertDatabaseHas('products', [
+            'sku' => 'BJU-GUIDE-001',
+            'panduan_ukuran' => 'Panduan Baru: LD toleransi 1-2 cm',
+        ]);
+    }
+
+    public function test_can_create_and_update_product_with_custom_dynamic_sizes(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Outer Batik Etnik Multi Ukuran',
+            'sku' => 'BJU-CUSTOM-SIZES',
+            'kategori' => 'Baju Batik',
+            'harga' => 450000,
+            'stok_ukuran' => [
+                'XS' => 3,
+                'S' => 6,
+                '3XL' => 2,
+                'All Size' => 5,
+            ],
+            'status' => 'Tersedia',
+        ]);
+
+        $response->assertRedirect(route('produk.index'));
+
+        $product = Produk::where('sku', 'BJU-CUSTOM-SIZES')->firstOrFail();
+        $this->assertEquals(16, $product->stok);
+        $this->assertEquals('XS, S, 3XL, All Size', $product->ukuran);
+
+        $stockArray = $product->getStokUkuranArray();
+        $this->assertEquals(3, $stockArray['XS']);
+        $this->assertEquals(6, $stockArray['S']);
+        $this->assertEquals(2, $stockArray['3XL']);
+        $this->assertEquals(5, $stockArray['All Size']);
+    }
 }

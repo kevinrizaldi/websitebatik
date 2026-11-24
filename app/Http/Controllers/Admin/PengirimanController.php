@@ -95,11 +95,11 @@ class PengirimanController extends Controller
             'statusFilter' => $statusFilter,
             'perPage' => $perPage,
             'originInfo' => $originInfo,
-            'totalShipments' => $totalShipments > 0 ? $totalShipments : 126,
-            'siapDikemasCount' => $siapDikemasCount > 0 ? $siapDikemasCount : 18,
-            'siapSerahCount' => $siapSerahCount > 0 ? $siapSerahCount : 8,
-            'dalamPerjalananCount' => $dalamPerjalananCount > 0 ? $dalamPerjalananCount : 24,
-            'diterimaCount' => $diterimaCount > 0 ? $diterimaCount : 76,
+            'totalShipments' => $totalShipments,
+            'siapDikemasCount' => $siapDikemasCount,
+            'siapSerahCount' => $siapSerahCount,
+            'dalamPerjalananCount' => $dalamPerjalananCount,
+            'diterimaCount' => $diterimaCount,
         ]);
     }
 }

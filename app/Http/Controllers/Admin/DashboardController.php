@@ -74,10 +74,184 @@ class DashboardController extends Controller
         $totalOrders = Order::count();
         $ordersToProcess = Order::whereIn('status', ['Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi'])->count();
         $totalProducts = Produk::count();
+        $newProductsThisMonth = Produk::whereMonth('created_at', $today->month)->whereYear('created_at', $today->year)->count();
         $lowStockProducts = Produk::whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD])->count();
         $outOfStockProducts = Produk::where('stok', '<=', 0)->count();
         $averageRating = (float) (Ulasan::where('status', 'Disetujui')->avg('rating') ?? 0);
         $reviewsToApprove = Ulasan::where('status', 'Menunggu')->count();
+
+        // Real order growth: this month vs last month
+        $ordersThisMonth = Order::whereMonth('created_at', $today->month)->whereYear('created_at', $today->year)->count();
+        $ordersLastMonth = Order::whereMonth('created_at', $today->copy()->subMonth()->month)->whereYear('created_at', $today->copy()->subMonth()->year)->count();
+        $orderGrowthPercent = $ordersLastMonth > 0
+            ? round((($ordersThisMonth - $ordersLastMonth) / $ordersLastMonth) * 100)
+            : ($ordersThisMonth > 0 ? 100 : 0);
+
+        // Real repeat buyers percentage
+        $buyersCount = Order::distinct('user_id')->whereNotNull('user_id')->count('user_id');
+        $repeatBuyersCount = Order::select('user_id')
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->get()
+            ->count();
+        $repeatBuyerPercent = $buyersCount > 0 ? round(($repeatBuyersCount / $buyersCount) * 100) : 0;
+
+        // Real sales target percentage
+        $monthlySalesTarget = 50000000;
+        $targetPercentage = $monthlySalesTarget > 0 ? min(100, round(($salesThisMonth / $monthlySalesTarget) * 100, 1)) : 0;
+
+        // Real best-selling categories
+        $categorySales = OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->leftJoin('products', 'products.id', '=', 'order_items.produk_id')
+            ->where(function ($q): void {
+                $q->where('orders.payment_status', Order::PAYMENT_PAID)
+                    ->orWhereIn('orders.status', self::PAID_STATUSES);
+            })
+            ->selectRaw('COALESCE(products.kategori, "Baju Batik") as kategori_nama')
+            ->selectRaw('SUM(order_items.quantity) as units_sold')
+            ->groupBy('kategori_nama')
+            ->orderByDesc('units_sold')
+            ->get();
+
+        $totalCategoryUnits = (int) $categorySales->sum('units_sold');
+        if ($totalCategoryUnits === 0) {
+            $categorySales = Produk::query()
+                ->selectRaw('COALESCE(kategori, "Baju Batik") as kategori_nama')
+                ->selectRaw('SUM(stok) as units_sold')
+                ->groupBy('kategori_nama')
+                ->orderByDesc('units_sold')
+                ->get();
+            $totalCategoryUnits = (int) $categorySales->sum('units_sold');
+        }
+
+        $categoriesData = $categorySales->take(3)->values()->map(function ($cat, $index) use ($totalCategoryUnits): array {
+            $samples = Produk::where('kategori', $cat->kategori_nama)->pluck('nama')->take(2)->implode(', ');
+            $color = match ($index) {
+                0 => '#1E1B18',
+                1 => '#A86544',
+                default => '#C59A53',
+            };
+
+            return [
+                'nama' => $cat->kategori_nama,
+                'units_sold' => (int) $cat->units_sold,
+                'percentage' => $totalCategoryUnits > 0 ? round(($cat->units_sold / $totalCategoryUnits) * 100) : 0,
+                'samples' => $samples ?: 'Koleksi busana pilihan',
+                'color' => $color,
+            ];
+        });
+
+        // Real restock recommendation
+        $lowStockProduct = Produk::where('stok', '<=', Produk::LOW_STOCK_THRESHOLD)
+            ->orderBy('stok', 'asc')
+            ->first();
+
+        // Real 6-month trend data
+        $trendMonths = [];
+        $rawTrendData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $monthDate = $today->copy()->subMonths($i);
+            $mStart = $monthDate->copy()->startOfMonth();
+            $mEnd = $monthDate->copy()->endOfMonth();
+
+            $batikSales = (float) OrderItem::query()
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->leftJoin('products', 'products.id', '=', 'order_items.produk_id')
+                ->where(function ($q): void {
+                    $q->where('orders.payment_status', Order::PAYMENT_PAID)
+                        ->orWhereIn('orders.status', self::PAID_STATUSES);
+                })
+                ->whereBetween('orders.created_at', [$mStart, $mEnd])
+                ->where(function ($q): void {
+                    $q->where('products.kategori', 'like', '%baju%')
+                        ->orWhereNull('products.kategori');
+                })
+                ->sum('order_items.subtotal');
+
+            $otherSales = (float) OrderItem::query()
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->leftJoin('products', 'products.id', '=', 'order_items.produk_id')
+                ->where(function ($q): void {
+                    $q->where('orders.payment_status', Order::PAYMENT_PAID)
+                        ->orWhereIn('orders.status', self::PAID_STATUSES);
+                })
+                ->whereBetween('orders.created_at', [$mStart, $mEnd])
+                ->where('products.kategori', 'like', '%kain%')
+                ->sum('order_items.subtotal');
+
+            $upcycledSales = (float) OrderItem::query()
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->leftJoin('products', 'products.id', '=', 'order_items.produk_id')
+                ->where(function ($q): void {
+                    $q->where('orders.payment_status', Order::PAYMENT_PAID)
+                        ->orWhereIn('orders.status', self::PAID_STATUSES);
+                })
+                ->whereBetween('orders.created_at', [$mStart, $mEnd])
+                ->where(function ($q): void {
+                    $q->where('products.kategori', 'like', '%olahan%')
+                        ->orWhere('products.kategori', 'like', '%sisa%');
+                })
+                ->sum('order_items.subtotal');
+
+            $totalMonthSales = (float) Order::where(function ($q): void {
+                $q->where('payment_status', Order::PAYMENT_PAID)
+                    ->orWhereIn('status', self::PAID_STATUSES);
+            })->whereBetween('created_at', [$mStart, $mEnd])->sum('total_price');
+
+            $rawTrendData[] = [
+                'label' => $monthDate->translatedFormat('M Y').($i === 0 ? ' (Berjalan)' : ''),
+                'total_sales' => $totalMonthSales,
+                'batik_sales' => $batikSales,
+                'other_sales' => $otherSales,
+                'upcycled_sales' => $upcycledSales,
+            ];
+        }
+
+        $maxTrendSales = max(1, ...array_column($rawTrendData, 'total_sales'));
+        $trendPoints = [];
+        foreach ($rawTrendData as $idx => $m) {
+            $xCenter = 75 + ($idx * 110);
+            $bar1Height = $m['batik_sales'] > 0 ? max(8, round(($m['batik_sales'] / $maxTrendSales) * 140)) : 0;
+            $bar2Height = $m['other_sales'] > 0 ? max(6, round(($m['other_sales'] / $maxTrendSales) * 140)) : 0;
+            $lineY = $m['total_sales'] > 0 ? round(190 - (($m['total_sales'] / $maxTrendSales) * 130)) : 190;
+
+            $trendPoints[] = [
+                'x' => $xCenter,
+                'y' => $lineY,
+            ];
+
+            $trendMonths[] = [
+                'label' => $m['label'],
+                'total_sales' => $m['total_sales'],
+                'x_bar1' => $xCenter - 10,
+                'y_bar1' => 190 - $bar1Height,
+                'h_bar1' => $bar1Height,
+                'x_bar2' => $xCenter + 4,
+                'y_bar2' => 190 - $bar2Height,
+                'h_bar2' => $bar2Height,
+                'x_point' => $xCenter,
+                'y_point' => $lineY,
+            ];
+        }
+
+        // Generate SVG path for the trend line
+        $trendPath = '';
+        $trendAreaPath = '';
+        if (count($trendPoints) > 0) {
+            $trendPath = 'M '.$trendPoints[0]['x'].' '.$trendPoints[0]['y'];
+            for ($k = 1; $k < count($trendPoints); $k++) {
+                $prev = $trendPoints[$k - 1];
+                $curr = $trendPoints[$k];
+                $midX = ($prev['x'] + $curr['x']) / 2;
+                $trendPath .= ' Q '.$prev['x'].' '.$prev['y'].' '.$midX.' '.(($prev['y'] + $curr['y']) / 2);
+                $trendPath .= ' T '.$curr['x'].' '.$curr['y'];
+            }
+            $lastP = end($trendPoints);
+            $firstP = $trendPoints[0];
+            $trendAreaPath = $trendPath.' L '.$lastP['x'].' 190 L '.$firstP['x'].' 190 Z';
+        }
 
         $chartSeries = $this->salesSeries($period, $startDate, $endDate);
         $chartPoints = $this->chartPoints($chartSeries, $metric);
@@ -109,10 +283,42 @@ class DashboardController extends Controller
         $topProducts->each(function ($item): void {
             $produk = Produk::where('nama', $item->produk_name)->first();
             $item->produk = $produk;
-            $item->stok = $produk?->stok ?? 8;
-            $item->kategori_nama = $produk?->kategori?->nama_kategori ?? 'Katun Primissima';
+            $item->stok = $produk?->stok ?? 0;
+            $item->kategori_nama = $produk?->kategoriRelasi?->nama_kategori ?? $produk?->kategori ?? 'Koleksi Batik';
             $item->gambar = $produk?->gambar;
+            $item->gambar_url = $produk?->gambar_url ?? asset('images/beranda/cloth-fabric.jpg');
         });
+
+        if ($topProducts->count() < 3) {
+            $existingNames = $topProducts->pluck('produk_name')->toArray();
+            $allTimeTop = OrderItem::query()
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->where(function ($q): void {
+                    $q->where('orders.payment_status', Order::PAYMENT_PAID)
+                        ->orWhereIn('orders.status', self::PAID_STATUSES);
+                })
+                ->whereNotIn('order_items.produk_name', $existingNames)
+                ->select('order_items.produk_name')
+                ->selectRaw('SUM(order_items.quantity) as units_sold')
+                ->selectRaw('SUM(order_items.subtotal) as sales_total')
+                ->groupBy('order_items.produk_name')
+                ->orderByDesc('units_sold')
+                ->limit(3 - $topProducts->count())
+                ->get();
+
+            $allTimeTop->each(function ($item): void {
+                $produk = Produk::where('nama', $item->produk_name)->first();
+                $item->produk = $produk;
+                $item->stok = $produk?->stok ?? 0;
+                $item->kategori_nama = $produk?->kategoriRelasi?->nama_kategori ?? $produk?->kategori ?? 'Koleksi Batik';
+                $item->gambar = $produk?->gambar;
+                $item->gambar_url = $produk?->gambar_url ?? asset('images/beranda/cloth-fabric.jpg');
+            });
+
+            foreach ($allTimeTop as $item) {
+                $topProducts->push($item);
+            }
+        }
 
         $totalCustomers = User::where(function ($q): void {
             $q->where('role', '!=', 'admin')->orWhereNull('role');
@@ -143,6 +349,7 @@ class DashboardController extends Controller
             'totalOrders' => $totalOrders,
             'ordersToProcess' => $ordersToProcess,
             'totalProducts' => $totalProducts,
+            'newProductsThisMonth' => $newProductsThisMonth,
             'lowStockProducts' => $lowStockProducts,
             'outOfStockProducts' => $outOfStockProducts,
             'averageRating' => $averageRating,
@@ -154,6 +361,17 @@ class DashboardController extends Controller
             'topProducts' => $topProducts,
             'totalCustomers' => $totalCustomers,
             'pendingActionOrders' => $pendingActionOrders,
+            'orderGrowthPercent' => $orderGrowthPercent,
+            'ordersThisMonth' => $ordersThisMonth,
+            'ordersLastMonth' => $ordersLastMonth,
+            'repeatBuyerPercent' => $repeatBuyerPercent,
+            'monthlySalesTarget' => $monthlySalesTarget,
+            'targetPercentage' => $targetPercentage,
+            'categoriesData' => $categoriesData,
+            'lowStockProduct' => $lowStockProduct,
+            'trendMonths' => $trendMonths,
+            'trendPath' => $trendPath,
+            'trendAreaPath' => $trendAreaPath,
         ]);
     }
 

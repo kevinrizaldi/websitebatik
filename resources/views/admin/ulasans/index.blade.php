@@ -274,12 +274,22 @@
                             @if ($ulasan->image_path)
                                 <div class="flex items-center gap-3 pt-1">
                                     <div class="w-16 h-16 rounded-xl border border-[#ECE5D8] overflow-hidden bg-[#F6F1EA]">
-                                        <img src="{{ asset('storage/' . $ulasan->image_path) }}" alt="Foto Pembeli" class="w-full h-full object-cover">
+                                        <img src="{{ \App\Support\MediaUrl::resolve($ulasan->image_path) }}" alt="Foto Pembeli" class="w-full h-full object-cover">
                                     </div>
                                     <div>
                                         <span class="text-[11px] font-semibold text-[#1E1B18]">1 Foto Riil Pembeli</span>
                                         <p class="text-[10px] text-emerald-600 font-medium">Terverifikasi High-Res</p>
                                     </div>
+                                </div>
+                            @endif
+
+                            @if ($ulasan->photos)
+                                <div class="flex items-center gap-2 pt-2">
+                                    @foreach ($ulasan->photos as $photo)
+                                        <div class="w-16 h-16 rounded-xl border border-[#ECE5D8] overflow-hidden bg-[#F6F1EA]">
+                                            <img src="{{ \App\Support\MediaUrl::resolve($photo) ?: $photo }}" alt="Foto Pembeli" class="w-full h-full object-cover">
+                                        </div>
+                                    @endforeach
                                 </div>
                             @endif
 

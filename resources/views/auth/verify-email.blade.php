@@ -34,7 +34,7 @@
                     </svg>
                 </div>
                 <span class="font-bold tracking-wider text-sm sm:text-base text-[#26211D] uppercase font-sans">
-                    Hamzah Style Official
+                    Hamzah Style
                 </span>
             </a>
         </div>
@@ -50,7 +50,7 @@
 
             <h1 class="font-serif-luxury text-2xl font-semibold text-[#26211D]">Verifikasi Email Anda</h1>
             <p class="text-xs text-stone-600 mt-2 leading-relaxed">
-                Terima kasih telah mendaftar di Hamzah Style Official! Silakan periksa kotak masuk email Anda dan klik tautan verifikasi yang baru saja kami kirimkan.
+                Terima kasih telah mendaftar di Hamzah Style! Silakan periksa kotak masuk email Anda dan klik tautan verifikasi yang baru saja kami kirimkan.
             </p>
 
             @if (session('status') == 'verification-link-sent')

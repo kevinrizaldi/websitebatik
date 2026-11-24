@@ -5,9 +5,9 @@
             <div>
                 {{-- Eyebrow --}}
                 <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#A86544] mb-1">
-                    <span>KURASI TOKO</span>
+                    <span>RINGKASAN TOKO</span>
                     <span>•</span>
-                    <span>SEMESTER II 2025</span>
+                    <span>SEMESTER {{ now()->month <= 6 ? 'I' : 'II' }} {{ now()->year }}</span>
                     <span>•</span>
                     <span class="text-stone-400">Update Otomatis: Baru saja</span>
                 </div>
@@ -17,7 +17,7 @@
                     <span class="sr-only">Dashboard Admin</span>
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Pantau transaksi Midtrans gateway otomatis, status pengiriman ekspedisi RajaOngkir, dan konversi koleksi busana batik Hamzah Style.
+                    Pantau data transaksi pembayaran, status pengiriman pesanan, dan ringkasan penjualan batik Hamzah Style.
                 </p>
             </div>
 
@@ -34,7 +34,7 @@
                     <svg class="h-4 w-4 text-[#C59A53]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    <span>Unduh Rekap Kurasi</span>
+                    <span>Unduh Laporan Penjualan</span>
                 </a>
             </div>
         </div>
@@ -53,11 +53,15 @@
                 </div>
                 <p class="text-[11px] text-[#5A544E]">Total Produk</p>
                 <p class="mt-1 text-xl sm:text-2xl font-extrabold text-[#1E1B18]">
-                    {{ $totalProducts > 0 ? $totalProducts : 48 }} Karya
+                    {{ $totalProducts }} Produk
                 </p>
                 <div class="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-[#A86544]">
                     <span>✦</span>
-                    <span>+4 koleksi baru bulan ini</span>
+                    @if(($newProductsThisMonth ?? 0) > 0)
+                        <span>+{{ $newProductsThisMonth }} produk baru bulan ini</span>
+                    @else
+                        <span>Katalog aktif terdata</span>
+                    @endif
                 </div>
             </div>
 
@@ -73,11 +77,14 @@
                 </div>
                 <p class="text-[11px] text-[#5A544E]">Total Pesanan</p>
                 <p class="mt-1 text-xl sm:text-2xl font-extrabold text-[#1E1B18]">
-                    {{ $totalOrders > 0 ? $totalOrders : 142 }} Pesanan
+                    {{ $totalOrders }} Pesanan
                 </p>
                 <div class="mt-3 flex items-center gap-1 text-[11px] font-semibold text-[#A86544]">
-                    <span>↗</span>
-                    <span>+18% vs bulan lalu</span>
+                    @if(isset($orderGrowthPercent) && ($ordersLastMonth ?? 0) > 0)
+                        <span>{{ $orderGrowthPercent >= 0 ? '↗ +' : '↘ ' }}{{ $orderGrowthPercent }}% vs bulan lalu</span>
+                    @else
+                        <span>{{ $ordersThisMonth ?? $totalOrders }} pesanan bulan ini</span>
+                    @endif
                 </div>
             </div>
 
@@ -98,15 +105,20 @@
                 </div>
                 <p class="text-[11px] text-[#5A544E]">Pesanan Menunggu</p>
                 <p class="mt-1 text-xl sm:text-2xl font-extrabold text-[#1E1B18]">
-                    {{ $ordersToProcess > 0 ? $ordersToProcess : 12 }} Antrean
+                    {{ $ordersToProcess }} Antrean
                 </p>
                 <div class="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-[#A86544]">
-                    <span class="h-1.5 w-1.5 rounded-full bg-[#A86544]"></span>
-                    <span>Perlu segera diverifikasi</span>
+                    @if($ordersToProcess > 0)
+                        <span class="h-1.5 w-1.5 rounded-full bg-[#A86544]"></span>
+                        <span>Perlu segera diverifikasi</span>
+                    @else
+                        <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        <span class="text-emerald-700">Semua pesanan terproses</span>
+                    @endif
                 </div>
             </div>
 
-            {{-- 4. PATRON --}}
+            {{-- 4. PELANGGAN --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-4 sm:p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center gap-2 text-stone-400 mb-2">
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
@@ -114,14 +126,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                     </div>
-                    <span class="text-[10px] font-bold uppercase tracking-wider">PATRON</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">PELANGGAN</span>
                 </div>
                 <p class="text-[11px] text-[#5A544E]">Total Pelanggan</p>
                 <p class="mt-1 text-xl sm:text-2xl font-extrabold text-[#1E1B18]">
-                    {{ number_format($totalCustomers > 0 ? $totalCustomers : 1280, 0, ',', '.') }} Patron
+                    {{ number_format($totalCustomers, 0, ',', '.') }} Pelanggan
                 </p>
                 <div class="mt-3 text-[11px] text-stone-500 font-medium">
-                    <strong class="font-bold text-[#1E1B18]">88%</strong> repeat buyer setia
+                    <strong class="font-bold text-[#1E1B18]">{{ $repeatBuyerPercent ?? 0 }}%</strong> pelanggan beli ulang
                 </div>
             </div>
 
@@ -137,11 +149,11 @@
                 </div>
                 <p class="text-[11px] text-[#5A544E]">Pendapatan Bulan Ini</p>
                 <p class="mt-1 text-lg sm:text-xl font-extrabold text-[#1E1B18] truncate">
-                    Rp {{ number_format($salesThisMonth > 0 ? $salesThisMonth : 64850000, 0, ',', '.') }}
+                    Rp {{ number_format($salesThisMonth, 0, ',', '.') }}
                 </p>
                 <div class="mt-3 flex items-center justify-between text-[11px]">
                     <span class="text-stone-400">Target Rp50jt</span>
-                    <span class="font-extrabold text-[#1E1B18]">81%</span>
+                    <span class="font-extrabold text-[#1E1B18]">{{ $targetPercentage ?? 0 }}%</span>
                 </div>
             </div>
         </div>
@@ -150,24 +162,14 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {{-- KIRI: GRAFIK TREN PENJUALAN & SIRKULARITAS (col-span-8) --}}
             <div class="lg:col-span-8 rounded-2xl border border-[#EFECE6] bg-white p-6 shadow-2xs">
-                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-                    <div>
-                        <div class="flex items-center gap-2 text-base font-bold text-[#1E1B18]">
-                            <span class="text-[#A86544]">↺</span>
-                            <h3>Tren Penjualan & Sirkularitas 2025</h3>
-                        </div>
-                        <p class="text-xs text-[#5A544E] mt-0.5 max-w-md">
-                            Distribusi volume busana batik adi busana & kontribusi sirkularitas kain perca sisa produksi.
-                        </p>
+                <div class="mb-6">
+                    <div class="flex items-center gap-2 text-base font-bold text-[#1E1B18]">
+                        <span class="text-[#A86544]">↺</span>
+                        <h3>Tren Penjualan Koleksi {{ now()->year }}</h3>
                     </div>
-
-                    {{-- Badges --}}
-                    <div class="inline-flex items-center gap-2 rounded-full border border-[#E9DFD0] bg-[#FAF0E4] px-3.5 py-1.5 text-xs font-bold text-[#8C5E28] shrink-0">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span>34.2 kg kain sisa terselamatkan</span>
-                    </div>
+                    <p class="text-xs text-[#5A544E] mt-0.5 max-w-md">
+                        Distribusi volume penjualan busana batik dan ragam koleksi adibusana Hamzah Style.
+                    </p>
                 </div>
 
                 {{-- Chart Legend --}}
@@ -177,12 +179,8 @@
                         <span>Batik Pria/Wanita</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <span class="h-2.5 w-2.5 rounded-full bg-[#A86544]"></span>
-                        <span>Olahan Kain Sisa (Upcycled)</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
                         <span class="h-2.5 w-2.5 rounded-full bg-[#E5D7C3]"></span>
-                        <span>Kain Lembaran Sutra</span>
+                        <span>Kain Lembaran</span>
                     </div>
                 </div>
 
@@ -203,49 +201,44 @@
                         <line x1="20" y1="190" x2="680" y2="190" stroke="#EAE6DF"/>
 
                         {{-- Stacked/Paired Bars for 6 periods --}}
-                        {{-- 1. Sep 2024 --}}
-                        <rect x="70" y="95" width="10" height="95" rx="3" fill="#1E1B18"/>
-                        <rect x="84" y="130" width="10" height="60" rx="3" fill="#E5D7C3"/>
+                        @if(!empty($trendMonths))
+                            @foreach($trendMonths as $m)
+                                @if(($m['h_bar1'] ?? 0) > 0)
+                                    <rect x="{{ $m['x_bar1'] }}" y="{{ $m['y_bar1'] }}" width="10" height="{{ $m['h_bar1'] }}" rx="3" fill="#1E1B18"/>
+                                @endif
+                                @if(($m['h_bar2'] ?? 0) > 0)
+                                    <rect x="{{ $m['x_bar2'] }}" y="{{ $m['y_bar2'] }}" width="10" height="{{ $m['h_bar2'] }}" rx="3" fill="#E5D7C3"/>
+                                @endif
+                            @endforeach
+                        @endif
 
-                        {{-- 2. Okt 2024 --}}
-                        <rect x="180" y="80" width="10" height="110" rx="3" fill="#1E1B18"/>
-                        <rect x="194" y="120" width="10" height="70" rx="3" fill="#E5D7C3"/>
-
-                        {{-- 3. Nov 2024 --}}
-                        <rect x="290" y="70" width="10" height="120" rx="3" fill="#1E1B18"/>
-                        <rect x="304" y="105" width="10" height="85" rx="3" fill="#E5D7C3"/>
-
-                        {{-- 4. Des 2024 --}}
-                        <rect x="400" y="60" width="10" height="130" rx="3" fill="#1E1B18"/>
-                        <rect x="414" y="95" width="10" height="95" rx="3" fill="#E5D7C3"/>
-
-                        {{-- 5. Jan 2025 --}}
-                        <rect x="510" y="75" width="10" height="115" rx="3" fill="#1E1B18"/>
-                        <rect x="524" y="110" width="10" height="80" rx="3" fill="#E5D7C3"/>
-
-                        {{-- 6. Feb 2025 (Berjalan) --}}
-                        <rect x="620" y="50" width="10" height="140" rx="3" fill="#1E1B18"/>
-                        <rect x="634" y="85" width="10" height="105" rx="3" fill="#E5D7C3"/>
-
-                        {{-- Trend Line & Gradient Area for Upcycled --}}
-                        <path d="M 75 145 Q 185 135 295 115 T 515 95 T 625 60 L 625 190 L 75 190 Z" fill="url(#areaGradient)"/>
-                        <path d="M 75 145 Q 185 135 295 115 T 515 95 T 625 60" fill="none" stroke="#A86544" stroke-width="3" stroke-linecap="round"/>
+                        {{-- Trend Line & Gradient Area --}}
+                        @if(!empty($trendAreaPath))
+                            <path d="{{ $trendAreaPath }}" fill="url(#areaGradient)"/>
+                        @endif
+                        @if(!empty($trendPath))
+                            <path d="{{ $trendPath }}" fill="none" stroke="#A86544" stroke-width="3" stroke-linecap="round"/>
+                        @endif
 
                         {{-- Highlight Points --}}
-                        <circle cx="75" cy="145" r="4" fill="#A86544" stroke="#FFF" stroke-width="2"/>
-                        <circle cx="295" cy="115" r="4" fill="#A86544" stroke="#FFF" stroke-width="2"/>
-                        <circle cx="515" cy="95" r="4" fill="#A86544" stroke="#FFF" stroke-width="2"/>
-                        <circle cx="625" cy="60" r="5" fill="#A86544" stroke="#FFF" stroke-width="2"/>
+                        @if(!empty($trendMonths))
+                            @foreach($trendMonths as $m)
+                                @if(($m['total_sales'] ?? 0) > 0)
+                                    <circle cx="{{ $m['x_point'] }}" cy="{{ $m['y_point'] }}" r="4" fill="#A86544" stroke="#FFF" stroke-width="2"/>
+                                @endif
+                            @endforeach
+                        @endif
                     </svg>
 
                     {{-- X-Axis Month Labels --}}
                     <div class="grid grid-cols-6 text-center text-[10px] font-semibold text-stone-500 pt-1">
-                        <span>Sep 2024</span>
-                        <span>Okt 2024</span>
-                        <span>Nov 2024</span>
-                        <span>Des 2024</span>
-                        <span>Jan 2025</span>
-                        <span class="font-bold text-[#1E1B18]">Feb 2025 (Berjalan)</span>
+                        @if(!empty($trendMonths))
+                            @foreach($trendMonths as $m)
+                                <span @class(['font-bold text-[#1E1B18]' => str_contains($m['label'], 'Berjalan')])>{{ $m['label'] }}</span>
+                            @endforeach
+                        @else
+                            <span>-</span><span>-</span><span>-</span><span>-</span><span>-</span><span class="font-bold text-[#1E1B18]">{{ now()->translatedFormat('M Y') }}</span>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -255,59 +248,32 @@
                 <div class="flex items-center justify-between">
                     <h3 class="text-base font-bold text-[#1E1B18]">Kategori Terlaris</h3>
                     <span class="rounded-full bg-[#FAF0E4] px-2.5 py-0.5 text-[10px] font-bold text-[#8C5E28]">
-                        Bulan Ini
+                        Periode Aktif
                     </span>
                 </div>
                 <p class="text-xs text-[#5A544E] -mt-4">
-                    Komposisi perputaran inventaris berdasarkan minat patron pakaian pusaka.
+                    Komposisi perputaran inventaris berdasarkan minat pelanggan busana batik.
                 </p>
 
                 {{-- Progress Bars --}}
                 <div class="space-y-4">
-                    {{-- 1. Baju Batik Siap Pakai --}}
-                    <div>
-                        <div class="flex justify-between text-xs font-bold text-[#1E1B18] mb-1.5">
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2 w-2 rounded-full bg-[#1E1B18]"></span>
-                                Baju Batik Siap Pakai
-                            </span>
-                            <span>48%</span>
+                    @forelse($categoriesData as $cat)
+                        <div>
+                            <div class="flex justify-between text-xs font-bold text-[#1E1B18] mb-1.5">
+                                <span class="flex items-center gap-1.5">
+                                    <span class="h-2 w-2 rounded-full" style="background-color: {{ $cat['color'] }}"></span>
+                                    {{ $cat['nama'] }}
+                                </span>
+                                <span style="color: {{ $cat['color'] }}">{{ $cat['percentage'] }}%</span>
+                            </div>
+                            <div class="h-2 w-full rounded-full bg-[#F3EFEA] overflow-hidden">
+                                <div class="h-full rounded-full" style="width: {{ $cat['percentage'] }}%; background-color: {{ $cat['color'] }}"></div>
+                            </div>
+                            <p class="mt-1 text-[11px] text-stone-400 truncate">{{ $cat['samples'] }}</p>
                         </div>
-                        <div class="h-2 w-full rounded-full bg-[#F3EFEA] overflow-hidden">
-                            <div class="h-full rounded-full bg-[#1E1B18]" style="width: 48%"></div>
-                        </div>
-                        <p class="mt-1 text-[11px] text-stone-400">Kemeja Parang Seling, Dress Tenun Sutra</p>
-                    </div>
-
-                    {{-- 2. Olahan Kain Sisa (Upcycled) --}}
-                    <div>
-                        <div class="flex justify-between text-xs font-bold text-[#1E1B18] mb-1.5">
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2 w-2 rounded-full bg-[#A86544]"></span>
-                                Olahan Kain Sisa (Upcycled)
-                            </span>
-                            <span class="text-[#A86544]">32%</span>
-                        </div>
-                        <div class="h-2 w-full rounded-full bg-[#F3EFEA] overflow-hidden">
-                            <div class="h-full rounded-full bg-[#A86544]" style="width: 32%"></div>
-                        </div>
-                        <p class="mt-1 text-[11px] text-stone-400">Patchwork Tote Bag, Dompet Eco Batik, Pouch</p>
-                    </div>
-
-                    {{-- 3. Kain Primissima & Sutra --}}
-                    <div>
-                        <div class="flex justify-between text-xs font-bold text-[#1E1B18] mb-1.5">
-                            <span class="flex items-center gap-1.5">
-                                <span class="h-2 w-2 rounded-full bg-[#C59A53]"></span>
-                                Kain Primissima & Sutra
-                            </span>
-                            <span>20%</span>
-                        </div>
-                        <div class="h-2 w-full rounded-full bg-[#F3EFEA] overflow-hidden">
-                            <div class="h-full rounded-full bg-[#C59A53]" style="width: 20%"></div>
-                        </div>
-                        <p class="mt-1 text-[11px] text-stone-400">Kain Potong Tulis Truntum, Kawung Pusaka</p>
-                    </div>
+                    @empty
+                        <p class="text-xs text-stone-400 py-2">Belum ada kategori terdata.</p>
+                    @endforelse
                 </div>
 
                 {{-- Rekomendasi Restock Callout Box --}}
@@ -318,9 +284,15 @@
                         </svg>
                         <span>Rekomendasi Restock</span>
                     </div>
-                    <p class="text-[11px] text-[#5A544E] leading-relaxed">
-                        Aksesoris kain sisa melonjak <strong class="text-[#8C5E28]">+41%</strong> dalam 2 pekan. Direkomendasikan menambah stok Artisan Patchwork Tote Bag.
-                    </p>
+                    @if($lowStockProduct)
+                        <p class="text-[11px] text-[#5A544E] leading-relaxed">
+                            Stok <strong class="text-[#8C5E28]">{{ $lowStockProduct->nama }}</strong> tersisa <strong class="text-rose-600 font-bold">{{ $lowStockProduct->stok }} unit</strong> (menipis). Direkomendasikan segera menambah stok untuk memenuhi permintaan.
+                        </p>
+                    @else
+                        <p class="text-[11px] text-[#5A544E] leading-relaxed">
+                            Semua stok produk saat ini berada dalam kondisi aman (di atas batas minimum stok).
+                        </p>
+                    @endif
                 </div>
             </div>
         </div>
@@ -334,7 +306,7 @@
                         <div class="flex items-center gap-2.5">
                             <h3 class="text-base font-bold text-[#1E1B18]">Pesanan Membutuhkan Tindakan</h3>
                             <span class="rounded-full bg-[#1E1B18] px-2.5 py-0.5 text-[10px] font-bold text-white">
-                                {{ $ordersToProcess > 0 ? $ordersToProcess : 12 }} Menunggu
+                                {{ $ordersToProcess }} Menunggu
                             </span>
                         </div>
                         <p class="text-xs text-[#5A544E] mt-0.5">
@@ -371,7 +343,7 @@
                                     <td class="py-4">
                                         <p class="font-bold text-[#1E1B18]">{{ $order->customer_name }}</p>
                                         <p class="text-[11px] text-stone-400 truncate max-w-xs">
-                                            {{ $order->items->first()->produk_name ?? 'Kemeja Parang Seling' }}
+                                            {{ $order->items->first()->produk_name ?? 'Produk Batik' }}
                                             @if ($order->items->count() > 1)
                                                 + {{ $order->items->count() - 1 }} item lain
                                             @endif
@@ -432,101 +404,40 @@
 
                 {{-- Product List --}}
                 <div class="space-y-4">
-                    {{-- Item 1 --}}
-                    @php
-                        $item1 = $topProducts->get(0);
-                    @endphp
-                    <div class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-[#FAF7F2] transition">
-                        <div class="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
-                            @if ($item1?->gambar)
-                                <img src="{{ asset('storage/'.$item1->gambar) }}" alt="{{ $item1->produk_name }}" class="h-full w-full object-cover">
-                            @else
-                                <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
-                                    Kain
-                                </div>
-                            @endif
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-bold text-xs text-[#1E1B18] truncate">
-                                {{ $item1->produk_name ?? 'Kemeja Parang Seling' }}
-                            </p>
-                            <p class="text-[10px] text-stone-400">Katun Primissima</p>
-                            <div class="mt-1 flex items-center gap-2 text-[11px] font-semibold text-[#1E1B18]">
-                                <span>Terjual: <strong class="font-extrabold">{{ $item1->units_sold ?? 42 }} pcs</strong></span>
-                                <span class="text-stone-300">•</span>
-                                <span class="text-[#A86544]">Rp {{ number_format($item1->sales_total ?? 36500000, 0, ',', '.') }}</span>
+                    @forelse($topProducts->take(3) as $item)
+                        <div class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-[#FAF7F2] transition">
+                            <div class="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
+                                @if (!empty($item->gambar_url))
+                                    <img src="{{ $item->gambar_url }}" alt="{{ $item->produk_name }}" class="h-full w-full object-cover">
+                                @elseif(!empty($item->gambar))
+                                    <img src="{{ asset('storage/'.$item->gambar) }}" alt="{{ $item->produk_name }}" class="h-full w-full object-cover">
+                                @else
+                                    <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
+                                        Batik
+                                    </div>
+                                @endif
                             </div>
-                            <div class="mt-1 flex items-center gap-1 text-[10px] text-stone-500">
-                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                <span>Sisa Stok: {{ $item1->stok ?? 8 }} pcs</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Item 2 --}}
-                    @php
-                        $item2 = $topProducts->get(1);
-                    @endphp
-                    <div class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-[#FAF7F2] transition">
-                        <div class="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
-                            @if ($item2?->gambar)
-                                <img src="{{ asset('storage/'.$item2->gambar) }}" alt="{{ $item2->produk_name }}" class="h-full w-full object-cover">
-                            @else
-                                <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
-                                    Bag
-                                </div>
-                            @endif
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-1">
+                            <div class="flex-1 min-w-0">
                                 <p class="font-bold text-xs text-[#1E1B18] truncate">
-                                    {{ $item2->produk_name ?? 'Artisan Patchwork Tote Bag' }}
+                                    {{ $item->produk_name }}
                                 </p>
-                                <span class="text-[10px] text-[#A86544]">♡</span>
-                            </div>
-                            <p class="text-[10px] text-[#A86544] font-medium">Zero-Waste Upcycled</p>
-                            <div class="mt-1 flex items-center gap-2 text-[11px] font-semibold text-[#1E1B18]">
-                                <span>Terjual: <strong class="font-extrabold">{{ $item2->units_sold ?? 38 }} pcs</strong></span>
-                                <span class="text-stone-300">•</span>
-                                <span class="text-[#A86544]">Rp {{ number_format($item2->sales_total ?? 18400000, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="mt-1 flex items-center gap-1 text-[10px] text-rose-600 font-bold">
-                                <span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
-                                <span>Sisa Stok Menipis: {{ $item2->stok ?? 3 }} pcs</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Item 3 --}}
-                    @php
-                        $item3 = $topProducts->get(2);
-                    @endphp
-                    <div class="flex items-center gap-3.5 p-2 rounded-xl hover:bg-[#FAF7F2] transition">
-                        <div class="h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
-                            @if ($item3?->gambar)
-                                <img src="{{ asset('storage/'.$item3->gambar) }}" alt="{{ $item3->produk_name }}" class="h-full w-full object-cover">
-                            @else
-                                <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
-                                    Sutra
+                                <p class="text-[10px] text-stone-400">{{ $item->kategori_nama ?? 'Koleksi Batik' }}</p>
+                                <div class="mt-1 flex items-center gap-2 text-[11px] font-semibold text-[#1E1B18]">
+                                    <span>Terjual: <strong class="font-extrabold">{{ $item->units_sold ?? 0 }} pcs</strong></span>
+                                    <span class="text-stone-300">•</span>
+                                    <span class="text-[#A86544]">Rp {{ number_format($item->sales_total ?? 0, 0, ',', '.') }}</span>
                                 </div>
-                            @endif
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <p class="font-bold text-xs text-[#1E1B18] truncate">
-                                {{ $item3->produk_name ?? 'Kain Lembaran Batik Tulis' }}
-                            </p>
-                            <p class="text-[10px] text-stone-400">Batik Tulis Sutra Alam</p>
-                            <div class="mt-1 flex items-center gap-2 text-[11px] font-semibold text-[#1E1B18]">
-                                <span>Terjual: <strong class="font-extrabold">{{ $item3->units_sold ?? 15 }} pcs</strong></span>
-                                <span class="text-stone-300">•</span>
-                                <span class="text-[#A86544]">Rp {{ number_format($item3->sales_total ?? 21700000, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="mt-1 flex items-center gap-1 text-[10px] text-stone-500">
-                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                                <span>Sisa Stok: 5 meter</span>
+                                <div class="mt-1 flex items-center gap-1 text-[10px] {{ ($item->stok ?? 0) <= \App\Models\Produk::LOW_STOCK_THRESHOLD ? 'text-rose-600 font-bold' : 'text-stone-500' }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ ($item->stok ?? 0) <= \App\Models\Produk::LOW_STOCK_THRESHOLD ? 'bg-rose-500' : 'bg-emerald-500' }}"></span>
+                                    <span>Sisa Stok: {{ $item->stok ?? 0 }} pcs</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @empty
+                        <div class="py-6 text-center text-xs text-stone-400">
+                            Belum ada produk terjual pada periode ini.
+                        </div>
+                    @endforelse
                 </div>
 
                 {{-- Action Button --}}

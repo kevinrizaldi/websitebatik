@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Katalog Produk — HAMZAH STYLE OFFICIAL</title>
-    <meta name="description" content="Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi di Hamzah Style Official.">
+    <title>Katalog Produk — Hamzah Style</title>
+    <meta name="description" content="Temukan beragam pilihan batik asli dan kerajinan tangan berkualitas di Hamzah Style.">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +31,7 @@
       x-data="{
           mobileMenuOpen: false,
           searchQuery: '',
-          activeCategory: 'Semua Produk',
+          activeCategory: '{{ addslashes(request('kategori') ?: 'Semua Produk') }}',
           priceRange: 'Semua',
           sortBy: 'paling-sesuai',
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
@@ -80,13 +80,11 @@
                       nama: {{ json_encode($p->nama) }},
                       fullName: {{ json_encode($p->nama) }},
                       kategori: {{ json_encode($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'Koleksi Batik') }},
-                      subkategori: {{ json_encode(strtoupper($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'BATIK')) }},
-                      badge: {{ json_encode($p->stok > 0 ? ($p->stok <= 10 ? 'Stok Terbatas' : '') : 'Stok Habis') }},
-                      badgeColor: {{ json_encode($p->stok <= 0 ? 'bg-stone-500 text-white' : ($p->stok <= 10 ? 'bg-[#4A2D1B] text-white' : '')) }},
                       harga: {{ (float) $p->harga }},
                       hargaFormatted: {{ json_encode('Rp ' . number_format($p->harga, 0, ',', '.')) }},
-                      rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '5.0' }}',
-                      reviews: {{ $p->ulasans()->where('status', 'Disetujui')->count() }},
+                      hargaCoret: {{ (!empty($p->harga_coret) && (float)$p->harga_coret > (float)$p->harga) ? json_encode('Rp ' . number_format((float)$p->harga_coret, 0, ',', '.')) : 'null' }},
+                      rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '-' }}',
+                      reviews: {{ $p->reviews_count }},
                       detailUrl: '{{ route('produk.detail', $p->id) }}',
                       gambar: '{{ $p->gambar_url }}'
                   }@if(!$loop->last),@endif
@@ -96,7 +94,8 @@
 
           get filteredProducts() {
               return this.products.filter(item => {
-                  const matchCategory = this.activeCategory === 'Semua Produk' || item.kategori === this.activeCategory;
+                  const matchCategory = this.activeCategory === 'Semua Produk' ||
+                      (item.kategori && item.kategori.toLowerCase().trim() === this.activeCategory.toLowerCase().trim());
                   const q = this.searchQuery.toLowerCase().trim();
                   const matchSearch = !q || item.nama.toLowerCase().includes(q) || item.kategori.toLowerCase().includes(q);
                   let matchPrice = true;
@@ -155,16 +154,16 @@
             <nav class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-3">
                 <a href="{{ url('/') }}" class="hover:text-stone-700 transition">BERANDA</a>
                 <span>/</span>
-                <span class="text-stone-900 font-extrabold">PRODUK</span>
+                <span class="text-stone-900 font-extrabold">SEMUA PRODUK</span>
             </nav>
 
             <!-- Page Title & Subtitle -->
             <div class="mb-6">
                 <h1 class="font-serif-title text-3xl sm:text-4xl font-bold text-stone-900 leading-tight">
-                    Katalog Produk
+                    Semua Produk
                 </h1>
                 <p class="text-stone-600 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
-                    Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi.
+                    Temukan beragam pilihan batik asli dan kerajinan tangan berkualitas dari pengrajin lokal.
                 </p>
             </div>
 
@@ -244,31 +243,31 @@
                     <!-- Category Pills -->
                     <div class="flex flex-wrap items-center gap-2">
                         <button @click="activeCategory = 'Semua Produk'; resetPage()" 
-                                :class="activeCategory === 'Semua Produk' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                :class="(activeCategory === 'Semua Produk' || !activeCategory) ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                 class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                             Semua Produk
                         </button>
                         @if(isset($kategoris) && $kategoris->isNotEmpty())
                             @foreach($kategoris as $kat)
                                 <button @click="activeCategory = '{{ addslashes($kat->nama_kategori) }}'; resetPage()" 
-                                        :class="activeCategory === '{{ addslashes($kat->nama_kategori) }}' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                        :class="(activeCategory.toLowerCase().trim() === '{{ strtolower(addslashes($kat->nama_kategori)) }}') ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                         class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                                     {{ $kat->nama_kategori }} ({{ $kat->produks_count }})
                                 </button>
                             @endforeach
                         @else
                             <button @click="activeCategory = 'Baju Batik'; resetPage()" 
-                                    :class="activeCategory === 'Baju Batik' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    :class="(activeCategory.toLowerCase().trim() === 'baju batik') ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                     class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                                 Baju Batik
                             </button>
                             <button @click="activeCategory = 'Kain Batik'; resetPage()" 
-                                    :class="activeCategory === 'Kain Batik' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    :class="(activeCategory.toLowerCase().trim() === 'kain batik') ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                     class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                                 Kain Batik
                             </button>
                             <button @click="activeCategory = 'Olahan Kain Sisa'; resetPage()" 
-                                    :class="activeCategory === 'Olahan Kain Sisa' ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
+                                    :class="(activeCategory.toLowerCase().trim() === 'olahan kain sisa') ? 'bg-[#201A17] text-white shadow-xs' : 'bg-white text-stone-700 border border-stone-300 hover:border-stone-400'"
                                     class="px-4 py-1.5 rounded-full text-xs font-semibold transition">
                                 Olahan Kain Sisa
                             </button>
@@ -289,21 +288,8 @@
                 <template x-for="item in pagedProducts" :key="item.id">
                     <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-2xs hover:shadow-md transition-all flex flex-col group">
                         
-                        <!-- Image Container with badges -->
+                        <!-- Image Container -->
                         <a :href="item.detailUrl" class="relative aspect-square overflow-hidden bg-stone-100 block">
-                            <!-- Top-left Stock/Edition Badge -->
-                            <span x-show="item.badge"
-                                  class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded shadow-xs"
-                                  :class="item.badgeColor"
-                                  x-text="item.badge">
-                            </span>
-
-                            <!-- Secondary bottom-left badge if exists (e.g. +4 Klasik) -->
-                            <span x-show="item.extraBadge" 
-                                  class="absolute bottom-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-white/90 text-stone-800 shadow-xs"
-                                  x-text="item.extraBadge">
-                            </span>
-
                             <img :src="item.gambar" 
                                  :alt="item.nama" 
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -312,15 +298,20 @@
                         <!-- Card Body -->
                         <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                             <div>
-                                <!-- Category & Rating Row -->
-                                <div class="flex items-center justify-between text-[10px] mb-1">
-                                    <span class="font-bold tracking-wider uppercase text-stone-400" x-text="item.subkategori"></span>
-                                    <div class="flex items-center gap-1 font-semibold text-stone-700">
+                                <!-- Rating Row -->
+                                <template x-if="item.reviews > 0">
+                                    <div class="flex items-center gap-1 text-[10px] font-semibold text-stone-700 mb-1">
                                         <span class="text-amber-500 text-xs">★</span>
                                         <span x-text="item.rating"></span>
                                         <span class="text-stone-400 font-normal" x-text="'(' + item.reviews + ')'"></span>
                                     </div>
-                                </div>
+                                </template>
+                                <template x-if="item.reviews === 0">
+                                    <div class="flex items-center gap-1 text-[10px] text-stone-400 mb-1">
+                                        <span class="text-amber-500 text-xs">★</span>
+                                        <span class="font-normal text-stone-500">Belum ada ulasan</span>
+                                    </div>
+                                </template>
 
                                 <!-- Product Title -->
                                 <h3 class="font-bold text-stone-900 text-sm leading-snug line-clamp-1 mb-1.5">
@@ -328,7 +319,12 @@
                                 </h3>
 
                                 <!-- Price -->
-                                <p class="text-sm sm:text-base font-extrabold text-stone-900 mb-3" x-text="item.hargaFormatted"></p>
+                                <div class="flex items-baseline gap-2 mb-3">
+                                    <p class="text-sm sm:text-base font-extrabold text-stone-900" x-text="item.hargaFormatted"></p>
+                                    <template x-if="item.hargaCoret">
+                                        <p class="text-xs text-stone-400 line-through" x-text="item.hargaCoret"></p>
+                                    </template>
+                                </div>
                             </div>
 
                             <!-- Action Button: Lihat Produk -->

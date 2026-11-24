@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ? $title . ' — HAMZAH STYLE OFFICIAL' : 'HAMZAH STYLE OFFICIAL — Warisan Batik Nusantara Modern' }}</title>
+    <title>{{ $title ? $title . ' — Hamzah Style' : 'Hamzah Style — Warisan Batik Nusantara Modern' }}</title>
     <meta name="description" content="{{ $description ?? 'Koleksi busana batik modern dan autentik Indonesia karya pengrajin lokal pilihan. Elegan dalam setiap motif untuk momen berharga Anda.' }}">
 
     <!-- Google Fonts: Poppins -->
