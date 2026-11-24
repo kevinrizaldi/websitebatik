@@ -515,7 +515,7 @@
                                                 <h4 class="font-bold text-sm text-stone-900">{{ $u->customer_name }}</h4>
                                             </div>
                                         </div>
-                                        <span class="text-[11px] text-stone-400">{{ $u->created_at ? $u->created_at->diffForHumans() : 'Baru saja' }}</span>
+                                        <span class="text-[11px] text-stone-400">{{ $u->created_at ? $u->created_at->translatedFormat('j M Y') : '-' }}</span>
                                     </div>
 
                                     <div class="flex text-amber-500 text-xs mb-3">
