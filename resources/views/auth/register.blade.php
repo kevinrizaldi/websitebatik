@@ -174,6 +174,8 @@
                             id="phone"
                             type="tel"
                             name="phone"
+                            inputmode="numeric"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                             value="{{ old('phone') }}"
                             placeholder="Contoh: 081234567890"
                             class="w-full pl-10 pr-4 py-2.5 bg-[#FAF7F2] border @error('phone') border-red-400 @else border-[#ECE4D8] @enderror rounded-xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:border-transparent transition duration-200"
