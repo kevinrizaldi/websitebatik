@@ -132,12 +132,6 @@
                                     <dt class="text-[10px] font-bold uppercase tracking-wider text-stone-400">TANGGAL LAHIR</dt>
                                     <dd class="mt-1 text-base font-semibold text-stone-900">{{ $user->tanggal_lahir ?? '15 Agustus 1988' }}</dd>
                                 </div>
-
-                                {{-- Preferensi Adibusana --}}
-                                <div>
-                                    <dt class="text-[10px] font-bold uppercase tracking-wider text-stone-400">PREFERENSI ADIBUSANA</dt>
-                                    <dd class="mt-1 text-base font-semibold text-stone-900">{{ $user->preferensi_adibusana ?? 'Kemeja Batik Katun & Bespoke Outer' }}</dd>
-                                </div>
                             </dl>
                         </div>
                     </div>
@@ -203,13 +197,6 @@
                                         <input id="tanggal_lahir" type="text" name="tanggal_lahir" value="{{ old('tanggal_lahir', $user->tanggal_lahir ?? '15 Agustus 1988') }}"
                                                placeholder="15 Agustus 1988" class="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                                     </div>
-                                </div>
-
-                                <div>
-                                    <label for="preferensi_adibusana" class="block text-xs font-bold uppercase tracking-wider text-stone-500">Preferensi Adibusana</label>
-                                    <input id="preferensi_adibusana" type="text" name="preferensi_adibusana"
-                                           value="{{ old('preferensi_adibusana', $user->preferensi_adibusana ?? 'Kemeja Batik Katun & Bespoke Outer') }}"
-                                           class="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3.5 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
                                 </div>
 
                                 <div class="mt-6 flex items-center justify-end gap-3 pt-3">
