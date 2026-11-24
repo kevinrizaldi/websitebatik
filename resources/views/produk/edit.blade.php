@@ -168,10 +168,6 @@
                                         {{-- If item exists at (i-1) --}}
                                         <div x-show="otherPreviews[i - 1]" class="relative aspect-square rounded-xl overflow-hidden border border-[#ECE5D8] bg-[#FAF7F2] group shadow-2xs">
                                             <img :src="otherPreviews[i - 1]?.url" class="w-full h-full object-cover">
-                                            {{-- Slot Label Overlay at Bottom --}}
-                                            <div class="absolute bottom-1 inset-x-1 px-1 py-0.5 rounded bg-black/60 backdrop-blur text-[8.5px] font-medium text-white text-center truncate pointer-events-none"
-                                                 x-text="slotLabels[i - 1]">
-                                            </div>
                                             {{-- Delete Button --}}
                                             <button type="button" @click.stop="removeOther(i - 1)" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition leading-none" title="Hapus foto">
                                                 &times;
@@ -181,11 +177,10 @@
                                         {{-- If slot is empty --}}
                                         <div x-show="!otherPreviews[i - 1]"
                                              @click="triggerOtherUpload()"
-                                             class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] hover:bg-[#F3EDE6] hover:border-[#8C6D58] transition cursor-pointer flex flex-col items-center justify-center p-1.5 text-center group select-none">
-                                            <svg class="w-3.5 h-3.5 text-[#A89F91] group-hover:text-[#8C6D58] transition mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                             class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] hover:bg-[#F3EDE6] hover:border-[#8C6D58] transition cursor-pointer flex items-center justify-center text-center group select-none">
+                                            <svg class="w-5 h-5 text-[#A89F91] group-hover:text-[#8C6D58] group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                             </svg>
-                                            <span class="text-[9px] font-semibold text-[#8C827A] group-hover:text-[#1E1B18] transition line-clamp-2" x-text="slotLabels[i - 1]"></span>
                                         </div>
                                     </div>
                                 </template>
