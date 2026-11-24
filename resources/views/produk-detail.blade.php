@@ -244,43 +244,6 @@
                         @endforeach
                     </div>
                     @endif
-
-                    <!-- Accordion: Deskripsi Produk (Diletakkan di bawah foto produk) -->
-                    <div class="border border-[#EAE1D3] rounded-2xl bg-white overflow-hidden shadow-2xs mt-4">
-                        <button @click="descOpen = !descOpen"
-                                class="w-full p-4 sm:p-5 flex items-center justify-between font-bold text-stone-900 text-sm sm:text-base hover:bg-[#FAF7F2] transition">
-                            <span>Deskripsi Produk</span>
-                            <svg class="w-4 h-4 text-stone-500 transition-transform duration-200"
-                                 :class="descOpen ? 'rotate-180' : ''"
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
-
-                        <div x-show="descOpen" class="px-5 pb-5 text-xs sm:text-sm text-stone-600 leading-relaxed space-y-3 border-t border-[#EAE1D3]/70 pt-4">
-                            <p class="text-stone-800 leading-relaxed">
-                                {{ $deskripsiProduk }}
-                            </p>
-                            <ul class="space-y-1.5 text-stone-700 text-xs sm:text-sm pt-2">
-                                <li class="flex items-start gap-2">
-                                    <span class="text-stone-400">•</span>
-                                    <span><strong>Potongan:</strong> Regular Fit modern kerah kancing tersembunyi</span>
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-stone-400">•</span>
-                                    <span><strong>Bahan:</strong> Katun Prima Halus kombinasi soga alam non-alergi</span>
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-stone-400">•</span>
-                                    <span><strong>Kancing:</strong> Tempurung kelapa eksklusif dengan jahitan silang kuat</span>
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="text-stone-400">•</span>
-                                    <span><strong>Saku:</strong> Dada kiri satu pasang dengan motif menyambung sempurna (matching pattern)</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Right Column: Product Detail & Controls -->
@@ -448,8 +411,45 @@
 
             </div>
 
+            <!-- Accordion: Deskripsi Produk (Tampilan Lebar Penuh / Full Width) -->
+            <div class="mt-8 border border-[#EAE1D3] rounded-2xl bg-white overflow-hidden shadow-2xs">
+                <button @click="descOpen = !descOpen"
+                        class="w-full p-4 sm:p-5 flex items-center justify-between font-bold text-stone-900 text-sm sm:text-base hover:bg-[#FAF7F2] transition">
+                    <span>Deskripsi Produk</span>
+                    <svg class="w-4 h-4 text-stone-500 transition-transform duration-200"
+                         :class="descOpen ? 'rotate-180' : ''"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div x-show="descOpen" class="px-5 pb-5 text-xs sm:text-sm text-stone-600 leading-relaxed space-y-3 border-t border-[#EAE1D3]/70 pt-4">
+                    <p class="text-stone-800 leading-relaxed">
+                        {{ $deskripsiProduk }}
+                    </p>
+                    <ul class="space-y-1.5 text-stone-700 text-xs sm:text-sm pt-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-stone-400">•</span>
+                            <span><strong>Potongan:</strong> Regular Fit modern kerah kancing tersembunyi</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-stone-400">•</span>
+                            <span><strong>Bahan:</strong> Katun Prima Halus kombinasi soga alam non-alergi</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-stone-400">•</span>
+                            <span><strong>Kancing:</strong> Tempurung kelapa eksklusif dengan jahitan silang kuat</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-stone-400">•</span>
+                            <span><strong>Saku:</strong> Dada kiri satu pasang dengan motif menyambung sempurna (matching pattern)</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
             <!-- ================= REVIEWS SECTION (ULASAN PELANGGAN) ================= -->
-            <section id="ulasan-section" class="mt-20 pt-12 border-t border-[#EAE1D3]">
+            <section id="ulasan-section" class="mt-14 pt-12 border-t border-[#EAE1D3]">
                 <!-- Header Title -->
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                     <div>
