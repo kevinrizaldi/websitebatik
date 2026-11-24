@@ -81,6 +81,7 @@
           },
           quantity: 1,
           descOpen: true,
+          guideOpen: true,
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           sizeGuideModal: false,
           imageZoomModal: false,
@@ -324,7 +325,9 @@
                         <div class="space-y-3 pt-1">
                             <div class="flex items-center justify-between text-xs sm:text-sm font-semibold">
                                 <span class="text-stone-900 font-bold">Pilih Ukuran</span>
-                                <button @click="sizeGuideModal = true" class="text-stone-700 hover:text-stone-950 flex items-center gap-1.5 transition text-xs font-medium">
+                                <button type="button"
+                                        @click="guideOpen = true; document.getElementById('panduan-ukuran-card')?.scrollIntoView({ behavior: 'smooth' })"
+                                        class="text-stone-700 hover:text-stone-950 flex items-center gap-1.5 transition text-xs font-medium cursor-pointer">
                                     <svg class="w-3.5 h-3.5 text-stone-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
                                     </svg>
@@ -411,8 +414,61 @@
 
             </div>
 
+            <!-- Accordion: Panduan Ukuran (Diletakkan di atas Deskripsi Produk) -->
+            @if(!$isKain)
+            <div id="panduan-ukuran-card" class="mt-8 border border-[#EAE1D3] rounded-2xl bg-white overflow-hidden shadow-2xs">
+                <button @click="guideOpen = !guideOpen"
+                        class="w-full p-4 sm:p-5 flex items-center justify-between font-bold text-stone-900 text-sm sm:text-base hover:bg-[#FAF7F2] transition">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-stone-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                        </svg>
+                        <span>Panduan Ukuran</span>
+                    </span>
+                    <svg class="w-4 h-4 text-stone-500 transition-transform duration-200"
+                         :class="guideOpen ? 'rotate-180' : ''"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+
+                <div x-show="guideOpen" class="px-5 pb-5 text-xs sm:text-sm text-stone-600 leading-relaxed space-y-4 border-t border-[#EAE1D3]/70 pt-4">
+                    @if(!empty($produk->panduan_ukuran))
+                        <div class="bg-[#FAF7F2] border border-[#ECE5D8] rounded-xl p-4 text-xs sm:text-sm text-stone-700 whitespace-pre-line leading-relaxed font-sans">
+                            <div class="text-[11px] font-bold tracking-wider text-[#8C6D58] uppercase mb-1.5 flex items-center gap-1.5">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Panduan Khusus Produk Ini
+                            </div>
+                            {{ $produk->panduan_ukuran }}
+                        </div>
+                    @endif
+
+                    <div class="overflow-x-auto">
+                        <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Tabel Acuan Standar</div>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-stone-200 text-stone-500 font-semibold">
+                                    <th class="py-2.5">Size</th>
+                                    <th class="py-2.5">Lingkar Dada</th>
+                                    <th class="py-2.5">Panjang Baju</th>
+                                    <th class="py-2.5">Panjang Lengan</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-100 text-stone-700">
+                                <tr><td class="py-2.5 font-bold">S</td><td>104 cm</td><td>72 cm</td><td>60 cm</td></tr>
+                                <tr><td class="py-2.5 font-bold">M</td><td>108 cm</td><td>74 cm</td><td>61 cm</td></tr>
+                                <tr><td class="py-2.5 font-bold">L</td><td>112 cm</td><td>76 cm</td><td>62 cm</td></tr>
+                                <tr><td class="py-2.5 font-bold">XL</td><td>116 cm</td><td>78 cm</td><td>63 cm</td></tr>
+                                <tr><td class="py-2.5 font-bold">XXL</td><td>120 cm</td><td>80 cm</td><td>64 cm</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Accordion: Deskripsi Produk (Tampilan Lebar Penuh / Full Width) -->
-            <div class="mt-8 border border-[#EAE1D3] rounded-2xl bg-white overflow-hidden shadow-2xs">
+            <div class="mt-4 border border-[#EAE1D3] rounded-2xl bg-white overflow-hidden shadow-2xs">
                 <button @click="descOpen = !descOpen"
                         class="w-full p-4 sm:p-5 flex items-center justify-between font-bold text-stone-900 text-sm sm:text-base hover:bg-[#FAF7F2] transition">
                     <span>Deskripsi Produk</span>
