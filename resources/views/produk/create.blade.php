@@ -112,6 +112,8 @@
                         </div>
                     </div>
 
+                </div>
+
                 {{-- Right Column: Information, Specifications, Description & Status (7 cols) --}}
                 <div class="lg:col-span-7 space-y-6">
 
