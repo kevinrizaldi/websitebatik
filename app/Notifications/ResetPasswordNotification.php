@@ -20,13 +20,13 @@ class ResetPasswordNotification extends ResetPassword
         $expireMinutes = (int) config('auth.passwords.users.expire', 60);
 
         return (new MailMessage)
-            ->subject('Permintaan Reset Kata Sandi – Hamzah Style Official')
+            ->subject('Permintaan Reset Kata Sandi – Hamzah Style')
             ->greeting('Halo, '.$notifiable->name.'! 👋')
-            ->line('Kami menerima permintaan untuk mereset kata sandi akun Hamzah Style Official Anda.')
+            ->line('Kami menerima permintaan untuk mereset kata sandi akun Hamzah Style Anda.')
             ->action('Reset Kata Sandi via Website', $resetUrl)
             ->line('Tautan ini berlaku selama **'.$expireMinutes.' menit**.')
             ->line('Jika Anda tidak merasa meminta reset kata sandi, abaikan email ini. Akun Anda tetap aman.')
-            ->salutation('Salam hangat, Tim Hamzah Style Official');
+            ->salutation('Salam hangat, Tim Hamzah Style');
     }
 }
 

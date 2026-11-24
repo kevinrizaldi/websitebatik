@@ -20,13 +20,13 @@ class ResetPasswordOtpNotification extends Notification
     public function toMail(mixed $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Kode OTP Reset Kata Sandi – Hamzah Style Official')
+            ->subject('Kode OTP Reset Kata Sandi – Hamzah Style')
             ->greeting('Halo, ' . ($notifiable->name ?? 'Pelanggan') . '! 👋')
-            ->line('Kami menerima permintaan untuk mengatur ulang kata sandi akun Hamzah Style Official Anda.')
+            ->line('Kami menerima permintaan untuk mengatur ulang kata sandi akun Hamzah Style Anda.')
             ->line('Gunakan kode OTP 6 digit berikut untuk melanjutkan verifikasi:')
             ->line('# ' . $this->otp)
             ->line('Kode ini berlaku selama **' . $this->expireMinutes . ' menit** dan hanya dapat digunakan satu kali.')
             ->line('Jika Anda tidak merasa meminta reset kata sandi, abaikan email ini. Akun Anda tetap aman.')
-            ->salutation('Salam hangat, Tim Hamzah Style Official');
+            ->salutation('Salam hangat, Tim Hamzah Style');
     }
 }

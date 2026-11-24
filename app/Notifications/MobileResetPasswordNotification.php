@@ -27,6 +27,6 @@ class MobileResetPasswordNotification extends Notification
             ->line('# ' . $this->otp)
             ->line('Kode ini berlaku selama **' . $this->expireMinutes . ' menit** dan hanya dapat digunakan sekali.')
             ->line('Jika Anda tidak meminta reset kata sandi, abaikan email ini. Akun Anda tetap aman.')
-            ->salutation('Salam hangat, Tim Hamzah Style Official');
+            ->salutation('Salam hangat, Tim Hamzah Style');
     }
 }
