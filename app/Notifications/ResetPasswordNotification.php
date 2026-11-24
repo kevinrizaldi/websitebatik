@@ -17,13 +17,21 @@ class ResetPasswordNotification extends ResetPassword
             'email' => $notifiable->getEmailForPasswordReset(),
         ], false));
 
+        $expireMinutes = (int) config('auth.passwords.users.expire', 60);
+        $token = $this->token;
+
         return (new MailMessage)
             ->subject('Permintaan Reset Kata Sandi – Hamzah Style Official')
             ->greeting('Halo, '.$notifiable->name.'! 👋')
             ->line('Kami menerima permintaan untuk mereset kata sandi akun Hamzah Style Official Anda.')
-            ->line('Klik tombol di bawah ini untuk membuat kata sandi baru Anda:')
-            ->action('Reset Kata Sandi Sekarang', $resetUrl)
-            ->line('Tautan reset kata sandi ini akan kedaluwarsa dalam '.(int) config('auth.passwords.users.expire', 60).' menit.')
+            ->line('**Jika menggunakan website**, klik tombol di bawah:')
+            ->action('Reset Kata Sandi via Website', $resetUrl)
+            ->line('---')
+            ->line('**Jika menggunakan aplikasi mobile (Hamzah Style App)**, salin kode token berikut dan tempelkan ke kolom "Kode Token Reset" di aplikasi:')
+            ->line('```')
+            ->line($token)
+            ->line('```')
+            ->line('Kode ini berlaku selama **'.$expireMinutes.' menit** dan hanya dapat digunakan sekali.')
             ->line('Jika Anda tidak merasa meminta reset kata sandi, abaikan email ini. Akun Anda tetap aman.')
             ->salutation('Salam hangat, Tim Hamzah Style Official');
     }
