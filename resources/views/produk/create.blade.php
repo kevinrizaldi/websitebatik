@@ -354,13 +354,14 @@
                                                x-model="newSizeInput"
                                                @keydown.enter.prevent="addSize()"
                                                placeholder="Tambah ukuran lain (misal: 5XL, Anak, Custom, LD 110)..."
-                                               class="w-full py-2 px-3 rounded-xl border border-[#D9D0C5] bg-white text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] transition">
+                                               class="w-full py-2.5 px-3.5 rounded-xl border border-[#D9D0C5] bg-white text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] transition">
                                     </div>
                                     <button type="button"
                                             @click="addSize()"
-                                            class="shrink-0 px-3.5 py-2 rounded-xl bg-[#8C6D58] hover:bg-[#735845] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                                        <span>Tambah Ukuran</span>
+                                            style="background-color: #8C6D58 !important; color: #ffffff !important;"
+                                            class="shrink-0 px-4 py-2.5 rounded-xl bg-[#8C6D58] hover:bg-[#735845] text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                                        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                                        <span class="text-white font-bold">Tambah Ukuran</span>
                                     </button>
                                 </div>
                             </div>
