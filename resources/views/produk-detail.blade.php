@@ -110,6 +110,13 @@
               setTimeout(() => { this.toastMessage = ''; }, 3200);
           },
           selectSize(sz) {
+              // Jika ukuran yang sama diklik lagi, batalkan pilihan (toggle / unselect)
+              if (this.selectedSize === sz) {
+                  this.selectedSize = '';
+                  this.quantity = 1;
+                  return;
+              }
+
               if (this.sizeStockMap && this.sizeStockMap[sz] <= 0) {
                   this.showToast('Maaf, stok ukuran ' + sz + ' sedang habis');
                   return;
@@ -366,6 +373,7 @@
                                 @foreach($stokUkuranArray as $sz => $stk)
                                     <button type="button"
                                             @click="selectSize('{{ $sz }}')"
+                                            :title="selectedSize === '{{ $sz }}' ? 'Klik lagi untuk membatalkan pilihan ukuran {{ $sz }}' : 'Pilih ukuran {{ $sz }}'"
                                             :class="selectedSize === '{{ $sz }}'
                                                 ? 'bg-[#201A17] text-white shadow-xs'
                                                 : '{{ $stk <= 0 ? 'bg-stone-100 text-stone-400 border border-stone-200 opacity-60' : 'bg-[#FAF7F2] text-stone-800 border border-[#D5CABB] hover:border-stone-800 cursor-pointer' }}'"
@@ -386,8 +394,16 @@
                                     <svg class="w-3.5 h-3.5 text-[#8C6D58] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     Silakan klik salah satu ukuran di atas untuk memilih
                                 </span>
-                                <span x-show="selectedSize">
-                                    Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong> | Sisa stok ukuran ini: <strong class="text-stone-900" x-text="currentMaxStock"></strong> pcs
+                                <span x-show="selectedSize" class="flex flex-wrap items-center gap-1.5">
+                                    <span>Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong></span>
+                                    <span class="text-stone-300">•</span>
+                                    <span>Sisa stok ukuran ini: <strong class="text-stone-900" x-text="currentMaxStock"></strong> pcs</span>
+                                    <button type="button"
+                                            @click="selectSize(selectedSize)"
+                                            class="text-[#8C6D58] hover:text-[#5C3D2E] underline ml-1 font-medium transition cursor-pointer"
+                                            title="Batalkan pilihan ukuran">
+                                        (Batal pilih)
+                                    </button>
                                 </span>
                             </div>
                         </div>
