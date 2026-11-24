@@ -5,7 +5,7 @@
             <div>
                 {{-- Eyebrow --}}
                 <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#A86544] mb-1">
-                    <span>KURASI TOKO</span>
+                    <span>RINGKASAN TOKO</span>
                     <span>•</span>
                     <span>SEMESTER {{ now()->month <= 6 ? 'I' : 'II' }} {{ now()->year }}</span>
                     <span>•</span>
@@ -17,7 +17,7 @@
                     <span class="sr-only">Dashboard Admin</span>
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Pantau transaksi Midtrans gateway otomatis, status pengiriman ekspedisi RajaOngkir, dan konversi koleksi busana batik Hamzah Style.
+                    Pantau data transaksi pembayaran, status pengiriman pesanan, dan ringkasan penjualan batik Hamzah Style.
                 </p>
             </div>
 
@@ -34,7 +34,7 @@
                     <svg class="h-4 w-4 text-[#C59A53]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    <span>Unduh Rekap Kurasi</span>
+                    <span>Unduh Laporan Penjualan</span>
                 </a>
             </div>
         </div>
@@ -53,12 +53,12 @@
                 </div>
                 <p class="text-[11px] text-[#5A544E]">Total Produk</p>
                 <p class="mt-1 text-xl sm:text-2xl font-extrabold text-[#1E1B18]">
-                    {{ $totalProducts }} Karya
+                    {{ $totalProducts }} Produk
                 </p>
                 <div class="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-[#A86544]">
                     <span>✦</span>
                     @if(($newProductsThisMonth ?? 0) > 0)
-                        <span>+{{ $newProductsThisMonth }} koleksi baru bulan ini</span>
+                        <span>+{{ $newProductsThisMonth }} produk baru bulan ini</span>
                     @else
                         <span>Katalog aktif terdata</span>
                     @endif
@@ -118,7 +118,7 @@
                 </div>
             </div>
 
-            {{-- 4. PATRON --}}
+            {{-- 4. PELANGGAN --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-4 sm:p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center gap-2 text-stone-400 mb-2">
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
@@ -126,14 +126,14 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                     </div>
-                    <span class="text-[10px] font-bold uppercase tracking-wider">PATRON</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">PELANGGAN</span>
                 </div>
                 <p class="text-[11px] text-[#5A544E]">Total Pelanggan</p>
                 <p class="mt-1 text-xl sm:text-2xl font-extrabold text-[#1E1B18]">
-                    {{ number_format($totalCustomers, 0, ',', '.') }} Patron
+                    {{ number_format($totalCustomers, 0, ',', '.') }} Pelanggan
                 </p>
                 <div class="mt-3 text-[11px] text-stone-500 font-medium">
-                    <strong class="font-bold text-[#1E1B18]">{{ $repeatBuyerPercent ?? 0 }}%</strong> repeat buyer setia
+                    <strong class="font-bold text-[#1E1B18]">{{ $repeatBuyerPercent ?? 0 }}%</strong> pelanggan beli ulang
                 </div>
             </div>
 

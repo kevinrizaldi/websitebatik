@@ -64,7 +64,7 @@
                                     </svg>
                                 </div>
                                 <input type="search" name="search"
-                                       placeholder="Cari nomor pesanan, SKU kain, pelanggan..."
+                                       placeholder="Cari nomor pesanan, kode produk, pelanggan..."
                                        class="w-full rounded-2xl border border-[#E8E4DC] bg-white py-2 pl-10 pr-4 text-xs placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
                             </form>
                         </div>
@@ -87,7 +87,7 @@
                             </a>
 
                             {{-- User Avatar & Info --}}
-                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 pl-2 border-l border-[#EFECE6] hover:opacity-80 transition group" title="Profil Kurator &amp; Keamanan">
+                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 pl-2 border-l border-[#EFECE6] hover:opacity-80 transition group" title="Profil Saya">
                                 <div class="flex h-8 w-8 items-center justify-center rounded-full bg-[#1E1B18] text-[#C59A53] text-xs font-bold group-hover:scale-105 transition-transform">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />

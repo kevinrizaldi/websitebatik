@@ -20,7 +20,7 @@
                     </span>
                 </div>
                 <p class="text-sm text-[#7A7269] mt-1">
-                    Perbarui data busana wastra, spesifikasi bahan primissima, atau stok inventaris sirkular.
+                    Perbarui informasi produk batik, harga, foto, dan ketersediaan stok per ukuran.
                 </p>
             </div>
             <div class="flex items-center gap-2">
@@ -98,7 +98,6 @@
                                     <span>Foto Produk</span>
                                     <span class="text-rose-500 font-bold">*</span>
                                 </h3>
-                                <p class="text-[11px] text-[#8C827A] mt-0.5">Unggah foto kurasi beresolusi tinggi dengan pencahayaan natural. (Foto utama wajib diunggah)</p>
                             </div>
                             <svg class="w-5 h-5 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -138,7 +137,7 @@
                                 {{-- Pill Tag --}}
                                 <div class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-[11px] font-bold text-[#1E1B18] shadow-xs flex items-center gap-1.5 pointer-events-none">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span>Foto Utama Aktif</span>
+                                    <span>Foto Utama</span>
                                 </div>
 
                                 {{-- Action Buttons --}}
@@ -165,7 +164,7 @@
                                     </svg>
                                 </div>
                                 <div class="text-xs font-semibold text-[#1E1B18]">
-                                    Klik untuk Mengganti Foto Utama <span class="text-rose-500 font-bold">*</span>
+                                    Klik atau Seret Foto Baru ke Sini <span class="text-rose-500 font-bold">*</span>
                                 </div>
                                 <p class="text-[11px] text-[#8C827A]">Format JPG, PNG, atau WEBP (Wajib diisi, Maksimal 2 MB)</p>
                             </div>
@@ -174,7 +173,7 @@
                         {{-- 4 Slots Detail --}}
                         <div>
                             <div class="flex items-center justify-between text-[11px] mb-2">
-                                <span class="font-bold text-[#8C827A] uppercase tracking-wider">FOTO SUDUT &amp; DETAIL KAIN (4 SLOT)</span>
+                                <span class="font-bold text-[#8C827A] uppercase tracking-wider">Foto pendukung</span>
                                 <span class="text-[#A89F91]">Maks. 2 MB per berkas</span>
                             </div>
                             <div class="grid grid-cols-4 gap-2">
@@ -251,14 +250,14 @@
                         <div class="flex items-center justify-between">
                             <h3 class="font-bold text-sm text-[#1E1B18]">Informasi Dasar &amp; Kategori</h3>
                             <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#FAF4ED] text-[#8C6D58] border border-[#E5DDD0]">
-                                SKU Terindeks
+                                Kode Produk
                             </span>
                         </div>
 
-                        {{-- Nama Busana / Kriya --}}
+                        {{-- Nama Produk Batik --}}
                         <div>
                             <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
-                                Nama Busana / Kriya <span class="text-rose-500">*</span>
+                                Nama Produk Batik <span class="text-rose-500">*</span>
                             </label>
                             <input type="text"
                                    name="nama"
@@ -271,7 +270,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
-                                    Kategori Wastra <span class="text-rose-500">*</span>
+                                    Kategori Produk <span class="text-rose-500">*</span>
                                 </label>
                                 <select name="kategori" x-model="kategori" required class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
                                     @if(isset($kategoris) && $kategoris->isNotEmpty())
@@ -345,7 +344,7 @@
                                            min="0"
                                            max="100000"
                                            class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] font-bold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
-                                    <p class="text-[10px] text-stone-400 mt-1">Jumlah lembar kain wastra fisik.</p>
+                                    <p class="text-[10px] text-stone-400 mt-1">Jumlah lembar stok kain yang tersedia.</p>
                                 </div>
                                 {{-- Jika Bukan Kain (Busana): Dihitung otomatis dari alokasi stok per ukuran --}}
                                 <div x-show="!isKain">
@@ -360,15 +359,15 @@
                         </div>
                     </div>
 
-                    {{-- Card 2: Ukuran Baju & Alokasi Stok (Variasi) --}}
+                    {{-- Card 2: Ukuran Baju & Stok (Variasi) --}}
                     <div class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-5">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="font-bold text-sm text-[#1E1B18]">Variasi Ukuran &amp; Alokasi Stok</h3>
-                                <p class="text-[11px] text-[#8C827A] mt-0.5">Pilih atau tambahkan ukuran busana yang tersedia beserta alokasi stok masing-masing.</p>
+                                <h3 class="font-bold text-sm text-[#1E1B18]">Variasi Ukuran &amp; Stok</h3>
+                                <p class="text-[11px] text-[#8C827A] mt-0.5">Pilih atau tambahkan ukuran baju yang tersedia beserta jumlah stok masing-masing.</p>
                             </div>
                             <span class="text-[10px] font-semibold text-[#8C6D58] bg-[#FAF0E4] px-2.5 py-0.5 rounded-full border border-[#E8D9C5]"
-                                  x-text="isKain ? 'Bahan Lembaran Wastra' : (sizes.length + ' Variasi Aktif')">
+                                  x-text="isKain ? 'Kain Lembaran' : (sizes.length + ' Variasi Aktif')">
                             </span>
                         </div>
 
@@ -478,7 +477,7 @@
 
                                 {{-- Empty State when all sizes removed --}}
                                 <div x-show="sizes.length === 0" class="p-6 text-center rounded-xl border border-dashed border-[#D9D0C5] bg-[#FAF7F2] space-y-2">
-                                    <p class="text-xs text-stone-500">Belum ada variasi ukuran yang dipilih untuk busana ini.</p>
+                                    <p class="text-xs text-stone-500">Belum ada variasi ukuran yang dipilih untuk produk ini.</p>
                                     <button type="button"
                                             @click="resetDefaultSizes()"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0E4] hover:bg-[#F3E5D4] text-[#8C6D58] border border-[#E8D9C5] text-xs font-bold transition cursor-pointer">
@@ -496,9 +495,9 @@
                                     🧵
                                 </div>
                                 <div class="flex-1">
-                                    <h4 class="text-xs font-bold text-[#1E1B18]">Produk Bahan Kain Lembaran</h4>
+                                    <h4 class="text-xs font-bold text-[#1E1B18]">Produk Kain Lembaran</h4>
                                     <p class="text-xs text-[#5A544E] mt-1 leading-relaxed">
-                                        Kategori kain batik dijual per lembar potongan wastra utuh (standar 2,4m × 1,15m) sehingga tidak memiliki variasi ukuran busana (S, M, L, XL, XXL). Stok dikelola terpusat pada kolom <strong>Stok Kain</strong> di atas.
+                                        Kategori kain batik dijual per lembar kain utuh sehingga tidak memiliki variasi ukuran baju (S, M, L, XL, XXL). Stok diatur langsung pada kolom <strong>Stok Kain</strong> di atas.
                                     </p>
                                 </div>
                             </div>
@@ -513,13 +512,11 @@
                                 <label class="block text-xs font-bold text-[#1E1B18]">
                                     Panduan Ukuran Produk <span class="text-stone-400 font-normal">(Size Guide)</span>
                                 </label>
-                                <span class="text-[10px] text-[#8C6D58]">Tampil di pop-up Panduan Ukuran pembeli</span>
                             </div>
                             <textarea name="panduan_ukuran"
                                       rows="3"
                                       placeholder="Contoh rincian dimensi (lingkar dada, panjang baju, panjang lengan):&#10;S: LD 104 cm, PB 72 cm, PL 60 cm&#10;M: LD 108 cm, PB 74 cm, PL 61 cm&#10;L: LD 112 cm, PB 76 cm, PL 62 cm&#10;XL: LD 116 cm, PB 78 cm, PL 63 cm&#10;XXL: LD 120 cm, PB 80 cm, PL 64 cm"
                                       class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition leading-relaxed">{{ old('panduan_ukuran', $produk->panduan_ukuran) }}</textarea>
-                            <p class="text-[10px] text-stone-400 mt-1">Panduan ini akan ditampilkan saat pembeli menekan tombol &ldquo;Panduan Ukuran&rdquo; di etalase toko.</p>
                         </div>
                     </div>
 
@@ -528,7 +525,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-bold text-sm text-[#1E1B18]">Deskripsi Produk</h3>
-                                <p class="text-[11px] text-[#8C827A] mt-0.5">Tambahkan Deskripsi Produk</p>
+                                <p class="text-[11px] text-[#8C827A] mt-0.5">Tuliskan keterangan mengenai motif, bahan, atau keunggulan produk ini.</p>
                             </div>
                             <svg class="w-4 h-4 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -541,17 +538,17 @@
                                   class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">{{ old('deskripsi', $produk->deskripsi) }}</textarea>
                     </div>
 
-                    {{-- Card 4: Status Publikasi Katalog --}}
+                    {{-- Card 4: Status Tampilan Produk --}}
                     <div class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-3">
-                        <h3 class="font-bold text-sm text-[#1E1B18]">Status Publikasi Katalog</h3>
+                        <h3 class="font-bold text-sm text-[#1E1B18]">Status Tampilan Produk</h3>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <label class="flex items-start gap-3 p-3.5 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white cursor-pointer transition">
                                 <input type="radio" name="publish_mode" value="publish" checked class="mt-0.5 text-[#1E1B18] focus:ring-[#8C6D58]">
                                 <div>
-                                    <div class="font-bold text-xs text-[#1E1B18]">Langsung Terbitkan</div>
+                                    <div class="font-bold text-xs text-[#1E1B18]">Langsung Tampilkan di Katalog</div>
                                     <p class="text-[10px] text-[#7A7269] mt-0.5 leading-normal">
-                                        Produk langsung terlihat di etalase web, aplikasi mobile, dan siap dipesan pembeli.
+                                        Produk langsung dapat dilihat dan dibeli oleh pelanggan di website.
                                     </p>
                                 </div>
                             </label>
@@ -561,7 +558,7 @@
                                 <div>
                                     <div class="font-bold text-xs text-[#1E1B18]">Simpan Sebagai Draf</div>
                                     <p class="text-[10px] text-[#7A7269] mt-0.5 leading-normal">
-                                        Hanya dapat diakses dan ditinjau oleh kurator internal di panel manajemen toko.
+                                        Produk tersimpan di sistem admin dan belum ditampilkan ke pembeli.
                                     </p>
                                 </div>
                             </label>
@@ -583,13 +580,13 @@
 
                 <div class="flex items-center gap-3">
                     <a href="{{ route('produk.index') }}" class="px-5 py-2.5 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-semibold text-[#1E1B18] transition">
-                        Batal / Kembali ke Katalog
+                        Batal
                     </a>
                     <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#1E1B18] hover:bg-black text-xs font-semibold text-white transition shadow-sm">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        <span>Simpan Perubahan Produk</span>
+                        <span>Simpan Perubahan</span>
                     </button>
                 </div>
             </div>

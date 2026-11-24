@@ -25,16 +25,16 @@
                 {{-- Eyebrow --}}
                 <div class="inline-flex items-center gap-1.5 rounded-full border border-[#E8D9C5] bg-[#FAF0E4] px-3 py-1 text-[10px] font-bold text-[#8C5E28] uppercase tracking-wider mb-2">
                     <span>✦</span>
-                    <span>ARSIP INVENTARIS LESTARI</span>
+                    <span>MANAJEMEN KATEGORI</span>
                 </div>
 
                 {{-- Title & Subtitle --}}
                 <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">
-                    Kategori Produk &amp; Kurasi Wastra
+                    Kategori Produk
                     <span class="sr-only">Kelola Kategori Produk</span>
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Kelola klasifikasi busana dan ragam koleksi produk Hamzah Style.
+                    Kelola daftar kategori produk batik di toko Hamzah Style.
                 </p>
             </div>
 
@@ -307,27 +307,27 @@
                             </div>
                         </div>
 
-                        {{-- FILOSOFI & DESKRIPSI KURASI --}}
+                        {{-- DESKRIPSI KATEGORI --}}
                         <div>
                             <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-                                FILOSOFI &amp; DESKRIPSI KURASI
+                                DESKRIPSI KATEGORI
                             </label>
                             <textarea name="deskripsi" rows="3"
-                                      placeholder="Sampaikan makna filosofis motif dan spesifikasi wastra..."
+                                      placeholder="Tuliskan keterangan mengenai kategori ini..."
                                       class="w-full rounded-xl border border-[#E8E4DC] bg-[#FAF0E4]/30 px-3.5 py-2.5 text-xs text-[#1E1B18] placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">{{ old('deskripsi') }}</textarea>
                         </div>
 
-                        {{-- FOTO REPRESENTASI (MOODBOARD / VISUAL) --}}
+                        {{-- FOTO KATEGORI --}}
                         <div>
                             <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1.5">
-                                FOTO REPRESENTASI (MOODBOARD / VISUAL)
+                                FOTO KATEGORI
                             </label>
                             <label class="group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8D9C5] bg-[#FAF0E4]/40 p-5 text-center cursor-pointer hover:bg-[#FAF0E4]/70 transition">
                                 <input type="file" name="gambar" accept="image/jpeg,image/png,image/jpg,image/webp" class="sr-only" onchange="previewUploadImage(this)">
                                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#E8D9C5] text-stone-600 shadow-2xs mb-2">
                                     📷
                                 </div>
-                                <p id="uploadPromptText" class="text-xs font-bold text-[#1E1B18]">Pilih File Wastra</p>
+                                <p id="uploadPromptText" class="text-xs font-bold text-[#1E1B18]">Pilih Foto Kategori</p>
                                 <p class="text-[10px] text-stone-400 mt-0.5">JPG, WebP hingga 5MB (Aspek 1:1)</p>
                             </label>
                         </div>
@@ -340,7 +340,7 @@
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" name="is_featured" value="1" class="rounded border-[#E8E4DC] text-[#1E1B18] focus:ring-0">
-                                <span>Kategori Unggulan / Pilihan Kurator</span>
+                                <span>Kategori Pilihan / Rekomendasi</span>
                             </label>
                         </div>
 
@@ -349,7 +349,7 @@
                             <svg class="w-4 h-4 text-[#C59A53]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                             </svg>
-                            <span>Simpan &amp; Publikasikan Kategori</span>
+                            <span>Simpan Kategori</span>
                         </button>
                     </form>
 
@@ -357,7 +357,7 @@
                     <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/60 p-3.5 flex items-start gap-2.5 text-xs text-[#5A544E]">
                         <span class="text-sm text-[#8C5E28]">🛡</span>
                         <p class="text-[11px] leading-relaxed">
-                            Semua kategori yang disetujui akan diindeks langsung pada etalase online <strong class="text-[#1E1B18]">Hamzah Style</strong> dengan penanda asal wastra.
+                            Kategori yang disimpan akan langsung ditampilkan di etalase toko <strong class="text-[#1E1B18]">Hamzah Style</strong>.
                         </p>
                     </div>
                 </div>
