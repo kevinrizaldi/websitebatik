@@ -67,9 +67,6 @@ class PelangganController extends Controller
                 $tierBadgeClass = 'bg-stone-100 text-stone-600 border-stone-200';
             }
 
-            // Waste upcycled contribution calculation (kg of fabric scraps)
-            $percaKg = round(max(0.4, $totalSpent / 1150000), 1);
-
             return (object) [
                 'id' => $user->id,
                 'patron_code' => '#CST-'.$cityCode.'-'.str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
@@ -84,7 +81,6 @@ class PelangganController extends Controller
                 'tier_name' => $tierName,
                 'tier_sub' => $tierSub,
                 'tier_badge_class' => $tierBadgeClass,
-                'perca_kg' => $percaKg,
                 'has_pending' => $orders->whereIn('status', ['Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi'])->isNotEmpty(),
             ];
         });
@@ -104,20 +100,20 @@ class PelangganController extends Controller
             $patrons = $patrons->filter(fn ($p) => in_array($p->tier_name, ['Lestari Adibusana Patron', 'Pelanggan Terverifikasi']));
         } elseif ($tier === 'new') {
             $patrons = $patrons->filter(fn ($p) => $p->tier_name === 'Pembeli Baru');
-        } elseif ($tier === 'eco') {
-            $patrons = $patrons->filter(fn ($p) => $p->perca_kg >= 3.0);
         }
 
         // Summary counts
         $vipCount = $patrons->filter(fn ($p) => $p->tier_name === 'Lestari Adibusana Patron')->count();
         $repeatCount = $patrons->filter(fn ($p) => $p->orders_count >= 2)->count();
-        $repeatRate = $totalPelanggan > 0 ? round(($repeatCount / $totalPelanggan) * 100, 1) : 46.8;
+        $repeatRate = $totalPelanggan > 0 ? round(($repeatCount / $totalPelanggan) * 100, 1) : 0;
+        $totalOmzet = (float) $patrons->sum('total_spent');
 
         return view('admin.pelanggan.index', [
             'patrons' => $patrons,
-            'totalPelanggan' => $totalPelanggan > 0 ? $totalPelanggan : 1280,
-            'vipCount' => $vipCount > 0 ? $vipCount : 184,
-            'repeatRate' => $repeatRate > 0 ? $repeatRate : 46.8,
+            'totalPelanggan' => $totalPelanggan,
+            'vipCount' => $vipCount,
+            'repeatRate' => $repeatRate,
+            'totalOmzet' => $totalOmzet,
             'search' => $search,
             'tier' => $tier,
             'sort' => $sort,

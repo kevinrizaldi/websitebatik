@@ -162,24 +162,14 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {{-- KIRI: GRAFIK TREN PENJUALAN & SIRKULARITAS (col-span-8) --}}
             <div class="lg:col-span-8 rounded-2xl border border-[#EFECE6] bg-white p-6 shadow-2xs">
-                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
-                    <div>
-                        <div class="flex items-center gap-2 text-base font-bold text-[#1E1B18]">
-                            <span class="text-[#A86544]">↺</span>
-                            <h3>Tren Penjualan & Sirkularitas {{ now()->year }}</h3>
-                        </div>
-                        <p class="text-xs text-[#5A544E] mt-0.5 max-w-md">
-                            Distribusi volume busana batik adi busana & kontribusi sirkularitas kain perca sisa produksi.
-                        </p>
+                <div class="mb-6">
+                    <div class="flex items-center gap-2 text-base font-bold text-[#1E1B18]">
+                        <span class="text-[#A86544]">↺</span>
+                        <h3>Tren Penjualan Koleksi {{ now()->year }}</h3>
                     </div>
-
-                    {{-- Badges --}}
-                    <div class="inline-flex items-center gap-2 rounded-full border border-[#E9DFD0] bg-[#FAF0E4] px-3.5 py-1.5 text-xs font-bold text-[#8C5E28] shrink-0">
-                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span>{{ $kainTerselamatkanKg ?? 0 }} kg kain sisa terselamatkan</span>
-                    </div>
+                    <p class="text-xs text-[#5A544E] mt-0.5 max-w-md">
+                        Distribusi volume penjualan busana batik dan ragam koleksi adibusana Hamzah Style.
+                    </p>
                 </div>
 
                 {{-- Chart Legend --}}

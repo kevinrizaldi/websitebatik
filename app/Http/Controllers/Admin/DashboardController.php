@@ -101,35 +101,6 @@ class DashboardController extends Controller
         $monthlySalesTarget = 50000000;
         $targetPercentage = $monthlySalesTarget > 0 ? min(100, round(($salesThisMonth / $monthlySalesTarget) * 100, 1)) : 0;
 
-        // Real upcycled fabric saved (kg)
-        $upcycledSoldQty = (int) OrderItem::query()
-            ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->join('products', 'products.id', '=', 'order_items.produk_id')
-            ->where(function ($q): void {
-                $q->where('orders.payment_status', Order::PAYMENT_PAID)
-                    ->orWhereIn('orders.status', self::PAID_STATUSES);
-            })
-            ->where(function ($q): void {
-                $q->where('products.kategori', 'like', '%olahan%')
-                    ->orWhere('products.kategori', 'like', '%sisa%')
-                    ->orWhere('order_items.produk_name', 'like', '%pouch%')
-                    ->orWhere('order_items.produk_name', 'like', '%tote bag%')
-                    ->orWhere('order_items.produk_name', 'like', '%dompet%')
-                    ->orWhere('order_items.produk_name', 'like', '%patchwork%');
-            })
-            ->sum('order_items.quantity');
-
-        $upcycledTotalStock = (int) Produk::where(function ($q): void {
-            $q->where('kategori', 'like', '%olahan%')
-                ->orWhere('kategori', 'like', '%sisa%')
-                ->orWhere('nama', 'like', '%pouch%')
-                ->orWhere('nama', 'like', '%tote bag%')
-                ->orWhere('nama', 'like', '%dompet%')
-                ->orWhere('nama', 'like', '%patchwork%');
-        })->sum('stok');
-
-        $kainTerselamatkanKg = round(($upcycledSoldQty * 0.4) + ($upcycledTotalStock * 0.35), 1);
-
         // Real best-selling categories
         $categorySales = OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
@@ -396,7 +367,6 @@ class DashboardController extends Controller
             'repeatBuyerPercent' => $repeatBuyerPercent,
             'monthlySalesTarget' => $monthlySalesTarget,
             'targetPercentage' => $targetPercentage,
-            'kainTerselamatkanKg' => $kainTerselamatkanKg,
             'categoriesData' => $categoriesData,
             'lowStockProduct' => $lowStockProduct,
             'trendMonths' => $trendMonths,

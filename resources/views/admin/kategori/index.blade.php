@@ -164,7 +164,7 @@
 
                         $filosofi = match ($badgeTitle) {
                             'READY-TO-WEAR' => 'Filosofi: Keselarasan Parang Barong & Dinamika Kencana',
-                            'CIRCULAR CRAFT' => 'Sirkularitas: Mereduksi 84kg Limbah Perca / Semester',
+                            'CIRCULAR CRAFT' => 'Kriya Kreatif: Olahan Kerajinan Kain Artistik & Aksesoris',
                             default => 'Filosofi: Bintang Truntum Penuntun Cinta Abadi',
                         };
 

@@ -21,7 +21,7 @@
                             <span class="text-xs text-stone-400">Pembaruan: Hari Ini</span>
                         </div>
 
-                        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                             {{-- Pesanan Selesai --}}
                             <div class="flex flex-col justify-between rounded-2xl bg-[#FAF3EA] p-4 sm:p-5">
                                 <div class="flex items-center justify-between">
@@ -34,20 +34,6 @@
                                 <div>
                                     <p class="mt-3 text-3xl font-extrabold text-stone-900">{{ $stats['selesai'] > 0 ? $stats['selesai'] : 4 }}</p>
                                     <p class="mt-1 text-xs text-stone-500">Koleksi adibusana terkurasi</p>
-                                </div>
-                            </div>
-
-                            {{-- Kain Diselamatkan --}}
-                            <div class="flex flex-col justify-between rounded-2xl bg-[#FAF3EA] p-4 sm:p-5">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-stone-600">KAIN DISELAMATKAN</span>
-                                    <svg class="h-4 w-4 text-stone-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
-                                    </svg>
-                                </div>
-                                <div>
-                                    <p class="mt-3 text-3xl font-extrabold text-stone-900">3.2 <span class="text-xl font-bold text-stone-800">kg</span></p>
-                                    <p class="mt-1 text-xs text-stone-500">Perca Primissima terolah</p>
                                 </div>
                             </div>
 
