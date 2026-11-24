@@ -37,6 +37,7 @@ class Product extends Model
         'material',
         'size',
         'ukuran',
+        'panduan_ukuran',
         'size_stock',
         'stok_ukuran',
         'image',

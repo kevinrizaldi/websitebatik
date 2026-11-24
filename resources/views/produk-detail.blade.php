@@ -641,10 +641,20 @@
     <div x-cloak x-show="sizeGuideModal" class="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/70 backdrop-blur-sm p-4" @click="sizeGuideModal = false">
         <div class="relative max-w-lg w-full bg-white rounded-3xl p-6 sm:p-8" @click.stop>
             <div class="flex items-center justify-between mb-4 pb-3 border-b border-stone-100">
-                <h3 class="font-serif-title text-xl font-bold text-stone-900">Panduan Ukuran Kemeja Pria</h3>
+                <h3 class="font-serif-title text-xl font-bold text-stone-900">Panduan Ukuran Busana</h3>
                 <button @click="sizeGuideModal = false" class="text-stone-400 hover:text-stone-800 text-xl font-bold">&times;</button>
             </div>
+            @if(!empty($produk->panduan_ukuran))
+                <div class="mb-5 bg-[#FAF7F2] border border-[#ECE5D8] rounded-2xl p-4 text-xs sm:text-sm text-stone-700 whitespace-pre-line leading-relaxed font-sans">
+                    <div class="text-[11px] font-bold tracking-wider text-[#8C6D58] uppercase mb-1.5 flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Panduan Khusus Produk Ini
+                    </div>
+                    {{ $produk->panduan_ukuran }}
+                </div>
+            @endif
             <div class="overflow-x-auto text-xs sm:text-sm">
+                <div class="text-[11px] font-semibold text-stone-500 uppercase tracking-wider mb-2">Tabel Acuan Standar</div>
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-stone-200 text-stone-500 font-semibold">

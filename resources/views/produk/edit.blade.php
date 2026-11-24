@@ -351,6 +351,21 @@
                                    class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
                             <input type="hidden" name="material" value="{{ old('material', $produk->material ?? 'Katun Primissima Halus 60s, Batik Cap kombinasi Tulis canting tembaga') }}">
                         </div>
+
+                        {{-- Panduan Ukuran Produk --}}
+                        <div x-show="!isKain" x-transition>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold text-[#1E1B18]">
+                                    Panduan Ukuran Produk <span class="text-stone-400 font-normal">(Size Guide)</span>
+                                </label>
+                                <span class="text-[10px] text-[#8C6D58]">Tampil di pop-up Panduan Ukuran pembeli</span>
+                            </div>
+                            <textarea name="panduan_ukuran"
+                                      rows="3"
+                                      placeholder="Contoh rincian dimensi (lingkar dada, panjang baju, panjang lengan):&#10;S: LD 104 cm, PB 72 cm, PL 60 cm&#10;M: LD 108 cm, PB 74 cm, PL 61 cm&#10;L: LD 112 cm, PB 76 cm, PL 62 cm&#10;XL: LD 116 cm, PB 78 cm, PL 63 cm&#10;XXL: LD 120 cm, PB 80 cm, PL 64 cm"
+                                      class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition leading-relaxed">{{ old('panduan_ukuran', $produk->panduan_ukuran) }}</textarea>
+                            <p class="text-[10px] text-stone-400 mt-1">Panduan ini akan ditampilkan saat pembeli menekan tombol &ldquo;Panduan Ukuran&rdquo; di etalase toko.</p>
+                        </div>
                     </div>
 
                     {{-- Card 3: Deskripsi Filosofis & Cerita Karya --}}
