@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Katalog Produk — Hamzah Style</title>
-    <meta name="description" content="Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi di Hamzah Style.">
+    <meta name="description" content="Temukan beragam pilihan batik asli dan kerajinan tangan berkualitas di Hamzah Style.">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -163,7 +163,7 @@
                     Semua Produk
                 </h1>
                 <p class="text-stone-600 text-xs sm:text-sm mt-1 max-w-2xl leading-relaxed">
-                    Jelajahi keanggunan busana batik autentik dan ragam kriya sirkular olahan kain sisa bernilai tinggi.
+                    Temukan beragam pilihan batik asli dan kerajinan tangan berkualitas dari pengrajin lokal.
                 </p>
             </div>
 
