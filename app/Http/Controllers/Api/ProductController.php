@@ -150,7 +150,9 @@ class ProductController extends Controller
             ->values()
             ->all();
 
-        $sizeStock = $product->size_stock ?? $product->stok_ukuran ?? [];
+        $sizeStock = method_exists($product, 'getSizeStockArray')
+            ? $product->getSizeStockArray()
+            : ($product->size_stock ?? $product->stok_ukuran ?? []);
         $sizeStock = is_array($sizeStock) ? $sizeStock : [];
 
         $categoryRelation = $product->relationLoaded('category') ? $product->getRelation('category') : null;
