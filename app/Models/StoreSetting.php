@@ -28,7 +28,7 @@ class StoreSetting extends Model
     public static function current(): self
     {
         return static::firstOrCreate([], [
-            'nama_toko' => 'Hamzah Style Official',
+            'nama_toko' => 'Hamzah Style',
             'kota_asal' => 'Kota Surakarta (Solo)',
             'provinsi_asal' => 'Jawa Tengah',
             'kode_pos_asal' => '57141',

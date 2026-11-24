@@ -22,6 +22,7 @@ class GoogleAuthController extends Controller
         }
 
         return Socialite::driver('google')
+            ->stateless()
             ->with(['prompt' => 'consent select_account'])
             ->redirect();
     }
@@ -32,7 +33,13 @@ class GoogleAuthController extends Controller
     public function handleGoogleCallback(): RedirectResponse
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            // Gunakan stateless() agar tidak terjadi InvalidStateException pada percobaan pertama
+            // akibat browser/cookie session yang belum sinkron saat redirect lintas domain dari Google.
+            try {
+                $googleUser = Socialite::driver('google')->stateless()->user();
+            } catch (Throwable) {
+                $googleUser = Socialite::driver('google')->user();
+            }
 
             // 1. Cari user berdasarkan google_id
             $user = User::where('google_id', $googleUser->getId())->first();

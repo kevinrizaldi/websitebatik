@@ -428,7 +428,9 @@ class WebPrdFlowTest extends TestCase
 
         $response->assertOk();
         $response->assertSee($order->code);
-        $response->assertSee('Berikan Ulasan');
+        $response->assertSee('openReview(order, item)', false);
+        $response->assertSee('item.reviewed', false);
+        $response->assertSee('Sudah diulas');
     }
 
     public function test_review_comment_with_quotes_does_not_break_orders_page(): void

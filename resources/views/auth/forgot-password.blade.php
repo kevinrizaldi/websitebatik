@@ -37,7 +37,7 @@
                     </svg>
                 </div>
                 <span class="font-bold tracking-wider text-sm sm:text-base text-[#26211D] uppercase font-sans">
-                    Hamzah Style Official
+                    Hamzah Style
                 </span>
             </a>
 
@@ -66,7 +66,7 @@
                 Lupa Kata Sandi?
             </h1>
             <p class="text-xs text-stone-600 mt-2 leading-relaxed font-light">
-                Masukkan alamat email akun Anda. Kami akan mengirimkan tautan untuk mengatur ulang kata sandi Anda.
+                Masukkan alamat email akun Anda. Kami akan mengirimkan kode OTP 6 digit untuk mengatur ulang kata sandi Anda.
             </p>
 
             <!-- Status Alert -->
@@ -112,7 +112,7 @@
                     type="submit"
                     class="w-full py-3.5 px-6 rounded-xl bg-[#201A17] text-[#FAF7F2] text-sm font-semibold tracking-wider hover:bg-stone-800 active:scale-[0.99] transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center gap-2 group"
                 >
-                    <span>Kirim Tautan Reset</span>
+                    <span>Kirim Kode OTP</span>
                     <svg class="w-4 h-4 transform group-hover:translate-x-1 transition duration-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
                     </svg>

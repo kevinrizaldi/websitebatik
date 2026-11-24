@@ -19,7 +19,7 @@
                     </span>
                 </div>
                 <p class="text-sm text-[#7A7269] mt-1">
-                    Kelola identitas kurator utama, kredensial otentikasi dua langkah (2FA), serta hak akses staf atelier Hamzah Style Official.
+                    Kelola identitas kurator utama, kredensial otentikasi dua langkah (2FA), serta hak akses staf atelier Hamzah Style.
                 </p>
             </div>
             <div class="flex items-center gap-3">

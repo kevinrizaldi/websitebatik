@@ -33,7 +33,7 @@
     <div class="border-b border-[#EFECE6]/80 p-5">
         <div class="flex items-center justify-between">
             <a href="{{ route('dashboard') }}" class="flex flex-col gap-1">
-                <img src="{{ asset('images/logo.png') }}" alt="HAMZAH STYLE OFFICIAL" class="h-7 w-auto object-contain object-left">
+                <img src="{{ asset('images/logo.png') }}" alt="Hamzah Style" class="h-7 w-auto object-contain object-left">
                 <span class="inline-block w-fit rounded bg-[#F7EFE6] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#A86544]">
                     ADMIN PORTAL
                 </span>

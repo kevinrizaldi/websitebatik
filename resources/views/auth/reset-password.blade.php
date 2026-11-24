@@ -37,7 +37,7 @@
                     </svg>
                 </div>
                 <span class="font-bold tracking-wider text-sm sm:text-base text-[#26211D] uppercase font-sans">
-                    Hamzah Style Official
+                    Hamzah Style
                 </span>
             </a>
         </div>
@@ -59,14 +59,14 @@
                 Buat Sandi Baru
             </h1>
             <p class="text-xs text-stone-600 mt-2 leading-relaxed font-light">
-                Silakan buat kata sandi baru yang kuat untuk mengamankan akun belanja Anda.
+                Kode OTP berhasil diverifikasi ✓ Silakan buat kata sandi baru yang kuat untuk mengamankan akun belanja Anda.
             </p>
 
             <form method="POST" action="{{ route('password.store') }}" class="mt-6 space-y-4">
                 @csrf
 
                 <!-- Password Reset Token -->
-                <input type="hidden" name="token" value="{{ $request->route('token') }}">
+                <input type="hidden" name="token" value="{{ $token ?? $request->route('token') }}">
 
                 <!-- Email Address -->
                 <div>
@@ -77,11 +77,10 @@
                         id="email"
                         type="email"
                         name="email"
-                        value="{{ old('email', $request->email) }}"
+                        value="{{ old('email', $email ?? $request->email) }}"
                         required
-                        autofocus
-                        autocomplete="username"
-                        class="w-full px-4 py-2.5 bg-[#FAF7F2] border @error('email') border-red-400 @else border-[#ECE4D8] @enderror rounded-xl text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:border-transparent transition duration-200"
+                        readonly
+                        class="w-full px-4 py-2.5 bg-stone-100/60 border @error('email') border-red-400 @else border-[#ECE4D8] @enderror rounded-xl text-sm text-stone-700 cursor-not-allowed focus:outline-none transition duration-200"
                     />
                     @error('email')
                         <p class="text-xs text-red-600 mt-1.5">{{ $message }}</p>

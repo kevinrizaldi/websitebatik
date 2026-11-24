@@ -55,7 +55,7 @@
                         </div>
                         <p class="mt-1 text-sm leading-relaxed text-stone-600">"{{ $ulasan->comment }}"</p>
                         @if ($ulasan->image_path)
-                            <img src="{{ asset('storage/'.$ulasan->image_path) }}" alt="Foto ulasan" class="mt-3 h-20 w-20 rounded-xl border border-stone-200 object-cover">
+                            <img src="{{ \App\Support\MediaUrl::resolve($ulasan->image_path) }}" alt="Foto ulasan" class="mt-3 h-20 w-20 rounded-xl border border-stone-200 object-cover">
                         @endif
                         <p class="mt-2 text-[11px] text-stone-400">{{ $ulasan->created_at->format('d M Y, H:i') }} WIB</p>
                     </div>

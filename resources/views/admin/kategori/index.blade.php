@@ -34,7 +34,7 @@
                     <span class="sr-only">Kelola Kategori Produk</span>
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Kelola klasifikasi busana dan ragam koleksi produk Hamzah Style Official.
+                    Kelola klasifikasi busana dan ragam koleksi produk Hamzah Style.
                 </p>
             </div>
 
@@ -357,7 +357,7 @@
                     <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/60 p-3.5 flex items-start gap-2.5 text-xs text-[#5A544E]">
                         <span class="text-sm text-[#8C5E28]">🛡</span>
                         <p class="text-[11px] leading-relaxed">
-                            Semua kategori yang disetujui akan diindeks langsung pada etalase online <strong class="text-[#1E1B18]">Hamzah Style Official</strong> dengan penanda asal wastra.
+                            Semua kategori yang disetujui akan diindeks langsung pada etalase online <strong class="text-[#1E1B18]">Hamzah Style</strong> dengan penanda asal wastra.
                         </p>
                     </div>
                 </div>

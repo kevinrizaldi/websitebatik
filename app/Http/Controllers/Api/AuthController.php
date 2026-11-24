@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Models\User;
+use App\Notifications\ResetPasswordOtpNotification;
 use App\Services\GoogleAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -142,6 +146,137 @@ class AuthController extends Controller
         $request->user()?->currentAccessToken()?->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * Send a 6-digit OTP to the given user via email (mobile flow).
+     */
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'string', 'email'],
+        ]);
+
+        $user = User::where('email', strtolower($request->email))->first();
+
+        if ($user) {
+            // Cegah kirim ulang OTP sebelum 60 detik sejak OTP terakhir dikirim
+            $existing = DB::table('password_reset_otps')
+                ->where('email', $user->email)
+                ->where('used', false)
+                ->where('created_at', '>=', now()->subSeconds(60))
+                ->first();
+
+            if ($existing) {
+                return response()->json([
+                    'message' => 'Mohon tunggu 1 menit sebelum mengirim ulang kode OTP.',
+                    'errors'  => [
+                        'email' => ['Mohon tunggu 1 menit sebelum mengirim ulang kode OTP.'],
+                    ],
+                ], 429);
+            }
+
+            // Hapus OTP lama untuk email ini
+            DB::table('password_reset_otps')
+                ->where('email', $user->email)
+                ->delete();
+
+            // Buat OTP 6 digit baru
+            $otp = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+            DB::table('password_reset_otps')->insert([
+                'email'      => $user->email,
+                'otp'        => $otp,
+                'expires_at' => now()->addMinutes(10),
+                'used'       => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $user->notify(new ResetPasswordOtpNotification($otp));
+        }
+
+        // Selalu return sukses (keamanan: tidak bocorkan apakah email terdaftar)
+        return response()->json([
+            'message' => 'Jika email terdaftar, kode OTP telah dikirim ke email Anda.',
+        ]);
+    }
+
+    /**
+     * Validate a 6-digit OTP and return a password reset token (mobile flow).
+     */
+    public function verifyOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'string', 'email'],
+            'otp'   => ['required', 'string', 'size:6'],
+        ]);
+
+        $record = DB::table('password_reset_otps')
+            ->where('email', strtolower($request->email))
+            ->where('otp', $request->otp)
+            ->where('used', false)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (! $record) {
+            return response()->json([
+                'message' => 'Kode OTP tidak valid atau sudah kadaluarsa.',
+                'errors'  => [
+                    'otp' => ['Kode OTP tidak valid atau sudah kadaluarsa.'],
+                ],
+            ], 422);
+        }
+
+        // Tandai OTP sudah dipakai
+        DB::table('password_reset_otps')
+            ->where('email', strtolower($request->email))
+            ->update(['used' => true, 'updated_at' => now()]);
+
+        // Buat Laravel password reset token untuk dipakai di langkah selanjutnya
+        $user  = User::where('email', strtolower($request->email))->first();
+        $token = Password::createToken($user);
+
+        return response()->json([
+            'message' => 'OTP valid. Silakan buat password baru.',
+            'token'   => $token,
+            'email'   => $user->email,
+        ]);
+    }
+
+    /**
+     * Reset the given user's password using the token received in email.
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $status = Password::reset(
+            $validated,
+            function (User $user) use ($validated) {
+                $user->forceFill([
+                    'password' => Hash::make($validated['password']),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Kata sandi berhasil diperbarui. Silakan masuk dengan kata sandi baru Anda.',
+            ]);
+        }
+
+        return response()->json([
+            'message' => __($status),
+            'errors' => [
+                'email' => [__($status)],
+            ],
+        ], 422);
     }
 
     private function formatUser(User $user): array

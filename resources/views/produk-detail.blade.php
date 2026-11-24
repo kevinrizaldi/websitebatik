@@ -35,8 +35,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $namaProduk }} — HAMZAH STYLE OFFICIAL</title>
-    <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style Official. Warisan batik nusantara modern berkualitas premium.">
+    <title>{{ $namaProduk }} — Hamzah Style</title>
+    <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style. Warisan batik nusantara modern berkualitas premium.">
 
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -82,7 +82,7 @@
           cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           sizeGuideModal: false,
           imageZoomModal: false,
-          writeReviewModal: false,
+
           toastMessage: '',
           isAdding: false,
 
@@ -466,8 +466,6 @@
                             Ulasan Pelanggan
                         </h2>
                     </div>
-
-
                 </div>
 
                 <!-- Rating Scorecard Banner -->
@@ -531,12 +529,9 @@
                                             </div>
                                             <div>
                                                 <h4 class="font-bold text-sm text-stone-900">{{ $u->customer_name }}</h4>
-                                                <span class="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
-                                                    <span>✓</span> Pembeli Terverifikasi
-                                                </span>
                                             </div>
                                         </div>
-                                        <span class="text-[11px] text-stone-400">{{ $u->created_at ? $u->created_at->diffForHumans() : 'Baru saja' }}</span>
+                                        <span class="text-[11px] text-stone-400">{{ $u->created_at ? $u->created_at->translatedFormat('j M Y') : '-' }}</span>
                                     </div>
 
                                     <div class="flex text-amber-500 text-xs mb-3">
@@ -551,7 +546,15 @@
 
                                     @if($u->image_path)
                                         <div class="flex items-center gap-2 pt-1">
-                                            <img src="{{ asset('storage/' . $u->image_path) }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                            <img src="{{ \App\Support\MediaUrl::resolve($u->image_path) }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                        </div>
+                                    @endif
+
+                                    @if($u->photos)
+                                        <div class="flex items-center gap-2 pt-2">
+                                            @foreach($u->photos as $photo)
+                                                <img src="{{ \App\Support\MediaUrl::resolve($photo) ?: $photo }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                            @endforeach
                                         </div>
                                     @endif
                                 </div>

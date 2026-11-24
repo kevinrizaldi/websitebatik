@@ -89,8 +89,6 @@ class ProfileController extends Controller
             'postal_code' => ['nullable', 'string', 'max:10'],
             'province_id' => ['nullable', 'integer'],
             'city_id' => ['nullable', 'integer'],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'is_primary' => ['nullable', 'boolean'],
         ]);
 
@@ -119,8 +117,6 @@ class ProfileController extends Controller
             'postal_code' => $validated['postal_code'] ?: '',
             'province_id' => $validated['province_id'] ?? null,
             'city_id' => $validated['city_id'] ?? null,
-            'latitude' => $request->filled('latitude') ? (float) $request->input('latitude') : null,
-            'longitude' => $request->filled('longitude') ? (float) $request->input('longitude') : null,
             'is_primary' => $isPrimary,
         ]);
 
@@ -153,8 +149,6 @@ class ProfileController extends Controller
             'postal_code' => ['sometimes', 'nullable', 'string', 'max:10'],
             'province_id' => ['sometimes', 'nullable', 'integer'],
             'city_id' => ['sometimes', 'nullable', 'integer'],
-            'latitude' => ['sometimes', 'nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['sometimes', 'nullable', 'numeric', 'between:-180,180'],
             'is_primary' => ['sometimes', 'boolean'],
         ]);
 

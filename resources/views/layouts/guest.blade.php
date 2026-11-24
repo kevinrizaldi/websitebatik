@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'HAMZAH STYLE OFFICIAL') }}</title>
+        <title>{{ config('app.name', 'Hamzah Style') }}</title>
 
         <!-- Google Fonts: Poppins -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +31,7 @@
             <div class="mb-6 text-center">
                 <a href="{{ url('/') }}" class="inline-flex items-center group">
                     <img src="{{ asset('images/logo.png') }}" 
-                         alt="HAMZAH STYLE OFFICIAL" 
+                         alt="Hamzah Style" 
                          class="h-9 sm:h-10 w-auto object-contain">
                 </a>
             </div>

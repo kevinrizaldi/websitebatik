@@ -125,8 +125,8 @@ $catalogHandler = function () {
     return view('koleksi', compact('produks', 'kategoris'));
 };
 
-Route::get('/produk', $catalogHandler)->name('koleksi.index');
-Route::get('/koleksi', fn () => redirect()->route('koleksi.index', request()->query()));
+Route::get('/koleksi', $catalogHandler)->name('koleksi.index');
+Route::get('/produk', fn () => redirect()->route('koleksi.index', request()->query()));
 
 Route::get('/produk-detail/{id?}', function ($id = null) {
     if (! $id) {
