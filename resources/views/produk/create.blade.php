@@ -16,9 +16,6 @@
                         Tambah Produk Batik
                     </h1>
                 </div>
-                <p class="text-sm text-[#7A7269] mt-1">
-                    Lengkapi katalog busana wastra nusantara dengan narasi filosofis, dokumentasi serat benang, dan transparansi metrik sirkular limbah tekstil.
-                </p>
             </div>
         </div>
 
@@ -53,7 +50,7 @@
             }
         @endphp
         {{-- Main Two-Column Form --}}
-        <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data" id="produkForm" class="space-y-6" x-data="produkCreateHandler()">
+        <form action="{{ route('produk.store') }}" method="POST" enctype="multipart/form-data" id="produkForm" class="space-y-6" x-data="produkCreateHandler()" @submit="validateBeforeSubmit($event)">
             @csrf
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -65,13 +62,26 @@
                     <div class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="font-bold text-sm text-[#1E1B18]">Foto Produk</h3>
-                                <p class="text-[11px] text-[#8C827A] mt-0.5">Unggah foto kurasi beresolusi tinggi dengan pencahayaan natural.</p>
+                                <h3 class="font-bold text-sm text-[#1E1B18] flex items-center gap-1">
+                                    <span>Foto Produk</span>
+                                    <span class="text-rose-500 font-bold">*</span>
+                                </h3>
+                                <p class="text-[11px] text-[#8C827A] mt-0.5">Unggah foto kurasi beresolusi tinggi dengan pencahayaan natural. (Foto utama wajib diunggah)</p>
                             </div>
                             <svg class="w-5 h-5 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
+
+                        {{-- Error Alert for Main Image --}}
+                        @error('gambar')
+                            <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-600 font-semibold flex items-center gap-2">
+                                <svg class="w-4 h-4 shrink-0 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span>{{ $message }}</span>
+                            </div>
+                        @enderror
 
                         {{-- Hidden File Inputs --}}
                         <input type="file" name="gambar" id="heroImageInput" accept="image/*" class="hidden" @change="handleHeroChange($event)">
@@ -117,8 +127,10 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                     </svg>
                                 </div>
-                                <div class="text-xs font-semibold text-[#1E1B18]">Klik atau Seret Foto Utama ke Sini</div>
-                                <p class="text-[11px] text-[#8C827A]">Format JPG, PNG, atau WEBP (Maksimal 2 MB)</p>
+                                <div class="text-xs font-semibold text-[#1E1B18]">
+                                    Klik atau Seret Foto Utama ke Sini <span class="text-rose-500 font-bold">*</span>
+                                </div>
+                                <p class="text-[11px] text-[#8C827A]">Format JPG, PNG, atau WEBP (Wajib diisi, Maksimal 2 MB)</p>
                             </div>
                         </div>
 
@@ -483,7 +495,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-bold text-sm text-[#1E1B18]">Deskripsi Filosofis &amp; Cerita Karya</h3>
-                                <p class="text-[11px] text-[#8C827A] mt-0.5">Ceritakan asal motif, filosofi kepemimpinan, dan etika pengrajin lokal.</p>
+                                <p class="text-[11px] text-[#8C827A] mt-0.5">Tambahkan Deskripsi Produk</p>
                             </div>
                             <svg class="w-4 h-4 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -700,6 +712,15 @@
                 },
                 triggerOtherUpload() {
                     document.getElementById('otherImagesInput').click();
+                },
+                validateBeforeSubmit(e) {
+                    if (!this.heroPreview) {
+                        e.preventDefault();
+                        alert('Foto utama produk wajib diunggah sebelum menyimpan produk.');
+                        this.triggerHeroUpload();
+                        return false;
+                    }
+                    return true;
                 },
                 stokKain: {{ (int) old('stok', 0) }},
                 get totalStok() {
