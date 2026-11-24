@@ -25,7 +25,7 @@
             {{-- 1. TOTAL KOLEKSI AKTIF --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL KOLEKSI AKTIF</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL PRODUK AKTIF</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -34,19 +34,19 @@
                 </div>
                 <div class="flex items-baseline gap-2">
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        {{ $totalProduk > 0 ? $totalProduk : 48 }} SKU
+                        {{ $totalProduk > 0 ? $totalProduk : 48 }} Produk
                     </p>
                 </div>
                 <div class="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[#8C5E28]">
                     <span>✓</span>
-                    <span>{{ $totalKategori ?? 4 }} Kategori Terkurasi</span>
+                    <span>{{ $totalKategori ?? 4 }} Kategori Produk</span>
                 </div>
             </div>
 
             {{-- 2. TOTAL UNIT STOK FISIK (INTEGRASI FITUR STOK) --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL UNIT STOK FISIK</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL STOK PRODUK</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF0E4] text-[#A86544]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -57,11 +57,11 @@
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
                         {{ number_format($totalStokFisik ?? $produks->sum('stok'), 0, ',', '.') }}
                     </p>
-                    <span class="text-xs text-[#5A544E] font-medium">Pcs Fisik</span>
+                    <span class="text-xs text-[#5A544E] font-medium">Pcs</span>
                 </div>
                 <div class="mt-4 flex items-center justify-between text-[11px] text-stone-500 font-medium">
-                    <span>Gudang Utama Surakarta</span>
-                    <span class="text-emerald-700 font-bold">{{ $stokAmanCount ?? 0 }} SKU Stabil</span>
+                    <span>Gudang Toko</span>
+                    <span class="text-emerald-700 font-bold">{{ $stokAmanCount ?? 0 }} Produk Stok Aman</span>
                 </div>
             </div>
 
@@ -70,7 +70,7 @@
                aria-label="Lihat {{ $lowStockCount }} produk dengan stok menipis"
                class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition block {{ $lowStockOnly ? 'ring-2 ring-[#A86544]' : '' }}">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">PERLU RESTOCK SEGAT</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">STOK MENIPIS</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF0E4] text-[#A86544]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -79,7 +79,7 @@
                 </div>
                 <div class="flex items-baseline gap-2">
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#A86544]">
-                        {{ $lowStockCount > 0 ? $lowStockCount : 0 }} Motif
+                        {{ $lowStockCount > 0 ? $lowStockCount : 0 }} Produk
                     </p>
                     @if ($outOfStockCount > 0)
                         <span class="text-xs text-rose-600 font-bold">({{ $outOfStockCount }} Habis)</span>
@@ -100,7 +100,7 @@
             {{-- 4. NILAI VALUASI ASET ETALASE --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">NILAI VALUASI ETALASE</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL NILAI STOK</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -113,7 +113,7 @@
                     </p>
                 </div>
                 <div class="mt-4 flex items-center justify-between text-[11px] text-stone-500 font-medium">
-                    <span>Aset Fisik Batik Terdata</span>
+                    <span>Nilai produk aktif</span>
                     <span class="text-emerald-700 font-bold">Aktif</span>
                 </div>
             </div>
@@ -125,7 +125,7 @@
                 {{-- Eyebrow --}}
                 <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#A86544] mb-1">
                     <span class="h-2 w-2 rounded-full bg-[#A86544]"></span>
-                    <span>KATALOG PRODUK &amp; MANAJEMEN INVENTARIS STOK TERPADU</span>
+                    <span>KATALOG &amp; STOK PRODUK</span>
                 </div>
 
                 {{-- Title & Subtitle --}}
@@ -134,7 +134,7 @@
                     <span class="sr-only">Kelola Produk, Stok, &amp; SKU</span>
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Kelola katalog kain batik tulis, cap warisan nusantara, serta ketersediaan stok fisik per ukuran (S, M, L, XL, XXL) dalam satu pintu terpadu.
+                    Kelola daftar produk batik, harga, foto, dan ketersediaan stok per ukuran dalam satu halaman.
                 </p>
             </div>
 
@@ -144,7 +144,7 @@
                     <svg class="h-4 w-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
-                    <span>Cetak Inventaris</span>
+                    <span>Cetak Laporan</span>
                 </button>
 
                 <a href="{{ route('produk.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-[#1E1B18] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-black">
@@ -171,7 +171,7 @@
                 <a href="{{ route('produk.index', array_merge(request()->only(['search', 'kategori', 'sort']), ['status_stok' => 'tersedia'])) }}"
                    style="{{ $isAman ? 'background-color: #1E1B18 !important; color: #ffffff !important;' : '' }}"
                    class="px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs {{ $isAman ? 'bg-[#1E1B18] text-white border border-[#1E1B18]' : 'bg-white text-stone-600 border border-[#EFECE6] hover:bg-[#FAF7F2]' }}">
-                    Stok Stabil ({{ $stokAmanCount ?? 0 }})
+                    Stok Aman ({{ $stokAmanCount ?? 0 }})
                 </a>
                 <a href="{{ route('produk.index', array_merge(request()->only(['search', 'kategori', 'sort']), ['stok_menipis' => 1])) }}"
                    style="{{ $isMenipis ? 'background-color: #A86544 !important; color: #ffffff !important;' : '' }}"
@@ -256,7 +256,7 @@
                 </div>
 
                 <span class="text-stone-400">
-                    Menampilkan {{ $produks->firstItem() ?? 1 }} - {{ $produks->lastItem() ?? $produks->count() }} dari {{ $totalProduk }} karya busana
+                    Menampilkan {{ $produks->firstItem() ?? 1 }} - {{ $produks->lastItem() ?? $produks->count() }} dari {{ $totalProduk }} produk
                 </span>
             </div>
         </div>
@@ -270,11 +270,11 @@
                             <th class="py-3.5 px-4 w-10"></th>
                             <th class="py-3.5 px-4">PRODUK &amp; SKU</th>
                             <th class="py-3.5 px-4">KATEGORI</th>
-                            <th class="py-3.5 px-4">HARGA RESMI</th>
-                            <th class="py-3.5 px-4">STOK &amp; RINCIAN UKURAN</th>
-                            <th class="py-3.5 px-4">STATUS INVENTARIS</th>
-                            <th class="py-3.5 px-4">DAMPAK MATERIAL</th>
-                            <th class="py-3.5 px-4 text-center">AKSI &amp; KELOLA STOK</th>
+                            <th class="py-3.5 px-4">HARGA</th>
+                            <th class="py-3.5 px-4">STOK &amp; UKURAN</th>
+                            <th class="py-3.5 px-4">STATUS STOK</th>
+                            <th class="py-3.5 px-4">BAHAN / MATERIAL</th>
+                            <th class="py-3.5 px-4 text-center">AKSI</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#EFECE6]/70">
@@ -289,8 +289,8 @@
                                 };
                                 $statusText = match (true) {
                                     $isOut => 'Habis (0 pcs)',
-                                    $isLow => 'Stok Menipis (Restock)',
-                                    default => 'Tersedia Stabil',
+                                    $isLow => 'Stok Menipis',
+                                    default => 'Stok Aman',
                                 };
 
                                 $ecoBadge = match (true) {
@@ -373,7 +373,7 @@
                                             <span class="text-sm font-extrabold {{ $isOut ? 'text-rose-600' : ($isLow ? 'text-[#A86544]' : 'text-[#1E1B18]') }}">
                                                 {{ $p->stok }}
                                             </span>
-                                            <span class="text-[11px] text-stone-500 font-medium">pcs fisik</span>
+                                            <span class="text-[11px] text-stone-500 font-medium">pcs</span>
                                         </div>
 
                                         {{-- Rincian Ukuran jika ada --}}
@@ -456,7 +456,7 @@
             {{-- Table Footer / Pagination --}}
             <div class="p-4 sm:p-5 border-t border-[#EFECE6] bg-[#FAF7F2]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <span class="text-stone-500">
-                    Menampilkan {{ $produks->firstItem() ?? 1 }} - {{ $produks->lastItem() ?? $produks->count() }} dari {{ $totalProduk }} karya busana terdaftar
+                    Menampilkan {{ $produks->firstItem() ?? 1 }} - {{ $produks->lastItem() ?? $produks->count() }} dari {{ $totalProduk }} produk terdaftar
                 </span>
 
                 <div class="flex items-center gap-2">
@@ -480,7 +480,7 @@
                 <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
                     <div>
                         <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#A86544]">
-                            <span>INVENTARIS GUDANG</span>
+                            <span>STOK PRODUK</span>
                             <span>•</span>
                             <span x-text="activeProdukSku"></span>
                         </div>
@@ -496,11 +496,11 @@
                     {{-- Total Stok Utama --}}
                     <div>
                         <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
-                            TOTAL JUMLAH STOK (PCS) <span class="text-rose-600">*</span>
+                            Total Jumlah Stok (Pcs) <span class="text-rose-600">*</span>
                         </label>
                         <input type="number" name="stok" x-model.number="activeStok" min="0" required
                                class="w-full rounded-xl border border-[#E8E4DC] bg-[#FAF7F2]/40 px-3.5 py-2.5 text-sm font-bold text-[#1E1B18] focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
-                        <p class="text-[10px] text-stone-400 mt-1">Total ketersediaan unit fisik produk di gudang.</p>
+                        <p class="text-[10px] text-stone-400 mt-1">Total ketersediaan stok produk.</p>
                     </div>
 
                     {{-- Breakdown Ukuran (Opsional) --}}

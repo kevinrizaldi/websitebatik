@@ -144,7 +144,7 @@
                 {{ strtoupper(substr(Auth::user()->name ?? 'AK', 0, 2)) }}
             </div>
             <div class="min-w-0">
-                <p class="truncate text-xs font-bold text-[#1E1B18] group-hover:text-[#A86544] transition-colors">{{ Auth::user()->name ?? 'Admin Kurator' }}</p>
+                <p class="truncate text-xs font-bold text-[#1E1B18] group-hover:text-[#A86544] transition-colors">{{ Auth::user()->name ?? 'Administrator' }}</p>
                 <p class="text-[10px] text-stone-400">Super Admin</p>
             </div>
         </a>
