@@ -122,41 +122,6 @@
                         </div>
                     </div>
 
-                    {{-- Pedoman Standar Kurasi Visual Card --}}
-                    <div class="bg-[#FAF7F2] rounded-2xl border border-[#ECE5D8] p-5 space-y-3">
-                        <div class="flex items-center gap-2 text-xs font-bold text-[#1E1B18]">
-                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <span>Pedoman Standar Kurasi Visual</span>
-                        </div>
-                        <ul class="space-y-2 text-xs text-[#5A544E]">
-                            <li class="flex items-start gap-2">
-                                <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Pencahayaan Hangat:</strong> Suhu warna 3200K - 4000K menonjolkan pigmen alami soga &amp; indigo.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Resolusi Tajam:</strong> Minimal 1200 x 800px untuk kejelasan zoom serat kain.</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {{-- Inisiatif Sirkular --}}
-                    <div class="bg-[#F6F1EA] rounded-2xl border border-[#ECE5D8] p-4 text-xs text-[#5A544E] space-y-1">
-                        <div class="flex items-center gap-2 font-bold text-[10px] text-[#8C6D58] uppercase tracking-wider">
-                            <svg class="w-3.5 h-3.5 text-[#B85D3B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span>INISIATIF SIRKULAR HAMZAH STYLE</span>
-                        </div>
-                        <p class="leading-relaxed">
-                            Setiap helai busana memanfaatkan pola potong efisien (&ldquo;zero-waste tailoring&rdquo;), meminimalkan sisa kain perca.
-                        </p>
-                    </div>
-
-                </div>
-
                 {{-- Right Column: Information, Specifications, Description & Status (7 cols) --}}
                 <div class="lg:col-span-7 space-y-6">
 

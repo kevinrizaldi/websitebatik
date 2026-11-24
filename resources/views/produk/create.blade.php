@@ -13,21 +13,12 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl sm:text-3xl font-serif font-bold text-[#1E1B18] tracking-tight">
-                        Tambah Produk Busana &amp; Kriya Baru
+                        Tambah Produk Batik
                     </h1>
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FCECE6] text-[#B85D3B] tracking-wider uppercase">
-                        KURASI EDISI NO. #2024-C
-                    </span>
                 </div>
                 <p class="text-sm text-[#7A7269] mt-1">
                     Lengkapi katalog busana wastra nusantara dengan narasi filosofis, dokumentasi serat benang, dan transparansi metrik sirkular limbah tekstil.
                 </p>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#FAF4ED] text-[#8C6D58] border border-[#E5DDD0]">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Status: Draf Penyuntingan
-                </span>
             </div>
         </div>
 
@@ -120,47 +111,6 @@
                             </div>
                         </div>
                     </div>
-
-                    {{-- Pedoman Standar Kurasi Visual Card --}}
-                    <div class="bg-[#FAF7F2] rounded-2xl border border-[#ECE5D8] p-5 space-y-3">
-                        <div class="flex items-center gap-2 text-xs font-bold text-[#1E1B18]">
-                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                            </svg>
-                            <span>Pedoman Standar Kurasi Visual</span>
-                        </div>
-                        <p class="text-[11px] text-[#7A7269]">Mempertahankan estetika mewah dan keaslian warna kain</p>
-
-                        <ul class="space-y-2 text-xs text-[#5A544E]">
-                            <li class="flex items-start gap-2">
-                                <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Pencahayaan Studio Hangat:</strong> Gunakan suhu warna 3200K - 4000K untuk menonjolkan pigmen alami soga &amp; indigo.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Resolusi Tajam:</strong> Minimal 1200 x 800px untuk kejelasan zoom serat kain katun primissima.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="text-emerald-600 font-bold shrink-0">✓</span>
-                                <span><strong>Komposisi Flat-lay Wastra:</strong> Sertakan elemen kriya pendukung (kancing tempurung kelapa, besek bambu, atau anyaman pandan).</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {{-- Inisiatif Sirkular Hamzah Style Card --}}
-                    <div class="bg-[#F6F1EA] rounded-2xl border border-[#ECE5D8] p-4 text-xs text-[#5A544E] space-y-1">
-                        <div class="flex items-center gap-2 font-bold text-[10px] text-[#8C6D58] uppercase tracking-wider">
-                            <svg class="w-3.5 h-3.5 text-[#B85D3B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            <span>INISIATIF SIRKULAR HAMZAH STYLE</span>
-                        </div>
-                        <p class="leading-relaxed">
-                            Setiap helai busana memanfaatkan pola potong efisien (&ldquo;zero-waste tailoring&rdquo;), meminimalkan potongan kain perca yang terbuang.
-                        </p>
-                    </div>
-
-                </div>
 
                 {{-- Right Column: Information, Specifications, Description & Status (7 cols) --}}
                 <div class="lg:col-span-7 space-y-6">
