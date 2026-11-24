@@ -310,18 +310,6 @@
                         </div>
                     </div>
 
-                    <!-- Value Proposition Card -->
-                    <div class="bg-[#FAF5EF]/80 border border-[#ECE2D2] rounded-2xl p-4 flex items-start gap-3.5 text-xs text-stone-700 leading-relaxed">
-                        <div class="w-8 h-8 rounded-lg bg-[#EFE8DD] text-amber-900 flex items-center justify-center shrink-0 mt-0.5">
-                            <svg class="w-4 h-4 text-stone-800" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"/>
-                            </svg>
-                        </div>
-                        <p>
-                            <strong>{{ $materialProduk }}.</strong> {{ $deskripsiProduk }}
-                        </p>
-                    </div>
-
                     <!-- Size Selector -->
                     @if($isKain)
                         <div class="space-y-1.5 pt-1">
