@@ -53,10 +53,12 @@ class ProdukController extends Controller
             default => $query->latest(),
         };
 
-        $produks = $query->paginate(5)->withQueryString();
+        $produks = $query->paginate(10)->withQueryString();
         $totalProduk = Produk::count();
+        $totalStokFisik = (int) Produk::sum('stok');
         $lowStockCount = Produk::whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD])->count();
         $outOfStockCount = Produk::where('stok', '<=', 0)->count();
+        $stokAmanCount = Produk::where('stok', '>', Produk::LOW_STOCK_THRESHOLD)->count();
         $totalKategori = Schema::hasTable('categories') ? Kategori::count() : 4;
         $kategorisList = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
         $totalValuasi = (float) (Produk::query()->selectRaw('SUM(harga * stok) as total')->value('total') ?? 128400000);
@@ -68,6 +70,8 @@ class ProdukController extends Controller
             'lowStockCount',
             'outOfStockOnly',
             'outOfStockCount',
+            'stokAmanCount',
+            'totalStokFisik',
             'totalProduk',
             'totalKategori',
             'kategorisList',
@@ -98,6 +102,7 @@ class ProdukController extends Controller
             'kategori' => 'required|string|max:100',
             'kategori_id' => 'nullable|exists:categories,id',
             'harga' => 'required|numeric|min:0|max:100000000',
+            'harga_coret' => 'nullable|numeric|min:0|max:100000000|gt:harga',
             'stok' => 'nullable|integer|min:0|max:100000',
             'stok_ukuran' => 'nullable|array',
             'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
@@ -113,6 +118,7 @@ class ProdukController extends Controller
             'harga.numeric' => 'Harga produk harus berupa angka.',
             'harga.min' => 'Harga produk tidak boleh minus (minimal Rp 0).',
             'harga.max' => 'Harga produk maksimal adalah Rp 100.000.000.',
+            'harga_coret.gt' => 'Harga coret harus lebih tinggi dari harga jual.',
             'stok.integer' => 'Stok produk harus berupa bilangan bulat.',
             'stok.min' => 'Stok produk tidak boleh minus (minimal 0).',
             'stok.max' => 'Stok produk maksimal adalah 100.000 unit.',
@@ -201,6 +207,7 @@ class ProdukController extends Controller
             'kategori' => 'required|string|max:100',
             'kategori_id' => 'nullable|exists:categories,id',
             'harga' => 'required|numeric|min:0|max:100000000',
+            'harga_coret' => 'nullable|numeric|min:0|max:100000000|gt:harga',
             'stok' => 'nullable|integer|min:0|max:100000',
             'stok_ukuran' => 'nullable|array',
             'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
@@ -218,6 +225,7 @@ class ProdukController extends Controller
             'harga.numeric' => 'Harga produk harus berupa angka.',
             'harga.min' => 'Harga produk tidak boleh minus (minimal Rp 0).',
             'harga.max' => 'Harga produk maksimal adalah Rp 100.000.000.',
+            'harga_coret.gt' => 'Harga coret harus lebih tinggi dari harga jual.',
             'stok.integer' => 'Stok produk harus berupa bilangan bulat.',
             'stok.min' => 'Stok produk tidak boleh minus (minimal 0).',
             'stok.max' => 'Stok produk maksimal adalah 100.000 unit.',
@@ -312,5 +320,30 @@ class ProdukController extends Controller
         return redirect()
             ->route('produk.index')
             ->with('success', 'Produk berhasil dihapus.');
+    }
+
+    /**
+     * Memperbarui stok produk secara cepat (terintegrasi dari fitur stok).
+     */
+    public function updateStock(Request $request, Produk $produk)
+    {
+        $validated = $request->validate([
+            'stok' => 'required|integer|min:0|max:100000',
+            'stok_ukuran' => 'nullable|array',
+            'catatan' => 'nullable|string|max:255',
+        ]);
+
+        $payload = ['stok' => (int) $validated['stok']];
+
+        if ($request->filled('stok_ukuran')) {
+            $stokUkuran = $request->input('stok_ukuran');
+            $payload['stok_ukuran'] = $stokUkuran;
+            $payload['size_stock'] = $stokUkuran;
+            $payload['stok'] = array_sum(array_map('intval', $stokUkuran));
+        }
+
+        $produk->update($payload);
+
+        return redirect()->back()->with('success', "✓ Stok untuk produk \"{$produk->nama}\" berhasil diperbarui menjadi {$produk->stok} pcs.");
     }
 }

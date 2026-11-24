@@ -28,6 +28,7 @@ class Product extends Model
         'kategori',
         'price',
         'harga',
+        'harga_coret',
         'stock',
         'stok',
         'status',
@@ -47,6 +48,7 @@ class Product extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'harga' => 'decimal:2',
+        'harga_coret' => 'decimal:2',
         'stock' => 'integer',
         'stok' => 'integer',
         'size_stock' => 'array',
@@ -363,7 +365,32 @@ class Product extends Model
 
     public function getAvgRatingAttribute(): float
     {
-        return (float) ($this->reviews()->where('status', 'Disetujui')->avg('rating') ?: 0.0);
+        if (array_key_exists('avg_rating', $this->attributes) && $this->attributes['avg_rating'] !== null) {
+            return round((float) $this->attributes['avg_rating'], 1);
+        }
+
+        return round((float) ($this->reviews()->where('status', 'Disetujui')->avg('rating') ?: 0.0), 1);
+    }
+
+    public function getReviewsCountAttribute(): int
+    {
+        if (array_key_exists('approved_reviews_count', $this->attributes) && $this->attributes['approved_reviews_count'] !== null) {
+            return (int) $this->attributes['approved_reviews_count'];
+        }
+
+        return (int) $this->reviews()->where('status', 'Disetujui')->count();
+    }
+
+    public function getDiscountPercentageAttribute(): int
+    {
+        $crossedOutPrice = (float) ($this->harga_coret ?? 0);
+        $currentPrice = (float) ($this->harga ?? 0);
+
+        if ($crossedOutPrice <= $currentPrice || $crossedOutPrice <= 0) {
+            return 0;
+        }
+
+        return (int) round((($crossedOutPrice - $currentPrice) / $crossedOutPrice) * 100);
     }
 
     public function getImageUrlAttribute(): string

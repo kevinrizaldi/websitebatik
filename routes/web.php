@@ -36,10 +36,55 @@ Route::get('/', function () {
     }
 
     $produks = collect();
+    $produkTerbaru = collect();
+    $produkRating = collect();
+    $bannerProduk = collect();
     $kategoris = collect();
     try {
+        $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
+
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
-            $produks = Produk::latest()->take(12)->get();
+            $produks = Produk::query()
+                ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
+                ->latest()
+                ->take(12)
+                ->get();
+        }
+        if (Schema::hasTable('products')) {
+
+            $produkTerbaru = Produk::query()
+                ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                ->latest()
+                ->take(2)
+                ->get();
+
+            $produkRating = Produk::query()
+                ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
+                ->whereHas('reviews', $approvedReviews)
+                ->orderByDesc('avg_rating')
+                ->orderByDesc('approved_reviews_count')
+                ->latest()
+                ->take(2)
+                ->get();
+
+            $bannerProduk = $produkTerbaru
+                ->concat($produkRating)
+                ->unique('id')
+                ->values();
+
+            if ($bannerProduk->count() < 4) {
+                $bannerProduk = $bannerProduk
+                    ->concat(Produk::query()
+                        ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                        ->whereNotIn('id', $bannerProduk->modelKeys())
+                        ->latest()
+                        ->take(4 - $bannerProduk->count())
+                        ->get())
+                    ->unique('id')
+                    ->values();
+            }
         }
         if (Schema::hasTable('categories') || Schema::hasTable('kategoris')) {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
@@ -47,30 +92,41 @@ Route::get('/', function () {
     } catch (Throwable $e) {
         Log::warning('Error loading homepage data: '.$e->getMessage(), ['exception' => $e]);
         $produks = collect();
+        $produkTerbaru = collect();
+        $produkRating = collect();
+        $bannerProduk = collect();
         $kategoris = collect();
     }
 
-    return view('welcome', compact('produks', 'kategoris'));
+    return view('welcome', compact('produks', 'produkTerbaru', 'produkRating', 'bannerProduk', 'kategoris'));
 })->name('home');
 
-Route::get('/koleksi', function () {
+$catalogHandler = function () {
     $produks = collect();
     $kategoris = collect();
     try {
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
-            $produks = Produk::latest()->get();
+            $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
+            $produks = Produk::query()
+                ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
+                ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
+                ->latest()
+                ->get();
         }
         if (Schema::hasTable('categories') || Schema::hasTable('kategoris')) {
             $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
-        Log::warning('Error loading koleksi data: '.$e->getMessage(), ['exception' => $e]);
+        Log::warning('Error loading produk catalog: '.$e->getMessage(), ['exception' => $e]);
         $produks = collect();
         $kategoris = collect();
     }
 
     return view('koleksi', compact('produks', 'kategoris'));
-})->name('koleksi.index');
+};
+
+Route::get('/produk', $catalogHandler)->name('koleksi.index');
+Route::get('/koleksi', fn () => redirect()->route('koleksi.index', request()->query()));
 
 Route::get('/produk-detail/{id?}', function ($id = null) {
     if (! $id) {
@@ -163,7 +219,7 @@ Route::get('/pesanan', function () {
                 $pesananAktif = Order::where('user_id', Auth::id())
                     ->whereIn('status', [
                         'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Konfirmasi',
-                        'Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi', 'Dikirim', 'sedang dikirim', 'sedang diproses'
+                        'Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi', 'Dikirim', 'sedang dikirim', 'sedang diproses',
                     ])->count();
 
                 if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
@@ -259,7 +315,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Route Khusus Admin: Kelola Produk, Kelola Pesanan, & Kelola Ulasan
 Route::middleware(['auth', 'admin'])->group(function () {
-    Route::resource('produk', ProdukController::class);
+    Route::prefix('admin')->group(function () {
+        Route::resource('produk', ProdukController::class);
+        Route::patch('/produk/{produk}/stok', [ProdukController::class, 'updateStock'])->name('produk.update-stock');
+    });
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -296,9 +355,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
         // Kelola Pengiriman & Logistik RajaOngkir
         Route::get('/pengiriman', [PengirimanController::class, 'index'])->name('pengiriman.index');
 
-        // Update Pengiriman & Sync Pembayaran Per-Order
+        // Update Pengiriman & Sync Pembayaran Per-Order & Massal
         Route::patch('/orders/{order}/pengiriman', [OrderController::class, 'updatePengiriman'])->name('orders.update-pengiriman');
         Route::post('/orders/{order}/sync-payment', [OrderController::class, 'syncPayment'])->name('orders.sync-payment');
+        Route::post('/orders/sync-payments', [OrderController::class, 'syncAllPayments'])->name('orders.sync-all-payments');
 
         // Pengaturan Toko
         Route::get('/pengaturan', [StoreSettingController::class, 'index'])->name('pengaturan.index');

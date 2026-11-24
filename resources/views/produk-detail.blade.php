@@ -445,9 +445,7 @@
                 <!-- Header Title -->
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
                     <div>
-                        <span class="text-[11px] font-bold uppercase tracking-widest text-stone-500 block mb-1">
-                            TESTIMONI NYATA
-                        </span>
+
                         <h2 class="font-serif-title text-2xl sm:text-3xl font-bold text-[#1F1916]">
                             Ulasan Pelanggan
                         </h2>
@@ -556,7 +554,7 @@
 
                 @if($ratingCount > 6)
                     <div class="text-center mt-8">
-                        <button @click="showToast('Menampilkan semua ulasan')" 
+                        <button @click="showToast('Menampilkan semua ulasan')"
                                 class="inline-block px-7 py-3 rounded-full bg-white border border-[#EAE1D3] text-stone-800 text-xs sm:text-sm font-semibold hover:border-stone-400 hover:bg-stone-50 transition shadow-2xs">
                             Lihat Semua {{ $ratingCount }} Ulasan
                         </button>
@@ -582,22 +580,10 @@
                         @foreach($produksTerkait as $rel)
                             <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-2xs hover:shadow-md transition flex flex-col group">
                                 <a href="{{ route('produk.detail', $rel->id) }}" class="relative aspect-[4/5] overflow-hidden bg-stone-100 block">
-                                    @if($rel->stok <= 0)
-                                        <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-stone-500 text-white uppercase tracking-wider shadow-xs">
-                                            Stok Habis
-                                        </span>
-                                    @elseif($rel->stok <= 10)
-                                        <span class="absolute top-3 left-3 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-[#4A2D1B] text-white uppercase tracking-wider shadow-xs">
-                                            Stok Terbatas
-                                        </span>
-                                    @endif
                                     <img src="{{ $rel->gambar_url }}" alt="{{ $rel->nama }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 </a>
                                 <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                                     <div>
-                                        <span class="text-[10px] uppercase font-bold tracking-wider text-stone-400 block mb-1">
-                                            {{ strtoupper($rel->kategoriRelasi?->nama_kategori ?? $rel->kategori ?? 'BATIK') }}
-                                        </span>
                                         <a href="{{ route('produk.detail', $rel->id) }}">
                                             <h3 class="font-bold text-stone-900 text-sm leading-snug mb-1 hover:text-amber-800 transition line-clamp-1">
                                                 {{ $rel->nama }}
@@ -611,7 +597,7 @@
                                         <span class="text-sm font-extrabold text-stone-900">
                                             Rp {{ number_format($rel->harga, 0, ',', '.') }}
                                         </span>
-                                        <a href="{{ route('produk.detail', $rel->id) }}" 
+                                        <a href="{{ route('produk.detail', $rel->id) }}"
                                            class="w-8 h-8 rounded-full bg-stone-100 hover:bg-[#201A17] hover:text-white text-stone-800 flex items-center justify-center transition shadow-2xs"
                                            title="Lihat Detail">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
