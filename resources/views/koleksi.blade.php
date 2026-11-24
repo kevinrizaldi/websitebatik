@@ -82,6 +82,7 @@
                       kategori: {{ json_encode($p->kategoriRelasi?->nama_kategori ?? $p->kategori ?? 'Koleksi Batik') }},
                       harga: {{ (float) $p->harga }},
                       hargaFormatted: {{ json_encode('Rp ' . number_format($p->harga, 0, ',', '.')) }},
+                      hargaCoret: {{ (!empty($p->harga_coret) && (float)$p->harga_coret > (float)$p->harga) ? json_encode('Rp ' . number_format((float)$p->harga_coret, 0, ',', '.')) : 'null' }},
                       rating: '{{ $p->avg_rating > 0 ? number_format($p->avg_rating, 1) : '-' }}',
                       reviews: {{ $p->reviews_count }},
                       detailUrl: '{{ route('produk.detail', $p->id) }}',
@@ -318,7 +319,12 @@
                                 </h3>
 
                                 <!-- Price -->
-                                <p class="text-sm sm:text-base font-extrabold text-stone-900 mb-3" x-text="item.hargaFormatted"></p>
+                                <div class="flex items-baseline gap-2 mb-3">
+                                    <p class="text-sm sm:text-base font-extrabold text-stone-900" x-text="item.hargaFormatted"></p>
+                                    <template x-if="item.hargaCoret">
+                                        <p class="text-xs text-stone-400 line-through" x-text="item.hargaCoret"></p>
+                                    </template>
+                                </div>
                             </div>
 
                             <!-- Action Button: Lihat Produk -->

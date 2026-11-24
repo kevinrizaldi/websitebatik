@@ -355,8 +355,15 @@
                                 </td>
 
                                 {{-- HARGA RESMI --}}
-                                <td class="py-4 px-4 font-bold text-[#1E1B18] align-top">
-                                    Rp {{ number_format($p->harga, 0, ',', '.') }}
+                                <td class="py-4 px-4 align-top">
+                                    <div class="font-bold text-[#1E1B18]">
+                                        Rp {{ number_format($p->harga, 0, ',', '.') }}
+                                    </div>
+                                    @if (!empty($p->harga_coret) && (float)$p->harga_coret > (float)$p->harga)
+                                        <div class="text-[10px] text-stone-400 line-through">
+                                            Rp {{ number_format($p->harga_coret, 0, ',', '.') }}
+                                        </div>
+                                    @endif
                                 </td>
 
                                 {{-- STOK & RINCIAN UKURAN --}}

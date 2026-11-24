@@ -65,7 +65,7 @@
                     <div class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-4">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h3 class="font-bold text-sm text-[#1E1B18]">Galeri &amp; Dokumentasi Visual</h3>
+                                <h3 class="font-bold text-sm text-[#1E1B18]">Foto Produk</h3>
                                 <p class="text-[11px] text-[#8C827A] mt-0.5">Unggah foto kurasi beresolusi tinggi dengan pencahayaan natural.</p>
                             </div>
                             <svg class="w-5 h-5 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,7 +243,7 @@
 
                             <div>
                                 <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
-                                    Kode SKU Inventaris <span class="text-rose-500">*</span>
+                                    Kode Produk <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="text"
                                        name="sku"
@@ -272,15 +272,16 @@
 
                             <div>
                                 <label class="block text-xs font-bold text-[#7A7269] mb-1.5">
-                                    Harga Coret (IDR)
+                                    Harga Coret (IDR) <span class="text-[10px] font-normal text-stone-400">(Opsional)</span>
                                 </label>
                                 <input type="number"
                                        name="harga_coret"
                                        value="{{ old('harga_coret') }}"
-                                       placeholder="475000"
+                                       placeholder="Kosongkan jika tidak ada"
                                        min="0"
                                        max="100000000"
                                        class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#7A7269] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                                <p class="text-[10px] text-stone-400 mt-1">Hanya ditampilkan bila diisi.</p>
                             </div>
 
                             <div>
