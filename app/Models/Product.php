@@ -78,9 +78,10 @@ class Product extends Model
             $p->attributes['price'] = $price;
             $p->attributes['harga'] = $price;
 
-            $stock = $p->attributes['stock'] ?? $p->attributes['stok'] ?? 0;
+            $stock = (int) ($p->attributes['stock'] ?? $p->attributes['stok'] ?? 0);
             $p->attributes['stock'] = $stock;
             $p->attributes['stok'] = $stock;
+            $p->attributes['status'] = self::statusForStock($stock);
 
             $category = $p->attributes['category'] ?? $p->attributes['kategori'] ?? '';
             $p->attributes['category'] = $category;

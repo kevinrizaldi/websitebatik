@@ -28,6 +28,7 @@ class ProdukController extends Controller
         $search = trim($validated['search'] ?? '');
         $lowStockOnly = $request->boolean('stok_menipis') || ($request->input('status_stok') === 'menipis');
         $outOfStockOnly = $request->boolean('stok_habis') || ($request->input('status_stok') === 'habis');
+        $stokAmanOnly = ($request->input('status_stok') === 'tersedia') || ($request->input('status_stok') === 'aman');
         $kategoriFilter = $validated['kategori'] ?? null;
         $sort = $validated['sort'] ?? 'latest';
 
@@ -42,6 +43,7 @@ class ProdukController extends Controller
             ->when($kategoriFilter, function (Builder $query, string $kat): void {
                 $query->where('kategori', $kat);
             })
+            ->when($stokAmanOnly, fn (Builder $query): Builder => $query->where('stok', '>', Produk::LOW_STOCK_THRESHOLD))
             ->when($lowStockOnly, fn (Builder $query): Builder => $query->whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD]))
             ->when($outOfStockOnly, fn (Builder $query): Builder => $query->where('stok', '<=', 0));
 
@@ -70,6 +72,7 @@ class ProdukController extends Controller
             'lowStockCount',
             'outOfStockOnly',
             'outOfStockCount',
+            'stokAmanOnly',
             'stokAmanCount',
             'totalStokFisik',
             'totalProduk',

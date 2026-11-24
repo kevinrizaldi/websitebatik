@@ -117,36 +117,36 @@
             </div>
         </div>
 
-        {{-- SEARCH & FILTER TABS --}}
+        {{-- SEARCH & FILTER BAR --}}
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {{-- Search Box --}}
-            <form action="{{ route('admin.kategori.index') }}" method="GET" class="flex-1 max-w-md relative">
-                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-stone-400">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
+            {{-- Search Box & Clear Filter --}}
+            <form action="{{ route('admin.kategori.index') }}" method="GET" class="flex items-center gap-2 flex-1 max-w-lg">
+                <div class="relative flex-1">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-stone-400">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <input type="search" name="search" value="{{ $search }}"
+                           placeholder="Cari kategori, filosofi motif, atau wastra..."
+                           class="w-full rounded-2xl border border-[#E8E4DC] bg-[#FAF0E4]/30 py-2.5 pl-10 pr-4 text-xs placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
                 </div>
-                <input type="search" name="search" value="{{ $search }}"
-                       placeholder="Cari kategori, filosofi motif, atau wastra..."
-                       class="w-full rounded-2xl border border-[#E8E4DC] bg-[#FAF0E4]/30 py-2.5 pl-10 pr-4 text-xs placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
+
+                @if(!empty($search))
+                    <a href="{{ route('admin.kategori.index') }}" class="shrink-0 px-3 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5" title="Hapus Filter Pencarian">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span>Hapus Filter</span>
+                    </a>
+                @endif
             </form>
 
-            {{-- Tabs --}}
+            {{-- Category Count Badge --}}
             <div class="flex items-center gap-2">
-                <button type="button" class="px-4 py-2 rounded-xl bg-[#1E1B18] text-white text-xs font-bold shadow-2xs">
-                    SEMUA KATEGORI ({{ $totalKategori ?? 3 }})
-                </button>
-                <button type="button" class="px-4 py-2 rounded-xl border border-[#E8E4DC] bg-white text-stone-600 text-xs font-semibold hover:bg-[#FAF7F2] shadow-2xs">
-                    AKTIF ({{ $totalKategori ?? 3 }})
-                </button>
-                <button type="button" class="px-4 py-2 rounded-xl border border-[#E8E4DC] bg-white text-stone-600 text-xs font-semibold hover:bg-[#FAF7F2] shadow-2xs">
-                    DIARSIPKAN (0)
-                </button>
-                <button type="button" class="p-2 rounded-xl border border-[#E8E4DC] bg-white text-stone-500 hover:bg-[#FAF7F2] shadow-2xs">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                    </svg>
-                </button>
+                <span class="px-3.5 py-1.5 rounded-xl bg-[#FAF0E4] border border-[#E8D9C5] text-[#8C5E28] text-xs font-bold shadow-2xs">
+                    Total: {{ $kategoris->total() }} Kategori
+                </span>
             </div>
         </div>
 
@@ -220,9 +220,9 @@
                                         <form action="{{ route('admin.kategori.destroy', $kat) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori {{ $kat->nama_kategori }}?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="p-1.5 text-stone-400 hover:text-rose-600 transition" title="Hapus / Arsipkan Kategori">
+                                            <button type="submit" class="p-1.5 text-stone-400 hover:text-rose-600 transition cursor-pointer" title="Hapus Kategori">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
                                             </button>
                                         </form>

@@ -197,6 +197,9 @@
                     @if(request('stok_habis'))
                         <input type="hidden" name="stok_habis" value="{{ request('stok_habis') }}">
                     @endif
+                    @if(request('status_stok'))
+                        <input type="hidden" name="status_stok" value="{{ request('status_stok') }}">
+                    @endif
                     @if(request('kategori'))
                         <input type="hidden" name="kategori" value="{{ request('kategori') }}">
                     @endif
@@ -218,6 +221,9 @@
                     @endif
                     @if(request('stok_habis'))
                         <input type="hidden" name="stok_habis" value="{{ request('stok_habis') }}">
+                    @endif
+                    @if(request('status_stok'))
+                        <input type="hidden" name="status_stok" value="{{ request('status_stok') }}">
                     @endif
 
                     <select name="kategori" onchange="document.getElementById('produkFilterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">

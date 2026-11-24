@@ -63,9 +63,10 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <h3 class="font-bold text-sm text-[#1E1B18] flex items-center gap-1">
-                                    <span>Foto Produk</span>
+                                    <span>Galeri &amp; Dokumentasi Visual</span>
                                     <span class="text-rose-500 font-bold">*</span>
                                 </h3>
+                                <p class="text-[11px] text-[#8C827A] mt-0.5">Unggah foto kurasi beresolusi tinggi dengan pencahayaan natural.</p>
                             </div>
                             <svg class="w-5 h-5 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -94,24 +95,24 @@
                              @drop.prevent="handleHeroDrop($event)">
 
                             {{-- When Hero Preview Exists --}}
-                            <div x-show="heroPreview" class="relative aspect-4/3 sm:aspect-16/10 rounded-xl overflow-hidden bg-black/5 m-2 shadow-2xs">
+                            <div x-show="heroPreview" class="relative w-full aspect-[4/3] sm:aspect-[16/10] min-h-[220px] rounded-xl overflow-hidden bg-[#FAF7F2] m-2 shadow-2xs">
                                 <img :src="heroPreview" alt="Foto Utama" class="w-full h-full object-cover">
 
                                 {{-- Pill Tag --}}
-                                <div class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-[11px] font-bold text-[#1E1B18] shadow-xs flex items-center gap-1.5 pointer-events-none">
+                                <div class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-[11px] font-bold text-[#1E1B18] shadow-xs flex items-center gap-1.5 pointer-events-none z-10">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                     <span>Foto Utama Terpilih</span>
                                 </div>
 
                                 {{-- Action Buttons --}}
-                                <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5">
-                                    <button type="button" @click.stop="triggerHeroUpload()" class="px-2.5 py-1 rounded-lg bg-white/95 hover:bg-white text-[11px] font-semibold text-[#1E1B18] shadow-xs transition flex items-center gap-1">
+                                <div class="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                                    <button type="button" @click.stop="triggerHeroUpload()" class="px-2.5 py-1 rounded-lg bg-white/95 hover:bg-white text-[11px] font-semibold text-[#1E1B18] shadow-xs transition flex items-center gap-1 cursor-pointer">
                                         <svg class="w-3.5 h-3.5 text-[#8C6D58]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                         </svg>
                                         <span>Ganti</span>
                                     </button>
-                                    <button type="button" @click.stop="removeHero()" class="p-1 rounded-lg bg-rose-50/95 hover:bg-rose-100 text-rose-600 shadow-xs transition" title="Hapus foto utama">
+                                    <button type="button" @click.stop="removeHero()" class="p-1 rounded-lg bg-rose-50/95 hover:bg-rose-100 text-rose-600 shadow-xs transition cursor-pointer" title="Hapus foto utama">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
@@ -127,16 +128,16 @@
                                     </svg>
                                 </div>
                                 <div class="text-xs font-semibold text-[#1E1B18]">
-                                    Klik atau Seret Foto Utama ke Sini <span class="text-rose-500 font-bold">*</span>
+                                    Klik atau Seret Foto Utama ke Sini
                                 </div>
-                                <p class="text-[11px] text-[#8C827A]">Format JPG, PNG, atau WEBP (Wajib diisi, Maksimal 2 MB)</p>
+                                <p class="text-[11px] text-[#8C827A]">Format JPG, PNG, atau WEBP (Maksimal 2 MB)</p>
                             </div>
                         </div>
 
                         {{-- 4 Slots Detail --}}
                         <div>
                             <div class="flex items-center justify-between text-[11px] mb-2">
-                                <span class="font-bold text-[#8C827A] uppercase tracking-wider">Foto pendukung</span>
+                                <span class="font-bold text-[#8C827A] uppercase tracking-wider">FOTO SUDUT &amp; DETAIL KAIN (4 SLOT)</span>
                                 <span class="text-[#A89F91]">Maks. 2 MB per berkas</span>
                             </div>
                             <div class="grid grid-cols-4 gap-2">
@@ -145,6 +146,10 @@
                                         {{-- If item exists at (i-1) --}}
                                         <div x-show="otherPreviews[i - 1]" class="relative aspect-square rounded-xl overflow-hidden border border-[#ECE5D8] bg-[#FAF7F2] group shadow-2xs">
                                             <img :src="otherPreviews[i - 1]?.url" class="w-full h-full object-cover">
+                                            {{-- Slot Label Overlay at Bottom --}}
+                                            <div class="absolute bottom-1 inset-x-1 px-1 py-0.5 rounded bg-black/60 backdrop-blur text-[8.5px] font-medium text-white text-center truncate pointer-events-none"
+                                                 x-text="slotLabels[i - 1]">
+                                            </div>
                                             {{-- Delete Button --}}
                                             <button type="button" @click.stop="removeOther(i - 1)" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center text-xs transition leading-none" title="Hapus foto">
                                                 &times;
@@ -154,10 +159,11 @@
                                         {{-- If slot is empty --}}
                                         <div x-show="!otherPreviews[i - 1]"
                                              @click="triggerOtherUpload()"
-                                             class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] hover:bg-[#F3EDE6] hover:border-[#8C6D58] transition cursor-pointer flex items-center justify-center text-center group select-none">
-                                            <svg class="w-5 h-5 text-[#A89F91] group-hover:text-[#8C6D58] group-hover:scale-110 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                             class="aspect-square rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] hover:bg-[#F3EDE6] hover:border-[#8C6D58] transition cursor-pointer flex flex-col items-center justify-center p-1.5 text-center group select-none">
+                                            <svg class="w-3.5 h-3.5 text-[#A89F91] group-hover:text-[#8C6D58] transition mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                                             </svg>
+                                            <span class="text-[9px] font-semibold text-[#8C827A] group-hover:text-[#1E1B18] transition line-clamp-2" x-text="slotLabels[i - 1]"></span>
                                         </div>
                                     </div>
                                 </template>

@@ -256,43 +256,46 @@
                         </p>
                     </div>
 
-                    {{-- Filter Status Tabs (Semua 5, Menunggu Pembayaran 1, Diproses 1, Dikirim 1, Selesai 2) --}}
+                    {{-- Filter Status Tabs --}}
+                    @php
+                        $ordersCol = collect($ordersData);
+                    @endphp
                     <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs scrollbar-none sm:text-sm">
                         <button @click="activeTab = 'semua'"
                                 :class="activeTab === 'semua' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-4 py-1.5 transition whitespace-nowrap">
                             <span>Semua</span>
-                            <span class="text-xs" x-text="counts.semua">5</span>
+                            <span class="text-xs" x-text="counts.semua">{{ $ordersCol->count() }}</span>
                         </button>
                         <button @click="activeTab = 'menunggu_pembayaran'"
                                 :class="activeTab === 'menunggu_pembayaran' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Menunggu Pembayaran</span>
-                            <span class="text-xs" x-text="counts.menunggu_pembayaran">1</span>
+                            <span class="text-xs" x-text="counts.menunggu_pembayaran">{{ $ordersCol->where('status', 'menunggu_pembayaran')->count() }}</span>
                         </button>
                         <button @click="activeTab = 'diproses'"
                                 :class="activeTab === 'diproses' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Diproses</span>
-                            <span class="text-xs" x-text="counts.diproses">1</span>
+                            <span class="text-xs" x-text="counts.diproses">{{ $ordersCol->where('status', 'diproses')->count() }}</span>
                         </button>
                         <button @click="activeTab = 'dikirim'"
                                 :class="activeTab === 'dikirim' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Dikirim</span>
-                            <span class="text-xs" x-text="counts.dikirim">1</span>
+                            <span class="text-xs" x-text="counts.dikirim">{{ $ordersCol->where('status', 'dikirim')->count() }}</span>
                         </button>
                         <button @click="activeTab = 'selesai'"
                                 :class="activeTab === 'selesai' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Selesai</span>
-                            <span class="text-xs" x-text="counts.selesai">2</span>
+                            <span class="text-xs" x-text="counts.selesai">{{ $ordersCol->where('status', 'selesai')->count() }}</span>
                         </button>
                         <button @click="activeTab = 'dibatalkan'"
                                 :class="activeTab === 'dibatalkan' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Dibatalkan</span>
-                            <span class="text-xs" x-text="counts.dibatalkan">0</span>
+                            <span class="text-xs" x-text="counts.dibatalkan">{{ $ordersCol->where('status', 'dibatalkan')->count() }}</span>
                         </button>
                     </div>
 
