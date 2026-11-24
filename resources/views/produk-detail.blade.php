@@ -13,13 +13,21 @@
     $isKain = str_contains(strtolower($kategoriProduk), 'kain');
     $stokUkuranArray = $produk ? $produk->getStokUkuranArray() : ['All Size' => $stokProduk];
 
-    $firstAvailableSize = 'All Size';
-    foreach ($stokUkuranArray as $sz => $stk) {
-        if ($stk > 0) {
-            $firstAvailableSize = (string) $sz;
+    // Jika produk memiliki ukuran spesifik (S, M, L, dll), jangan tampilkan opsi 'All Size'
+    $hasSpecificSizes = false;
+    foreach (array_keys($stokUkuranArray) as $k) {
+        if (in_array(strtoupper($k), ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL'])) {
+            $hasSpecificSizes = true;
             break;
         }
     }
+    if ($hasSpecificSizes && isset($stokUkuranArray['All Size'])) {
+        unset($stokUkuranArray['All Size']);
+    }
+
+    // Untuk busana/baju: awal buka halaman TIDAK otomatis memilih ukuran (kosong)
+    // Untuk kain: otomatis 'All Size'
+    $firstAvailableSize = $isKain ? 'All Size' : '';
     $produkId = $produk->id ?? 1;
 
     // Foto asli produk dari database
@@ -68,6 +76,7 @@
           selectedSize: '{{ $firstAvailableSize }}',
           sizeStockMap: {{ json_encode($stokUkuranArray) }},
           totalStock: {{ $stokProduk }},
+          isKain: {{ $isKain ? 'true' : 'false' }},
           sizeDescriptions: {
               'XS': '100 cm',
               'S': '104 cm',
@@ -101,6 +110,10 @@
               setTimeout(() => { this.toastMessage = ''; }, 3200);
           },
           selectSize(sz) {
+              if (this.sizeStockMap && this.sizeStockMap[sz] <= 0) {
+                  this.showToast('Maaf, stok ukuran ' + sz + ' sedang habis');
+                  return;
+              }
               this.selectedSize = sz;
               const max = this.currentMaxStock;
               if (max <= 0) {
@@ -111,6 +124,10 @@
               }
           },
           increaseQty() {
+              if (!this.isKain && !this.selectedSize) {
+                  this.showToast('Silakan pilih ukuran terlebih dahulu');
+                  return;
+              }
               const max = this.currentMaxStock;
               if (max <= 0) {
                   this.showToast('Maaf, stok untuk ukuran ini sedang habis');
@@ -128,6 +145,10 @@
               }
           },
           addToCart(redirect = false) {
+              if (!this.isKain && !this.selectedSize) {
+                  this.showToast('Silakan pilih ukuran terlebih dahulu');
+                  return;
+              }
               const max = this.currentMaxStock;
               if (max <= 0) {
                   this.showToast('Maaf, stok produk untuk ukuran ini sedang habis');
@@ -286,7 +307,7 @@
                     <!-- Price Card -->
                     <div class="bg-[#FAF4EC] rounded-2xl p-5 border border-[#EFE5D6] flex items-center justify-between shadow-2xs">
                         <div>
-                            <span class="text-[10px] text-stone-500 uppercase tracking-widest font-bold block">HARGA TERBAIK</span>
+                            <span class="text-[10px] text-stone-500 uppercase tracking-widest font-bold block">HARGA</span>
                             <div class="flex items-baseline gap-3 mt-1">
                                 <span class="text-3xl sm:text-4xl font-extrabold text-[#1F1916] tracking-tight">
                                     {{ $hargaFormatted }}
@@ -302,11 +323,16 @@
                         <!-- Stock Badge -->
                         <div class="text-right">
                             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white border border-stone-200 text-stone-800 shadow-2xs">
-                                <span class="w-2 h-2 rounded-full" :class="currentMaxStock > 0 ? 'bg-emerald-500' : 'bg-red-500'"></span>
-                                <span x-text="currentMaxStock > 0 ? 'Stok Tersedia' : 'Stok Habis'"></span>
+                                <span class="w-2 h-2 rounded-full" :class="(selectedSize ? currentMaxStock : totalStock) > 0 ? 'bg-emerald-500' : 'bg-red-500'"></span>
+                                <span x-text="(selectedSize ? currentMaxStock : totalStock) > 0 ? 'Stok Tersedia' : 'Stok Habis'"></span>
                             </span>
                             <span class="block text-xs text-stone-500 mt-1 font-medium">
-                                Sisa <strong class="text-stone-800" x-text="currentMaxStock"></strong> pcs
+                                <span x-show="!selectedSize && !isKain">
+                                    Total stok: <strong class="text-stone-800" x-text="totalStock"></strong> pcs
+                                </span>
+                                <span x-show="selectedSize || isKain">
+                                    Sisa <strong class="text-stone-800" x-text="currentMaxStock"></strong> pcs <span class="text-[11px] text-stone-400" x-show="selectedSize && !isKain">(Ukuran <span x-text="selectedSize"></span>)</span>
+                                </span>
                             </span>
                         </div>
                     </div>
@@ -356,7 +382,13 @@
 
                             <!-- Dynamic Size Subtext -->
                             <div class="text-xs text-stone-500 pt-0.5">
-                                Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong> | Lingkar Dada: <span class="font-semibold text-stone-800" x-text="sizeDescriptions[selectedSize] || 'Standar'"></span>
+                                <span x-show="!selectedSize" class="text-[#8C6D58] font-medium flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5 text-[#8C6D58] shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    Silakan klik salah satu ukuran di atas untuk memilih
+                                </span>
+                                <span x-show="selectedSize">
+                                    Ukuran terpilih: <strong class="text-stone-900" x-text="selectedSize"></strong> | Sisa stok ukuran ini: <strong class="text-stone-900" x-text="currentMaxStock"></strong> pcs
+                                </span>
                             </div>
                         </div>
                     @endif
@@ -366,38 +398,38 @@
                         <!-- Stepper -->
                         <div class="inline-flex items-center rounded-xl bg-white border border-[#D5CABB] p-1 shadow-2xs">
                             <button @click="decreaseQty()"
-                                    :disabled="quantity <= 1 || currentMaxStock <= 0"
-                                    :class="quantity <= 1 || currentMaxStock <= 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
+                                    :disabled="quantity <= 1"
+                                    :class="quantity <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
                                     class="w-10 h-10 rounded-lg flex items-center justify-center text-stone-700 font-bold text-base transition">
                                 −
                             </button>
                             <span class="w-10 text-center text-sm font-bold text-stone-900" x-text="quantity"></span>
                             <button @click="increaseQty()"
-                                    :disabled="quantity >= currentMaxStock || currentMaxStock <= 0"
-                                    :class="quantity >= currentMaxStock || currentMaxStock <= 0 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
+                                    :disabled="quantity >= currentMaxStock || (selectedSize ? currentMaxStock <= 0 : totalStock <= 0)"
+                                    :class="quantity >= currentMaxStock || (selectedSize ? currentMaxStock <= 0 : totalStock <= 0) ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
                                     class="w-10 h-10 rounded-lg flex items-center justify-center text-stone-700 font-bold text-base transition"
-                                    :title="quantity >= currentMaxStock ? 'Maksimal stok tercapai (' + currentMaxStock + ')' : 'Tambah jumlah'">
+                                    :title="!selectedSize ? 'Pilih ukuran terlebih dahulu' : (quantity >= currentMaxStock ? 'Maksimal stok tercapai (' + currentMaxStock + ')' : 'Tambah jumlah')">
                                 +
                             </button>
                         </div>
 
                         <!-- Primary CTA Button: Tambah ke Keranjang -->
                         <button @click="addToCart(false)"
-                                :disabled="isAdding || currentMaxStock <= 0"
-                                :class="currentMaxStock <= 0 ? 'bg-stone-300 text-stone-500 cursor-not-allowed shadow-none' : 'bg-[#201A17] hover:bg-stone-800 text-white shadow-md cursor-pointer'"
+                                :disabled="isAdding || totalStock <= 0 || (selectedSize && currentMaxStock <= 0)"
+                                :class="totalStock <= 0 || (selectedSize && currentMaxStock <= 0) ? 'bg-stone-300 text-stone-500 cursor-not-allowed shadow-none' : 'bg-[#201A17] hover:bg-stone-800 text-white shadow-md cursor-pointer'"
                                 class="flex-1 py-3.5 px-6 rounded-xl font-semibold text-xs sm:text-sm transition duration-200 flex items-center justify-center gap-2">
                             <svg class="w-4 h-4 text-stone-200" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                             </svg>
-                            <span x-text="currentMaxStock <= 0 ? 'Stok Habis' : (isAdding ? 'Menyimpan...' : 'Tambah ke Keranjang')"></span>
+                            <span x-text="totalStock <= 0 || (selectedSize && currentMaxStock <= 0) ? 'Stok Habis' : (isAdding ? 'Menyimpan...' : 'Tambah ke Keranjang')"></span>
                         </button>
                     </div>
 
                     <!-- Secondary Row: Beli Sekarang & WhatsApp -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                         <button @click="addToCart(true)"
-                                :disabled="isAdding || currentMaxStock <= 0"
-                                :class="currentMaxStock <= 0 ? 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none' : 'bg-[#EFE8DD] hover:bg-[#E5DBCB] text-stone-900 cursor-pointer shadow-2xs'"
+                                :disabled="isAdding || totalStock <= 0 || (selectedSize && currentMaxStock <= 0)"
+                                :class="totalStock <= 0 || (selectedSize && currentMaxStock <= 0) ? 'bg-stone-200 text-stone-400 cursor-not-allowed shadow-none' : 'bg-[#EFE8DD] hover:bg-[#E5DBCB] text-stone-900 cursor-pointer shadow-2xs'"
                                 class="py-3 px-4 rounded-xl font-bold text-xs sm:text-sm transition text-center">
                             Beli Sekarang
                         </button>
