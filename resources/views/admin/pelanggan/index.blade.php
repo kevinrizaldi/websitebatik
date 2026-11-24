@@ -56,11 +56,11 @@
                     <span class="text-xs text-[#5A544E] font-medium">Pembeli</span>
                 </div>
                 <div class="mt-4 flex items-center gap-1 text-[11px] font-semibold text-[#A86544]">
-                    <span>↗</span>
-                    <span>+18% vs bulan lalu</span>
+                    <span>{{ ($growthPercent ?? 0) >= 0 ? '↗' : '↘' }}</span>
+                    <span>{{ (($growthPercent ?? 0) >= 0 ? '+' : '') . ($growthPercent ?? 0) }}% vs bulan lalu</span>
                 </div>
                 <div class="mt-2 h-1 w-full rounded-full bg-[#FAF0E4] overflow-hidden">
-                    <div class="h-full rounded-full bg-[#A86544]" style="width: 65%"></div>
+                    <div class="h-full rounded-full bg-[#A86544]" style="width: {{ min(100, max(5, ($totalPelanggan ?? 0) > 0 ? round((($customersThisMonth ?? 0) / $totalPelanggan) * 100) : 0)) }}%"></div>
                 </div>
             </div>
 
@@ -85,7 +85,7 @@
                     <span>Patron belanja > 2 kali</span>
                 </div>
                 <div class="mt-2 h-1 w-full rounded-full bg-[#F3EFEA] overflow-hidden">
-                    <div class="h-full rounded-full bg-[#1E1B18]" style="width: 46.8%"></div>
+                    <div class="h-full rounded-full bg-[#1E1B18]" style="width: {{ min(100, max(5, $repeatRate)) }}%"></div>
                 </div>
             </div>
 

@@ -80,7 +80,7 @@
             </div>
         </div>
 
-        {{-- ECO-PACKAGING BANNER --}}
+        {{-- RINGKASAN PESANAN BANNER --}}
         <div class="rounded-2xl border border-[#E8D9C5] bg-[#FAF0E4]/70 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
             <div class="flex items-center gap-3">
                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1E1B18] text-[#C59A53]">
@@ -89,14 +89,14 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-xs font-bold text-[#1E1B18]">Paket Pesanan Upcycled &amp; Zero Waste Material</h3>
+                    <h3 class="text-xs font-bold text-[#1E1B18]">Ringkasan Produk Pesanan Pelanggan</h3>
                     <p class="text-[11px] text-[#5A544E] mt-0.5">
-                        Pesanan ini memuat 1 item repurpose sisa tenun lokal dan 1 kain batik cap motif klasik.
+                        Pesanan ini memuat {{ $order->items->count() }} item ({{ $order->items->pluck('produk_name')->filter()->take(2)->implode(', ') }}{{ $order->items->count() > 2 ? ', dan lainnya' : '' }}).
                     </p>
                 </div>
             </div>
             <span class="rounded-full border border-[#E9DFD0] bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-[#8C5E28] shrink-0 self-start sm:self-center">
-                ECO-PACKING READY
+                {{ $order->items->sum('quantity') }} TOTAL UNIT
             </span>
         </div>
 
@@ -271,15 +271,19 @@
 
                                 <div class="flex-1 min-w-0">
                                     <span class="inline-block rounded bg-[#FAF0E4] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider text-[#A86544] mb-1">
-                                        {{ $loop->first ? 'BATIK TULIS SOGA' : 'UPCYCLED CAPSULE #03' }}
+                                        {{ strtoupper($item->produk?->kategori ?? 'KOLEKSI BATIK') }}
                                     </span>
                                     <h4 class="font-bold text-xs text-[#1E1B18]">{{ $item->produk_name }}</h4>
                                     <div class="mt-1 flex flex-wrap items-center gap-3 text-[10px] text-stone-400">
-                                        <span>Ukuran: <strong class="text-stone-700">L</strong></span>
-                                        <span>•</span>
-                                        <span>Material: <strong class="text-stone-700">Katun Primissima Halus</strong></span>
-                                        <span>•</span>
-                                        <span>SKU: <span class="font-mono text-stone-600">HSO-BTP-081-L</span></span>
+                                        @if ($item->ukuran)
+                                            <span>Ukuran: <strong class="text-stone-700">{{ $item->ukuran }}</strong></span>
+                                            <span>•</span>
+                                        @endif
+                                        @if ($item->produk?->material)
+                                            <span>Material: <strong class="text-stone-700">{{ $item->produk->material }}</strong></span>
+                                            <span>•</span>
+                                        @endif
+                                        <span>SKU: <span class="font-mono text-stone-600">{{ $item->produk?->sku ?? ('SKU-'.str_pad((string) ($item->produk_id ?? 1), 4, '0', STR_PAD_LEFT)) }}</span></span>
                                     </div>
                                 </div>
 
@@ -296,42 +300,37 @@
                     </div>
 
                     {{-- Buyer Note Callout --}}
-                    <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/60 p-3.5 text-xs">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-[#8C5E28] block mb-1">
-                            ❝ CATATAN KHUSUS PEMBELI:
-                        </span>
-                        <blockquote class="italic text-stone-700">
-                            "Mohon kemasan besek ramah lingkungan dan sertakan kartu ucapan selamat pernikahan."
-                        </blockquote>
-                    </div>
+                    @if (!empty($order->catatan))
+                        <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/60 p-3.5 text-xs">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-[#8C5E28] block mb-1">
+                                ❝ CATATAN KHUSUS PEMBELI:
+                            </span>
+                            <blockquote class="italic text-stone-700">
+                                "{{ $order->catatan }}"
+                            </blockquote>
+                        </div>
+                    @else
+                        <div class="rounded-xl border border-[#EFECE6] bg-[#FAF7F2]/50 p-3 text-xs text-stone-400 italic">
+                            Tidak ada catatan khusus dari pembeli untuk pesanan ini.
+                        </div>
+                    @endif
 
                     {{-- Financial Breakdown --}}
                     <div class="space-y-2 pt-2 border-t border-[#EFECE6] text-xs">
                         <div class="flex justify-between text-stone-500">
                             <span>Subtotal Produk ({{ $order->items->count() }} Item)</span>
                             <span class="font-semibold text-stone-800">
-                                Rp {{ number_format($order->items->sum('subtotal') ?: $order->total_price * 0.85, 0, ',', '.') }}
+                                Rp {{ number_format($order->items->sum('subtotal') ?: $order->total_price, 0, ',', '.') }}
                             </span>
                         </div>
                         <div class="flex justify-between text-stone-500">
                             <span class="flex items-center gap-1.5">
                                 <span>🚚</span>
-                                <span>Ongkos Kirim RajaOngkir ({{ $order->pengiriman->ekspedisi ?? $order->shipment->courier ?? 'JNE Reguler 1.0kg' }})</span>
+                                <span>Ongkos Kirim ({{ $order->pengiriman->ekspedisi ?? $order->shipment->courier ?? 'RajaOngkir' }})</span>
                             </span>
                             <span class="font-semibold text-stone-800">
-                                Rp {{ number_format($order->shipping_cost ?? 20000, 0, ',', '.') }}
+                                Rp {{ number_format($order->shipping_cost ?? 0, 0, ',', '.') }}
                             </span>
-                        </div>
-                        <div class="flex justify-between text-stone-500">
-                            <span>Biaya Layanan Gateway Midtrans</span>
-                            <span class="font-semibold text-stone-800">Rp 1.000</span>
-                        </div>
-                        <div class="flex justify-between text-[#A86544] font-medium">
-                            <span class="flex items-center gap-1">
-                                <span>🏷</span>
-                                <span>Diskon Promo Sirkular Lestari</span>
-                            </span>
-                            <span>- Rp 50.000</span>
                         </div>
 
                         <div class="pt-3 border-t border-[#EFECE6] flex justify-between items-baseline">
@@ -391,8 +390,8 @@
                         {{-- Step 4 --}}
                         <div class="relative">
                             <span class="absolute -left-6 top-1 h-3.5 w-3.5 rounded-full {{ in_array($order->status, ['Diproses', 'Dikirim', 'Selesai']) ? 'bg-[#1E1B18]' : 'bg-stone-300' }} ring-4 ring-white"></span>
-                            <p class="text-xs font-bold {{ in_array($order->status, ['Diproses', 'Dikirim', 'Selesai']) ? 'text-[#1E1B18]' : 'text-stone-400' }}">Pengepakan Besek &amp; Input Resi RajaOngkir</p>
-                            <p class="text-[11px] text-stone-400 mt-0.5">Kemas pesanan dengan anyaman besek bambu dan input nomor resi pengiriman.</p>
+                            <p class="text-xs font-bold {{ in_array($order->status, ['Diproses', 'Dikirim', 'Selesai']) ? 'text-[#1E1B18]' : 'text-stone-400' }}">Pengemasan Pesanan &amp; Input Resi RajaOngkir</p>
+                            <p class="text-[11px] text-stone-400 mt-0.5">Kemas pesanan dengan rapi dan input nomor resi pengiriman.</p>
                         </div>
 
                         {{-- Step 5 --}}
@@ -422,7 +421,7 @@
                         </div>
                         <div>
                             <p class="font-bold text-sm text-[#1E1B18]">{{ $order->customer_name }}</p>
-                            <p class="text-[11px] text-stone-400">ID: CST-JKT-{{ $order->user_id ?? 88219 }}</p>
+                            <p class="text-[11px] text-stone-400">ID: CST-{{ strtoupper(substr($order->user?->alamats?->first()?->kota ?? 'IDN', 0, 3)) }}-{{ str_pad((string) ($order->user_id ?? 1), 5, '0', STR_PAD_LEFT) }}</p>
                             <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 mt-0.5">
                                 <span>✓</span> Pelanggan Terverifikasi
                             </span>
@@ -432,15 +431,18 @@
                     <div class="space-y-2.5 pt-2 border-t border-[#EFECE6] text-xs text-stone-600">
                         <div class="flex items-center gap-2">
                             <span class="text-stone-400">✉</span>
-                            <span class="font-mono text-[11px]">{{ $order->user->email ?? 'budi.santoso@email.com' }}</span>
+                            <span class="font-mono text-[11px]">{{ $order->user->email ?? '-' }}</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span class="text-stone-400">📞</span>
-                            <span class="font-mono text-[11px]">{{ $order->phone }}</span>
+                            <span class="font-mono text-[11px]">{{ $order->phone ?: '-' }}</span>
                         </div>
                         <div class="flex items-center gap-2 text-stone-500">
                             <span class="text-stone-400">🕒</span>
-                            <span>4 Pesanan Selesai sebelumnya</span>
+                            @php
+                                $prevOrdersCount = $order->user ? $order->user->orders()->where('id', '!=', $order->id)->where('status', 'Selesai')->count() : 0;
+                            @endphp
+                            <span>{{ $prevOrdersCount }} Pesanan Selesai sebelumnya</span>
                         </div>
                     </div>
                 </div>
@@ -479,13 +481,15 @@
                         </div>
                     </div>
 
-                    {{-- Kurir Note Box --}}
-                    <div class="rounded-xl bg-[#FAF7F2] p-3 text-[11px] text-stone-600 border border-[#EFECE6]">
-                        <span class="font-bold text-[10px] uppercase tracking-wider text-stone-400 block mb-0.5">
-                            ⓘ INSTRUKSI KURIR / PATOKAN:
-                        </span>
-                        Pagar kayu cokelat, titip di pos sekuriti jika sedang rapat.
-                    </div>
+                    @if (!empty($order->catatan))
+                        {{-- Kurir Note Box --}}
+                        <div class="rounded-xl bg-[#FAF7F2] p-3 text-[11px] text-stone-600 border border-[#EFECE6]">
+                            <span class="font-bold text-[10px] uppercase tracking-wider text-stone-400 block mb-0.5">
+                                ⓘ INSTRUKSI / CATATAN PEMBELI:
+                            </span>
+                            {{ $order->catatan }}
+                        </div>
+                    @endif
                 </div>
 
                 {{-- 3. LOGISTIK & EKSPEDISI RAJAONGKIR --}}
@@ -515,7 +519,7 @@
                                 </div>
                             </div>
                             <span class="text-xs font-bold text-[#8C5E28] bg-[#FAF0E4] px-2 py-1 rounded-lg">
-                                Tarif: Rp {{ number_format($order->shipping_cost ?? 20000, 0, ',', '.') }}
+                                Tarif: Rp {{ number_format($order->shipping_cost ?? 0, 0, ',', '.') }}
                             </span>
                         </div>
 
@@ -526,7 +530,7 @@
                             </div>
                             <div>
                                 <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">BERAT PAKET</span>
-                                <span class="font-semibold text-stone-700">1.0 Kg (Kalkulasi Presisi)</span>
+                                <span class="font-semibold text-stone-700">{{ max(1, $order->items->sum('quantity')) * 0.5 }} Kg (Estimasi)</span>
                             </div>
                         </div>
                     </div>

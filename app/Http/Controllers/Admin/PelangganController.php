@@ -73,8 +73,8 @@ class PelangganController extends Controller
                 'name' => $user->name,
                 'initials' => strtoupper(substr($user->name, 0, 2)),
                 'email' => $user->email,
-                'phone' => $user->phone ?? '+62 812-3456-7890',
-                'clean_phone' => preg_replace('/[^0-9]/', '', (string) ($user->phone ?? '6281234567890')),
+                'phone' => $user->phone ?: '-',
+                'clean_phone' => $user->phone ? preg_replace('/[^0-9]/', '', (string) $user->phone) : null,
                 'city' => $city,
                 'orders_count' => $ordersCount,
                 'total_spent' => $totalSpent,
@@ -108,9 +108,28 @@ class PelangganController extends Controller
         $repeatRate = $totalPelanggan > 0 ? round(($repeatCount / $totalPelanggan) * 100, 1) : 0;
         $totalOmzet = (float) $patrons->sum('total_spent');
 
+        // Customer growth calculation
+        $startThisMonth = now()->startOfMonth();
+        $startLastMonth = now()->subMonth()->startOfMonth();
+        $endLastMonth = now()->subMonth()->endOfMonth();
+
+        $customersThisMonth = User::where(function ($q): void {
+            $q->where('role', '!=', 'admin')->orWhereNull('role');
+        })->where('created_at', '>=', $startThisMonth)->count();
+
+        $customersLastMonth = User::where(function ($q): void {
+            $q->where('role', '!=', 'admin')->orWhereNull('role');
+        })->whereBetween('created_at', [$startLastMonth, $endLastMonth])->count();
+
+        $growthPercent = $customersLastMonth > 0
+            ? round((($customersThisMonth - $customersLastMonth) / $customersLastMonth) * 100)
+            : ($customersThisMonth > 0 ? 100 : 0);
+
         return view('admin.pelanggan.index', [
             'patrons' => $patrons,
             'totalPelanggan' => $totalPelanggan,
+            'customersThisMonth' => $customersThisMonth,
+            'growthPercent' => $growthPercent,
             'vipCount' => $vipCount,
             'repeatRate' => $repeatRate,
             'totalOmzet' => $totalOmzet,

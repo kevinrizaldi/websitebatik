@@ -179,10 +179,6 @@
                         <span>Batik Pria/Wanita</span>
                     </div>
                     <div class="flex items-center gap-1.5">
-                        <span class="h-2.5 w-2.5 rounded-full bg-[#A86544]"></span>
-                        <span>Olahan Kain Sisa (Upcycled)</span>
-                    </div>
-                    <div class="flex items-center gap-1.5">
                         <span class="h-2.5 w-2.5 rounded-full bg-[#E5D7C3]"></span>
                         <span>Kain Lembaran</span>
                     </div>

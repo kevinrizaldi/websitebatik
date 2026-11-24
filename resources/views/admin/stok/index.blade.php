@@ -148,7 +148,12 @@
                            ])>
                             Semua Kategori
                         </a>
-                        @foreach(['Baju Batik', 'Kain Batik', 'Olahan Kain Sisa'] as $kat)
+                        @php
+                            $dynamicKategoris = isset($kategorisList) && $kategorisList->isNotEmpty()
+                                ? $kategorisList->pluck('nama_kategori')
+                                : \App\Models\Produk::whereNotNull('kategori')->pluck('kategori')->unique();
+                        @endphp
+                        @foreach($dynamicKategoris as $kat)
                             <a href="{{ route('admin.stok.index', array_merge(request()->query(), ['kategori' => $kat])) }}"
                                @class([
                                    'px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition',

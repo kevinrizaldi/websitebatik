@@ -34,7 +34,7 @@
                     <span class="sr-only">Kelola Kategori Produk</span>
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Kelola klasifikasi busana, kain lembaran, dan kriya olahan kain sisa sirkular Hamzah Style Official.
+                    Kelola klasifikasi busana dan ragam koleksi produk Hamzah Style Official.
                 </p>
             </div>
 
@@ -339,8 +339,8 @@
                                 <span>Tampilkan di Menu Navigasi Utama Pelanggan</span>
                             </label>
                             <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="is_upcycled" value="1" checked class="rounded border-[#E8E4DC] text-[#1E1B18] focus:ring-0">
-                                <span>Sertifikasi Kurasi Sirkular / Upcycling</span>
+                                <input type="checkbox" name="is_featured" value="1" class="rounded border-[#E8E4DC] text-[#1E1B18] focus:ring-0">
+                                <span>Kategori Unggulan / Pilihan Kurator</span>
                             </label>
                         </div>
 

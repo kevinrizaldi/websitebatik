@@ -81,13 +81,18 @@
                             </div>
 
                             {{-- Notification Bell --}}
+                            @php
+                                $unhandledOrdersCount = \App\Models\Order::whereIn('status', ['Menunggu Verifikasi', 'Menunggu Pembayaran', 'Belum Dibayar', 'Diproses'])->count();
+                            @endphp
                             <a href="{{ route('admin.orders.index', ['status' => 'Menunggu Verifikasi']) }}" class="relative rounded-full border border-[#EFECE6] bg-white p-2 text-stone-600 hover:bg-[#FAF7F2] transition shadow-2xs" title="Notifikasi Verifikasi Pesanan">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                 </svg>
-                                <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#A86544] text-[9px] font-bold text-white">
-                                    3
-                                </span>
+                                @if($unhandledOrdersCount > 0)
+                                    <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#A86544] text-[9px] font-bold text-white">
+                                        {{ $unhandledOrdersCount > 99 ? '99+' : $unhandledOrdersCount }}
+                                    </span>
+                                @endif
                             </a>
 
                             {{-- User Avatar & Info --}}
@@ -98,8 +103,8 @@
                                     </svg>
                                 </div>
                                 <div class="hidden md:block text-left">
-                                    <p class="text-xs font-bold text-[#1E1B18] leading-tight group-hover:text-[#A86544] transition-colors">Admin Curator</p>
-                                    <p class="text-[10px] text-stone-400">Master Artisan Studio</p>
+                                    <p class="text-xs font-bold text-[#1E1B18] leading-tight group-hover:text-[#A86544] transition-colors">{{ Auth::user()->name ?? 'Administrator' }}</p>
+                                    <p class="text-[10px] text-stone-400">{{ Auth::user()->role ? ucfirst(Auth::user()->role) : 'Super Admin' }}</p>
                                 </div>
                             </a>
                         </div>
