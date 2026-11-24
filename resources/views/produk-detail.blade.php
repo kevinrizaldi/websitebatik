@@ -3,7 +3,9 @@
     $kategoriProduk = $produk->kategoriRelasi?->nama_kategori ?? $produk->kategori ?? 'Koleksi Batik';
     $hargaProduk = (float) ($produk->harga ?? 0);
     $hargaFormatted = 'Rp ' . number_format($hargaProduk, 0, ',', '.');
-    $hargaCoret = $hargaProduk > 0 ? 'Rp ' . number_format($hargaProduk * 1.15, 0, ',', '.') : '';
+    $hargaCoret = (!empty($produk->harga_coret) && (float)$produk->harga_coret > $hargaProduk)
+        ? 'Rp ' . number_format((float)$produk->harga_coret, 0, ',', '.')
+        : null;
     $materialProduk = $produk->material ?: 'Katun Primissima Halus Benang 60s';
     $deskripsiProduk = $produk->deskripsi ?: 'Koleksi busana batik eksklusif bermutu tinggi berdaya pakai harian dan formal.';
     $gambarProduk = $produk ? $produk->gambar_url : asset('images/beranda/folded-shirts.jpg');
@@ -288,9 +290,11 @@
                                 <span class="text-3xl sm:text-4xl font-extrabold text-[#1F1916] tracking-tight">
                                     {{ $hargaFormatted }}
                                 </span>
-                                <span class="text-sm sm:text-base text-stone-400 line-through">
-                                    {{ $hargaCoret }}
-                                </span>
+                                @if(!empty($hargaCoret))
+                                    <span class="text-sm sm:text-base text-stone-400 line-through">
+                                        {{ $hargaCoret }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
 

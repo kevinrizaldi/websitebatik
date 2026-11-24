@@ -43,8 +43,15 @@
                                 {{ $produk->kategori }}
                             </span>
                             <h1 class="text-2xl font-bold text-gray-900">{{ $produk->nama }}</h1>
-                            <div class="text-2xl font-extrabold text-gray-900 mt-2">
-                                Rp {{ number_format($produk->harga, 0, ',', '.') }}
+                            <div class="flex items-baseline gap-3 mt-2">
+                                <span class="text-2xl font-extrabold text-gray-900">
+                                    Rp {{ number_format($produk->harga, 0, ',', '.') }}
+                                </span>
+                                @if(!empty($produk->harga_coret) && (float)$produk->harga_coret > (float)$produk->harga)
+                                    <span class="text-sm text-gray-400 line-through">
+                                        Rp {{ number_format($produk->harga_coret, 0, ',', '.') }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
 

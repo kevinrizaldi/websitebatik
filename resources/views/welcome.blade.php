@@ -391,9 +391,16 @@
                                     </a>
                                 </h4>
                                 <!-- Price -->
-                                <p class="text-base font-extrabold text-stone-900 mb-4">
-                                    Rp {{ number_format($p->harga, 0, ',', '.') }}
-                                </p>
+                                <div class="flex items-baseline gap-2 mb-4">
+                                    <p class="text-base font-extrabold text-stone-900">
+                                        Rp {{ number_format($p->harga, 0, ',', '.') }}
+                                    </p>
+                                    @if(!empty($p->harga_coret) && (float)$p->harga_coret > (float)$p->harga)
+                                        <p class="text-xs text-stone-400 line-through">
+                                            Rp {{ number_format($p->harga_coret, 0, ',', '.') }}
+                                        </p>
+                                    @endif
+                                </div>
                             </div>
                             <a href="{{ route('produk.detail', ['id' => $p->id]) }}"
                                class="w-full py-2.5 px-4 rounded-full bg-[#201A17] hover:bg-stone-800 text-white text-xs font-semibold transition duration-200 shadow-xs flex items-center justify-center gap-1.5 text-center">
