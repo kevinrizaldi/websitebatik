@@ -71,15 +71,6 @@
 
                         {{-- Right Status & User Actions --}}
                         <div class="flex items-center gap-3">
-                            {{-- Operational Status Pill --}}
-                            <div class="hidden sm:inline-flex items-center gap-2 rounded-full border border-[#E9DFD0] bg-[#FDF9F3] px-3.5 py-1.5 text-xs font-semibold text-[#8C5E28] shadow-2xs">
-                                <span class="relative flex h-2 w-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                                </span>
-                                <span>TOKO AKTIF / OPERASIONAL</span>
-                            </div>
-
                             {{-- Notification Bell --}}
                             @php
                                 $unhandledOrdersCount = \App\Models\Order::whereIn('status', ['Menunggu Verifikasi', 'Menunggu Pembayaran', 'Belum Dibayar', 'Diproses'])->count();
