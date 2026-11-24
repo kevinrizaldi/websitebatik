@@ -65,166 +65,23 @@
                     ['name' => 'XXL', 'stock' => 0],
                 ];
             }
+
+            $existingOtherPreviews = [];
+            if (!empty($produk->gambar_lainnya) && is_array($produk->gambar_lainnya)) {
+                foreach ($produk->gambar_lainnya as $idx => $img) {
+                    $existingOtherPreviews[] = [
+                        'id' => 'existing_' . $idx,
+                        'url' => asset('storage/' . $img),
+                        'path' => $img,
+                        'isExisting' => true,
+                        'file' => null,
+                        'name' => 'Foto ' . ($idx + 1),
+                    ];
+                }
+            }
         @endphp
         {{-- Main Two-Column Form --}}
-        <form action="{{ route('produk.update', $produk) }}" method="POST" enctype="multipart/form-data" class="space-y-6"
-              x-data="{
-                  kategori: '{{ old('kategori', $produk->kategori) }}',
-                  get isKain() {
-                      return (this.kategori || '').toLowerCase().includes('kain');
-                  },
-                  sizes: {{ json_encode($initialSizes) }},
-                  newSizeInput: '',
-                  bulkStockInput: '',
-                  addSize(name) {
-                      const trimmed = (name || this.newSizeInput || '').trim();
-                      if (!trimmed) return;
-                      const exists = this.sizes.some(s => s.name.toUpperCase() === trimmed.toUpperCase());
-                      if (!exists) {
-                          this.sizes.push({ name: trimmed, stock: 0 });
-                      }
-                      this.newSizeInput = '';
-                  },
-                  hasSize(name) {
-                      return this.sizes.some(s => s.name.toUpperCase() === name.toUpperCase());
-                  },
-                  toggleSize(name) {
-                      const idx = this.sizes.findIndex(s => s.name.toUpperCase() === name.toUpperCase());
-                      if (idx >= 0) {
-                          this.sizes.splice(idx, 1);
-                      } else {
-                          this.sizes.push({ name: name, stock: 0 });
-                      }
-                  },
-                  removeSize(index) {
-                      this.sizes.splice(index, 1);
-                  },
-                  applyBulkStock() {
-                      const val = parseInt(this.bulkStockInput);
-                      if (isNaN(val) || val < 0) return;
-                      this.sizes.forEach(s => s.stock = val);
-                      this.bulkStockInput = '';
-                  },
-                  resetDefaultSizes() {
-                      this.sizes = [
-                          { name: 'S', stock: 0 },
-                          { name: 'M', stock: 0 },
-                          { name: 'L', stock: 0 },
-                          { name: 'XL', stock: 0 },
-                          { name: 'XXL', stock: 0 }
-                      ];
-                  },
-                  heroPreview: '{{ $produk->gambar ? asset('storage/' . $produk->gambar) : '' }}',
-                  dragOverHero: false,
-                  dragOverOther: false,
-                  handleHeroChange(event) {
-                      const file = event.target.files[0];
-                      if (file) {
-                          if (file.size > 2 * 1024 * 1024) {
-                              alert('Ukuran berkas melebihi batas 2 MB.');
-                              event.target.value = '';
-                              return;
-                          }
-                          this.heroPreview = URL.createObjectURL(file);
-                      }
-                  },
-                  handleHeroDrop(event) {
-                      this.dragOverHero = false;
-                      if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
-                          const file = event.dataTransfer.files[0];
-                          if (!file.type.startsWith('image/')) return;
-                          if (file.size > 2 * 1024 * 1024) {
-                              alert('Ukuran berkas melebihi batas 2 MB.');
-                              return;
-                          }
-                          const input = document.getElementById('heroImageInput');
-                          const dt = new DataTransfer();
-                          dt.items.add(file);
-                          if (input) input.files = dt.files;
-                          this.heroPreview = URL.createObjectURL(file);
-                      }
-                  },
-                  removeHero() {
-                      this.heroPreview = '';
-                      const input = document.getElementById('heroImageInput');
-                      if (input) input.value = '';
-                  },
-                  triggerHeroUpload() {
-                      document.getElementById('heroImageInput').click();
-                  },
-                  otherPreviews: [
-                      @if(!empty($produk->gambar_lainnya) && is_array($produk->gambar_lainnya))
-                          @foreach($produk->gambar_lainnya as $idx => $img)
-                              {
-                                  id: 'existing_{{ $idx }}',
-                                  url: '{{ asset('storage/' . $img) }}',
-                                  path: '{{ $img }}',
-                                  isExisting: true,
-                                  file: null,
-                                  name: 'Foto {{ $idx + 1 }}'
-                              },
-                          @endforeach
-                      @endif
-                  ],
-                  deletedOtherImages: [],
-                  slotLabels: ['Detail Serat', 'Pola Motif', 'Tampak Belakang', 'Ramah Lingkungan'],
-                  handleOtherChange(event) {
-                      this.addOtherFiles(event.target.files);
-                  },
-                  handleOtherDrop(event) {
-                      this.dragOverOther = false;
-                      if (event.dataTransfer && event.dataTransfer.files) {
-                          this.addOtherFiles(event.dataTransfer.files);
-                      }
-                  },
-                  addOtherFiles(fileList) {
-                      const files = Array.from(fileList);
-                      for (const file of files) {
-                          if (!file.type.startsWith('image/')) continue;
-                          if (this.otherPreviews.length >= 9) {
-                              alert('Maksimal foto tambahan yang dapat diunggah adalah 9 foto.');
-                              break;
-                          }
-                          if (file.size > 2 * 1024 * 1024) {
-                              alert('Ukuran file \"' + file.name + '\" melebihi 2 MB.');
-                              continue;
-                          }
-                          this.otherPreviews.push({
-                              id: Date.now() + Math.random().toString(36).substring(2, 7),
-                              url: URL.createObjectURL(file),
-                              file: file,
-                              name: file.name
-                          });
-                      }
-                      this.syncOtherFilesInput();
-                  },
-                  removeOther(index) {
-                      const item = this.otherPreviews[index];
-                      if (item && item.isExisting) {
-                          this.deletedOtherImages.push(item.path);
-                      }
-                      this.otherPreviews.splice(index, 1);
-                      this.syncOtherFilesInput();
-                  },
-                  syncOtherFilesInput() {
-                      const dt = new DataTransfer();
-                      this.otherPreviews.forEach(item => {
-                          if (item.file) dt.items.add(item.file);
-                      });
-                      const input = document.getElementById('otherImagesInput');
-                      if (input) input.files = dt.files;
-                  },
-                  triggerOtherUpload() {
-                      document.getElementById('otherImagesInput').click();
-                  },
-                  stokKain: {{ (int) old('stok', $produk->stok) }},
-                  get totalStok() {
-                      if (this.isKain) {
-                          return parseInt(this.stokKain) || 0;
-                      }
-                      return this.sizes.reduce((sum, s) => sum + (parseInt(s.stock) || 0), 0);
-                  }
-              }">
+        <form action="{{ route('produk.update', $produk) }}" method="POST" enctype="multipart/form-data" class="space-y-6" x-data="produkEditHandler()">
             @csrf
             @method('PUT')
 
@@ -729,4 +586,152 @@
 
     </div>
 
+    <script>
+        function produkEditHandler() {
+            return {
+                kategori: '{{ old('kategori', $produk->kategori) }}',
+                get isKain() {
+                    return (this.kategori || '').toLowerCase().includes('kain');
+                },
+                sizes: @json($initialSizes),
+                newSizeInput: '',
+                bulkStockInput: '',
+                addSize(name) {
+                    const trimmed = (name || this.newSizeInput || '').trim();
+                    if (!trimmed) return;
+                    const exists = this.sizes.some(s => s.name.toUpperCase() === trimmed.toUpperCase());
+                    if (!exists) {
+                        this.sizes.push({ name: trimmed, stock: 0 });
+                    }
+                    this.newSizeInput = '';
+                },
+                hasSize(name) {
+                    return this.sizes.some(s => s.name.toUpperCase() === name.toUpperCase());
+                },
+                toggleSize(name) {
+                    const idx = this.sizes.findIndex(s => s.name.toUpperCase() === name.toUpperCase());
+                    if (idx >= 0) {
+                        this.sizes.splice(idx, 1);
+                    } else {
+                        this.sizes.push({ name: name, stock: 0 });
+                    }
+                },
+                removeSize(index) {
+                    this.sizes.splice(index, 1);
+                },
+                applyBulkStock() {
+                    const val = parseInt(this.bulkStockInput);
+                    if (isNaN(val) || val < 0) return;
+                    this.sizes.forEach(s => s.stock = val);
+                    this.bulkStockInput = '';
+                },
+                resetDefaultSizes() {
+                    this.sizes = [
+                        { name: 'S', stock: 0 },
+                        { name: 'M', stock: 0 },
+                        { name: 'L', stock: 0 },
+                        { name: 'XL', stock: 0 },
+                        { name: 'XXL', stock: 0 }
+                    ];
+                },
+                heroPreview: '{{ $produk->gambar ? asset('storage/' . $produk->gambar) : '' }}',
+                dragOverHero: false,
+                dragOverOther: false,
+                handleHeroChange(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        if (file.size > 2 * 1024 * 1024) {
+                            alert('Ukuran berkas melebihi batas 2 MB.');
+                            event.target.value = '';
+                            return;
+                        }
+                        this.heroPreview = URL.createObjectURL(file);
+                    }
+                },
+                handleHeroDrop(event) {
+                    this.dragOverHero = false;
+                    if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+                        const file = event.dataTransfer.files[0];
+                        if (!file.type.startsWith('image/')) return;
+                        if (file.size > 2 * 1024 * 1024) {
+                            alert('Ukuran berkas melebihi batas 2 MB.');
+                            return;
+                        }
+                        const input = document.getElementById('heroImageInput');
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        if (input) input.files = dt.files;
+                        this.heroPreview = URL.createObjectURL(file);
+                    }
+                },
+                removeHero() {
+                    this.heroPreview = '';
+                    const input = document.getElementById('heroImageInput');
+                    if (input) input.value = '';
+                },
+                triggerHeroUpload() {
+                    document.getElementById('heroImageInput').click();
+                },
+                otherPreviews: @json($existingOtherPreviews),
+                deletedOtherImages: [],
+                slotLabels: ['Detail Serat', 'Pola Motif', 'Tampak Belakang', 'Ramah Lingkungan'],
+                handleOtherChange(event) {
+                    this.addOtherFiles(event.target.files);
+                },
+                handleOtherDrop(event) {
+                    this.dragOverOther = false;
+                    if (event.dataTransfer && event.dataTransfer.files) {
+                        this.addOtherFiles(event.dataTransfer.files);
+                    }
+                },
+                addOtherFiles(fileList) {
+                    const files = Array.from(fileList);
+                    for (const file of files) {
+                        if (!file.type.startsWith('image/')) continue;
+                        if (this.otherPreviews.length >= 9) {
+                            alert('Maksimal foto tambahan yang dapat diunggah adalah 9 foto.');
+                            break;
+                        }
+                        if (file.size > 2 * 1024 * 1024) {
+                            alert('Ukuran file "' + file.name + '" melebihi 2 MB.');
+                            continue;
+                        }
+                        this.otherPreviews.push({
+                            id: Date.now() + Math.random().toString(36).substring(2, 7),
+                            url: URL.createObjectURL(file),
+                            file: file,
+                            name: file.name
+                        });
+                    }
+                    this.syncOtherFilesInput();
+                },
+                removeOther(index) {
+                    const item = this.otherPreviews[index];
+                    if (item && item.isExisting) {
+                        this.deletedOtherImages.push(item.path);
+                    }
+                    this.otherPreviews.splice(index, 1);
+                    this.syncOtherFilesInput();
+                },
+                syncOtherFilesInput() {
+                    const dt = new DataTransfer();
+                    this.otherPreviews.forEach(item => {
+                        if (item.file) dt.items.add(item.file);
+                    });
+                    const input = document.getElementById('otherImagesInput');
+                    if (input) input.files = dt.files;
+                },
+                triggerOtherUpload() {
+                    document.getElementById('otherImagesInput').click();
+                },
+                stokKain: {{ (int) old('stok', $produk->stok) }},
+                get totalStok() {
+                    if (this.isKain) {
+                        return parseInt(this.stokKain) || 0;
+                    }
+                    return this.sizes.reduce((sum, s) => sum + (parseInt(s.stock) || 0), 0);
+                }
+            };
+        }
+    </script>
 </x-app-layout>
