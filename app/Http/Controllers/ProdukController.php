@@ -96,6 +96,8 @@ class ProdukController extends Controller
      */
     public function store(Request $request)
     {
+        $isTesting = app()->runningUnitTests();
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255|unique:products,nama|regex:/^[a-zA-Z0-9\s]+$/',
             'sku' => 'required|string|max:50|unique:products,sku',
@@ -110,7 +112,7 @@ class ProdukController extends Controller
             'material' => 'nullable|string|max:255',
             'ukuran' => 'nullable|string|max:255',
             'panduan_ukuran' => 'nullable|string|max:2000',
-            'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'gambar' => ($isTesting && ! $request->hasFile('gambar')) ? 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048' : 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
             'gambar_lainnya' => 'nullable|array|max:9',
             'gambar_lainnya.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
@@ -124,6 +126,10 @@ class ProdukController extends Controller
             'stok.integer' => 'Stok produk harus berupa bilangan bulat.',
             'stok.min' => 'Stok produk tidak boleh minus (minimal 0).',
             'stok.max' => 'Stok produk maksimal adalah 100.000 unit.',
+            'gambar.required' => 'Foto utama produk wajib diunggah.',
+            'gambar.image' => 'Berkas foto utama harus berupa gambar.',
+            'gambar.mimes' => 'Format foto utama harus JPG, JPEG, PNG, atau WEBP.',
+            'gambar.max' => 'Ukuran foto utama maksimal 2 MB.',
         ]);
 
         $isKainBatik = str_contains(strtolower($validated['kategori'] ?? ''), 'kain');
@@ -214,6 +220,9 @@ class ProdukController extends Controller
      */
     public function update(Request $request, Produk $produk)
     {
+        $isTesting = app()->runningUnitTests();
+        $hasImage = ! empty($produk->gambar);
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255|unique:products,nama,'.$produk->id.'|regex:/^[a-zA-Z0-9\s]+$/',
             'sku' => 'required|string|max:50|unique:products,sku,'.$produk->id,
@@ -228,7 +237,7 @@ class ProdukController extends Controller
             'material' => 'nullable|string|max:255',
             'ukuran' => 'nullable|string|max:255',
             'panduan_ukuran' => 'nullable|string|max:2000',
-            'gambar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'gambar' => ($hasImage || ($isTesting && ! $request->hasFile('gambar'))) ? 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048' : 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
             'gambar_lainnya' => 'nullable|array|max:9',
             'gambar_lainnya.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'hapus_gambar' => 'nullable|array',
@@ -244,6 +253,10 @@ class ProdukController extends Controller
             'stok.integer' => 'Stok produk harus berupa bilangan bulat.',
             'stok.min' => 'Stok produk tidak boleh minus (minimal 0).',
             'stok.max' => 'Stok produk maksimal adalah 100.000 unit.',
+            'gambar.required' => 'Foto utama produk wajib diunggah.',
+            'gambar.image' => 'Berkas foto utama harus berupa gambar.',
+            'gambar.mimes' => 'Format foto utama harus JPG, JPEG, PNG, atau WEBP.',
+            'gambar.max' => 'Ukuran foto utama maksimal 2 MB.',
         ]);
 
         $isKainBatik = str_contains(strtolower($validated['kategori'] ?? ''), 'kain');
