@@ -6,7 +6,7 @@
             <div class="lg:col-span-4 space-y-4">
                 <div class="flex items-center">
                     <img src="{{ asset('images/logo.png') }}"
-                         alt="HAMZAH STYLE OFFICIAL"
+                         alt="Hamzah Style"
                          class="h-7 w-auto object-contain">
                 </div>
                 <p class="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-sm">
@@ -92,7 +92,7 @@
 
         <!-- Bottom Copyright Line -->
         <div class="pt-6 border-t border-[#ECE4D8] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
-            <p>&copy; 2025 Hamzah Style Official. All rights reserved.</p>
+            <p>&copy; 2025 Hamzah Style. All rights reserved.</p>
             <p>Made with pride in Indonesia</p>
         </div>
     </div>

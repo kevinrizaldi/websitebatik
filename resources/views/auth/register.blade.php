@@ -33,7 +33,7 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <a href="{{ url('/') }}" class="inline-flex items-center group">
                 <img src="{{ asset('images/logo.png') }}" 
-                     alt="HAMZAH STYLE OFFICIAL" 
+                     alt="Hamzah Style" 
                      class="h-8 sm:h-9 w-auto object-contain">
             </a>
 
@@ -86,7 +86,7 @@
                     Buat Akun Baru
                 </h1>
                 <p class="text-sm text-stone-600 mt-1.5 leading-relaxed font-light">
-                    Daftar untuk mulai berbelanja busana batik Nusantara di Hamzah Style Official.
+                    Daftar untuk mulai berbelanja busana batik Nusantara di Hamzah Style.
                 </p>
             </div>
 
@@ -300,7 +300,7 @@
                             class="mt-0.5 w-4 h-4 rounded border-[#ECE4D8] text-[#B58742] focus:ring-[#B58742] transition"
                         />
                         <span class="leading-relaxed">
-                            Saya menyetujui <span class="font-semibold text-stone-900">Syarat & Ketentuan</span> dan <span class="font-semibold text-stone-900">Kebijakan Privasi</span> Hamzah Style Official.
+                            Saya menyetujui <span class="font-semibold text-stone-900">Syarat & Ketentuan</span> dan <span class="font-semibold text-stone-900">Kebijakan Privasi</span> Hamzah Style.
                         </span>
                     </label>
                 </div>

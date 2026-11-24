@@ -72,7 +72,7 @@
             <div class="flex items-center gap-3">
                 <a href="{{ url('/') }}" class="flex items-center group">
                     <img src="{{ asset('images/logo.png') }}" 
-                         alt="HAMZAH STYLE OFFICIAL" 
+                         alt="Hamzah Style" 
                          class="h-8 sm:h-9 w-auto object-contain">
                 </a>
             </div>

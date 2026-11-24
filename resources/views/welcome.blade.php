@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Hamzah Style Official - Warisan Batik Nusantara Modern</title>
+    <title>Hamzah Style - Warisan Batik Nusantara Modern</title>
     <meta name="description" content="Koleksi busana batik modern dan autentik Indonesia karya pengrajin lokal pilihan. Elegan dalam setiap motif untuk momen berharga Anda.">
 
     <!-- Google Fonts -->
@@ -83,7 +83,7 @@
 
                     <!-- Paragraph -->
                     <p class="text-stone-600 text-base sm:text-lg leading-relaxed mb-8 max-w-xl">
-                        Temukan keindahan batik autentik Indonesia pilihan Hamzah Style Official. Menggabungkan kemewahan tradisi Nusantara dengan sentuhan modern ramah lingkungan.
+                        Temukan keindahan batik autentik Indonesia pilihan Hamzah Style. Menggabungkan kemewahan tradisi Nusantara dengan sentuhan modern ramah lingkungan.
                     </p>
 
                     <!-- CTA Buttons -->
@@ -418,7 +418,7 @@
         </div>
     </section>
 
-    <!-- ================= SECTION: TENTANG HAMZAH STYLE OFFICIAL ================= -->
+    <!-- ================= SECTION: TENTANG Hamzah Style ================= -->
     <section id="tentang-kami" class="scroll-mt-20 py-16 md:py-24 bg-[#FAF7F2] border-t border-[#ECE4D8]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center">
@@ -466,7 +466,7 @@
                     </div>
 
                     <h2 class="font-serif-title text-3xl sm:text-4xl font-bold text-[#1F1916] leading-tight mb-2">
-                        Tentang Hamzah Style Official
+                        Tentang Hamzah Style
                     </h2>
 
                     <p class="text-sm sm:text-base font-semibold text-[#8C5E35] mb-4">
@@ -474,7 +474,7 @@
                     </p>
 
                     <p class="text-stone-600 text-xs sm:text-sm leading-relaxed mb-8">
-                        Hamzah Style Official hadir sebagai wujud cinta dan dedikasi mendalam terhadap warisan wastra Nusantara. Kami menghadirkan busana batik autentik yang dirancang harmonis dengan sentuhan gaya modern kontemporer, sekaligus memelopori gerakan kriya beretika dengan mengolah kain sisa menjadi karya bernilai artistik tinggi dan ramah lingkungan.
+                        Hamzah Style hadir sebagai wujud cinta dan dedikasi mendalam terhadap warisan wastra Nusantara. Kami menghadirkan busana batik autentik yang dirancang harmonis dengan sentuhan gaya modern kontemporer, sekaligus memelopori gerakan kriya beretika dengan mengolah kain sisa menjadi karya bernilai artistik tinggi dan ramah lingkungan.
                     </p>
 
                     <!-- 3 Feature Cards -->
@@ -544,7 +544,7 @@
 
                 <!-- Subtitle -->
                 <p class="text-stone-300 text-xs sm:text-sm md:text-base max-w-2xl mx-auto leading-relaxed mb-8">
-                    Belanja produk batik premium dan olahan kain sisa ramah lingkungan dari Hamzah Style Official. Tampil percaya diri seraya ikut menjaga kelestarian bumi dan kebudayaan Nusantara.
+                    Belanja produk batik premium dan olahan kain sisa ramah lingkungan dari Hamzah Style. Tampil percaya diri seraya ikut menjaga kelestarian bumi dan kebudayaan Nusantara.
                 </p>
 
                 <!-- Action Buttons -->

@@ -1,4 +1,4 @@
-<x-storefront-layout title="Pesanan Saya — Hamzah Style Official">
+<x-storefront-layout title="Pesanan Saya — Hamzah Style">
 @php
     $ordersData = [];
     if (isset($orders) && $orders->isNotEmpty()) {

@@ -33,7 +33,7 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <a href="{{ url('/') }}" class="inline-flex items-center group">
                 <img src="{{ asset('images/logo.png') }}" 
-                     alt="HAMZAH STYLE OFFICIAL" 
+                     alt="Hamzah Style" 
                      class="h-8 sm:h-9 w-auto object-contain">
             </a>
 

@@ -34,8 +34,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $namaProduk }} — HAMZAH STYLE OFFICIAL</title>
-    <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style Official. Warisan batik nusantara modern berkualitas premium.">
+    <title>{{ $namaProduk }} — Hamzah Style</title>
+    <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style. Warisan batik nusantara modern berkualitas premium.">
 
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

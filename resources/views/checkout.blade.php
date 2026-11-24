@@ -3,8 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Selesaikan Pembayaran - Hamzah Style Official</title>
-    <meta name="description" content="Selesaikan pembayaran pesanan busana batik autentik ramah lingkungan di Hamzah Style Official dengan metode pembayaran aman dan terenkripsi.">
+    <title>Selesaikan Pembayaran - Hamzah Style</title>
+    <meta name="description" content="Selesaikan pembayaran pesanan busana batik autentik ramah lingkungan di Hamzah Style dengan metode pembayaran aman dan terenkripsi.">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
