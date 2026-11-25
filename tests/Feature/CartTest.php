@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CartItem;
-use App\Models\Produk;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,9 +12,9 @@ class CartTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function createSampleProduct(): Produk
+    private function createSampleProduct(): Product
     {
-        return Produk::create([
+        return Product::create([
             'nama' => 'Batik Tulis Sogan Klasik',
             'sku' => 'BTK-'.uniqid(),
             'kategori' => 'Kain Batik',

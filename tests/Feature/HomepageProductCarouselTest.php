@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Produk;
-use App\Models\Ulasan;
+use App\Models\Product;
+use App\Models\Review;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,9 +44,9 @@ class HomepageProductCarouselTest extends TestCase
             ->assertSee('50% OFF');
     }
 
-    private function createProduct(string $name, string $sku, mixed $createdAt, ?int $crossedOutPrice = null): Produk
+    private function createProduct(string $name, string $sku, mixed $createdAt, ?int $crossedOutPrice = null): Product
     {
-        return Produk::create([
+        return Product::create([
             'nama' => $name,
             'sku' => $sku,
             'kategori' => 'Batik',
@@ -59,9 +59,9 @@ class HomepageProductCarouselTest extends TestCase
         ]);
     }
 
-    private function createReview(Produk $product, int $rating, string $status): void
+    private function createReview(Product $product, int $rating, string $status): void
     {
-        Ulasan::create([
+        Review::create([
             'produk_id' => $product->id,
             'customer_name' => 'Pelanggan Uji',
             'rating' => $rating,

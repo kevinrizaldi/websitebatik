@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Ulasan;
+use App\Models\Review;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -16,7 +16,7 @@ class UlasanController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Ulasan::with('produk')->latest();
+        $query = Review::with('produk')->latest();
 
         // Filter status
         if ($request->filled('status')) {
@@ -48,18 +48,18 @@ class UlasanController extends Controller
         $ulasans = $query->paginate(10)->withQueryString();
 
         // Hitungan ringkasan statistik
-        $allCount = Ulasan::count();
-        $avgRating = $allCount > 0 ? round(Ulasan::avg('rating'), 1) : 4.9;
-        $mediaCount = Ulasan::whereNotNull('image_path')->where('image_path', '!=', '')->count();
-        $verifiedCount = Ulasan::where(function ($q) {
+        $allCount = Review::count();
+        $avgRating = $allCount > 0 ? round(Review::avg('rating'), 1) : 4.9;
+        $mediaCount = Review::whereNotNull('image_path')->where('image_path', '!=', '')->count();
+        $verifiedCount = Review::where(function ($q) {
             $q->whereNotNull('user_id')->orWhereNotNull('order_id');
         })->count();
 
         $counts = [
             'all' => $allCount ?: 324,
-            'menunggu' => Ulasan::where('status', 'Menunggu')->count(),
-            'disetujui' => Ulasan::where('status', 'Disetujui')->count(),
-            'ditolak' => Ulasan::where('status', 'Ditolak')->count(),
+            'menunggu' => Review::where('status', 'Menunggu')->count(),
+            'disetujui' => Review::where('status', 'Disetujui')->count(),
+            'ditolak' => Review::where('status', 'Ditolak')->count(),
             'avg_rating' => $avgRating ?: 4.9,
             'media_count' => $mediaCount ?: 148,
             'verified_count' => $verifiedCount ?: 318,
@@ -71,7 +71,7 @@ class UlasanController extends Controller
     /**
      * Memperbarui status moderasi ulasan (Disetujui, Menunggu, Ditolak)
      */
-    public function updateStatus(Request $request, Ulasan $ulasan): RedirectResponse
+    public function updateStatus(Request $request, Review $ulasan): RedirectResponse
     {
         // Jika ulasan sudah disetujui, status tidak boleh diubah lagi
         if ($ulasan->status === 'Disetujui') {
@@ -103,7 +103,7 @@ class UlasanController extends Controller
     /**
      * Menghapus ulasan pelanggan
      */
-    public function destroy(Ulasan $ulasan): RedirectResponse
+    public function destroy(Review $ulasan): RedirectResponse
     {
         try {
             $customerName = $ulasan->customer_name;

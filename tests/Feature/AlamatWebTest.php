@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Alamat;
+use App\Models\Address;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -42,7 +42,7 @@ class AlamatWebTest extends TestCase
     public function test_user_can_update_address_coordinates(): void
     {
         $user = User::factory()->create();
-        $alamat = Alamat::create([
+        $alamat = Address::create([
             'user_id' => $user->id,
             'label_alamat' => 'Rumah',
             'penerima' => 'Budi Santoso',

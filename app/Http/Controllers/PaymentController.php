@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateSnapTokenRequest;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\Pembayaran;
 use App\Services\Midtrans\MidtransService;
 use App\Services\OrderLifecycleService;
 use Exception;
@@ -191,7 +190,7 @@ class PaymentController extends Controller
         // `?mock=1` hanya berlaku di luar production — production mengikuti status normal.
         if ($request->query('mock') && ! config('midtrans.is_production') && in_array($order->payment_status, [null, Order::PAYMENT_PENDING], true)) {
             $order->update(['status' => 'Diproses']);
-            Pembayaran::updateOrCreate(
+            Payment::updateOrCreate(
                 ['order_id' => $order->id],
                 [
                     'metode_pembayaran' => $order->payment_method ?: 'Midtrans (Simulasi Sandbox)',

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Produk;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -21,7 +21,7 @@ class StokManagementTest extends TestCase
 
     public function test_admin_can_view_stok_management_page(): void
     {
-        Produk::create([
+        Product::create([
             'nama' => 'Kemeja Batik Parang Seling',
             'sku' => 'HSO-BJK-001',
             'kategori' => 'Baju Batik',

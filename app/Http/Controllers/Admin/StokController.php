@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Kategori;
-use App\Models\Produk;
+use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -20,7 +20,7 @@ class StokController extends Controller
         $kategoriFilter = $request->input('kategori');
         $statusFilter = $request->input('status', 'semua');
 
-        $query = Produk::query();
+        $query = Product::query();
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -46,7 +46,7 @@ class StokController extends Controller
         $produks = $query->latest()->paginate(10)->withQueryString();
 
         // Hitung metrik ringkasan
-        $allProducts = Produk::all();
+        $allProducts = Product::all();
         $totalItemFisik = (int) $allProducts->sum('stok');
         $totalSku = $allProducts->count();
         $stokAmanCount = $allProducts->where('stok', '>', 5)->count();
@@ -55,7 +55,7 @@ class StokController extends Controller
 
         // Kategori list
         $kategorisList = Schema::hasTable('categories')
-            ? Kategori::orderBy('nama_kategori')->get()
+            ? Category::orderBy('nama_kategori')->get()
             : collect();
 
         return view('admin.stok.index', compact(

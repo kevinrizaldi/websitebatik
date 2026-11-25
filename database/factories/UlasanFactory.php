@@ -2,17 +2,17 @@
 
 namespace Database\Factories;
 
-use App\Models\Produk;
-use App\Models\Ulasan;
+use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Ulasan>
+ * @extends Factory<Review>
  */
 class UlasanFactory extends Factory
 {
-    protected $model = Ulasan::class;
+    protected $model = Review::class;
 
     public function definition(): array
     {
@@ -32,7 +32,7 @@ class UlasanFactory extends Factory
         ];
 
         return [
-            'produk_id' => Produk::inRandomOrder()->first()?->id ?? 1,
+            'produk_id' => Product::inRandomOrder()->first()?->id ?? 1,
             'user_id' => User::where('role', 'customer')->inRandomOrder()->first()?->id,
             'customer_name' => fake('id_ID')->name(),
             'rating' => fake()->randomElement([5, 5, 5, 4, 4, 4, 3, 2]),

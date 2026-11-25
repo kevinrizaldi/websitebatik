@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Kategori;
-use App\Models\Produk;
+use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -33,7 +33,7 @@ class ProdukController extends Controller
         $kategoriFilter = $validated['kategori'] ?? null;
         $sort = $validated['sort'] ?? 'latest';
 
-        $query = Produk::query()
+        $query = Product::query()
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $query) use ($search): void {
                     foreach (['nama', 'sku', 'kategori', 'jenis_produk', 'deskripsi', 'ukuran', 'status'] as $column) {
@@ -45,8 +45,8 @@ class ProdukController extends Controller
                 $query->where('kategori', $kat);
             })
             ->when($archivedOnly, fn (Builder $query): Builder => $query->where('status', 'Diarsipkan'))
-            ->when($availableOnly, fn (Builder $query): Builder => $query->where('status', '!=', 'Diarsipkan')->where('stok', '>', Produk::LOW_STOCK_THRESHOLD))
-            ->when($lowStockOnly, fn (Builder $query): Builder => $query->where('status', '!=', 'Diarsipkan')->whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD]))
+            ->when($availableOnly, fn (Builder $query): Builder => $query->where('status', '!=', 'Diarsipkan')->where('stok', '>', Product::LOW_STOCK_THRESHOLD))
+            ->when($lowStockOnly, fn (Builder $query): Builder => $query->where('status', '!=', 'Diarsipkan')->whereBetween('stok', [1, Product::LOW_STOCK_THRESHOLD]))
             ->when($outOfStockOnly, fn (Builder $query): Builder => $query->where('status', '!=', 'Diarsipkan')->where('stok', '<=', 0));
 
         match ($sort) {
@@ -58,15 +58,15 @@ class ProdukController extends Controller
         };
 
         $produks = $query->paginate(10)->withQueryString();
-        $totalProduk = Produk::count();
-        $totalStokFisik = (int) Produk::sum('stok');
-        $archivedCount = Produk::where('status', 'Diarsipkan')->count();
-        $lowStockCount = Produk::where('status', '!=', 'Diarsipkan')->whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD])->count();
-        $outOfStockCount = Produk::where('status', '!=', 'Diarsipkan')->where('stok', '<=', 0)->count();
-        $stokAmanCount = Produk::where('status', '!=', 'Diarsipkan')->where('stok', '>', Produk::LOW_STOCK_THRESHOLD)->count();
-        $totalKategori = Schema::hasTable('categories') ? Kategori::count() : 4;
-        $kategorisList = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
-        $totalValuasi = (float) (Produk::query()->selectRaw('SUM(harga * stok) as total')->value('total') ?? 128400000);
+        $totalProduk = Product::count();
+        $totalStokFisik = (int) Product::sum('stok');
+        $archivedCount = Product::where('status', 'Diarsipkan')->count();
+        $lowStockCount = Product::where('status', '!=', 'Diarsipkan')->whereBetween('stok', [1, Product::LOW_STOCK_THRESHOLD])->count();
+        $outOfStockCount = Product::where('status', '!=', 'Diarsipkan')->where('stok', '<=', 0)->count();
+        $stokAmanCount = Product::where('status', '!=', 'Diarsipkan')->where('stok', '>', Product::LOW_STOCK_THRESHOLD)->count();
+        $totalKategori = Schema::hasTable('categories') ? Category::count() : 4;
+        $kategorisList = Schema::hasTable('categories') ? Category::orderBy('nama_kategori')->get() : collect();
+        $totalValuasi = (float) (Product::query()->selectRaw('SUM(harga * stok) as total')->value('total') ?? 128400000);
 
         return view('produk.index', compact(
             'produks',
@@ -167,7 +167,7 @@ class ProdukController extends Controller
         }
 
         $validated['stok'] = (int) ($validated['stok'] ?? 0);
-        $validated['status'] = Produk::statusForStock((int) $validated['stok']);
+        $validated['status'] = Product::statusForStock((int) $validated['stok']);
 
         if ($request->hasFile('gambar')) {
             $validated['gambar'] =
@@ -185,18 +185,18 @@ class ProdukController extends Controller
 
         $hasKategoris = Schema::hasTable('categories');
         if (! empty($validated['kategori_id']) && $hasKategoris) {
-            $kategori = Kategori::find($validated['kategori_id']);
+            $kategori = Category::find($validated['kategori_id']);
             if ($kategori) {
                 $validated['kategori'] = $kategori->nama_kategori;
             }
         } elseif ($hasKategoris) {
-            $kategori = Kategori::where('nama_kategori', $validated['kategori'])->first();
+            $kategori = Category::where('nama_kategori', $validated['kategori'])->first();
             if ($kategori) {
                 $validated['kategori_id'] = $kategori->id;
             }
         }
 
-        Produk::create($validated);
+        Product::create($validated);
 
         return redirect()
             ->route('produk.index')
@@ -206,7 +206,7 @@ class ProdukController extends Controller
     /**
      * Menampilkan detail produk (dialihkan ke halaman edit produk)
      */
-    public function show(Produk $produk)
+    public function show(Product $produk)
     {
         return redirect()->route('produk.edit', $produk);
     }
@@ -214,9 +214,9 @@ class ProdukController extends Controller
     /**
      * Form edit produk
      */
-    public function edit(Produk $produk)
+    public function edit(Product $produk)
     {
-        $kategoris = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
+        $kategoris = Schema::hasTable('categories') ? Category::orderBy('nama_kategori')->get() : collect();
 
         return view('produk.edit', compact('produk', 'kategoris'));
     }
@@ -224,7 +224,7 @@ class ProdukController extends Controller
     /**
      * Update produk
      */
-    public function update(Request $request, Produk $produk)
+    public function update(Request $request, Product $produk)
     {
         $isTesting = app()->runningUnitTests();
         $hasImage = ! empty($produk->gambar);
@@ -301,7 +301,7 @@ class ProdukController extends Controller
         if ($produk->status === 'Diarsipkan') {
             $validated['status'] = 'Diarsipkan';
         } else {
-            $validated['status'] = Produk::statusForStock((int) $validated['stok']);
+            $validated['status'] = Product::statusForStock((int) $validated['stok']);
         }
 
         if ($request->hasFile('gambar')) {
@@ -337,12 +337,12 @@ class ProdukController extends Controller
 
         $hasKategoris = Schema::hasTable('categories');
         if (! empty($validated['kategori_id']) && $hasKategoris) {
-            $kategori = Kategori::find($validated['kategori_id']);
+            $kategori = Category::find($validated['kategori_id']);
             if ($kategori) {
                 $validated['kategori'] = $kategori->nama_kategori;
             }
         } elseif ($hasKategoris) {
-            $kategori = Kategori::where('nama_kategori', $validated['kategori'])->first();
+            $kategori = Category::where('nama_kategori', $validated['kategori'])->first();
             if ($kategori) {
                 $validated['kategori_id'] = $kategori->id;
             }
@@ -358,7 +358,7 @@ class ProdukController extends Controller
     /**
      * Hapus produk
      */
-    public function destroy(Produk $produk)
+    public function destroy(Product $produk)
     {
         if ($produk->gambar) {
             Storage::disk('public')->delete($produk->gambar);
@@ -374,10 +374,10 @@ class ProdukController extends Controller
     /**
      * Mengarsipkan atau mengaktifkan kembali produk
      */
-    public function toggleArchive(Produk $produk)
+    public function toggleArchive(Product $produk)
     {
         if ($produk->status === 'Diarsipkan') {
-            $produk->status = Produk::statusForStock((int) $produk->stok);
+            $produk->status = Product::statusForStock((int) $produk->stok);
             $produk->save();
 
             return redirect()
@@ -396,7 +396,7 @@ class ProdukController extends Controller
     /**
      * Memperbarui stok produk secara cepat (terintegrasi dari fitur stok).
      */
-    public function updateStock(Request $request, Produk $produk)
+    public function updateStock(Request $request, Product $produk)
     {
         $validated = $request->validate([
             'stok' => 'required|integer|min:0|max:100000',

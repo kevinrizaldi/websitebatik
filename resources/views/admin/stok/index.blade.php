@@ -151,7 +151,7 @@
                         @php
                             $dynamicKategoris = isset($kategorisList) && $kategorisList->isNotEmpty()
                                 ? $kategorisList->pluck('nama_kategori')
-                                : \App\Models\Produk::whereNotNull('kategori')->pluck('kategori')->unique();
+                                : \App\Models\Product::whereNotNull('kategori')->pluck('kategori')->unique();
                         @endphp
                         @foreach($dynamicKategoris as $kat)
                             <a href="{{ route('admin.stok.index', array_merge(request()->query(), ['kategori' => $kat])) }}"

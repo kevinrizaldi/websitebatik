@@ -427,8 +427,8 @@
                                     <span class="text-stone-300">•</span>
                                     <span class="text-[#A86544]">Rp {{ number_format($item->sales_total ?? 0, 0, ',', '.') }}</span>
                                 </div>
-                                <div class="mt-1 flex items-center gap-1 text-[10px] {{ ($item->stok ?? 0) <= \App\Models\Produk::LOW_STOCK_THRESHOLD ? 'text-rose-600 font-bold' : 'text-stone-500' }}">
-                                    <span class="h-1.5 w-1.5 rounded-full {{ ($item->stok ?? 0) <= \App\Models\Produk::LOW_STOCK_THRESHOLD ? 'bg-rose-500' : 'bg-emerald-500' }}"></span>
+                                <div class="mt-1 flex items-center gap-1 text-[10px] {{ ($item->stok ?? 0) <= \App\Models\Product::LOW_STOCK_THRESHOLD ? 'text-rose-600 font-bold' : 'text-stone-500' }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ ($item->stok ?? 0) <= \App\Models\Product::LOW_STOCK_THRESHOLD ? 'bg-rose-500' : 'bg-emerald-500' }}"></span>
                                     <span>Sisa Stok: {{ $item->stok ?? 0 }} pcs</span>
                                 </div>
                             </div>

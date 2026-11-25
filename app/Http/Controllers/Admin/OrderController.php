@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\Pengiriman;
+use App\Models\Shipment;
 use App\Services\MidtransService;
 use App\Services\OrderLifecycleService;
 use App\Services\RajaOngkirService;
@@ -186,8 +186,8 @@ class OrderController extends Controller
                     $cleanTracking = strtoupper(trim((string) $request->tracking_number));
                     $order->update(['tracking_number' => $cleanTracking]);
 
-                    // Update pengiriman table
-                    Pengiriman::updateOrCreate(
+                    // Update shipment table
+                    Shipment::updateOrCreate(
                         ['order_id' => $order->id],
                         ['no_resi' => $cleanTracking]
                     );
@@ -230,7 +230,7 @@ class OrderController extends Controller
 
             $order->update($payload);
 
-            // Sync Pengiriman Record
+            // Sync Shipment Record
             $pengirimanStatus = match ($newStatus) {
                 'Dikirim' => 'Dikirim',
                 'Selesai' => 'Diterima',
@@ -238,7 +238,7 @@ class OrderController extends Controller
                 default => 'Menunggu Pengiriman',
             };
 
-            Pengiriman::updateOrCreate(
+            Shipment::updateOrCreate(
                 ['order_id' => $order->id],
                 [
                     'no_resi' => $payload['tracking_number'] ?? $order->tracking_number,
@@ -295,7 +295,7 @@ class OrderController extends Controller
             $order->update(['status' => 'Selesai']);
         }
 
-        Pengiriman::updateOrCreate(
+        Shipment::updateOrCreate(
             ['order_id' => $order->id],
             [
                 'ekspedisi' => $validated['ekspedisi'],

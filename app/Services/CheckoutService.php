@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Pengiriman;
 use App\Models\Product;
+use App\Models\Shipment;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -242,7 +242,7 @@ class CheckoutService
                 $item->delete();
             }
 
-            Pengiriman::create([
+            Shipment::create([
                 'order_id' => $order->id,
                 'ekspedisi' => $shippingOption,
                 'status_pengiriman' => 'Menunggu Pengiriman',
