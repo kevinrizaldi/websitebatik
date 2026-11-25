@@ -397,27 +397,25 @@
                         <!-- Rows Breakdown -->
                         <div class="space-y-3 text-xs sm:text-sm text-stone-600">
                             <div class="flex items-center justify-between">
-                                <span x-text="'Total Harga (' + totalSelectedQty + ' barang)'"></span>
-                                <span class="font-bold text-stone-900" x-text="formatRupiah(rawSubtotal)"></span>
+                                <span class="text-stone-600" x-text="'Total Harga (' + totalSelectedQty + ' barang)'"></span>
+                                <span class="font-bold text-stone-900 whitespace-nowrap" x-text="formatRupiah(rawSubtotal)"></span>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="flex items-center gap-1">
-                                    <span>Ongkos Kirim</span>
-                                </span>
-                                <span class="text-xs text-stone-500 font-medium italic">Dihitung saat checkout</span>
-                            </div>
+                            <template x-if="discountPromo > 0">
+                                <div class="flex items-center justify-between text-emerald-700 font-medium">
+                                    <span>Diskon Promo</span>
+                                    <span class="font-bold whitespace-nowrap" x-text="'-' + formatRupiah(discountPromo)"></span>
+                                </div>
+                            </template>
                         </div>
 
-                        <!-- Divider & Total Tagihan -->
+                        <!-- Divider & Total Belanja -->
                         <div class="pt-4 border-t border-[#ECE4D8]">
-                            <div class="flex items-baseline justify-between">
+                            <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <span class="text-sm font-bold text-stone-900 block">Total Belanja</span>
-                                    <p class="text-[10px] text-stone-400 mt-0.5">
-                                        Belum termasuk ongkir &bull; Termasuk PPN
-                                    </p>
+                                    <span class="text-[11px] text-stone-400 block mt-0.5">Termasuk PPN</span>
                                 </div>
-                                <span class="font-serif-title text-2xl sm:text-3xl font-extrabold text-stone-900"
+                                <span class="text-xl sm:text-2xl font-bold text-stone-900 tracking-tight whitespace-nowrap"
                                       x-text="formatRupiah(grandTotal)"></span>
                             </div>
                         </div>
