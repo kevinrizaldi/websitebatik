@@ -114,7 +114,7 @@
                 'tanggal' => '18 Feb 2025, 09:30 WIB',
                 'status' => 'diproses',
                 'statusLabel' => 'Diproses',
-                'categoryTag' => 'UPCYCLED KRIYA NUSANTARA',
+                'categoryTag' => 'PRODUK BATIK NUSANTARA',
                 'categoryIcon' => 'refresh',
                 'nama' => 'Rompi Kawung Sisa Tenun Etnik',
                 'varian' => 'Ukuran: All Size • Edisi Terbatas',

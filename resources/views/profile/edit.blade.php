@@ -37,7 +37,7 @@
                                 </div>
                             </div>
 
-                            {{-- Poin Kriya --}}
+                            {{-- Poin Belanja --}}
                             <div class="flex flex-col justify-between rounded-2xl bg-[#FAF3EA] p-4 sm:p-5">
                                 <div class="flex items-center justify-between">
                                     <span class="text-[10px] font-bold uppercase tracking-wider text-stone-600">POIN BELANJA</span>

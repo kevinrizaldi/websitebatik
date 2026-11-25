@@ -449,7 +449,7 @@
                             </div>
                             <div class="rounded-2xl overflow-hidden shadow-md aspect-square bg-stone-200">
                                 <img src="{{ asset('images/beranda/bags-accessories.jpg') }}"
-                                     alt="Kriya Olahan Kain Sisa"
+                                     alt="Kerajinan Kain Batik"
                                      class="w-full h-full object-cover hover:scale-103 transition duration-500">
                             </div>
                         </div>

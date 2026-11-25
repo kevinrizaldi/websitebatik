@@ -182,7 +182,7 @@
                         <input type="text" 
                                x-ref="searchInput"
                                x-model="searchQuery" 
-                               placeholder="Cari produk batik, kemeja, jenis motif, atau olahan kriya..."
+                               placeholder="Cari produk batik, kemeja, atau jenis motif..."
                                class="w-full bg-[#FAF4EC] border border-[#EFE8DE] rounded-xl pl-11 pr-10 py-2.5 text-xs sm:text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B58742] focus:bg-white transition">
                         <button x-show="searchQuery" 
                                 @click="searchQuery = ''; resetPage()" 
