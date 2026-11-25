@@ -1936,22 +1936,13 @@
                     <!-- Ringkasan Belanja Card matching Mockup -->
                     <div class="bg-white rounded-3xl p-6 sm:p-7 border border-[#EDE6DB] shadow-md space-y-6">
                         
-                        <div class="flex items-center justify-between pb-4 border-b border-stone-100">
-                            <div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">
-                                    RINGKASAN BELANJA
-                                </span>
-                                <h2 class="font-bold text-stone-900 text-lg">
-                                    Ringkasan Pesanan
-                                </h2>
-                            </div>
-                            <a href="{{ route('keranjang.index') }}" 
-                               class="p-2 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition"
-                               title="Edit Isi Keranjang">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/>
-                                </svg>
-                            </a>
+                        <div class="pb-4 border-b border-stone-100">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">
+                                RINGKASAN BELANJA
+                            </span>
+                            <h2 class="font-bold text-stone-900 text-lg">
+                                Ringkasan Pesanan
+                            </h2>
                         </div>
 
                         <!-- Rows Breakdown matching Mockup exactly -->
@@ -1999,7 +1990,6 @@
                                 :disabled="isSubmitting || items.length === 0"
                                 class="w-full py-4 px-6 rounded-2xl bg-[#201A17] hover:bg-stone-800 disabled:opacity-60 text-white font-bold text-sm transition duration-200 shadow-md flex items-center justify-center gap-2 group cursor-pointer">
                             <span x-show="!isSubmitting" class="flex items-center gap-2">
-                                <span>🔒</span>
                                 <span>Bayar Sekarang</span>
                             </span>
                             <span x-show="isSubmitting" class="flex items-center gap-2">
