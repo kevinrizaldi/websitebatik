@@ -173,17 +173,13 @@
                  return this.selectedItems.reduce((acc, curr) => acc + (curr.harga * curr.qty), 0);
              },
 
-             get shippingCost() {
-                 return this.selectedItems.length > 0 ? 20000 : 0;
-             },
-
              get discountPromo() {
-                 return (this.rawSubtotal >= 900000 && this.shippingCost > 0) ? 50000 : 0;
+                 return (this.rawSubtotal >= 900000) ? 50000 : 0;
              },
 
              get grandTotal() {
                  if (this.selectedItems.length === 0) return 0;
-                 return Math.max(0, this.rawSubtotal + this.shippingCost - this.discountPromo);
+                 return Math.max(0, this.rawSubtotal - this.discountPromo);
              },
 
              addRecommendation(prod) {
@@ -406,10 +402,9 @@
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="flex items-center gap-1">
-                                    <span>Estimasi Ongkos Kirim</span>
-                                    <span class="text-stone-400 text-xs cursor-pointer" title="Ongkos kirim flat kurir reguler">ⓘ</span>
+                                    <span>Ongkos Kirim</span>
                                 </span>
-                                <span class="font-bold text-stone-900" x-text="formatRupiah(shippingCost)"></span>
+                                <span class="text-xs text-stone-500 font-medium italic">Dihitung saat checkout</span>
                             </div>
                         </div>
 
@@ -417,9 +412,9 @@
                         <div class="pt-4 border-t border-[#ECE4D8]">
                             <div class="flex items-baseline justify-between">
                                 <div>
-                                    <span class="text-sm font-bold text-stone-900 block">Total Tagihan</span>
+                                    <span class="text-sm font-bold text-stone-900 block">Total Belanja</span>
                                     <p class="text-[10px] text-stone-400 mt-0.5">
-                                        Termasuk PPN & Kemasan Ramah Lingkungan
+                                        Belum termasuk ongkir &bull; Termasuk PPN
                                     </p>
                                 </div>
                                 <span class="font-serif-title text-2xl sm:text-3xl font-extrabold text-stone-900"
