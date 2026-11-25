@@ -33,7 +33,47 @@ class KategoriController extends Controller
         $totalKategori = Kategori::count();
         $totalProduk = Produk::count();
 
-        return view('admin.kategori.index', compact('kategoris', 'search', 'totalKategori', 'totalProduk'));
+        // Real Sales keseluruhan (dari pesanan non-batal dan bukan belum bayar)
+        $totalTerjualKeseluruhan = (int) \App\Models\OrderItem::whereHas('order', function ($q) {
+            $q->whereNotIn('status', ['Dibatalkan', 'Belum Dibayar']);
+        })->sum('quantity');
+
+        // Real Total Nilai Aset Stok (harga * stok seluruh produk)
+        $totalNilaiAset = (float) (Produk::selectRaw('SUM(harga * stok) as total')->value('total') ?? 0);
+
+        // Ambil data penjualan per kategori
+        $salesPerCategory = \App\Models\OrderItem::query()
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->whereNotIn('orders.status', ['Dibatalkan', 'Belum Dibayar'])
+            ->selectRaw('products.category_id, products.kategori, SUM(order_items.quantity) as total_qty, SUM(order_items.subtotal) as total_revenue')
+            ->groupBy('products.category_id', 'products.kategori')
+            ->get();
+
+        // Ambil data stok & aset per kategori
+        $stockPerCategory = Produk::query()
+            ->selectRaw('category_id, kategori, SUM(stok) as total_stock, SUM(harga * stok) as total_asset')
+            ->groupBy('category_id', 'kategori')
+            ->get();
+
+        foreach ($kategoris as $kat) {
+            $sales = $salesPerCategory->first(function ($s) use ($kat) {
+                return ($s->category_id !== null && $s->category_id == $kat->id)
+                    || (!empty($s->kategori) && strcasecmp($s->kategori, $kat->nama_kategori) === 0);
+            });
+
+            $stock = $stockPerCategory->first(function ($s) use ($kat) {
+                return ($s->category_id !== null && $s->category_id == $kat->id)
+                    || (!empty($s->kategori) && strcasecmp($s->kategori, $kat->nama_kategori) === 0);
+            });
+
+            $kat->real_terjual = (int) ($sales->total_qty ?? 0);
+            $kat->real_pendapatan = (float) ($sales->total_revenue ?? 0);
+            $kat->real_stok = (int) ($stock->total_stock ?? 0);
+            $kat->real_nilai_aset = (float) ($stock->total_asset ?? 0);
+        }
+
+        return view('admin.kategori.index', compact('kategoris', 'search', 'totalKategori', 'totalProduk', 'totalTerjualKeseluruhan', 'totalNilaiAset'));
     }
 
     /**
