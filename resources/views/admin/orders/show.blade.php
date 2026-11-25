@@ -449,11 +449,8 @@
 
                 {{-- 2. ALAMAT PENGIRIMAN --}}
                 <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 sm:p-6 shadow-2xs space-y-4">
-                    <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
+                    <div class="pb-3 border-b border-[#EFECE6]">
                         <h3 class="text-sm font-bold text-[#1E1B18]">Alamat Pengiriman</h3>
-                        <a href="{{ route('alamat.index') }}" class="text-xs font-bold text-[#A86544] hover:underline">
-                            Ubah Alamat
-                        </a>
                     </div>
 
                     <div class="flex items-start gap-3 text-xs">
