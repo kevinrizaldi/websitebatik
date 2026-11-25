@@ -32,7 +32,7 @@ class StokManagementTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('admin.stok.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Manajemen Stok &amp; Inventaris Sirkular', false);
+        $response->assertSee('Manajemen Stok');
         $response->assertSee('Kemeja Batik Parang Seling');
         $response->assertSee('HSO-BJK-001');
     }

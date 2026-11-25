@@ -9,14 +9,14 @@
 
                 {{-- Kolom Kanan: Statistik Belanja & Informasi Akun --}}
                 <div class="space-y-6 lg:col-span-8" x-data="{ editModal: false }">
-                    {{-- 1. Statistik Belanja Sirkular --}}
+                    {{-- 1. Statistik Belanja --}}
                     <div class="rounded-3xl border border-[#ECE4D8] bg-white p-6 shadow-xs sm:p-7">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-2.5">
                                 <svg class="h-4 w-4 text-stone-800" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
                                 </svg>
-                                <h3 class="text-sm font-bold text-stone-900 sm:text-base">Statistik Belanja Sirkular</h3>
+                                <h3 class="text-sm font-bold text-stone-900 sm:text-base">Statistik Belanja</h3>
                             </div>
                             <span class="text-xs text-stone-400">Pembaruan: Hari Ini</span>
                         </div>
@@ -33,14 +33,14 @@
                                 </div>
                                 <div>
                                     <p class="mt-3 text-3xl font-extrabold text-stone-900">{{ $stats['selesai'] > 0 ? $stats['selesai'] : 4 }}</p>
-                                    <p class="mt-1 text-xs text-stone-500">Koleksi adibusana terkurasi</p>
+                                    <p class="mt-1 text-xs text-stone-500">Pesanan batik selesai</p>
                                 </div>
                             </div>
 
                             {{-- Poin Kriya --}}
                             <div class="flex flex-col justify-between rounded-2xl bg-[#FAF3EA] p-4 sm:p-5">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-stone-600">POIN KRIYA</span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-stone-600">POIN BELANJA</span>
                                     <svg class="h-4 w-4 text-stone-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                         <circle cx="12" cy="12" r="9"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5l1.35 2.73 3.01.44-2.18 2.12.51 3-2.69-1.42L9.31 15.8l.51-3-2.18-2.12 3.01-.44L12 7.5z"/>
@@ -48,7 +48,7 @@
                                 </div>
                                 <div>
                                     <p class="mt-3 text-3xl font-extrabold text-stone-900">150</p>
-                                    <p class="mt-1 text-xs text-stone-500">Dapat ditukar voucher tailor</p>
+                                    <p class="mt-1 text-xs text-stone-500">Dapat ditukar voucher promo</p>
                                 </div>
                             </div>
                         </div>

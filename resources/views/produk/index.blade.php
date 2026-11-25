@@ -447,7 +447,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-[#1E1B18]">Integrasi Katalog &amp; Akurasi Stok Sirkular</h3>
+                    <h3 class="text-base font-bold text-[#1E1B18]">Pengelolaan Produk &amp; Akurasi Stok</h3>
                     <p class="text-xs text-[#5A544E] mt-1 max-w-2xl leading-relaxed">
                         Data ketersediaan unit fisik dan status stok tersinkronisasi otomatis dengan etalase web. Setiap penambahan atau pengurangan stok tercatat akurat untuk menjaga standar pelayanan Hamzah Style.
                     </p>

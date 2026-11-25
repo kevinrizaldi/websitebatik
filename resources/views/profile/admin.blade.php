@@ -11,15 +11,15 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <h1 class="text-2xl sm:text-3xl font-serif font-bold text-[#1E1B18] tracking-tight">
-                        Profil Kurator &amp; Keamanan Akun
+                        Profil Admin &amp; Keamanan Akun
                     </h1>
                     <span class="sr-only">Profil Admin</span>
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FAF4ED] text-[#8C6D58] border border-[#E5DDD0] tracking-wider uppercase">
-                        KURASI EDISI NO. #821
+                        ADMINISTRATOR TOKO
                     </span>
                 </div>
                 <p class="text-sm text-[#7A7269] mt-1">
-                    Kelola identitas kurator utama, kredensial otentikasi dua langkah (2FA), serta hak akses staf atelier Hamzah Style.
+                    Kelola informasi profil admin, ubah kata sandi, dan pengaturan keamanan akun toko Hamzah Style.
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -45,7 +45,7 @@
                     <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span class="font-medium">Profil kurator berhasil diperbarui.</span>
+                    <span class="font-medium">Profil admin berhasil diperbarui.</span>
                 </div>
                 <button onclick="this.parentElement.remove()" class="text-emerald-500 font-bold">&times;</button>
             </div>
@@ -83,10 +83,10 @@
                         <h3 class="font-serif font-bold text-lg text-[#1E1B18]">{{ $user->name }}</h3>
                         <div class="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
                             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#FAF4ED] text-[#8C6D58] border border-[#E5DDD0]">
-                                Kepala Kurator &amp; Lead Admin
+                                Administrator Toko
                             </span>
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#3D1E16] text-white">
-                                TIER ADIBUSANA
+                                SUPER ADMIN
                             </span>
                         </div>
                     </div>
@@ -114,18 +114,18 @@
 
                     <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#ECE5D8] text-[11px] text-[#8C6D58] flex items-center justify-between">
                         <div class="text-left">
-                            <span class="block text-[9px] uppercase tracking-wider text-[#A86544] font-bold">Kemitraan Kurator</span>
-                            <span class="font-bold text-[#1E1B18]">Zoni Wastra Atelier Borobudur</span>
+                            <span class="block text-[9px] uppercase tracking-wider text-[#A86544] font-bold">Lokasi Toko</span>
+                            <span class="font-bold text-[#1E1B18]">Toko Hamzah Style Pusat</span>
                         </div>
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">Aktif</span>
                     </div>
 
-                    <button type="button" onclick="alert('Upload foto avatar kurator dibuka.')" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-bold uppercase tracking-wider text-[#1E1B18] transition">
+                    <button type="button" onclick="alert('Upload foto profil admin dibuka.')" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-bold uppercase tracking-wider text-[#1E1B18] transition">
                         <svg class="w-4 h-4 text-[#7A7269]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span>GANTI FOTO AVATAR</span>
+                        <span>GANTI FOTO PROFIL</span>
                     </button>
                 </div>
 
@@ -175,7 +175,7 @@
                             </svg>
                             <span>Manajemen Staf</span>
                         </div>
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FAF4ED] text-[#8C6D58]">2 Kurator</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#FAF4ED] text-[#8C6D58]">2 Admin</span>
                     </a>
 
                     <a href="#section-notif" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-[#5A544E] hover:bg-[#FAF7F2] hover:text-[#1E1B18] transition">
@@ -183,7 +183,7 @@
                             <svg class="w-4 h-4 text-[#8C827A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                             </svg>
-                            <span>Notifikasi Studio</span>
+                            <span>Notifikasi Toko</span>
                         </div>
                         <svg class="w-3.5 h-3.5 text-[#A89F91]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -207,13 +207,13 @@
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
-                        <span>Keamanan Studio 100%</span>
+                        <span>Keamanan Akun 100%</span>
                     </div>
                     <p class="text-[#7A7269] text-[11px] leading-relaxed">
-                        Perangkat Anda terlindungi enkripsi end-to-end dengan otentikasi biometri di klaster private cloud Hamzah Style.
+                        Perangkat Anda terlindungi dengan enkripsi dan sistem keamanan toko Hamzah Style.
                     </p>
-                    <a href="javascript:void(0)" onclick="alert('Kebijakan Privasi & Enkripsi Hamzah Style')" class="inline-block text-[11px] font-bold text-[#B85D3B] hover:underline pt-1">
-                        Baca Kebijakan Privasi &amp; Arsip &rarr;
+                    <a href="javascript:void(0)" onclick="alert('Kebijakan Privasi & Keamanan Hamzah Style')" class="inline-block text-[11px] font-bold text-[#B85D3B] hover:underline pt-1">
+                        Baca Kebijakan Privasi &rarr;
                     </a>
                 </div>
 
@@ -222,13 +222,13 @@
             {{-- Right Column: Main Form & Security Sections (8 cols) --}}
             <div class="lg:col-span-8 space-y-6">
 
-                {{-- BAGIAN 01: Informasi Pribadi & Identitas Kurator --}}
+                {{-- BAGIAN 01: Informasi Pribadi & Identitas Admin --}}
                 <div id="section-profil" class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-5">
                     <div class="flex items-center justify-between pb-3 border-b border-[#F3EDE6]">
                         <div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-[#8C827A]">BAGIAN 01</span>
                             <h3 class="font-bold text-sm text-[#1E1B18]">
-                                Informasi Pribadi &amp; Identitas Kurator
+                                Informasi Pribadi Admin
                                 <span class="sr-only">Informasi Akun</span>
                             </h3>
                         </div>
@@ -267,7 +267,7 @@
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">Alamat Email Kurasi</label>
+                                <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">Alamat Email Admin</label>
                                 <div class="relative">
                                     <input type="email" name="email" value="{{ old('email', $user->email) }}" required
                                            class="w-full py-2.5 px-3.5 pr-20 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] font-mono focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
@@ -281,34 +281,34 @@
                                 <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">Nomor WhatsApp Operasional</label>
                                 <input type="text" name="phone" value="{{ old('phone', $user->phone ?? '+62 811-2501-4789') }}"
                                        class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] font-mono focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
-                                <p class="text-[10px] text-[#8C827A] mt-1">Digunakan untuk kirim alert stock kritis dan verifikasi order VIP.</p>
+                                <p class="text-[10px] text-[#8C827A] mt-1">Digunakan untuk kirim alert stock kritis dan informasi penting.</p>
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">Lokasi Studio &amp; Sentra Kurasi</label>
+                            <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">Alamat / Lokasi Operasional</label>
                             <input type="text" name="lokasi" value="Surakarta &amp; D.I. Yogyakarta"
                                    class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
                         </div>
 
                         <div>
                             <div class="flex items-center justify-between mb-1.5">
-                                <label class="block text-xs font-bold text-[#1E1B18]">Bio Kurator &amp; Filosofi Karya</label>
+                                <label class="block text-xs font-bold text-[#1E1B18]">Bio / Keterangan Admin</label>
                                 <span class="text-[10px] text-[#8C827A]">98 / 240 Karakter</span>
                             </div>
                             <textarea rows="2" maxlength="240"
-                                      class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">Menjaga pakem motif batik tradisional serta mengawal revolusi tekstil limbah kain perca nusantara.</textarea>
+                                      class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">Administrator resmi toko batik Hamzah Style.</textarea>
                         </div>
 
                         {{-- Capsule Banner --}}
                         <div class="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#ECE5D8] flex items-center gap-3">
                             <div class="w-12 h-12 rounded-lg bg-[#3D1E16] text-[#FFC4B2] flex items-center justify-center font-bold text-xs shrink-0">
-                                CAPS
+                                INFO
                             </div>
                             <div class="flex-1 text-xs">
-                                <span class="text-[9px] font-bold text-[#B85D3B] uppercase tracking-wider">10 SEMESTER CAPSULE 2024</span>
-                                <h4 class="font-bold text-[#1E1B18]">Soga Jawa &amp; Perca Daur Ulang Mandiri</h4>
-                                <p class="text-[10px] text-[#7A7269]">Tercatat 14 koleksi eksklusif dipamerkan langsung dibawah profil kurator ini.</p>
+                                <span class="text-[9px] font-bold text-[#B85D3B] uppercase tracking-wider">AKUN RESMI ADMINISTRATOR</span>
+                                <h4 class="font-bold text-[#1E1B18]">Toko Batik Hamzah Style</h4>
+                                <p class="text-[10px] text-[#7A7269]">Akun administrator utama pengelola sistem katalog dan pesanan Hamzah Style.</p>
                             </div>
                         </div>
 
@@ -454,14 +454,14 @@
                     </div>
                 </div>
 
-                {{-- BAGIAN 04: Akses Delegasi Kurator Studio (Tim Terdaftar) --}}
+                {{-- BAGIAN 04: Akses Delegasi Admin Toko (Tim Terdaftar) --}}
                 <div id="section-staf" class="bg-white rounded-2xl border border-[#ECE5D8] p-5 sm:p-6 shadow-xs space-y-4">
                     <div class="flex items-center justify-between pb-3 border-b border-[#F3EDE6]">
                         <div>
                             <span class="text-[10px] font-bold uppercase tracking-wider text-[#8C827A]">BAGIAN 04</span>
-                            <h3 class="font-bold text-sm text-[#1E1B18]">Akses Delegasi Kurator Studio (Tim Terdaftar)</h3>
+                            <h3 class="font-bold text-sm text-[#1E1B18]">Akses Delegasi Staf Admin Toko (Tim Terdaftar)</h3>
                         </div>
-                        <button type="button" onclick="alert('Modal undang staf kurator baru dibuka.')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-semibold text-[#1E1B18] transition">
+                        <button type="button" onclick="alert('Modal undang staf admin baru dibuka.')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-semibold text-[#1E1B18] transition">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
@@ -491,7 +491,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="py-3 text-[#5A544E]">Kurator Stok &amp; Pengiriman</td>
+                                    <td class="py-3 text-[#5A544E]">Staf Stok &amp; Pengiriman</td>
                                     <td class="py-3">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#FAF7F2] text-[#8C827A] border border-[#ECE5D8]">
                                             Akses Terbatas
@@ -525,7 +525,7 @@
                         <svg class="w-4 h-4 text-[#B85D3B] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>Hanya Super Admin yang berhak merekrut kurator baru dan menghapus wewenang penandatanganan sertifikat resmi Hamzah Style.</span>
+                        <span>Hanya Super Admin yang berhak mengelola akun admin baru di sistem toko Hamzah Style.</span>
                     </div>
                 </div>
 
@@ -539,8 +539,8 @@
                     <div class="space-y-4">
                         <div class="flex items-center justify-between p-3.5 rounded-xl bg-[#FAF7F2] border border-[#ECE5D8]">
                             <div>
-                                <h4 class="font-bold text-xs text-[#1E1B18]">Pemberitahuan Pesanan Adibusana Baru</h4>
-                                <p class="text-[11px] text-[#7A7269] mt-0.5">Kirim pesan via WhatsApp otomatis untuk order senilai &gt; Rp 2.500.000 masuk.</p>
+                                <h4 class="font-bold text-xs text-[#1E1B18]">Pemberitahuan Pesanan Baru</h4>
+                                <p class="text-[11px] text-[#7A7269] mt-0.5">Kirim pesan notifikasi otomatis untuk order baru yang masuk.</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" checked class="sr-only peer">
@@ -550,8 +550,8 @@
 
                         <div class="flex items-center justify-between p-3.5 rounded-xl bg-[#FAF7F2] border border-[#ECE5D8]">
                             <div>
-                                <h4 class="font-bold text-xs text-[#1E1B18]">Peringatan Resi Massal &amp; Sesi Baru</h4>
-                                <p class="text-[11px] text-[#7A7269] mt-0.5">Dapatkan email verifikasi jika ada perangkat mencurigakan login ke konsol kurasi tengah malam.</p>
+                                <h4 class="font-bold text-xs text-[#1E1B18]">Peringatan Resi &amp; Sesi Baru</h4>
+                                <p class="text-[11px] text-[#7A7269] mt-0.5">Dapatkan email verifikasi jika ada perangkat baru yang masuk ke sistem admin.</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" checked class="sr-only peer">

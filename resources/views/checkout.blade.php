@@ -2016,9 +2016,9 @@
                             </span>
                         </button>
 
-                        <!-- Legal & Sustainability Disclaimer -->
+                        <!-- Legal & Terms Disclaimer -->
                         <p class="text-[11px] text-stone-500 text-center leading-relaxed px-2">
-                            Dengan menekan Bayar Sekarang, Anda menyetujui Syarat & Ketentuan serta komitmen pelestarian warisan daya Official.
+                            Dengan menekan Bayar Sekarang, Anda menyetujui Syarat & Ketentuan serta kebijakan pembelian toko Hamzah Style.
                         </p>
 
                     </div>

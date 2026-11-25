@@ -113,7 +113,7 @@
                             </span>
                             <div>
                                 <h3 class="text-sm font-bold text-[#1E1B18]">Status Pembayaran Gateway Midtrans</h3>
-                                <p class="text-[11px] text-stone-400">Rekonsiliasi transaksi pembayaran otomatis via Midtrans Snap &amp; Webhook.</p>
+                                <p class="text-[11px] text-stone-400">Status pembayaran otomatis via Midtrans.</p>
                             </div>
                         </div>
                         <span class="rounded bg-[#FAF0E4] px-2.5 py-1 text-[10px] font-extrabold uppercase text-[#8C5E28]">
@@ -251,7 +251,7 @@
                             </span>
                         </div>
                         <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                            KURASI KOLEKSI NUSANTARA
+                            RINCIAN BARANG
                         </span>
                     </div>
 
@@ -411,7 +411,7 @@
                     <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
                         <h3 class="text-sm font-bold text-[#1E1B18]">Informasi Pelanggan</h3>
                         <span class="rounded bg-[#FAF0E4] px-2 py-0.5 text-[10px] font-bold text-[#8C5E28]">
-                            Member Lestari Patron
+                            Pelanggan Terdaftar
                         </span>
                     </div>
 

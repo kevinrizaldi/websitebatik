@@ -24,7 +24,7 @@
             <div>
                 {{-- Eyebrow --}}
                 <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#A86544] mb-1">
-                    <span>KONSOL KURASI PESANAN</span>
+                    <span>PESANAN PELANGGAN</span>
                     <span>•</span>
                     <span class="text-emerald-700">Sinkronisasi Real-Time</span>
                 </div>
@@ -35,7 +35,7 @@
                     <span class="sr-only">Kelola Pesanan</span>
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Kelola verifikasi transaksi gateway Midtrans, status pengerjaan kurasi, dan pengiriman ekspedisi RajaOngkir ke seluruh Nusantara.
+                    Kelola transaksi, status pembayaran pelanggan, dan proses pengiriman pesanan.
                 </p>
             </div>
 
@@ -45,7 +45,7 @@
                     <svg class="h-4 w-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
-                    <span>Cetak Label Massal</span>
+                    <span>Cetak Daftar Pesanan</span>
                 </button>
 
                 <a href="{{ route('admin.laporan.export', 'csv') }}" class="inline-flex items-center gap-2 rounded-xl bg-[#1E1B18] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-black">
@@ -77,7 +77,7 @@
                 </div>
                 <div class="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[#A86544]">
                     <span>●</span>
-                    <span>Menunggu Pembayaran (Midtrans Pending)</span>
+                    <span>Menunggu Pembayaran</span>
                 </div>
             </div>
 
@@ -99,7 +99,7 @@
                 </div>
                 <div class="mt-4 flex items-center gap-1.5 text-[11px] text-stone-500 font-medium">
                     <span>📦</span>
-                    <span>Siap serah terima kurir</span>
+                    <span>Siap dikirim</span>
                 </div>
             </div>
 
@@ -121,7 +121,7 @@
                 </div>
                 <div class="mt-4 flex items-center gap-1.5 text-[11px] text-stone-500 font-medium">
                     <span>🚚</span>
-                    <span>Ekspedisi RajaOngkir (JNE, POS &amp; TIKI)</span>
+                    <span>Sedang diantar kurir</span>
                 </div>
             </div>
 
@@ -136,13 +136,13 @@
                     </div>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        Rp 84,2 jt
+                    <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18] truncate">
+                        Rp {{ number_format($successAmount ?? 0, 0, ',', '.') }}
                     </p>
                 </div>
                 <div class="mt-4 flex items-center gap-1 text-[11px] font-semibold text-[#A86544]">
-                    <span>↗</span>
-                    <span>+14.6% vs Jan</span>
+                    <span>✓</span>
+                    <span>Total pesanan berhasil</span>
                 </div>
             </div>
         </div>
@@ -383,7 +383,7 @@
                 <div>
                     <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#8C5E28] mb-0.5">
                         <span>Protokol Keberlanjutan &amp; Kemasan Nol Sampah</span>
-                        <span class="rounded bg-[#F8EDE2] px-1.5 py-0.2 text-[#A86544] font-extrabold">Eko-Artisan</span>
+                        <span class="rounded bg-[#F8EDE2] px-1.5 py-0.2 text-[#A86544] font-extrabold">Batik Asli</span>
                     </div>
                     <p class="text-xs text-[#5A544E] mt-1 max-w-2xl leading-relaxed">
                         Seluruh paket dikemas dengan kertas samson daur ulang, tali serat rami alami, serta sertifikat keaslian motif batik tulis berpola tangan asli. Dihitung akurat via RajaOngkir API.

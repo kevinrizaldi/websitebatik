@@ -227,7 +227,7 @@
                     <thead>
                         <tr class="border-b border-[#ECE5D8] bg-[#FAF7F2] text-[10px] font-bold uppercase tracking-wider text-[#8C827A]">
                             <th class="py-3 px-4">Produk &amp; Identitas SKU</th>
-                            <th class="py-3 px-4">Kategori Wastra</th>
+                            <th class="py-3 px-4">Kategori Produk</th>
                             <th class="py-3 px-4 text-center">Stok Saat Ini</th>
                             <th class="py-3 px-4">Status Ketersediaan</th>
                             <th class="py-3 px-4">Terjual (30 Hari)</th>
@@ -382,22 +382,22 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h4 class="font-bold text-[#1E1B18] text-sm">Peringatan Restock Terracotta</h4>
+                        <h4 class="font-bold text-[#1E1B18] text-sm">Peringatan Stok Menipis</h4>
                         <span class="px-2 py-0.5 rounded-full bg-[#3D1E16] text-white font-bold text-[10px]">
                             {{ $stokMenipisCount ?: 7 }} SKU Perlu Tindakan
                         </span>
                     </div>
                     <p class="text-xs text-[#7A7269] mt-1 max-w-2xl leading-relaxed">
-                        {{ $stokMenipisCount ?: 7 }} produk berada di bawah batas minimum keamanan. Sistem telah menyiapkan draf Purchase Order untuk pengrajin rekanan di Pekalongan &amp; Kulon Progo guna mempertahankan kontinuitas rantai pasok wastra sirkular.
+                        {{ $stokMenipisCount ?: 7 }} produk berada di bawah batas minimum stok. Segera lakukan penambahan stok agar ketersediaan produk di toko Hamzah Style tetap terjaga.
                     </p>
                 </div>
             </div>
             <div class="flex items-center gap-3 shrink-0">
-                <button type="button" onclick="alert('Draf PO untuk pengrajin wastra sirkular telah dibuka.')" class="px-4 py-2 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-semibold text-[#1E1B18] transition">
-                    Lihat Draf PO
+                <button type="button" onclick="alert('Draf penambahan stok telah dibuka.')" class="px-4 py-2 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-semibold text-[#1E1B18] transition">
+                    Lihat Draf Stok
                 </button>
-                <button type="button" onclick="alert('Peringatan restock terkirim otomatis ke grup WhatsApp mitra pengrajin Pekalongan & Kulon Progo.')" class="px-4 py-2 rounded-xl bg-[#3D1E16] hover:bg-[#2A150F] text-xs font-semibold text-white transition shadow-sm">
-                    Kirim Peringatan ke Mitra Pengrajin
+                <button type="button" onclick="alert('Peringatan stok menipis berhasil dikirim.')" class="px-4 py-2 rounded-xl bg-[#3D1E16] hover:bg-[#2A150F] text-xs font-semibold text-white transition shadow-sm">
+                    Kirim Peringatan Stok
                 </button>
             </div>
         </div>
