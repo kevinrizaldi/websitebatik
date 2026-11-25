@@ -1689,9 +1689,6 @@
                                     <span x-show="addressData.isUtama" class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">
                                         Alamat Utama
                                     </span>
-                                    <button @click="openAddAddress()" type="button" class="text-[11px] font-semibold text-[#B58742] hover:underline">
-                                        + Tambah Baru
-                                    </button>
                                 </div>
                             </div>
 
@@ -1708,11 +1705,8 @@
                                 </div>
                             </template>
 
-                            <div class="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-[#ECE4D8]/60 text-[11px] text-stone-500">
+                            <div class="pt-1 border-t border-[#ECE4D8]/60 text-[11px] text-stone-500">
                                 <span>Pastikan nomor WhatsApp / HP aktif untuk konfirmasi kurir pengiriman.</span>
-                                <a href="{{ route('alamat.index') }}" class="font-bold text-stone-700 hover:text-stone-950 underline transition">
-                                    Kelola alamat tersimpan →
-                                </a>
                             </div>
                         </div>
 
