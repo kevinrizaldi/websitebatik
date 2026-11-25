@@ -180,7 +180,7 @@
                       produk_id: {{ $produkId }},
                       qty: this.quantity,
                       ukuran: this.selectedSize,
-                      varian: 'Ukuran: ' + this.selectedSize + ' • Lengan Panjang'
+                      varian: this.selectedSize ? ('Ukuran: ' + this.selectedSize) : 'Ukuran: All Size'
                   })
               })
               .then(res => res.json())

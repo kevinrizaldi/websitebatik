@@ -856,7 +856,7 @@
                       nama: '{{ addslashes($nama) }}',
                       kategori: '{{ addslashes($kategori) }}',
                       ukuran: '{{ $item->ukuran ?? 'All Size' }}',
-                      varian: '{{ addslashes($item->varian ?? ('Ukuran: ' . ($item->ukuran ?? 'L'))) }}',
+                      varian: '{{ addslashes($item->ukuran ? ('Ukuran: ' . $item->ukuran) : ($item->varian ? trim(str_replace('• Lengan Panjang', '', $item->varian)) : 'Ukuran: All Size')) }}',
                       qty: {{ $item->qty }},
                       harga: {{ $harga }},
                       gambar: '{{ $imgUrl }}'

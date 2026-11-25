@@ -20,7 +20,7 @@
                          nama: {{ json_encode($ci->produk->nama ?? 'Produk Batik') }},
                          kategoriBadge: {{ json_encode(strtoupper($ci->produk->kategoriRelasi?->nama_kategori ?? $ci->produk->kategori ?? 'TULIS')) }},
                          kategoriSub: {{ json_encode(strtoupper($ci->produk->kategoriRelasi?->nama_kategori ?? $ci->produk->kategori ?? 'ATASAN PRIA')) }},
-                         varian: {{ json_encode($ci->varian ?: ($ci->ukuran ? 'Ukuran: ' . $ci->ukuran : 'Standar')) }},
+                         varian: {{ json_encode($ci->ukuran ? ('Ukuran: ' . $ci->ukuran) : ($ci->varian ? trim(str_replace('• Lengan Panjang', '', $ci->varian)) : 'Standar')) }},
                          harga: {{ (float) ($ci->produk->harga ?? 0) }},
                          qty: {{ (int) $ci->qty }},
                          stok: {{ (int) ($ci->produk ? $ci->produk->getStokForUkuran($ci->ukuran) : 0) }},
