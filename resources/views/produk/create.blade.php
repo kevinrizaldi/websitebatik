@@ -265,6 +265,19 @@
                             </div>
                         </div>
 
+                        {{-- Bahan / Material --}}
+                        <div>
+                            <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
+                                Bahan / Material <span class="text-[10px] font-normal text-stone-400">(Opsional)</span>
+                            </label>
+                            <input type="text"
+                                   name="material"
+                                   value="{{ old('material') }}"
+                                   placeholder="Contoh: Katun Primissima, Sutra, Rayon Viscose, dll."
+                                   maxlength="255"
+                                   class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                        </div>
+
                         {{-- Harga Jual, Harga Coret, Stok Awal Row --}}
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
@@ -470,8 +483,6 @@
                             </div>
                         </div>
 
-                        {{-- Hidden inputs --}}
-                        <input type="hidden" name="material" value="{{ old('material', 'Katun Primissima Halus 60s, Batik Cap kombinasi Tulis canting tembaga') }}">
 
                         {{-- Panduan Ukuran Produk --}}
                         <div x-show="!isKain" x-transition>
