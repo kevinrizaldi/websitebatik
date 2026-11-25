@@ -627,7 +627,6 @@
                         <!-- Product Image -->
                         <div class="relative aspect-square sm:aspect-auto bg-stone-100 overflow-hidden">
                             <img :src="selectedProduct.gambar" :alt="selectedProduct.nama" class="w-full h-full object-cover">
-                            <span class="absolute top-3 left-3 bg-[#201A17] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full" x-text="selectedProduct.kategori"></span>
                         </div>
 
                         <!-- Product Info -->

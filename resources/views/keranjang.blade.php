@@ -312,11 +312,8 @@
                                            class="w-4 h-4 rounded text-stone-900 focus:ring-stone-900 border-stone-300 accent-[#201A17] cursor-pointer">
                                 </div>
 
-                                <!-- Product Image container with badge in top-left -->
+                                <!-- Product Image container -->
                                 <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-[#FAF2EA] border border-[#ECE4D8] shrink-0 flex items-center justify-center">
-                                    <span class="absolute top-2 left-2 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-white/95 text-stone-700 uppercase tracking-wider shadow-2xs"
-                                          x-text="item.kategoriBadge">
-                                    </span>
                                     <template x-if="item.gambar">
                                         <img :src="item.gambar" :alt="item.nama" class="w-full h-full object-cover">
                                     </template>
@@ -511,8 +508,6 @@
 
                             <!-- Image area: tall aspect ratio with rounded-2xl -->
                             <div class="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[#FAF2EA] border border-[#ECE4D8]/60 flex items-center justify-center">
-                                <span class="absolute top-2.5 left-2.5 z-10 text-[9px] font-bold px-2 py-0.5 rounded bg-white/95 text-stone-700 uppercase tracking-wider shadow-2xs"
-                                      x-text="prod.badge"></span>
                                 <template x-if="prod.gambar">
                                     <img :src="prod.gambar" :alt="prod.nama" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 </template>
