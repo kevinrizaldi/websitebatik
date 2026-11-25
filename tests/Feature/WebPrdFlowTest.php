@@ -223,15 +223,11 @@ class WebPrdFlowTest extends TestCase
         $response->assertDontSee('Voucher');
     }
 
-    public function test_admin_profile_uses_dashboard_layout(): void
+    public function test_admin_profile_redirects_to_dashboard(): void
     {
         $response = $this->actingAs($this->admin())->get(route('profile.edit'));
 
-        $response->assertStatus(200);
-        $response->assertSee('Profil Admin');
-        $response->assertSee('Informasi Akun');
-        $response->assertSee('Ubah Password');
-        $response->assertDontSee('Profil Saya');
+        $response->assertRedirect(route('dashboard'));
     }
 
     public function test_profile_update_persists_phone(): void
