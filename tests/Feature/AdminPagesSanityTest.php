@@ -131,4 +131,34 @@ class AdminPagesSanityTest extends TestCase
             $response->assertOk();
         }
     }
+
+    public function test_admin_create_and_edit_product_forms_contain_berat_input_and_save_correctly(): void
+    {
+        $createPage = $this->actingAs($this->admin)->get(route('produk.create'));
+        $createPage->assertOk();
+        $createPage->assertSee('Berat Produk (Gram)');
+        $createPage->assertSee('name="berat"', false);
+
+        $editPage = $this->actingAs($this->admin)->get(route('produk.edit', $this->product));
+        $editPage->assertOk();
+        $editPage->assertSee('Berat Produk (Gram)');
+        $editPage->assertSee('name="berat"', false);
+
+        // Test store product with berat
+        $response = $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Batik Tulis Mega Mendung Spesial',
+            'sku' => 'BTK-MGM-' . uniqid(),
+            'kategori' => 'Kain Batik',
+            'harga' => 450000,
+            'berat' => 420,
+            'stok' => 5,
+        ]);
+        $response->assertRedirect(route('produk.index'));
+
+        $this->assertDatabaseHas('products', [
+            'nama' => 'Batik Tulis Mega Mendung Spesial',
+            'berat' => 420,
+            'weight' => 420,
+        ]);
+    }
 }

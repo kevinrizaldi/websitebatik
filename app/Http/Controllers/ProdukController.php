@@ -111,6 +111,8 @@ class ProdukController extends Controller
             'kategori_id' => 'nullable|exists:categories,id',
             'harga' => 'required|numeric|min:0|max:100000000',
             'harga_coret' => 'nullable|numeric|min:0|max:100000000|gt:harga',
+            'berat' => 'nullable|integer|min:1|max:50000',
+            'weight' => 'nullable|integer|min:1|max:50000',
             'stok' => 'nullable|integer|min:0|max:100000',
             'stok_ukuran' => 'nullable|array',
             'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
@@ -165,6 +167,10 @@ class ProdukController extends Controller
         } elseif (empty($validated['ukuran'])) {
             $validated['ukuran'] = $isKainBatik ? 'Lembaran Kain' : 'S, M, L, XL, XXL';
         }
+
+        $berat = (int) ($request->input('berat') ?? $request->input('weight') ?? 300);
+        $validated['berat'] = $berat > 0 ? $berat : 300;
+        $validated['weight'] = $validated['berat'];
 
         $validated['stok'] = (int) ($validated['stok'] ?? 0);
         $validated['status'] = Product::statusForStock((int) $validated['stok']);
@@ -236,6 +242,8 @@ class ProdukController extends Controller
             'kategori_id' => 'nullable|exists:categories,id',
             'harga' => 'required|numeric|min:0|max:100000000',
             'harga_coret' => 'nullable|numeric|min:0|max:100000000|gt:harga',
+            'berat' => 'nullable|integer|min:1|max:50000',
+            'weight' => 'nullable|integer|min:1|max:50000',
             'stok' => 'nullable|integer|min:0|max:100000',
             'stok_ukuran' => 'nullable|array',
             'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
@@ -295,6 +303,12 @@ class ProdukController extends Controller
             $validated['ukuran'] = $request->input('ukuran');
         } elseif (empty($validated['ukuran'])) {
             $validated['ukuran'] = $isKainBatik ? 'Lembaran Kain' : 'S, M, L, XL, XXL';
+        }
+
+        if ($request->has('berat') || $request->has('weight')) {
+            $berat = (int) ($request->input('berat') ?? $request->input('weight') ?? 300);
+            $validated['berat'] = $berat > 0 ? $berat : 300;
+            $validated['weight'] = $validated['berat'];
         }
 
         $validated['stok'] = (int) ($validated['stok'] ?? $produk->stok);

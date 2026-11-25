@@ -299,8 +299,8 @@
                             </div>
                         </div>
 
-                        {{-- Harga Jual, Harga Coret, Stok Awal Row --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {{-- Harga Jual & Harga Coret Row --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
                                     Harga Jual (IDR) <span class="text-rose-500">*</span>
@@ -326,6 +326,29 @@
                                        max="100000000"
                                        class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#7A7269] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
                                 <p class="text-[10px] text-stone-400 mt-1">Hanya ditampilkan bila diisi.</p>
+                            </div>
+                        </div>
+
+                        {{-- Berat Produk & Total Stok Row --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
+                                    Berat Produk (Gram) <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number"
+                                           name="berat"
+                                           value="{{ old('berat', $produk->berat ?? $produk->weight ?? 300) }}"
+                                           placeholder="300"
+                                           min="1"
+                                           max="50000"
+                                           required
+                                           class="w-full py-2.5 px-3.5 pr-14 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-stone-400 pointer-events-none">
+                                        gram
+                                    </span>
+                                </div>
+                                <p class="text-[10px] text-stone-400 mt-1">Digunakan untuk menghitung ongkos kirim ekspedisi secara akurat.</p>
                             </div>
 
                             <div>
@@ -354,6 +377,7 @@
                                            :disabled="isKain"
                                            readonly
                                            class="w-full py-2.5 px-3.5 rounded-xl border border-[#E8DFC8] bg-[#FAF0E4]/70 text-xs text-[#1E1B18] font-bold cursor-not-allowed select-none">
+                                    <p class="text-[10px] text-stone-400 mt-1">Akumulasi otomatis dari variasi ukuran di bawah.</p>
                                 </div>
                             </div>
                         </div>

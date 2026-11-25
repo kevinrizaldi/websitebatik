@@ -859,6 +859,7 @@
                       varian: '{{ addslashes($item->ukuran ? ('Ukuran: ' . $item->ukuran) : ($item->varian ? trim(str_replace('• Lengan Panjang', '', $item->varian)) : 'Ukuran: All Size')) }}',
                       qty: {{ $item->qty }},
                       harga: {{ $harga }},
+                      berat: {{ (int) ($prod ? ($prod->berat ?? $prod->weight ?? 300) : 300) }},
                       gambar: '{{ $imgUrl }}'
                   },
                   @endforeach
@@ -905,7 +906,7 @@
           },
 
           get totalWeightGrams() {
-              return Math.max(1000, this.items.reduce((sum, item) => sum + (item.qty * 300), 0));
+              return Math.max(1000, this.items.reduce((sum, item) => sum + (item.qty * (item.berat || 300)), 0));
           },
 
           get totalWeightKg() {
