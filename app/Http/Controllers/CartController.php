@@ -30,6 +30,7 @@ class CartController extends Controller
         return view('keranjang', [
             'cartItems' => $this->cartService->getVisitorCartItems(),
             'produksRekomendasi' => $this->cartService->getRecommendedProducts(4),
+            'cartCount' => $this->cartService->getCartCount(),
         ]);
     }
 

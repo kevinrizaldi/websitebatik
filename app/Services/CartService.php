@@ -67,7 +67,7 @@ class CartService
      */
     public function getCartCount(): int
     {
-        return (int) CartItem::forCurrentVisitor()->sum('qty');
+        return (int) CartItem::forCurrentVisitor()->count();
     }
 
     /**

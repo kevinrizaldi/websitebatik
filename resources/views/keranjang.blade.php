@@ -1,5 +1,6 @@
-<x-storefront-layout title="Keranjang Belanja">
+<x-storefront-layout title="Keranjang Belanja" :cart-count="isset($cartItems) ? $cartItems->count() : null">
     <div class="bg-[#FAF7F2] min-h-screen py-8 sm:py-10"
+         x-init="window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: items.length } }))"
          x-data="{
              toastMessage: '',
              showToast(msg) {
@@ -96,6 +97,7 @@
              removeItem(id) {
                  const item = this.items.find(i => i.id === id);
                  this.items = this.items.filter(i => i.id !== id);
+                 window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.items.length } }));
                  fetch('/keranjang/' + id, {
                      method: 'DELETE',
                      headers: {
@@ -124,6 +126,7 @@
                      });
                  });
                  this.items = this.items.filter(i => !i.selected);
+                 window.dispatchEvent(new CustomEvent('cart-updated', { detail: { count: this.items.length } }));
                  this.showToast(toRemove.length + ' produk terpilih berhasil dihapus');
              },
 
@@ -166,7 +169,7 @@
              },
 
              get totalSelectedQty() {
-                 return this.selectedItems.reduce((acc, curr) => acc + curr.qty, 0);
+                 return this.selectedItems.length;
              },
 
              get rawSubtotal() {
@@ -504,29 +507,32 @@
                 <!-- Product Cards Grid from Database -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <template x-for="(prod, idx) in recommendations" :key="idx">
-                        <div class="bg-white rounded-3xl p-3 border border-[#ECE4D8] shadow-xs hover:shadow-md transition flex flex-col group">
+                        <div class="bg-white rounded-2xl overflow-hidden border border-[#EDE6DB] shadow-2xs hover:shadow-md transition flex flex-col group">
 
-                            <!-- Image area: tall aspect ratio with rounded-2xl -->
-                            <div class="relative aspect-[4/5] rounded-2xl overflow-hidden bg-[#FAF2EA] border border-[#ECE4D8]/60 flex items-center justify-center">
+                            <!-- Image area: full bleed -->
+                            <a :href="prod.detailUrl" class="relative aspect-[4/5] overflow-hidden bg-stone-100 block">
                                 <template x-if="prod.gambar">
                                     <img :src="prod.gambar" :alt="prod.nama" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                 </template>
-                            </div>
+                            </a>
 
                             <!-- Content -->
-                            <div class="pt-3 pb-1 px-1 flex-1 flex flex-col justify-between">
+                            <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                                 <div>
-                                    <h3 class="font-bold text-stone-900 text-sm leading-snug line-clamp-1" x-text="prod.nama"></h3>
-                                    <p class="text-xs text-stone-400 mt-0.5 line-clamp-1" x-text="prod.deskripsi"></p>
+                                    <a :href="prod.detailUrl">
+                                        <h3 class="font-bold text-stone-900 text-sm leading-snug mb-2 hover:text-amber-800 transition line-clamp-1" x-text="prod.nama"></h3>
+                                    </a>
                                 </div>
 
-                                <div class="flex items-center justify-between pt-3 mt-1">
-                                    <span class="text-sm sm:text-base font-bold text-stone-900" x-text="formatRupiah(prod.harga)"></span>
+                                <div class="flex items-center justify-between pt-2 border-t border-stone-100">
+                                    <span class="text-sm font-extrabold text-stone-900" x-text="formatRupiah(prod.harga)"></span>
 
                                     <button @click="addRecommendation(prod)"
-                                            class="w-8 h-8 rounded-full bg-[#FAF3EA] hover:bg-[#201A17] hover:text-white text-stone-800 flex items-center justify-center font-bold text-sm transition shadow-2xs cursor-pointer"
+                                            class="w-8 h-8 rounded-full bg-stone-100 hover:bg-[#201A17] hover:text-white text-stone-800 flex items-center justify-center transition shadow-2xs cursor-pointer"
                                             title="Tambahkan ke Keranjang">
-                                        +
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
+                                        </svg>
                                     </button>
                                 </div>
                             </div>

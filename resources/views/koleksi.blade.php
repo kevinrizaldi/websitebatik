@@ -34,7 +34,7 @@
           activeCategory: '{{ addslashes(request('kategori') ?: 'Semua Produk') }}',
           priceRange: 'Semua',
           sortBy: 'paling-sesuai',
-          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
+          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->count() }},
           toastMessage: '',
           currentPage: 1,
           perPage: 12,

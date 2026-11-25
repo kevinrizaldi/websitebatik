@@ -36,7 +36,7 @@
 <body class="antialiased bg-[#FAF7F2] text-[#26211D] min-h-screen selection:bg-[#B58742] selection:text-white"
       x-data="{
           mobileMenuOpen: false,
-          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
+          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->count() }},
           quickViewModal: false,
           selectedProduct: null,
           toastMessage: '',

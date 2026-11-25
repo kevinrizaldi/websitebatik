@@ -91,7 +91,7 @@
           quantity: 1,
           descOpen: true,
           guideOpen: true,
-          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
+          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->count() }},
           sizeGuideModal: false,
           imageZoomModal: false,
 
@@ -682,13 +682,10 @@
                                 <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                                     <div>
                                         <a href="{{ route('produk.detail', $rel->id) }}">
-                                            <h3 class="font-bold text-stone-900 text-sm leading-snug mb-1 hover:text-amber-800 transition line-clamp-1">
+                                            <h3 class="font-bold text-stone-900 text-sm leading-snug mb-2 hover:text-amber-800 transition line-clamp-1">
                                                 {{ $rel->nama }}
                                             </h3>
                                         </a>
-                                        <p class="text-[11px] text-stone-500 line-clamp-1 mb-3">
-                                            {{ $rel->deskripsi ?: 'Koleksi batik berkualitas buatan pengrajin lokal.' }}
-                                        </p>
                                     </div>
                                     <div class="flex items-center justify-between pt-2 border-t border-stone-100">
                                         <span class="text-sm font-extrabold text-stone-900">

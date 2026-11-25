@@ -1,7 +1,7 @@
 @props(['cartCount' => null])
 
 @php
-    $currentCartCount = $cartCount ?? \App\Models\CartItem::forCurrentVisitor()->sum('qty');
+    $currentCartCount = $cartCount ?? \App\Models\CartItem::forCurrentVisitor()->count();
 @endphp
 
 <!-- ================= NAVBAR ================= -->

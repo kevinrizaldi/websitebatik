@@ -898,7 +898,7 @@
 
           // Calculations
           get totalItemQty() {
-              return this.items.reduce((sum, item) => sum + item.qty, 0);
+              return this.items.length;
           },
 
           get rawSubtotal() {
@@ -1704,10 +1704,6 @@
                                     </a>
                                 </div>
                             </template>
-
-                            <div class="pt-1 border-t border-[#ECE4D8]/60 text-[11px] text-stone-500">
-                                <span>Pastikan nomor WhatsApp / HP aktif untuk konfirmasi kurir pengiriman.</span>
-                            </div>
                         </div>
 
                         <!-- Empty state: customer belum punya alamat -->
@@ -1783,7 +1779,7 @@
                                        x-model="sellerNotes"
                                        maxlength="250"
                                        @input="sellerNotes = sellerNotes.replace(/[^a-zA-Z0-9\s.,\'\-()\/!?]/g, '')"
-                                       placeholder="Contoh: Mohon sertakan kartu ucapan kado (maksimal 250 karakter)"
+                                       placeholder=""
                                        class="w-full pl-10 pr-4 py-3 rounded-2xl border border-stone-200 text-xs sm:text-sm text-stone-800 bg-[#FAF7F2]/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#B58742]/40 focus:border-[#B58742] transition placeholder-stone-400">
                             </div>
                         </div>
@@ -1894,12 +1890,6 @@
                                 </h2>
                             </div>
 
-                            <div class="flex items-center gap-1.5 text-xs text-stone-500 font-semibold">
-                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                                </svg>
-                                <span>Enkripsi 256-bit</span>
-                            </div>
                         </div>
 
                         <!-- Pembayaran tunggal via Midtrans (metode dipilih di popup Snap) -->
