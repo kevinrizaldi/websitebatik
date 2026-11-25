@@ -6,7 +6,7 @@
                     {{ $produk->nama }}
                 </h2>
                 <p class="text-xs sm:text-sm text-gray-500 mt-1">
-                    Detail informasi produk dan spesifikasi bahan
+                    Detail informasi produk dan spesifikasi
                 </p>
             </div>
             <div class="flex items-center gap-2">
@@ -76,13 +76,9 @@
                                     </div>
                                 @endif
                             </div>
-                            <div>
+                            <div class="col-span-2 sm:col-span-1">
                                 <span class="text-xs text-gray-500 block">Status</span>
                                 <span class="font-semibold text-gray-800">{{ $produk->status }}</span>
-                            </div>
-                            <div>
-                                <span class="text-xs text-gray-500 block">Material</span>
-                                <span class="text-gray-800">{{ $produk->material ?? '-' }}</span>
                             </div>
                         </div>
 

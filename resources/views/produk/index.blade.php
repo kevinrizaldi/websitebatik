@@ -206,7 +206,7 @@
                         </svg>
                     </div>
                     <input type="search" name="search" value="{{ $search }}"
-                           placeholder="Cari nama produk, SKU, material, ukuran..."
+                           placeholder="Cari nama produk, SKU, ukuran..."
                            class="w-full rounded-2xl border border-[#E8E4DC] bg-[#FAF0E4]/30 py-2.5 pl-10 pr-4 text-xs placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
                 </form>
 
@@ -273,7 +273,6 @@
                             <th class="py-3.5 px-4">HARGA</th>
                             <th class="py-3.5 px-4">STOK &amp; UKURAN</th>
                             <th class="py-3.5 px-4">STATUS STOK</th>
-                            <th class="py-3.5 px-4">BAHAN / MATERIAL</th>
                             <th class="py-3.5 px-4 text-center">AKSI</th>
                         </tr>
                     </thead>
@@ -293,7 +292,6 @@
                                     default => 'Stok Aman',
                                 };
 
-                                $materialText = !empty($p->material) ? $p->material : 'Katun Primissima';
                                 $stokUkuran = $p->stok_ukuran ?? $p->size_stock ?? [];
                             @endphp
                             <tr class="hover:bg-[#FAF7F2]/60 transition group">
@@ -386,14 +384,6 @@
                                     </span>
                                 </td>
 
-                                {{-- BAHAN / MATERIAL --}}
-                                <td class="py-4 px-4 align-top">
-                                    <span class="inline-flex items-center gap-1 rounded-lg bg-[#FAF7F2] border border-[#EFECE6] px-2.5 py-1 text-[10px] font-semibold text-stone-600" title="{{ $materialText }}">
-                                        <span>🧵</span>
-                                        <span>{{ Str::limit($materialText, 25) }}</span>
-                                    </span>
-                                </td>
-
                                 {{-- AKSI & KELOLA STOK --}}
                                 <td class="py-4 px-4 text-center align-top">
                                     <div class="flex flex-col items-center gap-1.5">
@@ -432,7 +422,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="py-12 text-center text-xs text-stone-400">
+                                <td colspan="7" class="py-12 text-center text-xs text-stone-400">
                                     Tidak ada produk batik yang ditemukan.
                                 </td>
                             </tr>
