@@ -293,21 +293,7 @@
                                     default => 'Stok Aman',
                                 };
 
-                                $ecoBadge = match (true) {
-                                    str_contains(strtolower($p->nama), 'upcycled') || str_contains(strtolower($p->kategori ?? ''), 'sisa') => 'Upcycled Fabric',
-                                    str_contains(strtolower($p->nama), 'sutera') || str_contains(strtolower($p->nama), 'sutra') => 'Sutera Dobi Exclusive',
-                                    str_contains(strtolower($p->nama), 'truntum') => 'Sutra Canting Halus',
-                                    default => 'Katun Primissima 100%',
-                                };
-
-                                $motifSub = match (true) {
-                                    str_contains(strtolower($p->nama), 'parang') => 'Pola Seling Nitik',
-                                    str_contains(strtolower($p->nama), 'kawung') => 'Kawung Manik Keraton',
-                                    str_contains(strtolower($p->nama), 'tote') => 'Kulit Nabati & Perca',
-                                    str_contains(strtolower($p->nama), 'truntum') => 'Canting Tembaga Asli',
-                                    default => 'Handmade Artisan',
-                                };
-
+                                $materialText = !empty($p->material) ? $p->material : 'Katun Primissima';
                                 $stokUkuran = $p->stok_ukuran ?? $p->size_stock ?? [];
                             @endphp
                             <tr class="hover:bg-[#FAF7F2]/60 transition group">
@@ -341,7 +327,9 @@
                                                 <span class="rounded bg-[#FAF0E4] px-1.5 py-0.5 text-[9px] font-mono font-bold text-[#8C5E28]">
                                                     {{ $p->sku ?: 'HSO-BJK-'.str_pad((string)$p->id, 3, '0', STR_PAD_LEFT) }}
                                                 </span>
-                                                <span class="text-[10px] text-stone-400">• {{ $motifSub }}</span>
+                                                @if (!empty($p->jenis_produk))
+                                                    <span class="text-[10px] text-stone-400">• {{ $p->jenis_produk }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -398,11 +386,11 @@
                                     </span>
                                 </td>
 
-                                {{-- DAMPAK MATERIAL --}}
+                                {{-- BAHAN / MATERIAL --}}
                                 <td class="py-4 px-4 align-top">
-                                    <span class="inline-flex items-center gap-1 rounded-lg bg-[#FAF7F2] border border-[#EFECE6] px-2.5 py-1 text-[10px] font-semibold text-stone-600">
-                                        <span>🍃</span>
-                                        <span>{{ $ecoBadge }}</span>
+                                    <span class="inline-flex items-center gap-1 rounded-lg bg-[#FAF7F2] border border-[#EFECE6] px-2.5 py-1 text-[10px] font-semibold text-stone-600" title="{{ $materialText }}">
+                                        <span>🧵</span>
+                                        <span>{{ Str::limit($materialText, 25) }}</span>
                                     </span>
                                 </td>
 
