@@ -325,7 +325,6 @@
                                        min="0"
                                        max="100000000"
                                        class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#7A7269] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
-                                <p class="text-[10px] text-stone-400 mt-1">Hanya ditampilkan bila diisi.</p>
                             </div>
                         </div>
 
@@ -348,7 +347,6 @@
                                         gram
                                     </span>
                                 </div>
-                                <p class="text-[10px] text-stone-400 mt-1">Digunakan untuk menghitung ongkos kirim ekspedisi secara akurat.</p>
                             </div>
 
                             <div>
@@ -367,7 +365,6 @@
                                            min="0"
                                            max="100000"
                                            class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] font-bold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
-                                    <p class="text-[10px] text-stone-400 mt-1">Jumlah lembar stok kain yang tersedia.</p>
                                 </div>
                                 {{-- Jika Bukan Kain (Busana): Dihitung otomatis dari alokasi stok per ukuran --}}
                                 <div x-show="!isKain">
@@ -377,7 +374,6 @@
                                            :disabled="isKain"
                                            readonly
                                            class="w-full py-2.5 px-3.5 rounded-xl border border-[#E8DFC8] bg-[#FAF0E4]/70 text-xs text-[#1E1B18] font-bold cursor-not-allowed select-none">
-                                    <p class="text-[10px] text-stone-400 mt-1">Akumulasi otomatis dari variasi ukuran di bawah.</p>
                                 </div>
                             </div>
                         </div>
