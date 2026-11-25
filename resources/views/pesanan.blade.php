@@ -80,160 +80,6 @@
                 'items' => $orderItems,
             ];
         }
-    } else {
-        $ordersData = [
-            [
-                'id' => 'HSO-20250218-0849',
-                'dbId' => 101,
-                'tanggal' => '18 Feb 2025, 14:30 WIB',
-                'status' => 'menunggu_pembayaran',
-                'statusLabel' => 'Menunggu Pembayaran',
-                'categoryTag' => 'BATIK KATUN PRIMISSIMA',
-                'categoryIcon' => 'tag',
-                'nama' => 'Kemeja Batik Parang Seling Premium',
-                'varian' => 'Ukuran: L',
-                'extraItemsCount' => 2,
-                'extraItemsText' => '+ 2 produk lainnya',
-                'total' => 871000,
-                'batasBayarText' => '05 jam 22 menit',
-                'kurir' => 'JNE Reguler',
-                'noResi' => null,
-                'estimasi' => 'Estimasi tiba 20 Feb 2025',
-                'penerima' => 'Budi Santoso',
-                'metodePembayaran' => 'Transfer Bank BCA',
-                'alamat' => 'Jl. Senopati No. 42, RT 02 / RW 03, Kel. Senayan, Kec. Kebayoran Baru, Jakarta Selatan',
-                'gambar' => asset('images/beranda/folded-shirts.jpg'),
-                'items' => [
-                    ['produk_id' => 1, 'nama' => 'Kemeja Batik Parang Seling Premium', 'harga' => 385000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
-                    ['produk_id' => 2, 'nama' => 'Rompi Kawung Sisa Tenun', 'harga' => 330000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
-                ],
-            ],
-            [
-                'id' => 'HSO-20250218-0842',
-                'dbId' => 102,
-                'tanggal' => '18 Feb 2025, 09:30 WIB',
-                'status' => 'diproses',
-                'statusLabel' => 'Diproses',
-                'categoryTag' => 'PRODUK BATIK NUSANTARA',
-                'categoryIcon' => 'refresh',
-                'nama' => 'Rompi Kawung Sisa Tenun Etnik',
-                'varian' => 'Ukuran: All Size • Edisi Terbatas',
-                'extraItemsCount' => 0,
-                'extraItemsText' => '',
-                'total' => 485000,
-                'batasBayarText' => null,
-                'kurir' => 'SiCepat Reguler',
-                'noResi' => '002938192831',
-                'estimasi' => 'Estimasi tiba 21 Feb 2025',
-                'penerima' => 'Budi Santoso',
-                'metodePembayaran' => 'Mandiri VA',
-                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                'gambar' => asset('images/beranda/folded-shirts.jpg'),
-                'items' => [
-                    ['produk_id' => 3, 'nama' => 'Rompi Kawung Sisa Tenun Etnik', 'harga' => 485000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
-                ],
-            ],
-            [
-                'id' => 'HSO-20250214-0412',
-                'dbId' => 103,
-                'tanggal' => '14 Feb 2025, 16:45 WIB',
-                'status' => 'dikirim',
-                'statusLabel' => 'Dikirim',
-                'categoryTag' => 'BATIK TULIS ASLI PEKALONGAN',
-                'categoryIcon' => 'tag',
-                'nama' => 'Kain Jarik Tulis Pola Sekar Jagad',
-                'varian' => 'Ukuran: 2.4 x 1.15m • Katun Primissima',
-                'extraItemsCount' => 0,
-                'extraItemsText' => '',
-                'total' => 1250000,
-                'batasBayarText' => null,
-                'kurir' => 'JNE Reguler',
-                'noResi' => 'JNE-88291039912',
-                'estimasi' => 'Estimasi tiba besok di Jakarta Selatan',
-                'penerima' => 'Budi Santoso',
-                'metodePembayaran' => 'BCA Virtual Account',
-                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                'gambar' => asset('images/beranda/folded-shirts.jpg'),
-                'items' => [
-                    ['produk_id' => 4, 'nama' => 'Kain Jarik Tulis Pola Sekar Jagad', 'harga' => 1250000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
-                ],
-            ],
-            [
-                'id' => 'HSO-20250210-0231',
-                'dbId' => 104,
-                'tanggal' => '10 Feb 2025, 10:15 WIB',
-                'status' => 'selesai',
-                'statusLabel' => 'Selesai',
-                'categoryTag' => 'BATIK PRINTING PREMIUM',
-                'categoryIcon' => 'tag',
-                'nama' => 'Outer Batik Mega Mendung Modern',
-                'varian' => 'Ukuran: M • Katun Halus',
-                'extraItemsCount' => 0,
-                'extraItemsText' => '',
-                'total' => 275000,
-                'batasBayarText' => null,
-                'kurir' => 'JNE Reguler',
-                'noResi' => 'JNE-99281726152',
-                'estimasi' => 'Telah Diterima',
-                'penerima' => 'Diterima oleh Budi Santoso',
-                'metodePembayaran' => 'GoPay',
-                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                'gambar' => asset('images/beranda/folded-shirts.jpg'),
-                'items' => [
-                    ['produk_id' => 5, 'nama' => 'Outer Batik Mega Mendung Modern', 'harga' => 275000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
-                ],
-            ],
-            [
-                'id' => 'HSO-20250115-0102',
-                'dbId' => 105,
-                'tanggal' => '15 Jan 2025, 11:20 WIB',
-                'status' => 'selesai',
-                'statusLabel' => 'Selesai',
-                'categoryTag' => 'BATIK KATUN PRIMISSIMA',
-                'categoryIcon' => 'tag',
-                'nama' => 'Kemeja Batik Katun Parang Seling Kencana',
-                'varian' => 'Ukuran: L',
-                'extraItemsCount' => 0,
-                'extraItemsText' => '',
-                'total' => 385000,
-                'batasBayarText' => null,
-                'kurir' => 'JNE Reguler',
-                'noResi' => 'JNE-66152431092',
-                'estimasi' => 'Telah Diterima',
-                'penerima' => 'Diterima oleh Budi Santoso',
-                'metodePembayaran' => 'BCA VA',
-                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                'gambar' => asset('images/beranda/folded-shirts.jpg'),
-                'items' => [
-                    ['produk_id' => 6, 'nama' => 'Kemeja Batik Katun Parang Seling Kencana', 'harga' => 385000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
-                ],
-            ],
-            [
-                'id' => 'HSO-20250105-0019',
-                'dbId' => 106,
-                'tanggal' => '05 Jan 2025, 08:10 WIB',
-                'status' => 'dibatalkan',
-                'statusLabel' => 'Dibatalkan',
-                'categoryTag' => 'BATIK KATUN PRIMISSIMA',
-                'categoryIcon' => 'tag',
-                'nama' => 'Kain Panjang Batik Pola Parang Rusak',
-                'varian' => 'Ukuran: 2.2 x 1.15m • Katun Primissima',
-                'extraItemsCount' => 0,
-                'extraItemsText' => '',
-                'total' => 320000,
-                'batasBayarText' => 'Waktu pembayaran telah habis',
-                'kurir' => 'JNE Reguler',
-                'noResi' => null,
-                'estimasi' => 'Dibatalkan',
-                'penerima' => 'Budi Santoso',
-                'metodePembayaran' => 'BCA Virtual Account',
-                'alamat' => 'Jl. Senopati No. 42, Kebayoran Baru, Jakarta Selatan',
-                'gambar' => asset('images/beranda/folded-shirts.jpg'),
-                'items' => [
-                    ['produk_id' => 7, 'nama' => 'Kain Panjang Batik Pola Parang Rusak', 'harga' => 320000, 'qty' => 1, 'gambar' => asset('images/beranda/folded-shirts.jpg')],
-                ],
-            ],
-        ];
     }
 @endphp
 
@@ -256,37 +102,37 @@
                         </p>
                     </div>
 
-                    {{-- Filter Status Tabs (Semua 5, Menunggu Pembayaran 1, Diproses 1, Dikirim 1, Selesai 2) --}}
+                    {{-- Filter Status Tabs --}}
                     <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs scrollbar-none sm:text-sm">
                         <button @click="activeTab = 'semua'"
                                 :class="activeTab === 'semua' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-4 py-1.5 transition whitespace-nowrap">
                             <span>Semua</span>
-                            <span class="text-xs" x-text="counts.semua">5</span>
+                            <span class="text-xs" x-text="counts.semua">0</span>
                         </button>
                         <button @click="activeTab = 'menunggu_pembayaran'"
                                 :class="activeTab === 'menunggu_pembayaran' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Menunggu Pembayaran</span>
-                            <span class="text-xs" x-text="counts.menunggu_pembayaran">1</span>
+                            <span class="text-xs" x-text="counts.menunggu_pembayaran">0</span>
                         </button>
                         <button @click="activeTab = 'diproses'"
                                 :class="activeTab === 'diproses' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Diproses</span>
-                            <span class="text-xs" x-text="counts.diproses">1</span>
+                            <span class="text-xs" x-text="counts.diproses">0</span>
                         </button>
                         <button @click="activeTab = 'dikirim'"
                                 :class="activeTab === 'dikirim' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Dikirim</span>
-                            <span class="text-xs" x-text="counts.dikirim">1</span>
+                            <span class="text-xs" x-text="counts.dikirim">0</span>
                         </button>
                         <button @click="activeTab = 'selesai'"
                                 :class="activeTab === 'selesai' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Selesai</span>
-                            <span class="text-xs" x-text="counts.selesai">2</span>
+                            <span class="text-xs" x-text="counts.selesai">0</span>
                         </button>
                         <button @click="activeTab = 'dibatalkan'"
                                 :class="activeTab === 'dibatalkan' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
@@ -538,12 +384,30 @@
                             </div>
                         </template>
 
-                        {{-- Empty State jika filter tidak menemukan pesanan --}}
+                        {{-- Empty State jika belum ada pesanan atau filter tidak menemukan pesanan --}}
                         <div x-cloak x-show="filteredOrders.length === 0"
-                             class="rounded-3xl border border-[#ECE4D8] bg-white p-12 text-center shadow-xs">
-                            <p class="text-sm font-semibold text-stone-700">Tidak ada pesanan pada status ini</p>
-                            <p class="mt-1 text-xs text-stone-500">Silakan pilih tab filter status lainnya.</p>
-                            <button @click="activeTab = 'semua'" class="mt-4 rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white">Lihat Semua Pesanan</button>
+                             class="rounded-3xl border border-[#ECE4D8] bg-white p-10 text-center shadow-xs sm:p-12">
+                            <template x-if="orders.length === 0">
+                                <div class="mx-auto max-w-md py-4">
+                                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5EDE1] text-stone-700">
+                                        <svg class="h-7 w-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25c-.669 0-1.189-.578-1.119-1.243l1.263-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-base font-bold text-stone-900 sm:text-lg">Belum Ada Riwayat Pesanan</h3>
+                                    <p class="mt-1.5 text-xs text-stone-500 sm:text-sm">Anda belum pernah melakukan pemesanan batik. Jelajahi katalog koleksi kami dan temukan busana favorit Anda.</p>
+                                    <a href="{{ route('koleksi.index') }}" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#201A17] px-5 py-2.5 text-xs font-semibold text-white shadow-2xs hover:bg-stone-800 transition">
+                                        <span>Mulai Belanja</span>
+                                    </a>
+                                </div>
+                            </template>
+                            <template x-if="orders.length > 0">
+                                <div>
+                                    <p class="text-sm font-semibold text-stone-700">Tidak ada pesanan pada status ini</p>
+                                    <p class="mt-1 text-xs text-stone-500">Silakan pilih tab filter status lainnya.</p>
+                                    <button @click="activeTab = 'semua'" class="mt-4 rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white">Lihat Semua Pesanan</button>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
