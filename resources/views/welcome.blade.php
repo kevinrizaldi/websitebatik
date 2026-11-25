@@ -151,8 +151,8 @@
                                     class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                                     @if($loop->index > 0) loading="lazy" @endif
                                 >
-                                <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(31, 25, 22, 0.95) 0%, rgba(31, 25, 22, 0.45) 35%, transparent 70%);"></div>
-                                <div class="absolute inset-x-0 bottom-0 text-white" style="padding: 1.5rem 1.75rem 3.5rem 1.75rem;">
+                                <div class="absolute inset-0 pointer-events-none" style="position: absolute; inset: 0; z-index: 5; background: linear-gradient(to top, rgba(31, 25, 22, 0.95) 0%, rgba(31, 25, 22, 0.45) 35%, transparent 70%);"></div>
+                                <div class="absolute inset-x-0 bottom-0 text-white" style="position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; padding: 1.5rem 1.75rem 3.5rem 1.75rem;">
                                     <h2 class="max-w-lg text-2xl font-bold leading-tight drop-shadow sm:text-3xl lg:text-4xl">
                                         {{ $produk->nama }}
                                     </h2>
