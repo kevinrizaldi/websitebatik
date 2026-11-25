@@ -45,6 +45,7 @@ Route::get('/', function () {
 
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
             $produks = Produk::query()
+                ->where('status', '!=', 'Diarsipkan')
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                 ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
                 ->latest()
@@ -54,12 +55,14 @@ Route::get('/', function () {
         if (Schema::hasTable('products')) {
 
             $produkTerbaru = Produk::query()
+                ->where('status', '!=', 'Diarsipkan')
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                 ->latest()
                 ->take(2)
                 ->get();
 
             $produkRating = Produk::query()
+                ->where('status', '!=', 'Diarsipkan')
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                 ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
                 ->whereHas('reviews', $approvedReviews)
@@ -108,6 +111,7 @@ $catalogHandler = function () {
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
             $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
             $produks = Produk::query()
+                ->where('status', '!=', 'Diarsipkan')
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                 ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
                 ->latest()
@@ -317,6 +321,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::resource('produk', ProdukController::class);
+        Route::patch('/produk/{produk}/archive', [ProdukController::class, 'toggleArchive'])->name('produk.toggle-archive');
         Route::patch('/produk/{produk}/stok', [ProdukController::class, 'updateStock'])->name('produk.update-stock');
     });
 
