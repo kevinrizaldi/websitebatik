@@ -92,7 +92,7 @@ class ProdukController extends Controller
      */
     public function create()
     {
-        $kategoris = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
+        $kategoris = Schema::hasTable('categories') ? Category::orderBy('nama_kategori')->get() : collect();
 
         return view('produk.create', compact('kategoris'));
     }
