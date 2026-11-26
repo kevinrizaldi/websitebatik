@@ -15,7 +15,7 @@
                 <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
                     <a href="{{ route('dashboard') }}" class="hover:text-stone-700">DASHBOARD</a>
                     <span>/</span>
-                    <span class="text-[#A86544]">FINANSIAL &amp; GATEWAY MIDTRANS</span>
+                    <span class="text-[#A86544]">PEMBAYARAN &amp; GATEWAY MIDTRANS</span>
                 </div>
 
                 {{-- Title & Subtitle --}}
@@ -23,7 +23,7 @@
                     Manajemen Pembayaran &amp; Gateway Midtrans
                 </h1>
                 <p class="mt-1 text-xs sm:text-sm text-[#5A544E] max-w-2xl leading-relaxed">
-                    Validasi status pembayaran Midtrans gateway (Snap, QRIS, &amp; Virtual Account), rekonsiliasi otomatis via webhook, dan mutasi kas masuk studio Hamzah Style.
+                    Validasi status pembayaran pelanggan melalui Midtrans (QRIS, Bank Transfer, dll.), status otomatis, dan riwayat dana masuk toko Hamzah Style.
                 </p>
             </div>
 
@@ -363,7 +363,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-xs font-bold text-[#1E1B18]">SOP Rekonsiliasi Gateway Midtrans Hamzah Style</h3>
+                    <h3 class="text-xs font-bold text-[#1E1B18]">Panduan Status Pembayaran Midtrans Hamzah Style</h3>
                     <p class="text-[11px] text-[#5A544E] mt-0.5 leading-relaxed">
                         Seluruh transaksi diproses otomatis melalui Midtrans Snap Gateway (QRIS, VA Bank &amp; E-Wallet). Notifikasi webhook IPN memperbarui pesanan secara real-time. Klik "Sinkronisasi Gateway Midtrans" untuk memeriksa status transaksi server Midtrans sewaktu-waktu.
                     </p>
@@ -371,7 +371,7 @@
             </div>
 
             <button type="button" onclick="alert('Membuka Panduan Finansial & Gateway Midtrans...')" class="text-xs font-bold text-[#8C5E28] hover:text-[#1E1B18] shrink-0 flex items-center gap-1">
-                <span>Buka Panduan Gateway</span>
+                <span>Buka Panduan Pembayaran</span>
                 <span>→</span>
             </button>
         </div>

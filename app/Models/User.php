@@ -28,6 +28,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'avatar',
         'phone',
+        'jenis_kelamin',
+        'tanggal_lahir',
         'password',
     ];
 

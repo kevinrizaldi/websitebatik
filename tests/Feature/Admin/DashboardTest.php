@@ -3,8 +3,8 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Order;
-use App\Models\Produk;
-use App\Models\Ulasan;
+use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,15 +14,15 @@ class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function createProduct(string $name, int $stock): Produk
+    private function createProduct(string $name, int $stock): Product
     {
-        return Produk::create([
+        return Product::create([
             'nama' => $name,
             'sku' => 'SKU-'.strtoupper(uniqid()),
             'kategori' => 'Batik',
             'harga' => 100000,
             'stok' => $stock,
-            'status' => Produk::statusForStock($stock),
+            'status' => Product::statusForStock($stock),
         ]);
     }
 
@@ -44,7 +44,7 @@ class DashboardTest extends TestCase
         return $order;
     }
 
-    private function addOrderItem(Order $order, Produk $product, int $quantity): void
+    private function addOrderItem(Order $order, Product $product, int $quantity): void
     {
         $order->items()->create([
             'produk_id' => $product->id,
@@ -79,7 +79,7 @@ class DashboardTest extends TestCase
         $cancelledOrder = $this->createOrder($customer, 'ORD-DASH-CANCELLED', 'Dibatalkan', 900000, now());
         $this->addOrderItem($cancelledOrder, $topProduct, 99);
 
-        Ulasan::create([
+        Review::create([
             'produk_id' => $topProduct->id,
             'user_id' => $customer->id,
             'customer_name' => $customer->name,
@@ -87,7 +87,7 @@ class DashboardTest extends TestCase
             'comment' => 'Bagus sekali.',
             'status' => 'Disetujui',
         ]);
-        Ulasan::create([
+        Review::create([
             'produk_id' => $topProduct->id,
             'user_id' => $customer->id,
             'customer_name' => $customer->name,

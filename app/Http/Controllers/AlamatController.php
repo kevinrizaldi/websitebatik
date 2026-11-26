@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Alamat;
+use App\Models\Address;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -127,7 +127,7 @@ class AlamatController extends Controller
     /**
      * Update address.
      */
-    public function update(Request $request, Alamat $alamat): JsonResponse|RedirectResponse
+    public function update(Request $request, Address $alamat): JsonResponse|RedirectResponse
     {
         if ($alamat->user_id !== Auth::id()) {
             abort(403);
@@ -202,7 +202,7 @@ class AlamatController extends Controller
     /**
      * Set address as primary.
      */
-    public function setDefault(Alamat $alamat): JsonResponse|RedirectResponse
+    public function setDefault(Address $alamat): JsonResponse|RedirectResponse
     {
         if ($alamat->user_id !== Auth::id()) {
             abort(403);
@@ -224,7 +224,7 @@ class AlamatController extends Controller
     /**
      * Delete address.
      */
-    public function destroy(Alamat $alamat): JsonResponse|RedirectResponse
+    public function destroy(Address $alamat): JsonResponse|RedirectResponse
     {
         if ($alamat->user_id !== Auth::id()) {
             abort(403);

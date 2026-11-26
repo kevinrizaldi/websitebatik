@@ -136,21 +136,21 @@
     </div>
 </div>
 
-{{-- USER PROFILE / LOGOUT BOTTOM CARD --}}
+{{-- USER INFO / LOGOUT BOTTOM CARD --}}
 <div class="border-t border-[#EFECE6] p-4 bg-white">
-    <div class="flex items-center justify-between rounded-xl p-2 hover:bg-[#FAF7F2] transition">
-        <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 min-w-0 flex-1 group">
-            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1E1B18] text-[#C59A53] text-xs font-bold group-hover:scale-105 transition-transform">
-                {{ strtoupper(substr(Auth::user()->name ?? 'AK', 0, 2)) }}
+    <div class="flex items-center justify-between rounded-xl p-2 bg-[#FAF7F2]/50">
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1E1B18] text-[#C59A53] text-xs font-bold">
+                {{ strtoupper(substr(Auth::user()->name ?? 'AD', 0, 2)) }}
             </div>
             <div class="min-w-0">
-                <p class="truncate text-xs font-bold text-[#1E1B18] group-hover:text-[#A86544] transition-colors">{{ Auth::user()->name ?? 'Administrator' }}</p>
-                <p class="text-[10px] text-stone-400">Super Admin</p>
+                <p class="truncate text-xs font-bold text-[#1E1B18]">{{ Auth::user()->name ?? 'Administrator' }}</p>
+                <p class="text-[10px] text-stone-400">Admin</p>
             </div>
-        </a>
+        </div>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" title="Keluar Portal" class="p-2 text-stone-400 hover:text-stone-700 transition" aria-label="Keluar Portal">
+            <button type="submit" title="Keluar" class="p-2 text-stone-400 hover:text-red-600 transition" aria-label="Keluar">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>

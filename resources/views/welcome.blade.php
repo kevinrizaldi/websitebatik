@@ -36,7 +36,7 @@
 <body class="antialiased bg-[#FAF7F2] text-[#26211D] min-h-screen selection:bg-[#B58742] selection:text-white"
       x-data="{
           mobileMenuOpen: false,
-          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
+          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->count() }},
           quickViewModal: false,
           selectedProduct: null,
           toastMessage: '',
@@ -151,8 +151,8 @@
                                     class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                                     @if($loop->index > 0) loading="lazy" @endif
                                 >
-                                <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to top, rgba(31, 25, 22, 0.95) 0%, rgba(31, 25, 22, 0.45) 35%, transparent 70%);"></div>
-                                <div class="absolute inset-x-0 bottom-0 text-white" style="padding: 1.5rem 1.75rem 3.5rem 1.75rem;">
+                                <div class="absolute inset-0 pointer-events-none" style="position: absolute; inset: 0; z-index: 5; background: linear-gradient(to top, rgba(31, 25, 22, 0.95) 0%, rgba(31, 25, 22, 0.45) 35%, transparent 70%);"></div>
+                                <div class="absolute inset-x-0 bottom-0 text-white" style="position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; padding: 1.5rem 1.75rem 3.5rem 1.75rem;">
                                     <h2 class="max-w-lg text-2xl font-bold leading-tight drop-shadow sm:text-3xl lg:text-4xl">
                                         {{ $produk->nama }}
                                     </h2>
@@ -449,7 +449,7 @@
                             </div>
                             <div class="rounded-2xl overflow-hidden shadow-md aspect-square bg-stone-200">
                                 <img src="{{ asset('images/beranda/bags-accessories.jpg') }}"
-                                     alt="Kriya Olahan Kain Sisa"
+                                     alt="Kerajinan Kain Batik"
                                      class="w-full h-full object-cover hover:scale-103 transition duration-500">
                             </div>
                         </div>
@@ -627,7 +627,6 @@
                         <!-- Product Image -->
                         <div class="relative aspect-square sm:aspect-auto bg-stone-100 overflow-hidden">
                             <img :src="selectedProduct.gambar" :alt="selectedProduct.nama" class="w-full h-full object-cover">
-                            <span class="absolute top-3 left-3 bg-[#201A17] text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full" x-text="selectedProduct.kategori"></span>
                         </div>
 
                         <!-- Product Info -->

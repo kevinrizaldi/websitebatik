@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
-use App\Models\Pembayaran;
+use App\Models\Payment;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -147,8 +147,8 @@ class MidtransService
             ]);
         }
 
-        // Store or update Pembayaran record
-        Pembayaran::updateOrCreate(
+        // Store or update Payment record
+        Payment::updateOrCreate(
             ['order_id' => $order->id],
             [
                 'metode_pembayaran' => $order->payment_method ?? 'Midtrans Gateway',
@@ -240,8 +240,8 @@ class MidtransService
             'payment_method' => 'Midtrans ('.strtoupper($paymentType).')',
         ]);
 
-        // Update or create Pembayaran record
-        Pembayaran::updateOrCreate(
+        // Update or create Payment record
+        Payment::updateOrCreate(
             ['order_id' => $order->id],
             [
                 'metode_pembayaran' => 'Midtrans ('.strtoupper($paymentType).')',

@@ -28,6 +28,8 @@ class ProfileController extends Controller
                 Rule::unique('users', 'email')->ignore($user->id),
             ],
             'phone' => ['nullable', 'string', 'max:20'],
+            'jenis_kelamin' => ['nullable', 'string', 'in:Laki-laki,Perempuan'],
+            'tanggal_lahir' => ['nullable', 'string', 'max:50'],
         ], [
             'name.regex' => 'Nama tidak boleh menggunakan simbol.',
         ]);
@@ -40,6 +42,8 @@ class ProfileController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'jenis_kelamin' => $user->jenis_kelamin,
+            'tanggal_lahir' => $user->tanggal_lahir,
             'avatar' => $user->avatar,
             'role' => $user->role ?? 'user',
         ];

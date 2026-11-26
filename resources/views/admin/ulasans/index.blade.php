@@ -14,7 +14,7 @@
                     Manajemen &amp; Moderasi Ulasan Pelanggan
                 </h1>
                 <p class="text-sm text-[#7A7269] mt-1">
-                    Kurasi testimoni kepuasan pelanggan, kelola galeri foto riil pembeli, dan balas masukan kualitas busana adibusana Hamzah Style.
+                    Kelola testimoni dan kepuasan pelanggan, lihat foto pembeli, dan balas ulasan pembeli di toko Hamzah Style.
                 </p>
             </div>
             <div class="flex items-center gap-3">
@@ -96,7 +96,7 @@
                             <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-[10px]">98.1%</span>
                             <span class="text-[#5A544E] text-[11px]">Pembeli sah &amp; riil</span>
                         </div>
-                        <p class="text-[10px] text-[#8C827A] mt-2">Integritas kurasi terjaga</p>
+                        <p class="text-[10px] text-[#8C827A] mt-2">Ulasan terverifikasi</p>
                     </div>
                     <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
                         <svg class="w-5 h-5 fill-none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +110,7 @@
             <div class="bg-[#3D1E16] text-white rounded-2xl border border-[#3D1E16] p-5 shadow-md relative overflow-hidden">
                 <div class="flex items-start justify-between">
                     <div>
-                        <p class="text-[10px] font-bold tracking-wider uppercase text-[#D9A694]">Perlu Tindakan Kurator</p>
+                        <p class="text-[10px] font-bold tracking-wider uppercase text-[#D9A694]">Perlu Direspon</p>
                         <h3 class="text-2xl sm:text-3xl font-bold text-white mt-2 font-serif">
                             {{ $counts['menunggu'] ?: 6 }} <span class="text-base font-sans font-normal text-[#D9A694]">Ulasan</span>
                         </h3>
@@ -118,7 +118,7 @@
                             <span class="px-2 py-0.5 rounded-full bg-[#5A291E] text-[#FFC4B2] font-semibold text-[10px]">Target &lt; 2 Jam</span>
                             <span class="text-[#D9A694] text-[11px]">Menunggu respon</span>
                         </div>
-                        <p class="text-[10px] text-[#D9A694] mt-2">Prioritaskan kritik konstruktif</p>
+                        <p class="text-[10px] text-[#D9A694] mt-2">Prioritaskan ulasan pelanggan</p>
                     </div>
                     <div class="w-10 h-10 rounded-xl bg-[#5A291E] flex items-center justify-center text-[#FFC4B2] shrink-0">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -300,10 +300,10 @@
                                         <svg class="w-3.5 h-3.5 text-[#B85D3B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                         </svg>
-                                        <span>BALASAN HAMZAH STYLE CURATOR:</span>
+                                        <span>BALASAN TOKO HAMZAH STYLE:</span>
                                     </div>
                                     <p class="text-[#5A544E] italic">
-                                        &ldquo;Terima kasih banyak atas apresiasi Anda! Kurator kami senantiasa teliti menjaga sambungan motif dan estetika wastra sirkular nusantara. Semoga busana ini memberi berkah dan pesona.&rdquo;
+                                        &ldquo;Terima kasih banyak atas apresiasi dan penilaian Anda! Kami selalu berusaha memberikan kualitas batik dan pelayanan terbaik untuk Anda.&rdquo;
                                     </p>
                                 </div>
                             @elseif($isPending)
@@ -311,7 +311,7 @@
                                     <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
-                                    <span>Umpan balik berharga untuk spesifikasi pola jahit studio produksi.</span>
+                                    <span>Umpan balik berharga untuk peningkatan kualitas produk kami.</span>
                                 </div>
                             @endif
                         </div>
@@ -367,7 +367,7 @@
                                         </button>
                                     </form>
                                 @else
-                                    <button type="button" onclick="alert('Fitur edit kurator reply dibuka.')" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-semibold text-[#1E1B18] transition">
+                                    <button type="button" onclick="alert('Fitur edit balasan admin dibuka.')" class="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-semibold text-[#1E1B18] transition">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                         </svg>
@@ -409,7 +409,7 @@
         {{-- Pagination --}}
         <div class="p-4 bg-white rounded-2xl border border-[#ECE5D8] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
             <div class="text-xs text-[#7A7269]">
-                Menampilkan {{ $ulasans->firstItem() ?? 0 }} - {{ $ulasans->lastItem() ?? 0 }} dari {{ $ulasans->total() }} ulasan kurasi
+                Menampilkan {{ $ulasans->firstItem() ?? 0 }} - {{ $ulasans->lastItem() ?? 0 }} dari {{ $ulasans->total() }} ulasan pelanggan
             </div>
             <div>
                 {{ $ulasans->links() }}

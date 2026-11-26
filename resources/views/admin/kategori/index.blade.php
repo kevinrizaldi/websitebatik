@@ -3,14 +3,14 @@
         {{-- Flash Alerts --}}
         @if (session('success'))
             <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 shadow-2xs">
-                <span class="flex items-center gap-2"><span>✓</span> {{ session('success') }}</span>
+                <span class="flex items-center gap-2"><span>âœ“</span> {{ session('success') }}</span>
                 <button onclick="this.parentElement.remove()" class="text-base leading-none text-emerald-600 hover:text-emerald-800">&times;</button>
             </div>
         @endif
 
         @if ($errors->any())
             <div class="rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800 shadow-2xs">
-                <p class="font-bold mb-1">⚠️ Terjadi Kesalahan Input:</p>
+                <p class="font-bold mb-1">âš ï¸ Terjadi Kesalahan Input:</p>
                 <ul class="list-disc list-inside space-y-0.5">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -24,7 +24,7 @@
             <div>
                 {{-- Eyebrow --}}
                 <div class="inline-flex items-center gap-1.5 rounded-full border border-[#E8D9C5] bg-[#FAF0E4] px-3 py-1 text-[10px] font-bold text-[#8C5E28] uppercase tracking-wider mb-2">
-                    <span>✦</span>
+                    <span>âœ¦</span>
                     <span>MANAJEMEN KATEGORI</span>
                 </div>
 
@@ -49,10 +49,10 @@
 
         {{-- 3 METRIC CARDS --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {{-- 1. KATEGORI UTAMA --}}
+            {{-- 1. TOTAL KATEGORI --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">KATEGORI UTAMA</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL KATEGORI</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -61,21 +61,21 @@
                 </div>
                 <div class="flex items-baseline gap-2">
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        {{ $totalKategori ?? 3 }}
+                        {{ $totalKategori ?? 0 }}
                     </p>
-                    <span class="text-xs text-[#5A544E] font-medium">Pilar Kurasi</span>
+                    <span class="text-xs text-[#5A544E] font-medium">Kategori Aktif</span>
                 </div>
                 <div class="mt-4 flex items-center gap-2 text-[11px]">
-                    <span class="rounded bg-[#FAF0E4] px-2 py-0.5 font-bold text-[#8C5E28]">100% Terpublikasi</span>
-                    <span class="text-stone-300">•</span>
-                    <span class="text-stone-500">Siap di etalase web</span>
+                    <span class="rounded bg-[#FAF0E4] px-2 py-0.5 font-bold text-[#8C5E28]">100% Aktif</span>
+                    <span class="text-stone-300">â€¢</span>
+                    <span class="text-stone-500">Tersedia di etalase toko</span>
                 </div>
             </div>
 
-            {{-- 2. TOTAL SKU AKTIF --}}
+            {{-- 2. TOTAL PRODUK & PENJUALAN --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL SKU AKTIF</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL PRODUK &amp; PENJUALAN</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#1E1B18]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -84,35 +84,35 @@
                 </div>
                 <div class="flex items-baseline gap-2">
                     <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        {{ $totalProduk ?? 48 }}
+                        {{ $totalProduk ?? 0 }}
                     </p>
-                    <span class="text-xs text-[#5A544E] font-medium">Karya Batik</span>
+                    <span class="text-xs text-[#5A544E] font-medium">Produk Terdaftar</span>
                 </div>
                 <div class="mt-4 flex items-center gap-2 text-[11px] text-stone-500 font-medium">
-                    <strong class="font-bold text-[#1E1B18]">178 unit terjual</strong>
-                    <span>•</span>
-                    <span>Kuartal Berjalan</span>
+                    <strong class="font-bold text-[#1E1B18]">{{ $totalTerjualKeseluruhan ?? 0 }} pcs terjual</strong>
+                    <span>â€¢</span>
+                    <span>Total pesanan toko</span>
                 </div>
             </div>
 
-            {{-- 3. STANDAR LESTARI & SIRKULAR --}}
+            {{-- 3. TOTAL NILAI STOK INVENTARIS --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">STANDAR LESTARI &amp; SIRKULAR</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider">TOTAL NILAI STOK PRODUK</span>
                     <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#A86544]">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
                     </div>
                 </div>
                 <div class="flex items-baseline gap-2">
-                    <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        100%
+                    <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18] truncate">
+                        Rp {{ number_format($totalNilaiAset ?? 0, 0, ',', '.') }}
                     </p>
                 </div>
                 <div class="mt-4 flex items-center gap-2 text-[10px] font-bold">
-                    <span class="rounded bg-[#FAF0E4] px-2 py-0.5 text-[#8C5E28]">Zero-Waste Cut</span>
-                    <span class="rounded bg-[#F2EDE4] px-2 py-0.5 text-[#5A544E]">Pewarna Alam Alami</span>
+                    <span class="rounded bg-[#FAF0E4] px-2 py-0.5 text-[#8C5E28]">Nilai Inventaris</span>
+                    <span class="text-stone-400 font-normal">Akumulasi harga &times; stok</span>
                 </div>
             </div>
         </div>
@@ -155,46 +155,18 @@
             {{-- ==================== LEFT COLUMN: CATEGORY CARDS (7 / 12) ==================== --}}
             <div class="lg:col-span-7 space-y-4">
                 @forelse ($kategoris as $kat)
-                    @php
-                        $badgeTitle = match (true) {
-                            str_contains(strtolower($kat->nama_kategori), 'baju') || str_contains(strtolower($kat->nama_kategori), 'seragam') => 'READY-TO-WEAR',
-                            str_contains(strtolower($kat->nama_kategori), 'sisa') || str_contains(strtolower($kat->nama_kategori), 'olahan') || str_contains(strtolower($kat->nama_kategori), 'aksesoris') => 'CIRCULAR CRAFT',
-                            default => 'WASTRA MURNI',
-                        };
-
-                        $filosofi = match ($badgeTitle) {
-                            'READY-TO-WEAR' => 'Filosofi: Keselarasan Parang Barong & Dinamika Kencana',
-                            'CIRCULAR CRAFT' => 'Kriya Kreatif: Olahan Kerajinan Kain Artistik & Aksesoris',
-                            default => 'Filosofi: Bintang Truntum Penuntun Cinta Abadi',
-                        };
-
-                        $unitsSold = match ($badgeTitle) {
-                            'READY-TO-WEAR' => 102,
-                            'CIRCULAR CRAFT' => 48,
-                            default => 28,
-                        };
-
-                        $accumulatedValue = match ($badgeTitle) {
-                            'READY-TO-WEAR' => 38450000,
-                            'CIRCULAR CRAFT' => 8200000,
-                            default => 18200000,
-                        };
-                    @endphp
-
                     <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                         <div class="flex flex-col sm:flex-row items-start gap-4">
-                            {{-- Photo with Overlay Badge --}}
-                            <div class="relative h-28 w-28 sm:h-32 sm:w-32 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
+                            {{-- Photo Thumbnail --}}
+                            <div class="relative h-24 w-24 sm:h-28 sm:w-28 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
                                 @if ($kat->gambar)
                                     <img src="{{ asset('storage/'.$kat->gambar) }}" alt="{{ $kat->nama_kategori }}" class="h-full w-full object-cover">
                                 @else
-                                    <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
-                                        {{ $kat->nama_kategori }}
+                                    <div class="h-full w-full bg-[#FAF0E4] flex flex-col items-center justify-center text-xs font-bold text-[#A86544] p-2 text-center">
+                                        <span class="text-2xl mb-1">ðŸ·ï¸</span>
+                                        <span class="truncate max-w-full text-[11px]">{{ $kat->nama_kategori }}</span>
                                     </div>
                                 @endif
-                                <span class="absolute top-2 left-2 rounded bg-[#1E1B18]/80 backdrop-blur-xs px-1.5 py-0.5 text-[8px] font-extrabold uppercase tracking-wider text-white">
-                                    {{ $badgeTitle }}
-                                </span>
                             </div>
 
                             {{-- Category Content --}}
@@ -220,7 +192,7 @@
                                         <form action="{{ route('admin.kategori.destroy', $kat) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori {{ $kat->nama_kategori }}?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="p-1.5 text-stone-400 hover:text-rose-600 transition cursor-pointer" title="Hapus Kategori">
+                                            <button type="submit" class="p-1.5 text-stone-400 hover:text-rose-600 transition" title="Hapus Kategori">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
@@ -229,29 +201,23 @@
                                     </div>
                                 </div>
 
-                                <p class="text-xs text-[#5A544E] mt-1 line-clamp-2 leading-relaxed">
-                                    {{ $kat->deskripsi ?: 'Busana pria & wanita, kemeja parang seling, dress asimetris kawung sutera, rompi sirkular...' }}
+                                <p class="text-xs text-[#5A544E] mt-1 leading-relaxed">
+                                    {{ $kat->deskripsi ?: 'Belum ada deskripsi untuk kategori ini.' }}
                                 </p>
 
-                                {{-- Filosofi Box --}}
-                                <div class="mt-2.5 rounded-lg bg-[#FAF0E4]/60 border border-[#E8D9C5] px-2.5 py-1 text-[10px] text-[#8C5E28] font-semibold flex items-center gap-1.5">
-                                    <span>✦</span>
-                                    <span>{{ $filosofi }}</span>
-                                </div>
-
-                                {{-- Stats Row --}}
+                                {{-- Real Stats Row --}}
                                 <div class="mt-3.5 pt-3 border-t border-[#EFECE6] grid grid-cols-3 gap-2 text-xs">
                                     <div>
                                         <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">KATALOG AKTIF</span>
-                                        <p class="font-extrabold text-[#1E1B18] mt-0.5">{{ $kat->produks_count ?? 12 }} Produk</p>
+                                        <p class="font-extrabold text-[#1E1B18] mt-0.5">{{ $kat->produks_count ?? 0 }} Produk</p>
                                     </div>
                                     <div>
                                         <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">TOTAL TERJUAL</span>
-                                        <p class="font-extrabold text-[#1E1B18] mt-0.5">{{ $unitsSold }} Pcs</p>
+                                        <p class="font-extrabold text-[#1E1B18] mt-0.5">{{ $kat->real_terjual ?? 0 }} Pcs</p>
                                     </div>
                                     <div>
-                                        <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">AKUMULASI NILAI</span>
-                                        <p class="font-extrabold text-[#A86544] mt-0.5">Rp {{ number_format($accumulatedValue, 0, ',', '.') }}</p>
+                                        <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400 block">NILAI STOK</span>
+                                        <p class="font-extrabold text-[#A86544] mt-0.5">Rp {{ number_format($kat->real_nilai_aset ?? 0, 0, ',', '.') }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -259,7 +225,7 @@
                     </div>
                 @empty
                     <div class="rounded-2xl border border-[#EFECE6] bg-white p-12 text-center text-stone-400">
-                        <p class="text-sm">Belum ada kategori yang ditambahkan.</p>
+                        <p class="text-sm">Belum ada kategori yang ditemukan.</p>
                     </div>
                 @endforelse
 
@@ -273,11 +239,11 @@
                 <div class="rounded-2xl border border-[#EFECE6] bg-white p-6 shadow-2xs space-y-5">
                     <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
                         <div>
-                            <h3 class="text-sm font-bold text-[#1E1B18]">Kurasi Kategori Cepat</h3>
-                            <p class="text-[11px] text-stone-400 mt-0.5">Definisikan kelompok busana atau kriya baru.</p>
+                            <h3 class="text-sm font-bold text-[#1E1B18]">Tambah Kategori Cepat</h3>
+                            <p class="text-[11px] text-stone-400 mt-0.5">Definisikan kelompok busana atau produk baru.</p>
                         </div>
                         <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FAF7F2] text-stone-600">
-                            ⚙
+                            âš™
                         </span>
                     </div>
 
@@ -325,7 +291,7 @@
                             <label class="group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#E8D9C5] bg-[#FAF0E4]/40 p-5 text-center cursor-pointer hover:bg-[#FAF0E4]/70 transition">
                                 <input type="file" name="gambar" accept="image/jpeg,image/png,image/jpg,image/webp" class="sr-only" onchange="previewUploadImage(this)">
                                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-[#E8D9C5] text-stone-600 shadow-2xs mb-2">
-                                    📷
+                                    ðŸ“·
                                 </div>
                                 <p id="uploadPromptText" class="text-xs font-bold text-[#1E1B18]">Pilih Foto Kategori</p>
                                 <p class="text-[10px] text-stone-400 mt-0.5">JPG, WebP hingga 5MB (Aspek 1:1)</p>
@@ -355,7 +321,7 @@
 
                     {{-- NOTE CALLOUT AT BOTTOM --}}
                     <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/60 p-3.5 flex items-start gap-2.5 text-xs text-[#5A544E]">
-                        <span class="text-sm text-[#8C5E28]">🛡</span>
+                        <span class="text-sm text-[#8C5E28]">ðŸ›¡</span>
                         <p class="text-[11px] leading-relaxed">
                             Kategori yang disimpan akan langsung ditampilkan di etalase toko <strong class="text-[#1E1B18]">Hamzah Style</strong>.
                         </p>
@@ -369,7 +335,7 @@
     <div id="editCategoryModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#EFECE6]">
             <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6] mb-4">
-                <h3 class="font-serif text-lg font-bold text-[#1E1B18]">Ubah Kategori Kurasi</h3>
+                <h3 class="font-serif text-lg font-bold text-[#1E1B18]">Ubah Kategori Produk</h3>
                 <button type="button" onclick="closeEditModal()" class="text-stone-400 hover:text-stone-700 text-xl font-bold">&times;</button>
             </div>
 
@@ -387,7 +353,7 @@
 
                 <div>
                     <label class="block text-[10px] font-bold uppercase tracking-wider text-stone-600 mb-1">
-                        Filosofi &amp; Deskripsi
+                        Deskripsi Kategori
                     </label>
                     <textarea name="deskripsi" id="editDeskripsiInput" rows="3"
                               class="w-full rounded-xl border border-[#E8E4DC] px-3.5 py-2.5 text-xs text-[#1E1B18] focus:border-[#C59A53] focus:ring-0"></textarea>

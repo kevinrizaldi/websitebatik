@@ -38,11 +38,11 @@
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span>SIRKULARITAS LOGISTIK / STUDIO HAMZAH OFFICIAL</span>
+                    <span>LOGISTIK PENGIRIMAN / TOKO HAMZAH STYLE</span>
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-serif text-[#1E1B18] tracking-tight">Manajemen Pengiriman & Logistik Terintegrasi RajaOngkir</h1>
                 <p class="text-xs sm:text-sm text-[#736B63] mt-1 max-w-2xl">
-                    Kelola alur cetak label pengiriman, pengemasan besek bambu ramah lingkungan, input resi AWB, dan pelacakan kurir ekspedisi RajaOngkir (JNE, POS, TIKI) dari origin {{ $originInfo['city_name'] ?? 'Kota Surakarta (Solo)' }}.
+                    Kelola alur cetak label pengiriman, pengemasan pesanan, input resi AWB, dan pelacakan kurir ekspedisi RajaOngkir (JNE, POS, TIKI) dari origin {{ $originInfo['city_name'] ?? 'Kota Surakarta (Solo)' }}.
                 </p>
             </div>
             <div class="flex items-center gap-3 shrink-0">
@@ -66,7 +66,7 @@
             {{-- 1. Antrean Atelier --}}
             <div class="bg-white p-5 rounded-2xl border border-[#EBE4D8] shadow-xs relative">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-bold tracking-wider text-[#8C827A] uppercase">ANTREAN ATELIER</span>
+                    <span class="text-[10px] font-bold tracking-wider text-[#8C827A] uppercase">PERLU DIKIRIM</span>
                     <div class="w-8 h-8 rounded-xl bg-[#F5ECE2] flex items-center justify-center text-[#A86544]">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -84,7 +84,7 @@
             {{-- 2. Docking Gate --}}
             <div class="bg-white p-5 rounded-2xl border border-[#EBE4D8] shadow-xs relative">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-bold tracking-wider text-[#8C827A] uppercase">DOCKING GATE</span>
+                    <span class="text-[10px] font-bold tracking-wider text-[#8C827A] uppercase">SIAP PICK-UP</span>
                     <div class="w-8 h-8 rounded-xl bg-[#F5ECE2] flex items-center justify-center text-[#A86544]">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -102,7 +102,7 @@
             {{-- 3. Trans-Nusantara --}}
             <div class="bg-white p-5 rounded-2xl border border-[#EBE4D8] shadow-xs relative">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-bold tracking-wider text-[#8C827A] uppercase">TRANS-NUSANTARA</span>
+                    <span class="text-[10px] font-bold tracking-wider text-[#8C827A] uppercase">DALAM PERJALANAN</span>
                     <div class="w-8 h-8 rounded-xl bg-[#F5ECE2] flex items-center justify-center text-[#A86544]">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -120,7 +120,7 @@
             {{-- 4. Performa Siklus --}}
             <div class="bg-white p-5 rounded-2xl border border-[#EBE4D8] shadow-xs relative">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-bold tracking-wider text-[#8C827A] uppercase">PERFORMA SIKLUS</span>
+                    <span class="text-[10px] font-bold tracking-wider text-[#8C827A] uppercase">SELESAI TERKIRIM</span>
                     <div class="w-8 h-8 rounded-xl bg-[#F5ECE2] flex items-center justify-center text-[#A86544]">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -145,16 +145,16 @@
                     </svg>
                 </div>
                 <div>
-                    <h2 class="text-xs font-bold text-[#1E1B18] uppercase tracking-wide">Protokol Kemasan Berkelanjutan Hamzah Style</h2>
+                    <h2 class="text-xs font-bold text-[#1E1B18] uppercase tracking-wide">Standar Pengemasan Toko Hamzah Style</h2>
                     <p class="text-xs text-[#736B63] mt-0.5">
-                        Setiap pesanan dijamin zero-plastic packaging: Anyaman besek bambu lokal Magelang, tali serat rami mentah, dan segel malam batik sisa cap.
+                        Setiap pesanan dikemas secara rapi, aman, dan menggunakan bahan pembungkus berkualitas untuk menjaga produk tetap utuh saat pengiriman.
                     </p>
                 </div>
             </div>
             <div class="shrink-0 flex items-center">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#E8F5E9] text-[#2E7D32] text-[10px] font-bold tracking-wider">
                     <span class="w-1.5 h-1.5 rounded-full bg-[#2E7D32]"></span>
-                    AUDIT KEMASAN: 100% LULUS
+                    STANDAR KEMASAN: AMAN
                 </span>
             </div>
         </div>

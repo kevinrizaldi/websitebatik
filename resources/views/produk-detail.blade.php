@@ -45,7 +45,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $namaProduk }} — Hamzah Style</title>
+    <title>{{ $namaProduk }} â€” Hamzah Style</title>
     <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style. Warisan batik nusantara modern berkualitas premium.">
 
     <!-- Google Fonts: Poppins -->
@@ -180,7 +180,7 @@
                       produk_id: {{ $produkId }},
                       qty: this.quantity,
                       ukuran: this.selectedSize,
-                      varian: 'Ukuran: ' + this.selectedSize + ' • Lengan Panjang'
+                      varian: this.selectedSize ? ('Ukuran: ' + this.selectedSize) : 'Ukuran: All Size'
                   })
               })
               .then(res => res.json())
@@ -294,7 +294,7 @@
                             <div class="flex items-center gap-1.5 font-bold text-stone-900">
                                 <div class="flex text-amber-500 text-sm">
                                     @for($s = 1; $s <= 5; $s++)
-                                        <span class="{{ $s <= round($ratingAvg) ? 'text-amber-500' : 'text-stone-300' }}">★</span>
+                                        <span class="{{ $s <= round($ratingAvg) ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
                                     @endfor
                                 </div>
                                 <span class="ml-1 text-sm font-bold">{{ number_format($ratingAvg, 1) }}</span>
@@ -305,7 +305,7 @@
                             </a>
                         @else
                             <div class="flex items-center gap-1 text-stone-400 text-xs">
-                                <span class="text-amber-500">★</span>
+                                <span class="text-amber-500">â˜…</span>
                                 <span>Belum ada ulasan</span>
                             </div>
                         @endif
@@ -349,8 +349,8 @@
                         <div class="space-y-1.5 pt-1">
                             <span class="text-stone-900 font-bold text-xs sm:text-sm block">Ukuran Kain</span>
                             <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#FAF7F2] border border-[#D5CABB] text-xs font-bold text-stone-800">
-                                <span>🧵</span>
-                                <span>Lembaran Kain Batik (2,4 m × 1,15 m)</span>
+                                <span>ðŸ§µ</span>
+                                <span>Lembaran Kain Batik (2,4 m Ã— 1,15 m)</span>
                             </div>
                             <p class="text-[11px] text-stone-500">Kain batik siap dijahit sesuai model pakaian yang Anda inginkan.</p>
                         </div>
@@ -402,7 +402,7 @@
                                     :disabled="quantity <= 1"
                                     :class="quantity <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
                                     class="w-10 h-10 rounded-lg flex items-center justify-center text-stone-700 font-bold text-base transition">
-                                −
+                                âˆ’
                             </button>
                             <span class="w-10 text-center text-sm font-bold text-stone-900" x-text="quantity"></span>
                             <button @click="increaseQty()"
@@ -518,19 +518,19 @@
                     </p>
                     <ul class="space-y-1.5 text-stone-700 text-xs sm:text-sm pt-2">
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">•</span>
+                            <span class="text-stone-400">â€¢</span>
                             <span><strong>Model:</strong> Regular Fit yang pas di badan, kerah rapi dengan kancing dalam</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">•</span>
+                            <span class="text-stone-400">â€¢</span>
                             <span><strong>Bahan:</strong> Katun Prima Halus, adem dan nyaman di kulit</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">•</span>
+                            <span class="text-stone-400">â€¢</span>
                             <span><strong>Kancing:</strong> Kancing batok kelapa alami dengan jahitan kuat dan rapi</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">•</span>
+                            <span class="text-stone-400">â€¢</span>
                             <span><strong>Saku:</strong> Satu saku di dada kiri dengan motif batik yang menyatu rapi</span>
                         </li>
                     </ul>
@@ -559,7 +559,7 @@
                         </span>
                         <div class="flex items-center justify-center gap-1 text-amber-500 text-lg my-2">
                             @for($s = 1; $s <= 5; $s++)
-                                <span class="{{ $s <= round($ratingAvg ?: 5) ? 'text-amber-500' : 'text-stone-300' }}">★</span>
+                                <span class="{{ $s <= round($ratingAvg ?: 5) ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
                             @endfor
                         </div>
                         <span class="font-bold text-stone-900 text-sm block">
@@ -617,7 +617,7 @@
 
                                     <div class="flex text-amber-500 text-xs mb-3">
                                         @for($s = 1; $s <= 5; $s++)
-                                            <span class="{{ $s <= $u->rating ? 'text-amber-500' : 'text-stone-300' }}">★</span>
+                                            <span class="{{ $s <= $u->rating ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
                                         @endfor
                                     </div>
 
@@ -682,13 +682,10 @@
                                 <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                                     <div>
                                         <a href="{{ route('produk.detail', $rel->id) }}">
-                                            <h3 class="font-bold text-stone-900 text-sm leading-snug mb-1 hover:text-amber-800 transition line-clamp-1">
+                                            <h3 class="font-bold text-stone-900 text-sm leading-snug mb-2 hover:text-amber-800 transition line-clamp-1">
                                                 {{ $rel->nama }}
                                             </h3>
                                         </a>
-                                        <p class="text-[11px] text-stone-500 line-clamp-1 mb-3">
-                                            {{ $rel->deskripsi ?: 'Koleksi batik berkualitas buatan pengrajin lokal.' }}
-                                        </p>
                                     </div>
                                     <div class="flex items-center justify-between pt-2 border-t border-stone-100">
                                         <span class="text-sm font-extrabold text-stone-900">

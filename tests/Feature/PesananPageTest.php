@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Produk;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -115,7 +115,7 @@ class PesananPageTest extends TestCase
     public function test_expired_payment_order_status_changes_to_dibatalkan_when_viewing_pesanan(): void
     {
         $user = User::factory()->create(['role' => 'customer']);
-        $produk = Produk::create([
+        $produk = Product::create([
             'nama' => 'Batik Tulis Sogan Klasik',
             'sku' => 'BTK-EXP-001',
             'kategori' => 'Kain Batik',

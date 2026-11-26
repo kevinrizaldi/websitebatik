@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Kategori;
-use App\Models\Produk;
+use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +20,7 @@ class KategoriController extends Controller
     {
         $search = trim((string) $request->input('search', ''));
 
-        $kategorisQuery = Kategori::withCount('produks');
+        $kategorisQuery = Category::withCount('produks');
 
         if ($search !== '') {
             $kategorisQuery->where(function ($q) use ($search) {
@@ -30,10 +30,50 @@ class KategoriController extends Controller
         }
 
         $kategoris = $kategorisQuery->latest()->paginate(10)->withQueryString();
-        $totalKategori = Kategori::count();
-        $totalProduk = Produk::count();
+        $totalKategori = Category::count();
+        $totalProduk = Product::count();
 
-        return view('admin.kategori.index', compact('kategoris', 'search', 'totalKategori', 'totalProduk'));
+        // Real Sales keseluruhan (dari pesanan non-batal dan bukan belum bayar)
+        $totalTerjualKeseluruhan = (int) \App\Models\OrderItem::whereHas('order', function ($q) {
+            $q->whereNotIn('status', ['Dibatalkan', 'Belum Dibayar']);
+        })->sum('quantity');
+
+        // Real Total Nilai Aset Stok (harga * stok seluruh produk)
+        $totalNilaiAset = (float) (Product::selectRaw('SUM(harga * stok) as total')->value('total') ?? 0);
+
+        // Ambil data penjualan per kategori
+        $salesPerCategory = \App\Models\OrderItem::query()
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->whereNotIn('orders.status', ['Dibatalkan', 'Belum Dibayar'])
+            ->selectRaw('products.category_id, products.kategori, SUM(order_items.quantity) as total_qty, SUM(order_items.subtotal) as total_revenue')
+            ->groupBy('products.category_id', 'products.kategori')
+            ->get();
+
+        // Ambil data stok & aset per kategori
+        $stockPerCategory = Product::query()
+            ->selectRaw('category_id, kategori, SUM(stok) as total_stock, SUM(harga * stok) as total_asset')
+            ->groupBy('category_id', 'kategori')
+            ->get();
+
+        foreach ($kategoris as $kat) {
+            $sales = $salesPerCategory->first(function ($s) use ($kat) {
+                return ($s->category_id !== null && $s->category_id == $kat->id)
+                    || (!empty($s->kategori) && strcasecmp($s->kategori, $kat->nama_kategori) === 0);
+            });
+
+            $stock = $stockPerCategory->first(function ($s) use ($kat) {
+                return ($s->category_id !== null && $s->category_id == $kat->id)
+                    || (!empty($s->kategori) && strcasecmp($s->kategori, $kat->nama_kategori) === 0);
+            });
+
+            $kat->real_terjual = (int) ($sales->total_qty ?? 0);
+            $kat->real_pendapatan = (float) ($sales->total_revenue ?? 0);
+            $kat->real_stok = (int) ($stock->total_stock ?? 0);
+            $kat->real_nilai_aset = (float) ($stock->total_asset ?? 0);
+        }
+
+        return view('admin.kategori.index', compact('kategoris', 'search', 'totalKategori', 'totalProduk', 'totalTerjualKeseluruhan', 'totalNilaiAset'));
     }
 
     /**
@@ -60,7 +100,7 @@ class KategoriController extends Controller
             $gambarPath = $request->file('gambar')->store('kategori', 'public');
         }
 
-        Kategori::create([
+        Category::create([
             'nama_kategori' => $validated['nama_kategori'],
             'slug' => Str::slug($validated['nama_kategori']),
             'deskripsi' => $validated['deskripsi'] ?? null,
@@ -73,7 +113,7 @@ class KategoriController extends Controller
     /**
      * Update the specified category.
      */
-    public function update(Request $request, Kategori $kategori): RedirectResponse
+    public function update(Request $request, Category $kategori): RedirectResponse
     {
         $validated = $request->validate([
             'nama_kategori' => ['required', 'string', 'max:30', 'regex:/^[\pL\s]+$/u', 'unique:categories,nama_kategori,'.$kategori->id],
@@ -115,7 +155,7 @@ class KategoriController extends Controller
     /**
      * Remove the specified category.
      */
-    public function destroy(Kategori $kategori): RedirectResponse
+    public function destroy(Category $kategori): RedirectResponse
     {
         $nama = $kategori->nama_kategori;
 

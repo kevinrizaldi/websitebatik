@@ -31,6 +31,8 @@ class Product extends Model
         'harga_coret',
         'stock',
         'stok',
+        'weight',
+        'berat',
         'status',
         'description',
         'deskripsi',
@@ -52,6 +54,8 @@ class Product extends Model
         'harga_coret' => 'decimal:2',
         'stock' => 'integer',
         'stok' => 'integer',
+        'weight' => 'integer',
+        'berat' => 'integer',
         'size_stock' => 'array',
         'stok_ukuran' => 'array',
         'other_images' => 'array',
@@ -120,7 +124,21 @@ class Product extends Model
                 $p->attributes['other_images'] = $encImgs;
                 $p->attributes['gambar_lainnya'] = $encImgs;
             }
+
+            $weight = (int) ($p->attributes['weight'] ?? $p->attributes['berat'] ?? 300);
+            $p->attributes['weight'] = $weight > 0 ? $weight : 300;
+            $p->attributes['berat'] = $weight > 0 ? $weight : 300;
         });
+    }
+
+    public function getBeratAttribute(): int
+    {
+        return (int) ($this->attributes['berat'] ?? $this->attributes['weight'] ?? 300);
+    }
+
+    public function getWeightAttribute(): int
+    {
+        return (int) ($this->attributes['weight'] ?? $this->attributes['berat'] ?? 300);
     }
 
     public function decrement($column, $amount = 1, array $extra = [])

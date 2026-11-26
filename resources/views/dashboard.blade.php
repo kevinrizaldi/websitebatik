@@ -158,9 +158,9 @@
             </div>
         </div>
 
-        {{-- MIDDLE SECTION: TREN PENJUALAN & SIRKULARITAS + KATEGORI TERLARIS --}}
+        {{-- MIDDLE SECTION: TREN PENJUALAN + KATEGORI TERLARIS --}}
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            {{-- KIRI: GRAFIK TREN PENJUALAN & SIRKULARITAS (col-span-8) --}}
+            {{-- KIRI: GRAFIK TREN PENJUALAN (col-span-8) --}}
             <div class="lg:col-span-8 rounded-2xl border border-[#EFECE6] bg-white p-6 shadow-2xs">
                 <div class="mb-6">
                     <div class="flex items-center gap-2 text-base font-bold text-[#1E1B18]">
@@ -168,7 +168,7 @@
                         <h3>Tren Penjualan Koleksi {{ now()->year }}</h3>
                     </div>
                     <p class="text-xs text-[#5A544E] mt-0.5 max-w-md">
-                        Distribusi volume penjualan busana batik dan ragam koleksi adibusana Hamzah Style.
+                        Distribusi volume penjualan busana batik dan produk koleksi toko Hamzah Style.
                     </p>
                 </div>
 
@@ -427,8 +427,8 @@
                                     <span class="text-stone-300">•</span>
                                     <span class="text-[#A86544]">Rp {{ number_format($item->sales_total ?? 0, 0, ',', '.') }}</span>
                                 </div>
-                                <div class="mt-1 flex items-center gap-1 text-[10px] {{ ($item->stok ?? 0) <= \App\Models\Produk::LOW_STOCK_THRESHOLD ? 'text-rose-600 font-bold' : 'text-stone-500' }}">
-                                    <span class="h-1.5 w-1.5 rounded-full {{ ($item->stok ?? 0) <= \App\Models\Produk::LOW_STOCK_THRESHOLD ? 'bg-rose-500' : 'bg-emerald-500' }}"></span>
+                                <div class="mt-1 flex items-center gap-1 text-[10px] {{ ($item->stok ?? 0) <= \App\Models\Product::LOW_STOCK_THRESHOLD ? 'text-rose-600 font-bold' : 'text-stone-500' }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ ($item->stok ?? 0) <= \App\Models\Product::LOW_STOCK_THRESHOLD ? 'bg-rose-500' : 'bg-emerald-500' }}"></span>
                                     <span>Sisa Stok: {{ $item->stok ?? 0 }} pcs</span>
                                 </div>
                             </div>

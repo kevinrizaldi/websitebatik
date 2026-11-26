@@ -96,4 +96,54 @@ class ProfileTest extends TestCase
 
         $this->assertNotNull($user->fresh());
     }
+
+    public function test_new_google_user_profile_shows_empty_fields_without_hardcoded_defaults(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Citra Lestari',
+            'email' => 'citra@example.com',
+            'google_id' => 'google-uid-12345',
+            'phone' => null,
+            'jenis_kelamin' => null,
+            'tanggal_lahir' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->get('/profile');
+
+        $response->assertOk();
+        $response->assertSee('Citra Lestari');
+        $response->assertSee('citra@example.com');
+        $response->assertDontSee('+62 812–3456–7890');
+        $response->assertDontSee('15 Agustus 1988');
+    }
+
+    public function test_profile_gender_and_birthdate_can_be_updated(): void
+    {
+        $user = User::factory()->create([
+            'phone' => null,
+            'jenis_kelamin' => null,
+            'tanggal_lahir' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->patch('/profile', [
+                'name' => 'Citra Lestari',
+                'email' => $user->email,
+                'phone' => '081298765432',
+                'jenis_kelamin' => 'Perempuan',
+                'tanggal_lahir' => '12 Desember 1999',
+            ]);
+
+        $response
+            ->assertSessionHasNoErrors()
+            ->assertRedirect('/profile');
+
+        $user->refresh();
+        $this->assertSame('081298765432', $user->phone);
+        $this->assertSame('Perempuan', $user->jenis_kelamin);
+        $this->assertSame('12 Desember 1999', $user->tanggal_lahir);
+    }
 }

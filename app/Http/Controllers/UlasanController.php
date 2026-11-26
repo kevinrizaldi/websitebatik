@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Models\Ulasan;
+use App\Models\Review;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -99,7 +99,7 @@ class UlasanController extends Controller
 
         // Satu pembelian (order × produk) hanya boleh diulas satu kali.
         // Beli lagi produk yang sama pada order lain = boleh ulas lagi.
-        $alreadyReviewed = Ulasan::where('user_id', $user->id)
+        $alreadyReviewed = Review::where('user_id', $user->id)
             ->where('produk_id', $validated['produk_id'])
             ->where('order_id', $targetOrder->id)
             ->exists();
@@ -113,7 +113,7 @@ class UlasanController extends Controller
             : null;
 
         try {
-            $ulasan = Ulasan::create([
+            $ulasan = Review::create([
                 'order_id' => $targetOrder->id,
                 'produk_id' => $validated['produk_id'],
                 'user_id' => $user->id,
@@ -161,7 +161,7 @@ class UlasanController extends Controller
     /**
      * Ubah ulasan milik sendiri selama masih Menunggu moderasi.
      */
-    public function update(Request $request, Ulasan $ulasan): JsonResponse|RedirectResponse
+    public function update(Request $request, Review $ulasan): JsonResponse|RedirectResponse
     {
         if ((int) $ulasan->user_id !== (int) Auth::id()) {
             abort(403, 'Akses tidak diizinkan.');
@@ -209,7 +209,7 @@ class UlasanController extends Controller
     /**
      * Hapus ulasan milik sendiri selama masih Menunggu moderasi.
      */
-    public function destroy(Request $request, Ulasan $ulasan): JsonResponse|RedirectResponse
+    public function destroy(Request $request, Review $ulasan): JsonResponse|RedirectResponse
     {
         if ((int) $ulasan->user_id !== (int) Auth::id()) {
             abort(403, 'Akses tidak diizinkan.');
