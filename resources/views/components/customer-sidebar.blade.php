@@ -7,8 +7,8 @@
 
 @php
     $currentUser = $user ?? Auth::user();
-    $name = $currentUser?->name ?? 'Budi Santoso';
-    $email = $currentUser?->email ?? 'budi.santoso@email.com';
+    $name = $currentUser?->name ?? 'Pelanggan';
+    $email = $currentUser?->email ?? '-';
     $nameParts = explode(' ', trim($name));
     $initials = strtoupper(substr($nameParts[0], 0, 1));
     if (count($nameParts) > 1) {
