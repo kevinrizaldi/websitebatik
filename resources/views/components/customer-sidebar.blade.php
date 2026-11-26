@@ -31,18 +31,8 @@
 
         <div class="relative">
             <div class="relative inline-block">
-                @if($currentUser?->avatar)
-                    <img src="{{ $currentUser->avatar }}" alt="{{ $name }}" class="h-20 w-20 rounded-full object-cover shadow-sm border border-stone-200">
-                @else
-                    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-[#201A17] text-xl font-bold tracking-wider text-white shadow-sm">
-                        {{ $initials }}
-                    </div>
-                @endif
-                <div class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-700 shadow-xs" title="Foto Profil">
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
-                    </svg>
+                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-[#201A17] text-2xl font-bold tracking-wider text-[#FAF7F2] shadow-sm ring-4 ring-[#F7EFE7]">
+                    {{ $initials }}
                 </div>
             </div>
             <h2 class="mt-3.5 text-base font-bold text-stone-900">{{ $name }}</h2>
