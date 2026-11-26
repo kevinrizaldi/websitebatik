@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="space-y-6">
+    <div class="space-y-6" x-data="{ previewModalImage: null }">
 
         {{-- Top Header Section --}}
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -271,25 +271,42 @@
                             </div>
 
                             {{-- Photos (if any) --}}
-                            @if ($ulasan->image_path)
-                                <div class="flex items-center gap-3 pt-1">
-                                    <div class="w-16 h-16 rounded-xl border border-[#ECE5D8] overflow-hidden bg-[#F6F1EA]">
-                                        <img src="{{ \App\Support\MediaUrl::resolve($ulasan->image_path) }}" alt="Foto Pembeli" class="w-full h-full object-cover">
-                                    </div>
-                                    <div>
-                                        <span class="text-[11px] font-semibold text-[#1E1B18]">1 Foto Riil Pembeli</span>
-                                        <p class="text-[10px] text-emerald-600 font-medium">Terverifikasi High-Res</p>
-                                    </div>
-                                </div>
-                            @endif
+                            @php
+                                $adminReviewPhotos = [];
+                                if (!empty($ulasan->image_path)) {
+                                    $adminReviewPhotos[] = \App\Support\MediaUrl::resolve($ulasan->image_path);
+                                }
+                                if (!empty($ulasan->photos) && is_array($ulasan->photos)) {
+                                    foreach ($ulasan->photos as $p) {
+                                        $resP = \App\Support\MediaUrl::resolve($p) ?: $p;
+                                        if ($resP && !in_array($resP, $adminReviewPhotos, true)) {
+                                            $adminReviewPhotos[] = $resP;
+                                        }
+                                    }
+                                }
+                            @endphp
 
-                            @if ($ulasan->photos)
-                                <div class="flex items-center gap-2 pt-2">
-                                    @foreach ($ulasan->photos as $photo)
-                                        <div class="w-16 h-16 rounded-xl border border-[#ECE5D8] overflow-hidden bg-[#F6F1EA]">
-                                            <img src="{{ \App\Support\MediaUrl::resolve($photo) ?: $photo }}" alt="Foto Pembeli" class="w-full h-full object-cover">
-                                        </div>
-                                    @endforeach
+                            @if (count($adminReviewPhotos) > 0)
+                                <div class="pt-2">
+                                    <div class="flex items-center gap-2 mb-1.5">
+                                        <span class="text-[11px] font-semibold text-[#1E1B18]">{{ count($adminReviewPhotos) }} Foto Riil Pembeli</span>
+                                        <span class="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">Klik foto untuk perbesar</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        @foreach ($adminReviewPhotos as $pUrl)
+                                            <button type="button"
+                                                    @click="previewModalImage = '{{ $pUrl }}'"
+                                                    class="group relative w-16 h-16 rounded-xl border border-[#ECE5D8] overflow-hidden bg-[#F6F1EA] hover:ring-2 hover:ring-[#8C6D58] transition-all cursor-pointer hover:scale-105 shadow-2xs"
+                                                    title="Klik untuk melihat foto ukuran penuh">
+                                                <img src="{{ $pUrl }}" alt="Foto Pembeli" class="w-full h-full object-cover">
+                                                <span class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                                    </svg>
+                                                </span>
+                                            </button>
+                                        @endforeach
+                                    </div>
                                 </div>
                             @endif
 
@@ -413,6 +430,31 @@
             </div>
             <div>
                 {{ $ulasans->links() }}
+            </div>
+        </div>
+
+        {{-- Lightbox Modal Review Photo Fullscreen --}}
+        <div x-cloak
+             x-show="previewModalImage !== null"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @keydown.escape.window="previewModalImage = null"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 sm:p-6"
+             @click="previewModalImage = null">
+            <button type="button"
+                    @click="previewModalImage = null"
+                    class="absolute top-5 right-5 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 cursor-pointer"
+                    title="Tutup (Esc)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <div class="relative max-w-4xl max-h-[85vh] flex items-center justify-center" @click.stop>
+                <img :src="previewModalImage" alt="Foto Ulasan Pembeli Full" class="max-h-[82vh] max-w-[88vw] w-auto h-auto rounded-2xl object-contain shadow-2xl border border-white/10 select-none">
             </div>
         </div>
 
