@@ -29,6 +29,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BTK-001',
             'kategori' => 'Kain Batik',
             'harga' => 1000000,
+            'harga_coret' => 1200000,
             'stok' => 1000,
             'status' => 'Tersedia',
         ]);
@@ -48,6 +49,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BTK-002',
             'kategori' => 'Kain Batik',
             'harga' => 0,
+            'harga_coret' => 100000,
             'stok' => 0,
             'status' => 'Habis',
         ]);
@@ -67,6 +69,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BTK-LOW-010',
             'kategori' => 'Kain Batik',
             'harga' => 200000,
+            'harga_coret' => 250000,
             'stok' => 10,
         ])->assertRedirect(route('produk.index'));
 
@@ -75,6 +78,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BTK-LOW-011',
             'kategori' => 'Kain Batik',
             'harga' => 200000,
+            'harga_coret' => 250000,
             'stok' => 11,
         ])->assertRedirect(route('produk.index'));
 
@@ -89,6 +93,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BTK-LOW-EDIT',
             'kategori' => 'Kain Batik',
             'harga' => 200000,
+            'harga_coret' => 250000,
             'stok' => 11,
             'status' => 'Tersedia',
         ]);
@@ -97,6 +102,7 @@ class ProdukValidationTest extends TestCase
             'sku' => $product->sku,
             'kategori' => $product->kategori,
             'harga' => $product->harga,
+            'harga_coret' => $product->harga_coret,
         ];
 
         $this->actingAs($this->admin)
@@ -148,6 +154,42 @@ class ProdukValidationTest extends TestCase
             'harga' => 100000,
             'harga_coret' => 90000,
             'stok' => 10,
+        ]);
+
+        $response->assertSessionHasErrors(['harga_coret']);
+    }
+
+    public function test_create_requires_crossed_out_price(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('produk.store'), [
+            'nama' => 'Batik Tanpa Harga Coret',
+            'sku' => 'BTK-PRICE-CROSS-REQUIRED',
+            'kategori' => 'Kain Batik',
+            'harga' => 100000,
+            'stok' => 10,
+        ]);
+
+        $response->assertSessionHasErrors(['harga_coret']);
+    }
+
+    public function test_update_requires_crossed_out_price(): void
+    {
+        $product = Produk::create([
+            'nama' => 'Batik Edit Tanpa Harga Coret',
+            'sku' => 'BTK-PRICE-CROSS-EDIT',
+            'kategori' => 'Kain Batik',
+            'harga' => 100000,
+            'harga_coret' => 150000,
+            'stok' => 10,
+            'status' => 'Tersedia',
+        ]);
+
+        $response = $this->actingAs($this->admin)->put(route('produk.update', $product), [
+            'nama' => $product->nama,
+            'sku' => $product->sku,
+            'kategori' => $product->kategori,
+            'harga' => $product->harga,
+            'stok' => $product->stok,
         ]);
 
         $response->assertSessionHasErrors(['harga_coret']);
@@ -253,6 +295,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BTK-008',
             'kategori' => 'Kain Batik',
             'harga' => 1000000,
+            'harga_coret' => 1200000,
             'stok' => 1000,
             'status' => 'Tersedia',
         ]);
@@ -272,6 +315,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'KMT-001',
             'kategori' => 'Baju Batik',
             'harga' => 350000,
+            'harga_coret' => 400000,
             'stok_ukuran' => [
                 'S' => 2,
                 'M' => 5,
@@ -297,6 +341,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'KMT-001',
             'kategori' => 'Baju Batik',
             'harga' => 375000,
+            'harga_coret' => 425000,
             'stok_ukuran' => [
                 'S' => 0,
                 'M' => 4,
@@ -484,6 +529,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BJU-GUIDE-001',
             'kategori' => 'Baju Batik',
             'harga' => 350000,
+            'harga_coret' => 400000,
             'stok' => 25,
             'ukuran' => 'S, M, L, XL, XXL',
             'panduan_ukuran' => "S: LD 104 cm, PB 72 cm\nM: LD 108 cm, PB 74 cm",
@@ -510,9 +556,10 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BJU-GUIDE-001',
             'kategori' => 'Baju Batik',
             'harga' => 375000,
+            'harga_coret' => 425000,
             'stok' => 20,
             'ukuran' => 'S, M, L, XL, XXL',
-            'panduan_ukuran' => "Panduan Baru: LD toleransi 1-2 cm",
+            'panduan_ukuran' => 'Panduan Baru: LD toleransi 1-2 cm',
             'stok_ukuran' => [
                 'S' => 4,
                 'M' => 4,
@@ -537,6 +584,7 @@ class ProdukValidationTest extends TestCase
             'sku' => 'BJU-CUSTOM-SIZES',
             'kategori' => 'Baju Batik',
             'harga' => 450000,
+            'harga_coret' => 500000,
             'stok_ukuran' => [
                 'XS' => 3,
                 'S' => 6,

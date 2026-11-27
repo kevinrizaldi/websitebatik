@@ -1,6 +1,15 @@
 <x-storefront-layout title="Data Diri — Profil Saya">
     <div class="min-h-screen bg-[#FAF7F2] py-8 sm:py-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            @if(in_array(session('status'), ['avatar-updated', 'avatar-removed'], true))
+                <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                    @if(session('status') === 'avatar-updated')
+                        Foto profil berhasil diperbarui.
+                    @else
+                        Foto profil dihapus. Avatar inisial kembali digunakan.
+                    @endif
+                </div>
+            @endif
             <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8">
                 {{-- Kolom Kiri: Sidebar Profil & Navigasi --}}
                 <div class="lg:col-span-4">

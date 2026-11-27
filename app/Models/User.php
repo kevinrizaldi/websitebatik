@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -52,6 +53,34 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        $nameParts = preg_split('/\s+/u', trim($this->name), -1, PREG_SPLIT_NO_EMPTY);
+
+        if ($nameParts === false) {
+            return '';
+        }
+
+        $initials = array_map(
+            static fn (string $part): string => mb_substr($part, 0, 1),
+            array_slice($nameParts, 0, 2)
+        );
+
+        return mb_strtoupper(implode('', $initials));
+    }
+
+    public function getProfilePhotoUrlAttribute(): ?string
+    {
+        $avatar = $this->attributes['avatar'] ?? null;
+        $avatarDirectory = 'avatars/'.$this->getKey().'/';
+
+        if (! is_string($avatar) || ! str_starts_with($avatar, $avatarDirectory)) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($avatar);
     }
 
     /**

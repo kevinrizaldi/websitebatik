@@ -39,13 +39,21 @@
         </div>
 
         {{-- Alerts --}}
-        @if (session('status') === 'profile-updated')
+        @if (in_array(session('status'), ['profile-updated', 'avatar-updated', 'avatar-removed'], true))
             <div class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs sm:text-sm shadow-xs flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span class="font-medium">Profil kurator berhasil diperbarui.</span>
+                    <span class="font-medium">
+                        @if(session('status') === 'avatar-updated')
+                            Foto profil berhasil diperbarui.
+                        @elseif(session('status') === 'avatar-removed')
+                            Foto profil dihapus. Avatar inisial kembali digunakan.
+                        @else
+                            Profil kurator berhasil diperbarui.
+                        @endif
+                    </span>
                 </div>
                 <button onclick="this.parentElement.remove()" class="text-emerald-500 font-bold">&times;</button>
             </div>
@@ -71,13 +79,32 @@
                 {{-- Profile Identity Card --}}
                 <div class="bg-white rounded-2xl border border-[#ECE5D8] p-6 text-center shadow-xs space-y-4">
                     <div class="relative w-24 h-24 mx-auto">
-                        <div class="w-24 h-24 rounded-full border-2 border-[#B85D3B] p-1 bg-[#FAF7F2] overflow-hidden">
-                            <div class="w-full h-full rounded-full bg-[#1E1B18] text-white flex items-center justify-center font-serif text-2xl font-bold">
-                                {{ strtoupper(substr($user->name, 0, 2)) }}
+                        <form method="POST" action="{{ route('profile.avatar.update') }}" enctype="multipart/form-data" class="relative h-full w-full">
+                            @csrf
+                            <div class="w-24 h-24 rounded-full border-2 border-[#B85D3B] p-1 bg-[#FAF7F2] overflow-hidden">
+                                <div class="w-full h-full rounded-full bg-[#1E1B18] text-white flex items-center justify-center font-serif text-2xl font-bold">
+                                    @if($user->profile_photo_url)
+                                        <img src="{{ $user->profile_photo_url }}" alt="Foto profil {{ $user->name }}" class="h-full w-full rounded-full object-cover">
+                                    @else
+                                        {{ $user->initials ?: 'A' }}
+                                    @endif
+                                </div>
                             </div>
-                        </div>
-                        <span class="absolute bottom-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white text-[10px]">✓</span>
+                            <label for="admin-profile-avatar" aria-label="Ubah foto profil" title="Ubah foto profil"
+                                   class="absolute bottom-0 right-0 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#1E1B18] text-white shadow-sm transition hover:bg-stone-700">
+                                <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0121.5 10v8A1.5 1.5 0 0120 19.5H4A1.5 1.5 0 012.5 18v-8A1.5 1.5 0 014 8.5z" />
+                                    <circle cx="12" cy="13.5" r="3.25" />
+                                </svg>
+                            </label>
+                            <input id="admin-profile-avatar" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" aria-label="Ubah foto profil" required
+                                   class="sr-only" onchange="this.form.submit()">
+                        </form>
+                        <span class="absolute top-1 right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white text-[10px]">✓</span>
                     </div>
+                    @error('avatar')
+                        <p role="alert" class="mt-2 text-xs text-rose-600">{{ $message }}</p>
+                    @enderror
 
                     <div>
                         <h3 class="font-serif font-bold text-lg text-[#1E1B18]">{{ $user->name }}</h3>
@@ -120,13 +147,18 @@
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700">Aktif</span>
                     </div>
 
-                    <button type="button" onclick="alert('Upload foto avatar kurator dibuka.')" class="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-[#D9D0C5] bg-[#FAF7F2] hover:bg-white text-xs font-bold uppercase tracking-wider text-[#1E1B18] transition">
-                        <svg class="w-4 h-4 text-[#7A7269]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span>GANTI FOTO AVATAR</span>
-                    </button>
+                    @if($user->profile_photo_url)
+                        <form method="POST" action="{{ route('profile.avatar.destroy') }}">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="text-xs font-medium text-stone-500 hover:text-rose-600">
+                                Hapus foto dan gunakan inisial
+                            </button>
+                        </form>
+                    @endif
                 </div>
 
                 {{-- Settings Sub-Navigation Menu --}}

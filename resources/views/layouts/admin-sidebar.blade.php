@@ -140,8 +140,12 @@
 <div class="border-t border-[#EFECE6] p-4 bg-white">
     <div class="flex items-center justify-between rounded-xl p-2 hover:bg-[#FAF7F2] transition">
         <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 min-w-0 flex-1 group">
-            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#1E1B18] text-[#C59A53] text-xs font-bold group-hover:scale-105 transition-transform">
-                {{ strtoupper(substr(Auth::user()->name ?? 'AK', 0, 2)) }}
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1E1B18] text-[#C59A53] text-xs font-bold group-hover:scale-105 transition-transform">
+                @if(Auth::user()->profile_photo_url)
+                    <img src="{{ Auth::user()->profile_photo_url }}" alt="" class="h-full w-full object-cover">
+                @else
+                    {{ Auth::user()->initials ?: 'A' }}
+                @endif
             </div>
             <div class="min-w-0">
                 <p class="truncate text-xs font-bold text-[#1E1B18] group-hover:text-[#A86544] transition-colors">{{ Auth::user()->name ?? 'Administrator' }}</p>

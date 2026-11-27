@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -61,6 +62,62 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    public function updateAvatar(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ], [
+            'avatar.required' => 'Pilih foto profil terlebih dahulu.',
+            'avatar.image' => 'Foto profil harus berupa gambar.',
+            'avatar.mimes' => 'Format foto profil harus JPG, JPEG, PNG, atau WEBP.',
+            'avatar.max' => 'Ukuran foto profil maksimal 2 MB.',
+        ]);
+
+        $user = $request->user();
+        $oldAvatar = $user->avatar;
+        $newAvatar = $validated['avatar']->store('avatars/'.$user->id, 'public');
+
+        try {
+            $user->avatar = $newAvatar;
+            $user->save();
+        } catch (\Throwable $exception) {
+            Storage::disk('public')->delete($newAvatar);
+
+            throw $exception;
+        }
+
+        $this->deleteUploadedAvatar($oldAvatar, (int) $user->id);
+
+        return Redirect::route('profile.edit')->with('status', 'avatar-updated');
+    }
+
+    public function destroyAvatar(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $oldAvatar = $user->avatar;
+        $user->avatar = null;
+        $user->save();
+
+        $this->deleteUploadedAvatar($oldAvatar, (int) $user->id);
+
+        return Redirect::route('profile.edit')->with('status', 'avatar-removed');
+    }
+
+    private function deleteUploadedAvatar(?string $avatar, int $userId): void
+    {
+        $avatarDirectory = 'avatars/'.$userId.'/';
+
+        if ($avatar === null || ! str_starts_with($avatar, $avatarDirectory)) {
+            return;
+        }
+
+        $disk = Storage::disk('public');
+
+        if ($disk->exists($avatar) && ! $disk->delete($avatar)) {
+            throw new \RuntimeException('Foto profil lama tidak dapat dihapus dari penyimpanan.');
+        }
     }
 
     /**

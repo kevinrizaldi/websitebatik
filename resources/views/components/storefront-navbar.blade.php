@@ -8,7 +8,6 @@
 <header class="sticky top-0 z-40 bg-[#FAF7F2]/95 backdrop-blur-md border-b border-[#ECE4D8] transition-all"
         x-data="{
             mobileNavOpen: false,
-            userDropdownOpen: false,
             navCartCount: {{ (int) $currentCartCount }},
             activeNav: '{{ request()->is('produk*') || request()->routeIs('koleksi.*') ? 'produk' : (request()->is('kategori*') ? 'kategori' : 'home') }}',
             initNav() {
@@ -125,21 +124,28 @@
 
                 <!-- Akun Pill Button -->
                 <div class="relative">
-                    <button @click="userDropdownOpen = !userDropdownOpen"
-                            @click.away="userDropdownOpen = false"
-                            class="flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white hover:bg-stone-50 transition shadow-2xs">
-                        <div class="w-6 h-6 rounded-full bg-[#201A17] text-white flex items-center justify-center font-bold text-xs">
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                            </svg>
+                    <a href="{{ Auth::check() ? route('profile.edit') : route('login') }}"
+                       aria-label="{{ Auth::check() ? 'Buka profil akun '.Auth::user()->name : 'Masuk ke akun' }}"
+                       class="flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white hover:bg-stone-50 transition shadow-2xs">
+                        <div class="w-6 h-6 rounded-full bg-[#201A17] text-white flex items-center justify-center font-bold text-[10px] tracking-wide">
+                            @auth
+                                @if(Auth::user()->profile_photo_url)
+                                    <img src="{{ Auth::user()->profile_photo_url }}" alt="" class="h-full w-full rounded-full object-cover">
+                                @else
+                                    {{ Auth::user()->initials ?: 'A' }}
+                                @endif
+                            @else
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                </svg>
+                            @endauth
                         </div>
-                        <span class="text-xs font-semibold text-stone-800">
-                            Akun
-                        </span>
-                    </button>
+                        <span class="text-xs font-semibold text-stone-800">Akun</span>
+                    </a>
 
+                    @if(false)
                     <!-- Dropdown Menu -->
-                    <div x-cloak x-show="userDropdownOpen"
+                    <div x-cloak x-show="false"
                          x-transition:enter="transition ease-out duration-100"
                          x-transition:enter-start="transform opacity-0 scale-95"
                          x-transition:enter-end="transform opacity-100 scale-100"
@@ -193,6 +199,7 @@
                             </a>
                         @endauth
                     </div>
+                    @endif
                 </div>
 
                 <!-- Mobile Menu Hamburger -->
@@ -224,7 +231,13 @@
         <a href="{{ route('pesanan.index') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Pesanan Saya</a>
         <a href="{{ route('keranjang.index') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Keranjang Belanja</a>
         @auth
-            <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Data Diri & Alamat</a>
+            <a href="{{ route('profile.edit') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-stone-800 hover:bg-stone-200/40">Data Diri</a>
+            <form method="POST" action="{{ route('logout') }}" class="pt-2">
+                @csrf
+                <button type="submit" class="block w-full px-3 py-2 rounded-xl text-left text-sm font-semibold text-rose-600 hover:bg-rose-50">
+                    Keluar (Logout)
+                </button>
+            </form>
         @else
             <a href="{{ route('login') }}" class="block px-3 py-2 rounded-xl text-sm font-semibold text-[#B58742] hover:bg-stone-200/40">Masuk ke Akun</a>
         @endauth
