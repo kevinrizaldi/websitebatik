@@ -323,37 +323,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- BOTTOM BANNER: INFORMASI PELANGGAN & PROGRAM LOYALITAS --}}
-        <div class="rounded-2xl border border-[#E9DFD0] bg-[#FAF0E4]/70 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs">
-            <div class="flex items-start gap-4">
-                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1E1B18] text-[#C59A53] shadow-xs">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z" />
-                    </svg>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#8C5E28] mb-0.5">
-                        <span>PROGRAM LOYALITAS PELANGGAN</span>
-                        <span>•</span>
-                        <span class="text-emerald-700">Program Aktif</span>
-                    </div>
-                    <h3 class="text-base font-bold text-[#1E1B18]">Program Apresiasi Pelanggan Setia</h3>
-                    <p class="text-xs text-[#5A544E] mt-1 max-w-2xl leading-relaxed">
-                        Kelola dan berikan voucher diskon khusus kepada pelanggan setia untuk meningkatkan loyalitas belanja di toko Hamzah Style.
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2.5 shrink-0">
-                <button type="button" onclick="alert('Detail metrik loyalitas pelanggan.')" class="rounded-xl border border-[#E8E4DC] bg-white px-4 py-2.5 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
-                    Detail Metrik
-                </button>
-                <button type="button" onclick="alert('Voucher promo berhasil dijadwalkan untuk dikirim ke pelanggan setia.')" class="rounded-xl bg-[#1E1B18] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-black transition">
-                    Kirimkan Voucher
-                </button>
-            </div>
-        </div>
     </div>
 </x-app-layout>
 

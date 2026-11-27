@@ -298,8 +298,8 @@
                                 <td class="py-4 px-6">
                                     <div class="flex items-center gap-3">
                                         <div class="h-12 w-12 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
-                                            @if ($firstItem?->produk && $firstItem->produk->gambar)
-                                                <img src="{{ asset('storage/'.$firstItem->produk->gambar) }}" alt="{{ $firstItem->produk_name }}" class="h-full w-full object-cover">
+                                            @if ($firstItem?->produk)
+                                                <img src="{{ $firstItem->produk->gambar_url }}" alt="{{ $firstItem->produk_name }}" class="h-full w-full object-cover">
                                             @else
                                                 <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
                                                     Batik
@@ -332,14 +332,14 @@
 
                                 {{-- STATUS PEMBAYARAN --}}
                                 <td class="py-4 px-6">
-                                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold border {{ $paymentStatusPill[1] }}">
+                                    <span class="inline-block rounded-lg px-2.5 py-1 text-[10px] font-bold leading-snug border {{ $paymentStatusPill[1] }}">
                                         {{ $paymentStatusPill[0] }}
                                     </span>
                                 </td>
 
                                 {{-- STATUS PESANAN --}}
                                 <td class="py-4 px-6 text-center">
-                                    <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-extrabold border {{ $statusStyle }} hover:scale-105 transition">
+                                    <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1 text-[10px] font-extrabold border {{ $statusStyle }} hover:scale-105 transition">
                                         <span>{{ $order->status }}</span>
                                     </a>
                                 </td>
@@ -364,35 +364,6 @@
                 <div class="flex items-center gap-2">
                     {{ $orders->links() }}
                 </div>
-            </div>
-        </div>
-
-        {{-- BOTTOM BANNER: KEMASAN NOL SAMPAH --}}
-        <div class="rounded-2xl border border-[#E9DFD0] bg-[#FAF0E4]/70 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs">
-            <div class="flex items-start gap-4">
-                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1E1B18] text-[#C59A53] shadow-xs">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#8C5E28] mb-0.5">
-                        <span>Protokol Keberlanjutan &amp; Kemasan Nol Sampah</span>
-                        <span class="rounded bg-[#F8EDE2] px-1.5 py-0.2 text-[#A86544] font-extrabold">Batik Asli</span>
-                    </div>
-                    <p class="text-xs text-[#5A544E] mt-1 max-w-2xl leading-relaxed">
-                        Seluruh paket dikemas dengan kertas samson daur ulang, tali serat rami alami, serta sertifikat keaslian motif batik tulis berpola tangan asli. Dihitung akurat via RajaOngkir API.
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2.5 shrink-0">
-                <button type="button" onclick="alert('Panduan pengemasan ramah lingkungan Hamzah Style.')" class="rounded-xl border border-[#E8E4DC] bg-white px-4 py-2.5 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
-                    Panduan Pengemasan
-                </button>
-                <button type="button" onclick="alert('Permintaan penjemputan kurir logistik RajaOngkir diproses.')" class="rounded-xl bg-[#1E1B18] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-black transition">
-                    Hubungi Kurir Penjemputan
-                </button>
             </div>
         </div>
     </div>

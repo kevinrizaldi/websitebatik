@@ -186,8 +186,8 @@
                             @foreach ($order->items as $item)
                                 <div class="py-3 flex gap-4 items-center">
                                     <div class="w-14 h-14 bg-stone-100 rounded-xl overflow-hidden flex-shrink-0 border border-stone-200/50">
-                                        @if ($item->produk && $item->produk->foto)
-                                            <img src="{{ asset('storage/' . $item->produk->foto) }}" class="w-full h-full object-cover" alt="{{ $item->produk_name }}">
+                                        @if ($item->produk)
+                                            <img src="{{ $item->produk->gambar_url }}" class="w-full h-full object-cover" alt="{{ $item->produk_name }}">
                                         @else
                                             <div class="w-full h-full flex items-center justify-center text-[10px] font-bold text-stone-500">Batik</div>
                                         @endif

@@ -440,6 +440,6 @@ class ProdukController extends Controller
 
         $produk->update($payload);
 
-        return redirect()->back()->with('success', "âœ“ Stok untuk produk \"{$produk->nama}\" berhasil diperbarui menjadi {$produk->stok} pcs.");
+        return redirect()->back()->with('success', "✓ Stok untuk produk \"{$produk->nama}\" berhasil diperbarui menjadi {$produk->stok} pcs.");
     }
 }

@@ -260,8 +260,8 @@
                         @foreach ($order->items as $item)
                             <div class="pt-4 first:pt-0 flex items-start gap-4">
                                 <div class="h-16 w-16 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
-                                    @if ($item->produk && $item->produk->gambar)
-                                        <img src="{{ asset('storage/'.$item->produk->gambar) }}" alt="{{ $item->produk_name }}" class="h-full w-full object-cover">
+                                    @if ($item->produk)
+                                        <img src="{{ $item->produk->gambar_url }}" alt="{{ $item->produk_name }}" class="h-full w-full object-cover">
                                     @else
                                         <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
                                             Batik

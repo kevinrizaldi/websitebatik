@@ -3,7 +3,7 @@
         {{-- Flash Alerts --}}
         @if (session('success'))
             <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 shadow-2xs">
-                <span class="flex items-center gap-2"><span>âœ“</span> {{ session('success') }}</span>
+                <span class="flex items-center gap-2"><span>✓</span> {{ session('success') }}</span>
                 <button onclick="this.parentElement.remove()" class="text-base leading-none text-emerald-600 hover:text-emerald-800">&times;</button>
             </div>
         @endif
@@ -26,7 +26,7 @@
                     </p>
                 </div>
                 <div class="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[#8C5E28]">
-                    <span>âœ“</span>
+                    <span>✓</span>
                     <span>{{ $totalKategori ?? 4 }} Kategori Produk</span>
                 </div>
             </div>
@@ -74,8 +74,8 @@
                     @endif
                 </div>
                 <div class="mt-4 flex items-center justify-between text-[11px] font-semibold text-rose-600">
-                    <span>âš ï¸ Stok &le; 10 unit</span>
-                    <span class="text-xs text-stone-400">Filter â†’</span>
+                    <span>⚠️ Stok &le; 10 unit</span>
+                    <span class="text-xs text-stone-400">Filter →</span>
                 </div>
             </a>
 
@@ -165,17 +165,17 @@
                 <a href="{{ route('produk.index', array_merge(request()->only(['search', 'kategori', 'sort']), ['stok_menipis' => 1])) }}"
                    style="{{ $isMenipis ? 'background-color: #A86544 !important; color: #ffffff !important;' : '' }}"
                    class="px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs {{ $isMenipis ? 'bg-[#A86544] text-white border border-[#A86544]' : 'bg-white text-[#A86544] border border-[#E9DFD0] hover:bg-[#FAF0E4]' }}">
-                    âš ï¸ Stok Menipis ({{ $lowStockCount }})
+                    ⚠️ Stok Menipis ({{ $lowStockCount }})
                 </a>
                 <a href="{{ route('produk.index', array_merge(request()->only(['search', 'kategori', 'sort']), ['stok_habis' => 1])) }}"
                    style="{{ $isHabis ? 'background-color: #991B1B !important; color: #ffffff !important;' : '' }}"
                    class="px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs {{ $isHabis ? 'bg-[#991B1B] text-white border border-[#991B1B]' : 'bg-white text-rose-700 border border-rose-200 hover:bg-rose-50' }}">
-                    ðŸš« Stok Habis ({{ $outOfStockCount }})
+                    🚫 Stok Habis ({{ $outOfStockCount }})
                 </a>
                 <a href="{{ route('produk.index', array_merge(request()->only(['search', 'kategori', 'sort']), ['status_stok' => 'arsip'])) }}"
                    style="{{ $isArsip ? 'background-color: #78716C !important; color: #ffffff !important;' : '' }}"
                    class="px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs {{ $isArsip ? 'bg-stone-500 text-white border border-stone-500' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50' }}">
-                    ðŸ“¦ Diarsipkan ({{ $archivedCount ?? 0 }})
+                    📦 Diarsipkan ({{ $archivedCount ?? 0 }})
                 </a>
             </div>
         </div>
@@ -220,7 +220,7 @@
                         <input type="hidden" name="status_stok" value="{{ request('status_stok') }}">
                     @endif
 
-                    <select name="kategori" onchange="document.getElementById('produkFilterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
+                    <select name="kategori" onchange="document.getElementById('produkFilterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white pl-3 pr-9 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
                         <option value="">Semua Kategori</option>
                         @foreach ($kategorisList as $k)
                             <option value="{{ $k->nama_kategori }}" {{ request('kategori') === $k->nama_kategori ? 'selected' : '' }}>
@@ -229,8 +229,8 @@
                         @endforeach
                     </select>
 
-                    <select name="sort" onchange="document.getElementById('produkFilterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
-                        <option value="latest" {{ request('sort') === 'latest' ? 'selected' : '' }}>Urutkan: Terbaru â‡…</option>
+                    <select name="sort" onchange="document.getElementById('produkFilterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white pl-3 pr-9 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
+                        <option value="latest" {{ request('sort') === 'latest' ? 'selected' : '' }}>Urutkan: Terbaru ⇅</option>
                         <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Urutkan: Terlama</option>
                         <option value="stock_high" {{ request('sort') === 'stock_high' ? 'selected' : '' }}>Stok Terbanyak</option>
                         <option value="price_high" {{ request('sort') === 'price_high' ? 'selected' : '' }}>Harga Tertinggi</option>
@@ -239,7 +239,7 @@
 
                     @if ($search !== '' || $lowStockOnly || $outOfStockOnly || request('kategori') || request('status_stok') || request('sort'))
                         <a href="{{ route('produk.index') }}" class="inline-flex items-center gap-1 rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs hover:bg-[#FAF7F2] transition" title="Reset filter">
-                            <span>âœ•</span>
+                            <span>✕</span>
                             <span>Reset</span>
                         </a>
                     @endif
@@ -307,13 +307,7 @@
                                 <td class="py-4 px-4 align-top">
                                     <div class="flex items-start gap-3">
                                         <div class="relative h-14 w-14 shrink-0 rounded-xl overflow-hidden bg-stone-100 border border-[#EFECE6]">
-                                            @if ($p->gambar)
-                                                <img src="{{ asset('storage/'.$p->gambar) }}" alt="{{ $p->nama }}" class="h-full w-full object-cover">
-                                            @else
-                                                <div class="h-full w-full bg-[#FAF0E4] flex items-center justify-center text-xs font-bold text-[#A86544]">
-                                                    Kain
-                                                </div>
-                                            @endif
+                                            <img src="{{ $p->gambar_url }}" alt="{{ $p->nama }}" class="h-full w-full object-cover">
                                             @if ($isOut)
                                                 <div class="absolute inset-0 bg-black/60 flex items-center justify-center text-[9px] font-extrabold text-white uppercase tracking-wider">
                                                     HABIS
@@ -329,7 +323,7 @@
                                                     {{ $p->sku ?: 'HSO-BJK-'.str_pad((string)$p->id, 3, '0', STR_PAD_LEFT) }}
                                                 </span>
                                                 @if (!empty($p->jenis_produk))
-                                                    <span class="text-[10px] text-stone-400">â€¢ {{ $p->jenis_produk }}</span>
+                                                    <span class="text-[10px] text-stone-400">• {{ $p->jenis_produk }}</span>
                                                 @endif
                                             </div>
                                         </div>

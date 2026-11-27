@@ -196,7 +196,7 @@
                                 <span class="text-[10px] text-[#8C827A]">Mendukung format JPG, PNG, atau WEBP (Rekomendasi rasio 4:5 atau 1:1)</span>
                                 <div x-show="otherPreviews.length > 0" class="pt-1">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF4ED] text-[#8C6D58] text-[10px] font-semibold border border-[#E5DDD0]">
-                                        âœ“ <span x-text="otherPreviews.length + ' Foto Tambahan Terpilih (Maks. 9)'"></span>
+                                        ✓ <span x-text="otherPreviews.length + ' Foto Tambahan Terpilih (Maks. 9)'"></span>
                                     </span>
                                 </div>
                             </div>
@@ -382,7 +382,7 @@
                                                     ? 'bg-[#1E1B18] text-white border-[#1E1B18] shadow-xs'
                                                     : 'bg-white text-stone-700 border-[#D9D0C5] hover:border-[#8C6D58] hover:bg-[#FAF0E4]'"
                                                 class="px-2.5 py-1 rounded-lg text-xs font-bold border transition flex items-center gap-1 cursor-pointer">
-                                            <span x-show="hasSize('{{ $presetSize }}')">âœ“</span>
+                                            <span x-show="hasSize('{{ $presetSize }}')">✓</span>
                                             <span x-show="!hasSize('{{ $presetSize }}')">+</span>
                                             <span>{{ $presetSize }}</span>
                                         </button>
@@ -470,7 +470,7 @@
                                     <button type="button"
                                             @click="resetDefaultSizes()"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0E4] hover:bg-[#F3E5D4] text-[#8C6D58] border border-[#E8D9C5] text-xs font-bold transition cursor-pointer">
-                                        <span>â†º</span>
+                                        <span>↺</span>
                                         <span>Gunakan Ukuran Standar (S, M, L, XL, XXL)</span>
                                     </button>
                                 </div>
@@ -481,7 +481,7 @@
                         <div x-show="isKain" x-transition>
                             <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/70 p-4 flex items-start gap-3.5">
                                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1E1B18] text-[#C59A53] text-sm">
-                                    ðŸ§µ
+                                    🧵
                                 </div>
                                 <div class="flex-1">
                                     <h4 class="text-xs font-bold text-[#1E1B18]">Produk Kain Lembaran</h4>

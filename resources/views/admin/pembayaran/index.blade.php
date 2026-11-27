@@ -324,7 +324,7 @@
 
                                 {{-- STATUS --}}
                                 <td class="py-4 px-6">
-                                    <span class="inline-block rounded-full px-2.5 py-1 text-[10px] font-bold border {{ $statusPill[1] }}">
+                                    <span class="inline-block rounded-lg px-2.5 py-1 text-[10px] font-bold leading-snug border {{ $statusPill[1] }}">
                                         {{ $statusPill[0] }}
                                     </span>
                                 </td>
