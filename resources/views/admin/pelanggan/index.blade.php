@@ -3,15 +3,6 @@
         {{-- HEADER BREADCRUMB & TITLE --}}
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-                {{-- Breadcrumbs --}}
-                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
-                    <a href="{{ route('dashboard') }}" class="hover:text-stone-700">DASHBOARD</a>
-                    <span>/</span>
-                    <span class="text-[#A86544]">PELANGGAN</span>
-                    <span>/</span>
-                    <span>DIR-CST.2025</span>
-                </div>
-
                 {{-- Title & Subtitle --}}
                 <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">
                     Manajemen Pelanggan
