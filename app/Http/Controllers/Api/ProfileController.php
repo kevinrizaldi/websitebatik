@@ -122,6 +122,7 @@ class ProfileController extends Controller
             'province_id' => $validated['province_id'] ?? null,
             'city_id' => $validated['city_id'] ?? null,
             'is_primary' => $isPrimary,
+            'is_utama' => $isPrimary,
         ]);
 
         return response()->json([
@@ -161,11 +162,15 @@ class ProfileController extends Controller
             unset($validated['street']);
         }
 
-        if ($request->boolean('is_primary')) {
-            $request->user()->addresses()->where('id', '!=', $address->id)->update([
-                'is_primary' => false,
-                'is_utama' => false,
-            ]);
+        if ($request->has('is_primary')) {
+            $isPrimary = $request->boolean('is_primary');
+            if ($isPrimary) {
+                $request->user()->addresses()->where('id', '!=', $address->id)->update([
+                    'is_primary' => false,
+                    'is_utama' => false,
+                ]);
+            }
+            $validated['is_utama'] = $isPrimary;
         }
 
         $address->fill($validated);

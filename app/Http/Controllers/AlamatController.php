@@ -92,7 +92,7 @@ class AlamatController extends Controller
             : ($user->alamats()->count() === 0);
 
         if ($isUtama) {
-            $user->alamats()->update(['is_utama' => false]);
+            $user->alamats()->update(['is_utama' => false, 'is_primary' => false]);
         }
 
         $alamat = $user->alamats()->create([
@@ -111,6 +111,7 @@ class AlamatController extends Controller
             'latitude' => $request->filled('latitude') ? (float) $request->input('latitude') : null,
             'longitude' => $request->filled('longitude') ? (float) $request->input('longitude') : null,
             'is_utama' => $isUtama,
+            'is_primary' => $isUtama,
         ]);
 
         if ($request->wantsJson()) {
@@ -176,7 +177,11 @@ class AlamatController extends Controller
         ]);
 
         if (! empty($validated['is_utama'])) {
-            Auth::user()->alamats()->where('id', '!=', $alamat->id)->update(['is_utama' => false]);
+            Auth::user()->alamats()->where('id', '!=', $alamat->id)->update([
+                'is_utama' => false,
+                'is_primary' => false,
+            ]);
+            $validated['is_primary'] = true;
         }
 
         if ($request->has('latitude')) {
@@ -208,8 +213,8 @@ class AlamatController extends Controller
             abort(403);
         }
 
-        Auth::user()->alamats()->update(['is_utama' => false]);
-        $alamat->update(['is_utama' => true]);
+        Auth::user()->alamats()->update(['is_utama' => false, 'is_primary' => false]);
+        $alamat->update(['is_utama' => true, 'is_primary' => true]);
 
         if (request()->wantsJson()) {
             return response()->json([
