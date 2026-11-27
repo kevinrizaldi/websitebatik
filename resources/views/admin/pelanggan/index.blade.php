@@ -23,11 +23,11 @@
 
             {{-- Action Buttons --}}
             <div class="flex items-center gap-2.5 shrink-0">
-                <button type="button" onclick="alert('Mempersiapkan unduhan berkas CSV direktori pelanggan...')" class="inline-flex items-center gap-2 rounded-xl border border-[#E8E4DC] bg-white px-3.5 py-2 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
+                <button type="button" onclick="alert('Mempersiapkan unduhan berkas CSV data pelanggan...')" class="inline-flex items-center gap-2 rounded-xl border border-[#E8E4DC] bg-white px-3.5 py-2 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
                     <svg class="h-4 w-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    <span>Unduh Direktori (CSV)</span>
+                    <span>Unduh Data (CSV)</span>
                 </button>
 
                 <button type="button" onclick="alert('Fitur tambah pelanggan baru.')" class="inline-flex items-center gap-2 rounded-xl bg-[#1E1B18] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-black">
@@ -153,7 +153,7 @@
                         </svg>
                     </div>
                     <input type="search" name="search" value="{{ $search }}"
-                           placeholder="Cari nama pelanggan, nomor WhatsApp, kota, atau ID Patron..."
+                           placeholder="Cari nama pelanggan, nomor WhatsApp, kota, atau ID Pelanggan..."
                            class="w-full rounded-2xl border border-[#E8E4DC] bg-[#FAF0E4]/30 py-2.5 pl-10 pr-4 text-xs placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
                 </form>
 
@@ -163,8 +163,8 @@
                     <form action="{{ route('admin.pelanggan.index') }}" method="GET" id="filterForm" class="flex items-center gap-2">
                         <input type="hidden" name="search" value="{{ $search }}">
                         <select name="tier" onchange="document.getElementById('filterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
-                            <option value="all" {{ $tier === 'all' ? 'selected' : '' }}>Status: Semua Patron</option>
-                            <option value="vip" {{ $tier === 'vip' ? 'selected' : '' }}>Status: Lestari Patron VIP</option>
+                            <option value="all" {{ $tier === 'all' ? 'selected' : '' }}>Status: Semua Pelanggan</option>
+                            <option value="vip" {{ $tier === 'vip' ? 'selected' : '' }}>Status: Pelanggan VIP</option>
                             <option value="verified" {{ $tier === 'verified' ? 'selected' : '' }}>Status: Pelanggan Terverifikasi</option>
                             <option value="new" {{ $tier === 'new' ? 'selected' : '' }}>Status: Pembeli Baru</option>
                         </select>
@@ -202,7 +202,7 @@
                        'bg-[#1E1B18] text-white' => $tier === 'vip',
                        'bg-white text-stone-600 border border-[#EFECE6] hover:bg-[#FAF7F2]' => $tier !== 'vip',
                    ])>
-                    Lestari Patron VIP ({{ $vipCount }})
+                    Pelanggan VIP ({{ $vipCount }})
                 </a>
                 <a href="{{ route('admin.pelanggan.index', ['tier' => 'verified']) }}"
                    @class([
@@ -223,13 +223,13 @@
             </div>
         </div>
 
-        {{-- TABLE PATRON DIRECTORY --}}
+        {{-- TABLE PELANGGAN --}}
         <div class="rounded-2xl border border-[#EFECE6] bg-white shadow-2xs overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs">
                     <thead>
                         <tr class="border-b border-[#EFECE6] bg-[#FAF7F2]/60 text-[10px] font-bold uppercase tracking-wider text-stone-400">
-                            <th class="py-3.5 px-6">ID PATRON</th>
+                            <th class="py-3.5 px-6">ID PELANGGAN</th>
                             <th class="py-3.5 px-6">NAMA & WILAYAH</th>
                             <th class="py-3.5 px-6">KONTAK & SALURAN</th>
                             <th class="py-3.5 px-6">TIER LOYALITAS</th>
@@ -298,7 +298,7 @@
                         @empty
                             <tr>
                                 <td colspan="6" class="py-12 text-center text-xs text-stone-400">
-                                    Tidak ada data patron yang cocok dengan pencarian.
+                                    Tidak ada data pelanggan yang cocok dengan pencarian.
                                 </td>
                             </tr>
                         @endforelse
@@ -324,7 +324,7 @@
             </div>
         </div>
 
-        {{-- BOTTOM BANNER: WAWASAN SIRKULAR & APRESIASI --}}
+        {{-- BOTTOM BANNER: INFORMASI PELANGGAN & PROGRAM LOYALITAS --}}
         <div class="rounded-2xl border border-[#E9DFD0] bg-[#FAF0E4]/70 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs">
             <div class="flex items-start gap-4">
                 <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#1E1B18] text-[#C59A53] shadow-xs">
@@ -334,23 +334,23 @@
                 </div>
                 <div>
                     <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#8C5E28] mb-0.5">
-                        <span>WAWASAN & APRESIASI PATRON</span>
+                        <span>PROGRAM LOYALITAS PELANGGAN</span>
                         <span>•</span>
                         <span class="text-emerald-700">Program Aktif</span>
                     </div>
-                    <h3 class="text-base font-bold text-[#1E1B18]">Program Apresiasi Patron Lestari</h3>
+                    <h3 class="text-base font-bold text-[#1E1B18]">Program Apresiasi Pelanggan Setia</h3>
                     <p class="text-xs text-[#5A544E] mt-1 max-w-2xl leading-relaxed">
-                        Berikan apresiasi dan kupon konsultasi fitting eksklusif kepada pelanggan setia untuk menjaga hubungan personal artisanal.
+                        Kelola dan berikan voucher diskon khusus kepada pelanggan setia untuk meningkatkan loyalitas belanja di toko Hamzah Style.
                     </p>
                 </div>
             </div>
 
             <div class="flex items-center gap-2.5 shrink-0">
-                <button type="button" onclick="alert('Detail metrik loyalitas patron.')" class="rounded-xl border border-[#E8E4DC] bg-white px-4 py-2.5 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
+                <button type="button" onclick="alert('Detail metrik loyalitas pelanggan.')" class="rounded-xl border border-[#E8E4DC] bg-white px-4 py-2.5 text-xs font-semibold text-[#1E1B18] shadow-2xs hover:bg-[#FAF7F2] transition">
                     Detail Metrik
                 </button>
-                <button type="button" onclick="alert('Kupon konsultasi fitting pola berhasil dijadwalkan ke patron setia.')" class="rounded-xl bg-[#1E1B18] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-black transition">
-                    Kirimkan Kupon Massal
+                <button type="button" onclick="alert('Voucher promo berhasil dijadwalkan untuk dikirim ke pelanggan setia.')" class="rounded-xl bg-[#1E1B18] px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-black transition">
+                    Kirimkan Voucher
                 </button>
             </div>
         </div>

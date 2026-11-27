@@ -21,7 +21,8 @@ use Illuminate\Support\Facades\Auth;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $user
- * @property-read Produk|null $produk
+ * @property-read Product|null $product
+ * @property-read Product|null $produk
  *
  * @method static \Illuminate\Database\Eloquent\Builder|CartItem forCurrentVisitor()
  * @method static \Illuminate\Database\Eloquent\Builder|CartItem query()

@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Produk;
-use App\Models\Ulasan;
+use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -73,12 +73,12 @@ class DashboardController extends Controller
         $salesThisMonth = $this->salesTotal($today->copy()->startOfMonth(), $today->copy()->endOfMonth());
         $totalOrders = Order::count();
         $ordersToProcess = Order::whereIn('status', ['Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi'])->count();
-        $totalProducts = Produk::count();
-        $newProductsThisMonth = Produk::whereMonth('created_at', $today->month)->whereYear('created_at', $today->year)->count();
-        $lowStockProducts = Produk::whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD])->count();
-        $outOfStockProducts = Produk::where('stok', '<=', 0)->count();
-        $averageRating = (float) (Ulasan::where('status', 'Disetujui')->avg('rating') ?? 0);
-        $reviewsToApprove = Ulasan::where('status', 'Menunggu')->count();
+        $totalProducts = Product::count();
+        $newProductsThisMonth = Product::whereMonth('created_at', $today->month)->whereYear('created_at', $today->year)->count();
+        $lowStockProducts = Product::whereBetween('stok', [1, Product::LOW_STOCK_THRESHOLD])->count();
+        $outOfStockProducts = Product::where('stok', '<=', 0)->count();
+        $averageRating = (float) (Review::where('status', 'Disetujui')->avg('rating') ?? 0);
+        $reviewsToApprove = Review::where('status', 'Menunggu')->count();
 
         // Real order growth: this month vs last month
         $ordersThisMonth = Order::whereMonth('created_at', $today->month)->whereYear('created_at', $today->year)->count();
@@ -117,7 +117,7 @@ class DashboardController extends Controller
 
         $totalCategoryUnits = (int) $categorySales->sum('units_sold');
         if ($totalCategoryUnits === 0) {
-            $categorySales = Produk::query()
+            $categorySales = Product::query()
                 ->selectRaw('COALESCE(kategori, "Baju Batik") as kategori_nama')
                 ->selectRaw('SUM(stok) as units_sold')
                 ->groupBy('kategori_nama')
@@ -127,7 +127,7 @@ class DashboardController extends Controller
         }
 
         $categoriesData = $categorySales->take(3)->values()->map(function ($cat, $index) use ($totalCategoryUnits): array {
-            $samples = Produk::where('kategori', $cat->kategori_nama)->pluck('nama')->take(2)->implode(', ');
+            $samples = Product::where('kategori', $cat->kategori_nama)->pluck('nama')->take(2)->implode(', ');
             $color = match ($index) {
                 0 => '#1E1B18',
                 1 => '#A86544',
@@ -144,7 +144,7 @@ class DashboardController extends Controller
         });
 
         // Real restock recommendation
-        $lowStockProduct = Produk::where('stok', '<=', Produk::LOW_STOCK_THRESHOLD)
+        $lowStockProduct = Product::where('stok', '<=', Product::LOW_STOCK_THRESHOLD)
             ->orderBy('stok', 'asc')
             ->first();
 
@@ -281,7 +281,7 @@ class DashboardController extends Controller
             ->get();
 
         $topProducts->each(function ($item): void {
-            $produk = Produk::where('nama', $item->produk_name)->first();
+            $produk = Product::where('nama', $item->produk_name)->first();
             $item->produk = $produk;
             $item->stok = $produk?->stok ?? 0;
             $item->kategori_nama = $produk?->kategoriRelasi?->nama_kategori ?? $produk?->kategori ?? 'Koleksi Batik';
@@ -307,7 +307,7 @@ class DashboardController extends Controller
                 ->get();
 
             $allTimeTop->each(function ($item): void {
-                $produk = Produk::where('nama', $item->produk_name)->first();
+                $produk = Product::where('nama', $item->produk_name)->first();
                 $item->produk = $produk;
                 $item->stok = $produk?->stok ?? 0;
                 $item->kategori_nama = $produk?->kategoriRelasi?->nama_kategori ?? $produk?->kategori ?? 'Koleksi Batik';

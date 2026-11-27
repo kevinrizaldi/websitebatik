@@ -38,11 +38,14 @@
 
     {{ $extraHead ?? '' }}
 </head>
+@php
+    $cartCount = $cartCount ?? \App\Models\CartItem::forCurrentVisitor()->count();
+@endphp
 <body class="antialiased bg-[#FAF7F2] text-[#26211D] min-h-screen flex flex-col selection:bg-[#B58742] selection:text-white"
       x-data="{
           mobileMenuOpen: false,
           userMenu: false,
-          cartCount: {{ $cartCount ?? 0 }},
+          cartCount: {{ (int) $cartCount }},
           toastMessage: '{{ addslashes(session('success') ?? session('status') ?? session('info') ?? session('error') ?? '') }}',
           showToast(msg) {
               this.toastMessage = msg;

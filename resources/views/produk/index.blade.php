@@ -1,21 +1,9 @@
 <x-app-layout>
-    <div x-data="{
-        stockModalOpen: false,
-        activeProdukId: null,
-        activeProdukName: '',
-        activeProdukSku: '',
-        activeStok: 0,
-        activeStockUrl: '',
-        stokS: 0,
-        stokM: 0,
-        stokL: 0,
-        stokXL: 0,
-        stokXXL: 0
-    }" class="space-y-8">
+    <div class="space-y-8">
         {{-- Flash Alerts --}}
         @if (session('success'))
             <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800 shadow-2xs">
-                <span class="flex items-center gap-2"><span>✓</span> {{ session('success') }}</span>
+                <span class="flex items-center gap-2"><span>âœ“</span> {{ session('success') }}</span>
                 <button onclick="this.parentElement.remove()" class="text-base leading-none text-emerald-600 hover:text-emerald-800">&times;</button>
             </div>
         @endif
@@ -38,7 +26,7 @@
                     </p>
                 </div>
                 <div class="mt-4 flex items-center gap-1.5 text-[11px] font-semibold text-[#8C5E28]">
-                    <span>✓</span>
+                    <span>âœ“</span>
                     <span>{{ $totalKategori ?? 4 }} Kategori Produk</span>
                 </div>
             </div>
@@ -86,8 +74,8 @@
                     @endif
                 </div>
                 <div class="mt-4 flex items-center justify-between text-[11px] font-semibold text-rose-600">
-                    <span>⚠️ Stok &le; 10 unit</span>
-                    <span class="text-xs text-stone-400">Filter →</span>
+                    <span>âš ï¸ Stok &le; 10 unit</span>
+                    <span class="text-xs text-stone-400">Filter â†’</span>
                 </div>
             </a>
 
@@ -162,6 +150,7 @@
                     $isAman = request('status_stok') === 'tersedia';
                     $isMenipis = request('stok_menipis') == 1 || request('status_stok') === 'menipis';
                     $isHabis = request('stok_habis') == 1 || request('status_stok') === 'habis';
+                    $isArsip = request('status_stok') === 'arsip';
                 @endphp
                 <a href="{{ route('produk.index', request()->only(['search', 'kategori', 'sort'])) }}"
                    style="{{ $isAll ? 'background-color: #1E1B18 !important; color: #ffffff !important;' : '' }}"
@@ -176,12 +165,17 @@
                 <a href="{{ route('produk.index', array_merge(request()->only(['search', 'kategori', 'sort']), ['stok_menipis' => 1])) }}"
                    style="{{ $isMenipis ? 'background-color: #A86544 !important; color: #ffffff !important;' : '' }}"
                    class="px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs {{ $isMenipis ? 'bg-[#A86544] text-white border border-[#A86544]' : 'bg-white text-[#A86544] border border-[#E9DFD0] hover:bg-[#FAF0E4]' }}">
-                    ⚠️ Stok Menipis ({{ $lowStockCount }})
+                    âš ï¸ Stok Menipis ({{ $lowStockCount }})
                 </a>
                 <a href="{{ route('produk.index', array_merge(request()->only(['search', 'kategori', 'sort']), ['stok_habis' => 1])) }}"
                    style="{{ $isHabis ? 'background-color: #991B1B !important; color: #ffffff !important;' : '' }}"
                    class="px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs {{ $isHabis ? 'bg-[#991B1B] text-white border border-[#991B1B]' : 'bg-white text-rose-700 border border-rose-200 hover:bg-rose-50' }}">
-                    🚫 Stok Habis ({{ $outOfStockCount }})
+                    ðŸš« Stok Habis ({{ $outOfStockCount }})
+                </a>
+                <a href="{{ route('produk.index', array_merge(request()->only(['search', 'kategori', 'sort']), ['status_stok' => 'arsip'])) }}"
+                   style="{{ $isArsip ? 'background-color: #78716C !important; color: #ffffff !important;' : '' }}"
+                   class="px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs {{ $isArsip ? 'bg-stone-500 text-white border border-stone-500' : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-50' }}">
+                    ðŸ“¦ Diarsipkan ({{ $archivedCount ?? 0 }})
                 </a>
             </div>
         </div>
@@ -197,6 +191,9 @@
                     @if(request('stok_habis'))
                         <input type="hidden" name="stok_habis" value="{{ request('stok_habis') }}">
                     @endif
+                    @if(request('status_stok'))
+                        <input type="hidden" name="status_stok" value="{{ request('status_stok') }}">
+                    @endif
                     @if(request('kategori'))
                         <input type="hidden" name="kategori" value="{{ request('kategori') }}">
                     @endif
@@ -206,7 +203,7 @@
                         </svg>
                     </div>
                     <input type="search" name="search" value="{{ $search }}"
-                           placeholder="Cari nama produk, SKU, material, ukuran..."
+                           placeholder="Cari nama produk, SKU, ukuran..."
                            class="w-full rounded-2xl border border-[#E8E4DC] bg-[#FAF0E4]/30 py-2.5 pl-10 pr-4 text-xs placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
                 </form>
 
@@ -219,6 +216,9 @@
                     @if(request('stok_habis'))
                         <input type="hidden" name="stok_habis" value="{{ request('stok_habis') }}">
                     @endif
+                    @if(request('status_stok'))
+                        <input type="hidden" name="status_stok" value="{{ request('status_stok') }}">
+                    @endif
 
                     <select name="kategori" onchange="document.getElementById('produkFilterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
                         <option value="">Semua Kategori</option>
@@ -230,7 +230,7 @@
                     </select>
 
                     <select name="sort" onchange="document.getElementById('produkFilterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
-                        <option value="latest" {{ request('sort') === 'latest' ? 'selected' : '' }}>Urutkan: Terbaru ⇅</option>
+                        <option value="latest" {{ request('sort') === 'latest' ? 'selected' : '' }}>Urutkan: Terbaru â‡…</option>
                         <option value="oldest" {{ request('sort') === 'oldest' ? 'selected' : '' }}>Urutkan: Terlama</option>
                         <option value="stock_high" {{ request('sort') === 'stock_high' ? 'selected' : '' }}>Stok Terbanyak</option>
                         <option value="price_high" {{ request('sort') === 'price_high' ? 'selected' : '' }}>Harga Tertinggi</option>
@@ -239,7 +239,7 @@
 
                     @if ($search !== '' || $lowStockOnly || $outOfStockOnly || request('kategori') || request('status_stok') || request('sort'))
                         <a href="{{ route('produk.index') }}" class="inline-flex items-center gap-1 rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs hover:bg-[#FAF7F2] transition" title="Reset filter">
-                            <span>✕</span>
+                            <span>âœ•</span>
                             <span>Reset</span>
                         </a>
                     @endif
@@ -273,39 +273,26 @@
                             <th class="py-3.5 px-4">HARGA</th>
                             <th class="py-3.5 px-4">STOK &amp; UKURAN</th>
                             <th class="py-3.5 px-4">STATUS STOK</th>
-                            <th class="py-3.5 px-4">BAHAN / MATERIAL</th>
                             <th class="py-3.5 px-4 text-center">AKSI</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#EFECE6]/70">
                         @forelse ($produks as $p)
                             @php
-                                $isLow = $p->stok > 0 && $p->stok <= \App\Models\Product::LOW_STOCK_THRESHOLD;
-                                $isOut = $p->stok <= 0;
+                                $isArchived = ($p->status === 'Diarsipkan');
+                                $isLow = ! $isArchived && $p->stok > 0 && $p->stok <= \App\Models\Product::LOW_STOCK_THRESHOLD;
+                                $isOut = ! $isArchived && $p->stok <= 0;
                                 $statusBadge = match (true) {
+                                    $isArchived => 'bg-stone-100 text-stone-500 border-stone-200',
                                     $isOut => 'bg-[#FFEBEE] text-[#C62828] border-[#FFCDD2]',
                                     $isLow => 'bg-[#FAF0E4] text-[#A86544] border-[#E8D9C5]',
                                     default => 'bg-[#FAF7F2] text-stone-700 border-[#EFECE6]',
                                 };
                                 $statusText = match (true) {
+                                    $isArchived => 'Diarsipkan',
                                     $isOut => 'Habis (0 pcs)',
                                     $isLow => 'Stok Menipis',
                                     default => 'Stok Aman',
-                                };
-
-                                $ecoBadge = match (true) {
-                                    str_contains(strtolower($p->nama), 'upcycled') || str_contains(strtolower($p->kategori ?? ''), 'sisa') => 'Upcycled Fabric',
-                                    str_contains(strtolower($p->nama), 'sutera') || str_contains(strtolower($p->nama), 'sutra') => 'Sutera Dobi Exclusive',
-                                    str_contains(strtolower($p->nama), 'truntum') => 'Sutra Canting Halus',
-                                    default => 'Katun Primissima 100%',
-                                };
-
-                                $motifSub = match (true) {
-                                    str_contains(strtolower($p->nama), 'parang') => 'Pola Seling Nitik',
-                                    str_contains(strtolower($p->nama), 'kawung') => 'Kawung Manik Keraton',
-                                    str_contains(strtolower($p->nama), 'tote') => 'Kulit Nabati & Perca',
-                                    str_contains(strtolower($p->nama), 'truntum') => 'Canting Tembaga Asli',
-                                    default => 'Handmade Artisan',
                                 };
 
                                 $stokUkuran = $p->stok_ukuran ?? $p->size_stock ?? [];
@@ -341,7 +328,9 @@
                                                 <span class="rounded bg-[#FAF0E4] px-1.5 py-0.5 text-[9px] font-mono font-bold text-[#8C5E28]">
                                                     {{ $p->sku ?: 'HSO-BJK-'.str_pad((string)$p->id, 3, '0', STR_PAD_LEFT) }}
                                                 </span>
-                                                <span class="text-[10px] text-stone-400">• {{ $motifSub }}</span>
+                                                @if (!empty($p->jenis_produk))
+                                                    <span class="text-[10px] text-stone-400">â€¢ {{ $p->jenis_produk }}</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -398,53 +387,43 @@
                                     </span>
                                 </td>
 
-                                {{-- DAMPAK MATERIAL --}}
-                                <td class="py-4 px-4 align-top">
-                                    <span class="inline-flex items-center gap-1 rounded-lg bg-[#FAF7F2] border border-[#EFECE6] px-2.5 py-1 text-[10px] font-semibold text-stone-600">
-                                        <span>🍃</span>
-                                        <span>{{ $ecoBadge }}</span>
-                                    </span>
-                                </td>
+                                {{-- AKSI --}}
+                                <td class="py-4 px-4 text-center align-middle">
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        {{-- Edit --}}
+                                        <a href="{{ route('produk.edit', $p) }}" class="p-1.5 rounded-lg text-stone-500 hover:text-[#8C5E28] hover:bg-[#FAF0E4] transition" title="Edit Produk">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                            </svg>
+                                        </a>
 
-                                {{-- AKSI & KELOLA STOK --}}
-                                <td class="py-4 px-4 text-center align-top">
-                                    <div class="flex flex-col items-center gap-1.5">
-                                        {{-- Tombol Cepat Update Stok (Integrasi Fitur Stok) --}}
-                                        <button type="button"
-                                                @click="stockModalOpen = true; activeProdukId = {{ $p->id }}; activeProdukName = '{{ addslashes($p->nama) }}'; activeProdukSku = '{{ addslashes($p->sku ?? '') }}'; activeStok = {{ (int)$p->stok }}; activeStockUrl = '{{ route('produk.update-stock', $p) }}'; stokS = {{ (int)($stokUkuran['S'] ?? $stokUkuran['s'] ?? 0) }}; stokM = {{ (int)($stokUkuran['M'] ?? $stokUkuran['m'] ?? 0) }}; stokL = {{ (int)($stokUkuran['L'] ?? $stokUkuran['l'] ?? 0) }}; stokXL = {{ (int)($stokUkuran['XL'] ?? $stokUkuran['xl'] ?? 0) }}; stokXXL = {{ (int)($stokUkuran['XXL'] ?? $stokUkuran['xxl'] ?? 0) }};"
-                                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#FAF0E4] hover:bg-[#F3E6D5] text-[#8C5E28] font-bold text-[10px] border border-[#E9DFD0] transition shadow-2xs">
-                                            <span>⚡</span>
-                                            <span>Update Stok</span>
-                                        </button>
+                                        {{-- Arsipkan / Buka Arsip --}}
+                                        <form action="{{ route('produk.toggle-archive', $p) }}" method="POST" onsubmit="return confirm('{{ $isArchived ? "Aktifkan kembali produk {$p->nama}?" : "Arsipkan produk {$p->nama}?" }}')">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="p-1.5 rounded-lg {{ $isArchived ? 'text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100' : 'text-stone-500 hover:text-stone-800 hover:bg-[#FAF0E4]' }} transition" title="{{ $isArchived ? 'Buka Arsip (Aktifkan Kembali)' : 'Arsipkan Produk' }}">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                                </svg>
+                                            </button>
+                                        </form>
 
-                                        <div class="flex items-center justify-center gap-1">
-                                            <a href="{{ route('produk.show', $p) }}" class="p-1 text-stone-400 hover:text-stone-700 transition" title="Lihat Detail Produk">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        {{-- Hapus --}}
+                                        <form action="{{ route('produk.destroy', $p) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk {{ $p->nama }}?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-1.5 rounded-lg text-stone-500 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Produk">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
-                                            </a>
-                                            <a href="{{ route('produk.edit', $p) }}" class="p-1 text-stone-400 hover:text-stone-700 transition" title="Ubah Produk">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                                </svg>
-                                            </a>
-                                            <form action="{{ route('produk.destroy', $p) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk {{ $p->nama }}?')">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="p-1 text-stone-400 hover:text-rose-600 transition" title="Hapus Produk">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        </div>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="py-12 text-center text-xs text-stone-400">
+                                <td colspan="7" class="py-12 text-center text-xs text-stone-400">
                                     Tidak ada produk batik yang ditemukan.
                                 </td>
                             </tr>
@@ -465,93 +444,6 @@
             </div>
         </div>
 
-        {{-- MODAL CEPAT UPDATE STOK (FITUR STOK TERPADU) --}}
-        <div x-show="stockModalOpen"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-             style="display: none;"
-             x-cloak>
-            <div @click.away="stockModalOpen = false" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#EFECE6] space-y-4">
-                <div class="flex items-center justify-between pb-3 border-b border-[#EFECE6]">
-                    <div>
-                        <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#A86544]">
-                            <span>STOK PRODUK</span>
-                            <span>•</span>
-                            <span x-text="activeProdukSku"></span>
-                        </div>
-                        <h3 class="text-base font-bold text-[#1E1B18] mt-0.5" x-text="'Update Stok: ' + activeProdukName"></h3>
-                    </div>
-                    <button type="button" @click="stockModalOpen = false" class="text-stone-400 hover:text-stone-700 text-lg">&times;</button>
-                </div>
-
-                <form :action="activeStockUrl" method="POST" class="space-y-4">
-                    @csrf
-                    @method('PATCH')
-
-                    {{-- Total Stok Utama --}}
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
-                            Total Jumlah Stok (Pcs) <span class="text-rose-600">*</span>
-                        </label>
-                        <input type="number" name="stok" x-model.number="activeStok" min="0" required
-                               class="w-full rounded-xl border border-[#E8E4DC] bg-[#FAF7F2]/40 px-3.5 py-2.5 text-sm font-bold text-[#1E1B18] focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
-                        <p class="text-[10px] text-stone-400 mt-1">Total ketersediaan stok produk.</p>
-                    </div>
-
-                    {{-- Breakdown Ukuran (Opsional) --}}
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-2">
-                            ALOKASI UKURAN BUSANA (OPSIONAL)
-                        </label>
-                        <div class="grid grid-cols-5 gap-2">
-                            <div>
-                                <span class="block text-center text-[10px] font-bold text-stone-500 mb-1">S</span>
-                                <input type="number" name="stok_ukuran[S]" x-model.number="stokS" min="0" class="w-full rounded-lg border border-[#E8E4DC] bg-[#FAF7F2]/40 p-1.5 text-center text-xs font-bold text-[#1E1B18] focus:border-[#C59A53] focus:ring-0">
-                            </div>
-                            <div>
-                                <span class="block text-center text-[10px] font-bold text-stone-500 mb-1">M</span>
-                                <input type="number" name="stok_ukuran[M]" x-model.number="stokM" min="0" class="w-full rounded-lg border border-[#E8E4DC] bg-[#FAF7F2]/40 p-1.5 text-center text-xs font-bold text-[#1E1B18] focus:border-[#C59A53] focus:ring-0">
-                            </div>
-                            <div>
-                                <span class="block text-center text-[10px] font-bold text-stone-500 mb-1">L</span>
-                                <input type="number" name="stok_ukuran[L]" x-model.number="stokL" min="0" class="w-full rounded-lg border border-[#E8E4DC] bg-[#FAF7F2]/40 p-1.5 text-center text-xs font-bold text-[#1E1B18] focus:border-[#C59A53] focus:ring-0">
-                            </div>
-                            <div>
-                                <span class="block text-center text-[10px] font-bold text-stone-500 mb-1">XL</span>
-                                <input type="number" name="stok_ukuran[XL]" x-model.number="stokXL" min="0" class="w-full rounded-lg border border-[#E8E4DC] bg-[#FAF7F2]/40 p-1.5 text-center text-xs font-bold text-[#1E1B18] focus:border-[#C59A53] focus:ring-0">
-                            </div>
-                            <div>
-                                <span class="block text-center text-[10px] font-bold text-stone-500 mb-1">XXL</span>
-                                <input type="number" name="stok_ukuran[XXL]" x-model.number="stokXXL" min="0" class="w-full rounded-lg border border-[#E8E4DC] bg-[#FAF7F2]/40 p-1.5 text-center text-xs font-bold text-[#1E1B18] focus:border-[#C59A53] focus:ring-0">
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Catatan Penyesuaian --}}
-                    <div>
-                        <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-600 mb-1">
-                            CATATAN RESTOCK / MUTASI (OPSIONAL)
-                        </label>
-                        <input type="text" name="catatan" placeholder="Contoh: Kiriman batch baru dari penjahit atelier..." class="w-full rounded-xl border border-[#E8E4DC] bg-[#FAF7F2]/40 px-3.5 py-2 text-xs text-[#1E1B18] placeholder:text-stone-400 focus:border-[#C59A53] shadow-2xs">
-                    </div>
-
-                    <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-[#EFECE6]">
-                        <button type="button" @click="stockModalOpen = false" class="rounded-xl border border-[#E8E4DC] bg-white px-4 py-2.5 text-xs font-semibold text-stone-600 hover:bg-[#FAF7F2] transition">
-                            Batal
-                        </button>
-                        <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-[#1E1B18] px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-black transition">
-                            <span>Simpan Perubahan Stok</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
         {{-- BOTTOM BANNER: STANDAR KURASI LESTARI --}}
         <div class="rounded-2xl border border-[#E9DFD0] bg-[#FAF0E4]/70 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs">
             <div class="flex items-start gap-4">
@@ -561,7 +453,7 @@
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-base font-bold text-[#1E1B18]">Integrasi Katalog &amp; Akurasi Stok Sirkular</h3>
+                    <h3 class="text-base font-bold text-[#1E1B18]">Pengelolaan Produk &amp; Akurasi Stok</h3>
                     <p class="text-xs text-[#5A544E] mt-1 max-w-2xl leading-relaxed">
                         Data ketersediaan unit fisik dan status stok tersinkronisasi otomatis dengan etalase web. Setiap penambahan atau pengurangan stok tercatat akurat untuk menjaga standar pelayanan Hamzah Style.
                     </p>

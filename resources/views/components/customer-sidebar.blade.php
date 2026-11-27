@@ -9,7 +9,13 @@
     $currentUser = $user ?? Auth::user();
     $name = $currentUser?->name ?? 'Budi Santoso';
     $email = $currentUser?->email ?? 'budi.santoso@email.com';
-    $initials = $currentUser?->initials ?: 'A';
+    $nameParts = explode(' ', trim($name));
+    $initials = strtoupper(substr($nameParts[0], 0, 1));
+    if (count($nameParts) > 1) {
+        $initials .= strtoupper(substr(end($nameParts), 0, 1));
+    } else {
+        $initials = strtoupper(substr($name, 0, 2));
+    }
     $alamatCount = $alamatCount ?? ($currentUser ? $currentUser->alamats()->count() : 0);
     $pesananAktif = $pesananAktif ?? ($currentUser ? $currentUser->orders()->whereIn('status', [
         'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi',
@@ -24,25 +30,19 @@
         <div class="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#F7EFE7]/80 to-transparent"></div>
 
         <div class="relative">
-            <form method="POST" action="{{ route('profile.avatar.update') }}" enctype="multipart/form-data">
-                @csrf
-                <div class="relative inline-block">
-                    @if($currentUser?->profile_photo_url)
-                        <img src="{{ $currentUser->profile_photo_url }}" alt="Foto profil {{ $name }}" class="h-20 w-20 rounded-full border border-stone-200 object-cover shadow-sm">
-                    @else
-                        <div class="flex h-20 w-20 items-center justify-center rounded-full bg-[#201A17] text-xl font-bold tracking-wider text-white shadow-sm">
-                            {{ $initials }}
-                        </div>
-                    @endif
-                    <label for="profile-avatar" aria-label="Ubah foto profil" title="Ubah foto profil"
-                           class="absolute bottom-0 right-0 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#201A17] text-white shadow-sm transition hover:bg-stone-700 focus-within:ring-2 focus-within:ring-[#C59A53]">
-                        <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 8.5h3l1.5-2h7l1.5 2h3A1.5 1.5 0 0121.5 10v8A1.5 1.5 0 0120 19.5H4A1.5 1.5 0 012.5 18v-8A1.5 1.5 0 014 8.5z" />
-                            <circle cx="12" cy="13.5" r="3.25" />
-                        </svg>
-                    </label>
-                    <input id="profile-avatar" type="file" name="avatar" accept="image/jpeg,image/png,image/webp" aria-label="Ubah foto profil" required
-                           class="sr-only" onchange="this.form.submit()">
+            <div class="relative inline-block">
+                @if($currentUser?->avatar)
+                    <img src="{{ $currentUser->avatar }}" alt="{{ $name }}" class="h-20 w-20 rounded-full object-cover shadow-sm border border-stone-200">
+                @else
+                    <div class="flex h-20 w-20 items-center justify-center rounded-full bg-[#201A17] text-xl font-bold tracking-wider text-white shadow-sm">
+                        {{ $initials }}
+                    </div>
+                @endif
+                <div class="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 bg-white text-stone-700 shadow-xs" title="Foto Profil">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z"/>
+                    </svg>
                 </div>
             </form>
             @error('avatar')

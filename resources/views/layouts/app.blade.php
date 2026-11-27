@@ -68,37 +68,6 @@
                                        class="w-full rounded-2xl border border-[#E8E4DC] bg-white py-2 pl-10 pr-4 text-xs placeholder:text-stone-400 focus:border-[#C59A53] focus:outline-none focus:ring-1 focus:ring-[#C59A53]/30 shadow-2xs">
                             </form>
                         </div>
-
-                        {{-- Right Status & User Actions --}}
-                        <div class="flex items-center gap-3">
-                            {{-- Notification Bell --}}
-                            @php
-                                $unhandledOrdersCount = \App\Models\Order::whereIn('status', ['Menunggu Verifikasi', 'Menunggu Pembayaran', 'Belum Dibayar', 'Diproses'])->count();
-                            @endphp
-                            <a href="{{ route('admin.orders.index', ['status' => 'Menunggu Verifikasi']) }}" class="relative rounded-full border border-[#EFECE6] bg-white p-2 text-stone-600 hover:bg-[#FAF7F2] transition shadow-2xs" title="Notifikasi Verifikasi Pesanan">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                </svg>
-                                @if($unhandledOrdersCount > 0)
-                                    <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#A86544] text-[9px] font-bold text-white">
-                                        {{ $unhandledOrdersCount > 99 ? '99+' : $unhandledOrdersCount }}
-                                    </span>
-                                @endif
-                            </a>
-
-                            {{-- User Avatar & Info --}}
-                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 pl-2 border-l border-[#EFECE6] hover:opacity-80 transition group" title="Profil Saya">
-                                <div class="flex h-8 w-8 items-center justify-center rounded-full bg-[#1E1B18] text-[#C59A53] text-xs font-bold group-hover:scale-105 transition-transform">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                </div>
-                                <div class="hidden md:block text-left">
-                                    <p class="text-xs font-bold text-[#1E1B18] leading-tight group-hover:text-[#A86544] transition-colors">{{ Auth::user()->name ?? 'Administrator' }}</p>
-                                    <p class="text-[10px] text-stone-400">{{ Auth::user()->role ? ucfirst(Auth::user()->role) : 'Super Admin' }}</p>
-                                </div>
-                            </a>
-                        </div>
                     </header>
 
                     {{-- Optional Header slot --}}

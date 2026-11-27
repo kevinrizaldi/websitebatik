@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CartItem;
-use App\Models\Produk;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -88,7 +88,7 @@ class ProdukValidationTest extends TestCase
 
     public function test_product_status_updates_when_stock_crosses_the_low_stock_threshold(): void
     {
-        $product = Produk::create([
+        $product = Product::create([
             'nama' => 'Batik Ubah Stok',
             'sku' => 'BTK-LOW-EDIT',
             'kategori' => 'Kain Batik',
@@ -174,7 +174,7 @@ class ProdukValidationTest extends TestCase
 
     public function test_update_requires_crossed_out_price(): void
     {
-        $product = Produk::create([
+        $product = Product::create([
             'nama' => 'Batik Edit Tanpa Harga Coret',
             'sku' => 'BTK-PRICE-CROSS-EDIT',
             'kategori' => 'Kain Batik',
@@ -225,7 +225,7 @@ class ProdukValidationTest extends TestCase
 
     public function test_update_fails_when_price_or_stock_out_of_bounds(): void
     {
-        $produk = Produk::create([
+        $produk = Product::create([
             'nama' => 'Batik Awal',
             'sku' => 'BTK-007',
             'kategori' => 'Kain Batik',
@@ -281,7 +281,7 @@ class ProdukValidationTest extends TestCase
 
     public function test_can_update_product_within_valid_limits(): void
     {
-        $produk = Produk::create([
+        $produk = Product::create([
             'nama' => 'Batik Valid',
             'sku' => 'BTK-008',
             'kategori' => 'Kain Batik',
@@ -326,7 +326,7 @@ class ProdukValidationTest extends TestCase
         ]);
 
         $response->assertRedirect(route('produk.index'));
-        $produk = Produk::where('sku', 'KMT-001')->first();
+        $produk = Product::where('sku', 'KMT-001')->first();
         $this->assertNotNull($produk);
         $this->assertSame(10, $produk->stok);
         $this->assertSame('Stok Menipis', $produk->status);
@@ -361,7 +361,7 @@ class ProdukValidationTest extends TestCase
     public function test_cannot_add_to_cart_out_of_stock_size(): void
     {
         $customer = User::factory()->create(['role' => 'customer']);
-        $produk = Produk::create([
+        $produk = Product::create([
             'nama' => 'Kemeja Eksklusif Sutra',
             'sku' => 'SUTRA-001',
             'kategori' => 'Baju Batik',
@@ -399,7 +399,7 @@ class ProdukValidationTest extends TestCase
     public function test_checkout_deducts_size_specific_stock_accurately(): void
     {
         $customer = User::factory()->create(['role' => 'customer']);
-        $produk = Produk::create([
+        $produk = Product::create([
             'nama' => 'Kemeja Katun Klasik',
             'sku' => 'KLASIK-001',
             'kategori' => 'Baju Batik',
@@ -437,7 +437,7 @@ class ProdukValidationTest extends TestCase
 
     public function test_product_index_searches_by_product_keywords(): void
     {
-        $matchedProduct = Produk::create([
+        $matchedProduct = Product::create([
             'nama' => 'Batik Motif Parang',
             'sku' => 'SKU-CARI-PARANG',
             'kategori' => 'Kain Batik',
@@ -446,7 +446,7 @@ class ProdukValidationTest extends TestCase
             'status' => 'Tersedia',
             'material' => 'Katun',
         ]);
-        Produk::create([
+        Product::create([
             'nama' => 'Batik Motif Kawung',
             'sku' => 'SKU-CARI-KAWUNG',
             'kategori' => 'Kain Batik',
@@ -472,13 +472,13 @@ class ProdukValidationTest extends TestCase
             ['Batik Habis', 'SKU-LOW-000', 0],
             ['Batik Aman', 'SKU-LOW-011', 11],
         ] as [$name, $sku, $stock]) {
-            Produk::create([
+            Product::create([
                 'nama' => $name,
                 'sku' => $sku,
                 'kategori' => 'Kain Batik',
                 'harga' => 250000,
                 'stok' => $stock,
-                'status' => Produk::statusForStock($stock),
+                'status' => Product::statusForStock($stock),
             ]);
         }
 
@@ -501,13 +501,13 @@ class ProdukValidationTest extends TestCase
             ['Batik Habis', 'SKU-OUT-000', 0],
             ['Batik Tersedia', 'SKU-OUT-011', 11],
         ] as [$name, $sku, $stock]) {
-            Produk::create([
+            Product::create([
                 'nama' => $name,
                 'sku' => $sku,
                 'kategori' => 'Kain Batik',
                 'harga' => 250000,
                 'stok' => $stock,
-                'status' => Produk::statusForStock($stock),
+                'status' => Product::statusForStock($stock),
             ]);
         }
 
@@ -549,7 +549,7 @@ class ProdukValidationTest extends TestCase
             'panduan_ukuran' => "S: LD 104 cm, PB 72 cm\nM: LD 108 cm, PB 74 cm",
         ]);
 
-        $product = Produk::where('sku', 'BJU-GUIDE-001')->firstOrFail();
+        $product = Product::where('sku', 'BJU-GUIDE-001')->firstOrFail();
 
         $updateResponse = $this->actingAs($this->admin)->put(route('produk.update', $product), [
             'nama' => 'Kemeja Batik Keraton Edisi Revisi',
@@ -596,7 +596,7 @@ class ProdukValidationTest extends TestCase
 
         $response->assertRedirect(route('produk.index'));
 
-        $product = Produk::where('sku', 'BJU-CUSTOM-SIZES')->firstOrFail();
+        $product = Product::where('sku', 'BJU-CUSTOM-SIZES')->firstOrFail();
         $this->assertEquals(16, $product->stok);
         $this->assertEquals('XS, S, 3XL, All Size', $product->ukuran);
 

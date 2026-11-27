@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\CartItem;
-use App\Models\Kategori;
+use App\Models\Category;
 use App\Models\Order;
-use App\Models\Produk;
-use App\Models\Ulasan;
+use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use App\Services\MidtransService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -129,7 +129,7 @@ class WebPrdFlowTest extends TestCase
 
     public function test_produk_create_form_uses_dynamic_categories(): void
     {
-        Kategori::create(['nama_kategori' => 'Seragam ASN', 'slug' => 'seragam-asn']);
+        Category::create(['nama_kategori' => 'Seragam ASN', 'slug' => 'seragam-asn']);
 
         $response = $this->actingAs($this->admin())->get(route('produk.create'));
 
@@ -140,7 +140,7 @@ class WebPrdFlowTest extends TestCase
     public function test_confirm_received_updates_pengiriman_to_diterima(): void
     {
         $user = $this->customer();
-        $produk = Produk::create([
+        $produk = Product::create([
             'nama' => 'Batik Produk Terima',
             'sku' => 'BTK-'.uniqid(),
             'kategori' => 'Baju Batik',
@@ -223,15 +223,11 @@ class WebPrdFlowTest extends TestCase
         $response->assertDontSee('Voucher');
     }
 
-    public function test_admin_profile_uses_dashboard_layout(): void
+    public function test_admin_profile_redirects_to_dashboard(): void
     {
         $response = $this->actingAs($this->admin())->get(route('profile.edit'));
 
-        $response->assertStatus(200);
-        $response->assertSee('Profil Admin');
-        $response->assertSee('Informasi Akun');
-        $response->assertSee('Ubah Password');
-        $response->assertDontSee('Profil Saya');
+        $response->assertRedirect(route('dashboard'));
     }
 
     public function test_profile_update_persists_phone(): void
@@ -251,7 +247,7 @@ class WebPrdFlowTest extends TestCase
     public function test_checkout_defaults_to_midtrans_gateway(): void
     {
         $user = $this->customer();
-        $produk = Produk::create([
+        $produk = Product::create([
             'nama' => 'Batik Checkout Midtrans',
             'sku' => 'BTK-'.uniqid(),
             'kategori' => 'Baju Batik',
@@ -284,7 +280,7 @@ class WebPrdFlowTest extends TestCase
         $this->assertSame(route('pembayaran', ['id' => $order->code]), $response->json('redirect_url'));
     }
 
-    private function createOrderWithProduct(User $user, Produk $produk, string $code, string $status): Order
+    private function createOrderWithProduct(User $user, Product $produk, string $code, string $status): Order
     {
         $order = Order::create([
             'user_id' => $user->id,
@@ -307,9 +303,9 @@ class WebPrdFlowTest extends TestCase
         return $order;
     }
 
-    private function sampleProduk(string $suffix): Produk
+    private function sampleProduk(string $suffix): Product
     {
-        return Produk::create([
+        return Product::create([
             'nama' => 'Batik Ulasan '.$suffix,
             'sku' => 'BTK-'.uniqid(),
             'kategori' => 'Baju Batik',
@@ -406,7 +402,7 @@ class WebPrdFlowTest extends TestCase
 
         $response->assertStatus(422)->assertJson(['success' => false]);
         $response->assertJsonPath('message', 'Anda sudah memberi ulasan untuk produk ini pada pesanan #'.$order->code.'.');
-        $this->assertSame(1, Ulasan::where('user_id', $user->id)->where('produk_id', $produk->id)->count());
+        $this->assertSame(1, Review::where('user_id', $user->id)->where('produk_id', $produk->id)->count());
     }
 
     public function test_reviewed_product_shows_sudah_diulas_badge(): void
@@ -438,7 +434,7 @@ class WebPrdFlowTest extends TestCase
         $user = $this->customer();
         $produk = $this->sampleProduk('Q2');
         $order = $this->createOrderWithProduct($user, $produk, 'ORD-ULAS-040', 'Selesai');
-        Ulasan::create([
+        Review::create([
             'order_id' => $order->id,
             'produk_id' => $produk->id,
             'user_id' => $user->id,
@@ -527,8 +523,8 @@ class WebPrdFlowTest extends TestCase
         ], ['Accept' => 'application/json']);
 
         $repeat->assertStatus(422)->assertJson(['success' => false]);
-        $this->assertSame(1, Ulasan::where('user_id', $user->id)->where('produk_id', $produkA->id)->count());
-        $this->assertSame(1, Ulasan::where('user_id', $user->id)->where('produk_id', $produkB->id)->count());
+        $this->assertSame(1, Review::where('user_id', $user->id)->where('produk_id', $produkA->id)->count());
+        $this->assertSame(1, Review::where('user_id', $user->id)->where('produk_id', $produkB->id)->count());
     }
 
     public function test_same_product_rebought_can_be_reviewed_again(): void
@@ -552,7 +548,7 @@ class WebPrdFlowTest extends TestCase
         $response = $this->actingAs($user)->post(route('ulasan.store'), $payloadFor($order2, 'Beli lagi dan tetap memuaskan.'), ['Accept' => 'application/json']);
 
         $response->assertOk()->assertJson(['success' => true]);
-        $this->assertSame(2, Ulasan::where('user_id', $user->id)->where('produk_id', $produk->id)->count());
+        $this->assertSame(2, Review::where('user_id', $user->id)->where('produk_id', $produk->id)->count());
     }
 
     public function test_customer_can_attach_an_image_to_a_review(): void
@@ -621,7 +617,7 @@ class WebPrdFlowTest extends TestCase
         $this->assertDatabaseMissing('reviews', ['produk_id' => $produk->id]);
     }
 
-    private function createPendingReview(User $user, Produk $produk, Order $order): Ulasan
+    private function createPendingReview(User $user, Product $produk, Order $order): Review
     {
         Storage::fake('public');
 
@@ -633,7 +629,7 @@ class WebPrdFlowTest extends TestCase
             'image' => $this->fakeReviewImage(),
         ], ['Accept' => 'application/json'])->assertOk();
 
-        return Ulasan::where('user_id', $user->id)->where('produk_id', $produk->id)->firstOrFail();
+        return Review::where('user_id', $user->id)->where('produk_id', $produk->id)->firstOrFail();
     }
 
     public function test_customer_can_update_own_pending_review(): void
@@ -740,8 +736,8 @@ class WebPrdFlowTest extends TestCase
 
     public function test_koleksi_shows_database_categories_as_pills(): void
     {
-        $kategori = Kategori::create(['nama_kategori' => 'Kain Batik', 'slug' => 'kain-batik']);
-        Produk::create([
+        $kategori = Category::create(['nama_kategori' => 'Kain Batik', 'slug' => 'kain-batik']);
+        Product::create([
             'nama' => 'Kain Batik Test Pill',
             'sku' => 'BTK-'.uniqid(),
             'kategori' => 'Kain Batik',
@@ -919,7 +915,7 @@ class WebPrdFlowTest extends TestCase
             'kota' => '##',
             'provinsi' => '##',
             'kode_pos' => '##',
-            'alamat_lengkap' => '##',
+            'alamat_lengkap' => '$$$$',
         ]);
 
         $response->assertStatus(422)
@@ -1074,7 +1070,7 @@ class WebPrdFlowTest extends TestCase
             ->assertOk()
             ->assertDontSee('Kainnya adem dan jahitannya rapi.');
 
-        $ulasan = Ulasan::where('user_id', $user->id)->where('produk_id', $produk->id)->first();
+        $ulasan = Review::where('user_id', $user->id)->where('produk_id', $produk->id)->first();
         $this->actingAs($admin)->patch(route('admin.ulasans.update-status', $ulasan), ['status' => 'Disetujui'])
             ->assertRedirect();
 

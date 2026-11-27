@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Kategori;
+use App\Models\Category;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -21,7 +21,7 @@ class KategoriManagementTest extends TestCase
     public function test_admin_can_view_kategori_index_page(): void
     {
         $admin = $this->createAdmin();
-        Kategori::create(['nama_kategori' => 'Kain Batik', 'slug' => 'kain-batik', 'deskripsi' => 'Kain mori batik halus']);
+        Category::create(['nama_kategori' => 'Kain Batik', 'slug' => 'kain-batik', 'deskripsi' => 'Kain mori batik halus']);
 
         $response = $this->actingAs($admin)->get(route('admin.kategori.index'));
 
@@ -47,7 +47,7 @@ class KategoriManagementTest extends TestCase
         $response->assertRedirect(route('admin.kategori.index'))
             ->assertSessionHas('success');
 
-        $kategori = Kategori::where('nama_kategori', 'Seragam Batik Modern')->first();
+        $kategori = Category::where('nama_kategori', 'Seragam Batik Modern')->first();
         $this->assertNotNull($kategori);
         $this->assertNotNull($kategori->gambar);
         $this->assertTrue(Storage::disk('public')->exists($kategori->gambar));
@@ -61,7 +61,7 @@ class KategoriManagementTest extends TestCase
         $oldFile = UploadedFile::fake()->image('old_kain.jpg');
         $oldPath = $oldFile->store('kategori', 'public');
 
-        $kategori = Kategori::create([
+        $kategori = Category::create([
             'nama_kategori' => 'Kain Jarik',
             'slug' => 'kain-jarik',
             'deskripsi' => 'Deskripsi lama',
@@ -93,7 +93,7 @@ class KategoriManagementTest extends TestCase
         $file = UploadedFile::fake()->image('foto.jpg');
         $path = $file->store('kategori', 'public');
 
-        $kategori = Kategori::create([
+        $kategori = Category::create([
             'nama_kategori' => 'Baju Formal',
             'slug' => 'baju-formal',
             'gambar' => $path,
@@ -119,7 +119,7 @@ class KategoriManagementTest extends TestCase
         $file = UploadedFile::fake()->image('hapus.jpg');
         $path = $file->store('kategori', 'public');
 
-        $kategori = Kategori::create([
+        $kategori = Category::create([
             'nama_kategori' => 'Kategori Sementara',
             'slug' => 'kategori-sementara',
             'gambar' => $path,
@@ -134,7 +134,7 @@ class KategoriManagementTest extends TestCase
 
     public function test_welcome_page_renders_categories_from_database(): void
     {
-        Kategori::create([
+        Category::create([
             'nama_kategori' => 'Batik Tulis Eksklusif',
             'slug' => 'batik-tulis-eksklusif',
             'deskripsi' => 'Karya istimewa pembatik maestro.',

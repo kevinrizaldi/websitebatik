@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\CartItem;
-use App\Models\Produk;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 
@@ -52,11 +52,11 @@ class CartService
     /**
      * Get recommended products for the cart view.
      *
-     * @return Collection<int, Produk>
+     * @return Collection<int, Product>
      */
     public function getRecommendedProducts(int $limit = 4): Collection
     {
-        return Produk::where('status', '!=', 'Habis')
+        return Product::where('status', '!=', 'Habis')
             ->latest()
             ->take($limit)
             ->get();
@@ -67,7 +67,7 @@ class CartService
      */
     public function getCartCount(): int
     {
-        return (int) CartItem::forCurrentVisitor()->sum('qty');
+        return (int) CartItem::forCurrentVisitor()->count();
     }
 
     /**
@@ -97,7 +97,7 @@ class CartService
      */
     public function addToCart(int $productId, int $requestedQty = 1, ?string $ukuran = null, ?string $varian = null): array
     {
-        $produk = Produk::findOrFail($productId);
+        $produk = Product::findOrFail($productId);
 
         if (! Auth::check()) {
             session()->put('cart_active', true);

@@ -856,9 +856,10 @@
                       nama: '{{ addslashes($nama) }}',
                       kategori: '{{ addslashes($kategori) }}',
                       ukuran: '{{ $item->ukuran ?? 'All Size' }}',
-                      varian: '{{ addslashes($item->varian ?? ('Ukuran: ' . ($item->ukuran ?? 'L'))) }}',
+                      varian: '{{ addslashes($item->ukuran ? ('Ukuran: ' . $item->ukuran) : ($item->varian ? trim(str_replace('• Lengan Panjang', '', $item->varian)) : 'Ukuran: All Size')) }}',
                       qty: {{ $item->qty }},
                       harga: {{ $harga }},
+                      berat: {{ (int) ($prod ? ($prod->berat ?? $prod->weight ?? 300) : 300) }},
                       gambar: '{{ $imgUrl }}'
                   },
                   @endforeach
@@ -897,7 +898,7 @@
 
           // Calculations
           get totalItemQty() {
-              return this.items.reduce((sum, item) => sum + item.qty, 0);
+              return this.items.length;
           },
 
           get rawSubtotal() {
@@ -905,7 +906,7 @@
           },
 
           get totalWeightGrams() {
-              return Math.max(1000, this.items.reduce((sum, item) => sum + (item.qty * 300), 0));
+              return Math.max(1000, this.items.reduce((sum, item) => sum + (item.qty * (item.berat || 300)), 0));
           },
 
           get totalWeightKg() {
@@ -1688,9 +1689,6 @@
                                     <span x-show="addressData.isUtama" class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">
                                         Alamat Utama
                                     </span>
-                                    <button @click="openAddAddress()" type="button" class="text-[11px] font-semibold text-[#B58742] hover:underline">
-                                        + Tambah Baru
-                                    </button>
                                 </div>
                             </div>
 
@@ -1706,13 +1704,6 @@
                                     </a>
                                 </div>
                             </template>
-
-                            <div class="pt-1 flex flex-wrap items-center justify-between gap-2 border-t border-[#ECE4D8]/60 text-[11px] text-stone-500">
-                                <span>Pastikan nomor WhatsApp / HP aktif untuk konfirmasi kurir pengiriman.</span>
-                                <a href="{{ route('alamat.index') }}" class="font-bold text-stone-700 hover:text-stone-950 underline transition">
-                                    Kelola alamat tersimpan →
-                                </a>
-                            </div>
                         </div>
 
                         <!-- Empty state: customer belum punya alamat -->
@@ -1788,7 +1779,7 @@
                                        x-model="sellerNotes"
                                        maxlength="250"
                                        @input="sellerNotes = sellerNotes.replace(/[^a-zA-Z0-9\s.,\'\-()\/!?]/g, '')"
-                                       placeholder="Contoh: Mohon sertakan kartu ucapan kado (maksimal 250 karakter)"
+                                       placeholder=""
                                        class="w-full pl-10 pr-4 py-3 rounded-2xl border border-stone-200 text-xs sm:text-sm text-stone-800 bg-[#FAF7F2]/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#B58742]/40 focus:border-[#B58742] transition placeholder-stone-400">
                             </div>
                         </div>
@@ -1899,12 +1890,6 @@
                                 </h2>
                             </div>
 
-                            <div class="flex items-center gap-1.5 text-xs text-stone-500 font-semibold">
-                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-                                </svg>
-                                <span>Enkripsi 256-bit</span>
-                            </div>
                         </div>
 
                         <!-- Pembayaran tunggal via Midtrans (metode dipilih di popup Snap) -->
@@ -1941,22 +1926,13 @@
                     <!-- Ringkasan Belanja Card matching Mockup -->
                     <div class="bg-white rounded-3xl p-6 sm:p-7 border border-[#EDE6DB] shadow-md space-y-6">
                         
-                        <div class="flex items-center justify-between pb-4 border-b border-stone-100">
-                            <div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">
-                                    RINGKASAN BELANJA
-                                </span>
-                                <h2 class="font-bold text-stone-900 text-lg">
-                                    Ringkasan Pesanan
-                                </h2>
-                            </div>
-                            <a href="{{ route('keranjang.index') }}" 
-                               class="p-2 text-stone-400 hover:text-stone-700 rounded-lg hover:bg-stone-100 transition"
-                               title="Edit Isi Keranjang">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/>
-                                </svg>
-                            </a>
+                        <div class="pb-4 border-b border-stone-100">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400 block mb-0.5">
+                                RINGKASAN BELANJA
+                            </span>
+                            <h2 class="font-bold text-stone-900 text-lg">
+                                Ringkasan Pesanan
+                            </h2>
                         </div>
 
                         <!-- Rows Breakdown matching Mockup exactly -->
@@ -2004,7 +1980,6 @@
                                 :disabled="isSubmitting || items.length === 0"
                                 class="w-full py-4 px-6 rounded-2xl bg-[#201A17] hover:bg-stone-800 disabled:opacity-60 text-white font-bold text-sm transition duration-200 shadow-md flex items-center justify-center gap-2 group cursor-pointer">
                             <span x-show="!isSubmitting" class="flex items-center gap-2">
-                                <span>🔒</span>
                                 <span>Bayar Sekarang</span>
                             </span>
                             <span x-show="isSubmitting" class="flex items-center gap-2">
@@ -2016,9 +1991,9 @@
                             </span>
                         </button>
 
-                        <!-- Legal & Sustainability Disclaimer -->
+                        <!-- Legal & Terms Disclaimer -->
                         <p class="text-[11px] text-stone-500 text-center leading-relaxed px-2">
-                            Dengan menekan Bayar Sekarang, Anda menyetujui Syarat & Ketentuan serta komitmen pelestarian warisan daya Official.
+                            Dengan menekan Bayar Sekarang, Anda menyetujui Syarat & Ketentuan serta kebijakan pembelian toko Hamzah Style.
                         </p>
 
                     </div>

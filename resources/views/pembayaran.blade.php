@@ -15,6 +15,8 @@
             window.dispatchEvent(new CustomEvent('show-toast', { detail: label + ' berhasil disalin!' }));
         },
 
+        orderId: {{ $order->id ?? 'null' }},
+
         payWithMidtrans() {
             if (!this.snapToken) {
                 window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Token pembayaran Midtrans tidak valid.' }));
@@ -26,13 +28,37 @@
             if (typeof window.snap !== 'undefined' && !this.snapToken.startsWith('MOCK_SNAP_')) {
                 window.snap.pay(this.snapToken, {
                     onSuccess: (result) => {
-                        window.location.href = '{{ route('midtrans.finish') }}?order_id=' + encodeURIComponent(this.orderCode) + '&status=success';
+                        // Sync status dari Midtrans ke database lokal, lalu redirect
+                        fetch('{{ route('payment.sync') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ order_id: this.orderId }),
+                        })
+                        .finally(() => {
+                            window.location.href = '{{ route('midtrans.finish') }}?order_id=' + encodeURIComponent(this.orderCode) + '&status=success';
+                        });
                     },
                     onPending: (result) => {
-                        window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Menunggu pembayaran Anda diselesaikan.' }));
-                        setTimeout(() => {
-                            window.location.href = '{{ route('pesanan.index') }}';
-                        }, 1500);
+                        // Sync juga saat pending (VA/QRIS sudah dipilih)
+                        fetch('{{ route('payment.sync') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ order_id: this.orderId }),
+                        })
+                        .finally(() => {
+                            window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Menunggu pembayaran Anda diselesaikan.' }));
+                            setTimeout(() => {
+                                window.location.href = '{{ route('pesanan.index') }}';
+                            }, 1500);
+                        });
                     },
                     onError: (result) => {
                         window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Pembayaran gagal atau dibatalkan.' }));

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Kategori;
-use App\Models\Produk;
+use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -26,15 +26,18 @@ class ProdukController extends Controller
             'sort' => 'nullable|string|max:50',
         ]);
         $search = trim($validated['search'] ?? '');
+        $archivedOnly = ($request->input('status_stok') === 'arsip');
+        $availableOnly = ($request->input('status_stok') === 'tersedia');
         $lowStockOnly = $request->boolean('stok_menipis') || ($request->input('status_stok') === 'menipis');
         $outOfStockOnly = $request->boolean('stok_habis') || ($request->input('status_stok') === 'habis');
+        $stokAmanOnly = ($request->input('status_stok') === 'tersedia') || ($request->input('status_stok') === 'aman');
         $kategoriFilter = $validated['kategori'] ?? null;
         $sort = $validated['sort'] ?? 'latest';
 
-        $query = Produk::query()
+        $query = Product::query()
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $query) use ($search): void {
-                    foreach (['nama', 'sku', 'kategori', 'jenis_produk', 'deskripsi', 'material', 'ukuran', 'status'] as $column) {
+                    foreach (['nama', 'sku', 'kategori', 'jenis_produk', 'deskripsi', 'ukuran', 'status'] as $column) {
                         $query->orWhere($column, 'like', '%'.$search.'%');
                     }
                 });
@@ -42,8 +45,10 @@ class ProdukController extends Controller
             ->when($kategoriFilter, function (Builder $query, string $kat): void {
                 $query->where('kategori', $kat);
             })
-            ->when($lowStockOnly, fn (Builder $query): Builder => $query->whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD]))
-            ->when($outOfStockOnly, fn (Builder $query): Builder => $query->where('stok', '<=', 0));
+            ->when($archivedOnly, fn (Builder $query): Builder => $query->where('status', 'Diarsipkan'))
+            ->when($availableOnly, fn (Builder $query): Builder => $query->where('status', '!=', 'Diarsipkan')->where('stok', '>', Product::LOW_STOCK_THRESHOLD))
+            ->when($lowStockOnly, fn (Builder $query): Builder => $query->where('status', '!=', 'Diarsipkan')->whereBetween('stok', [1, Product::LOW_STOCK_THRESHOLD]))
+            ->when($outOfStockOnly, fn (Builder $query): Builder => $query->where('status', '!=', 'Diarsipkan')->where('stok', '<=', 0));
 
         match ($sort) {
             'oldest' => $query->oldest(),
@@ -54,14 +59,15 @@ class ProdukController extends Controller
         };
 
         $produks = $query->paginate(10)->withQueryString();
-        $totalProduk = Produk::count();
-        $totalStokFisik = (int) Produk::sum('stok');
-        $lowStockCount = Produk::whereBetween('stok', [1, Produk::LOW_STOCK_THRESHOLD])->count();
-        $outOfStockCount = Produk::where('stok', '<=', 0)->count();
-        $stokAmanCount = Produk::where('stok', '>', Produk::LOW_STOCK_THRESHOLD)->count();
-        $totalKategori = Schema::hasTable('categories') ? Kategori::count() : 4;
-        $kategorisList = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
-        $totalValuasi = (float) (Produk::query()->selectRaw('SUM(harga * stok) as total')->value('total') ?? 128400000);
+        $totalProduk = Product::count();
+        $totalStokFisik = (int) Product::sum('stok');
+        $archivedCount = Product::where('status', 'Diarsipkan')->count();
+        $lowStockCount = Product::where('status', '!=', 'Diarsipkan')->whereBetween('stok', [1, Product::LOW_STOCK_THRESHOLD])->count();
+        $outOfStockCount = Product::where('status', '!=', 'Diarsipkan')->where('stok', '<=', 0)->count();
+        $stokAmanCount = Product::where('status', '!=', 'Diarsipkan')->where('stok', '>', Product::LOW_STOCK_THRESHOLD)->count();
+        $totalKategori = Schema::hasTable('categories') ? Category::count() : 4;
+        $kategorisList = Schema::hasTable('categories') ? Category::orderBy('nama_kategori')->get() : collect();
+        $totalValuasi = (float) (Product::query()->selectRaw('SUM(harga * stok) as total')->value('total') ?? 128400000);
 
         return view('produk.index', compact(
             'produks',
@@ -70,7 +76,9 @@ class ProdukController extends Controller
             'lowStockCount',
             'outOfStockOnly',
             'outOfStockCount',
+            'stokAmanOnly',
             'stokAmanCount',
+            'archivedCount',
             'totalStokFisik',
             'totalProduk',
             'totalKategori',
@@ -86,7 +94,7 @@ class ProdukController extends Controller
      */
     public function create()
     {
-        $kategoris = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
+        $kategoris = Schema::hasTable('categories') ? Category::orderBy('nama_kategori')->get() : collect();
 
         return view('produk.create', compact('kategoris'));
     }
@@ -105,6 +113,8 @@ class ProdukController extends Controller
             'kategori_id' => 'nullable|exists:categories,id',
             'harga' => 'required|numeric|min:0|max:100000000',
             'harga_coret' => 'required|numeric|min:0|max:100000000|gt:harga',
+            'berat' => 'nullable|integer|min:1|max:50000',
+            'weight' => 'nullable|integer|min:1|max:50000',
             'stok' => 'nullable|integer|min:0|max:100000',
             'stok_ukuran' => 'nullable|array',
             'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
@@ -161,8 +171,12 @@ class ProdukController extends Controller
             $validated['ukuran'] = $isKainBatik ? 'Lembaran Kain' : 'S, M, L, XL, XXL';
         }
 
+        $berat = (int) ($request->input('berat') ?? $request->input('weight') ?? 300);
+        $validated['berat'] = $berat > 0 ? $berat : 300;
+        $validated['weight'] = $validated['berat'];
+
         $validated['stok'] = (int) ($validated['stok'] ?? 0);
-        $validated['status'] = Produk::statusForStock((int) $validated['stok']);
+        $validated['status'] = Product::statusForStock((int) $validated['stok']);
 
         if ($request->hasFile('gambar')) {
             $validated['gambar'] =
@@ -180,18 +194,18 @@ class ProdukController extends Controller
 
         $hasKategoris = Schema::hasTable('categories');
         if (! empty($validated['kategori_id']) && $hasKategoris) {
-            $kategori = Kategori::find($validated['kategori_id']);
+            $kategori = Category::find($validated['kategori_id']);
             if ($kategori) {
                 $validated['kategori'] = $kategori->nama_kategori;
             }
         } elseif ($hasKategoris) {
-            $kategori = Kategori::where('nama_kategori', $validated['kategori'])->first();
+            $kategori = Category::where('nama_kategori', $validated['kategori'])->first();
             if ($kategori) {
                 $validated['kategori_id'] = $kategori->id;
             }
         }
 
-        Produk::create($validated);
+        Product::create($validated);
 
         return redirect()
             ->route('produk.index')
@@ -199,19 +213,19 @@ class ProdukController extends Controller
     }
 
     /**
-     * Menampilkan detail produk
+     * Menampilkan detail produk (dialihkan ke halaman edit produk)
      */
-    public function show(Produk $produk)
+    public function show(Product $produk)
     {
-        return view('produk.show', compact('produk'));
+        return redirect()->route('produk.edit', $produk);
     }
 
     /**
      * Form edit produk
      */
-    public function edit(Produk $produk)
+    public function edit(Product $produk)
     {
-        $kategoris = Schema::hasTable('categories') ? Kategori::orderBy('nama_kategori')->get() : collect();
+        $kategoris = Schema::hasTable('categories') ? Category::orderBy('nama_kategori')->get() : collect();
 
         return view('produk.edit', compact('produk', 'kategoris'));
     }
@@ -219,7 +233,7 @@ class ProdukController extends Controller
     /**
      * Update produk
      */
-    public function update(Request $request, Produk $produk)
+    public function update(Request $request, Product $produk)
     {
         $isTesting = app()->runningUnitTests();
         $hasImage = ! empty($produk->gambar);
@@ -231,6 +245,8 @@ class ProdukController extends Controller
             'kategori_id' => 'nullable|exists:categories,id',
             'harga' => 'required|numeric|min:0|max:100000000',
             'harga_coret' => 'required|numeric|min:0|max:100000000|gt:harga',
+            'berat' => 'nullable|integer|min:1|max:50000',
+            'weight' => 'nullable|integer|min:1|max:50000',
             'stok' => 'nullable|integer|min:0|max:100000',
             'stok_ukuran' => 'nullable|array',
             'stok_ukuran.*' => 'nullable|integer|min:0|max:100000',
@@ -293,8 +309,18 @@ class ProdukController extends Controller
             $validated['ukuran'] = $isKainBatik ? 'Lembaran Kain' : 'S, M, L, XL, XXL';
         }
 
+        if ($request->has('berat') || $request->has('weight')) {
+            $berat = (int) ($request->input('berat') ?? $request->input('weight') ?? 300);
+            $validated['berat'] = $berat > 0 ? $berat : 300;
+            $validated['weight'] = $validated['berat'];
+        }
+
         $validated['stok'] = (int) ($validated['stok'] ?? $produk->stok);
-        $validated['status'] = Produk::statusForStock((int) $validated['stok']);
+        if ($produk->status === 'Diarsipkan') {
+            $validated['status'] = 'Diarsipkan';
+        } else {
+            $validated['status'] = Product::statusForStock((int) $validated['stok']);
+        }
 
         if ($request->hasFile('gambar')) {
 
@@ -329,12 +355,12 @@ class ProdukController extends Controller
 
         $hasKategoris = Schema::hasTable('categories');
         if (! empty($validated['kategori_id']) && $hasKategoris) {
-            $kategori = Kategori::find($validated['kategori_id']);
+            $kategori = Category::find($validated['kategori_id']);
             if ($kategori) {
                 $validated['kategori'] = $kategori->nama_kategori;
             }
         } elseif ($hasKategoris) {
-            $kategori = Kategori::where('nama_kategori', $validated['kategori'])->first();
+            $kategori = Category::where('nama_kategori', $validated['kategori'])->first();
             if ($kategori) {
                 $validated['kategori_id'] = $kategori->id;
             }
@@ -350,7 +376,7 @@ class ProdukController extends Controller
     /**
      * Hapus produk
      */
-    public function destroy(Produk $produk)
+    public function destroy(Product $produk)
     {
         if ($produk->gambar) {
             Storage::disk('public')->delete($produk->gambar);
@@ -364,9 +390,31 @@ class ProdukController extends Controller
     }
 
     /**
+     * Mengarsipkan atau mengaktifkan kembali produk
+     */
+    public function toggleArchive(Product $produk)
+    {
+        if ($produk->status === 'Diarsipkan') {
+            $produk->status = Product::statusForStock((int) $produk->stok);
+            $produk->save();
+
+            return redirect()
+                ->route('produk.index')
+                ->with('success', "Produk \"{$produk->nama}\" berhasil diaktifkan kembali.");
+        }
+
+        $produk->status = 'Diarsipkan';
+        $produk->save();
+
+        return redirect()
+            ->route('produk.index')
+            ->with('success', "Produk \"{$produk->nama}\" berhasil diarsipkan.");
+    }
+
+    /**
      * Memperbarui stok produk secara cepat (terintegrasi dari fitur stok).
      */
-    public function updateStock(Request $request, Produk $produk)
+    public function updateStock(Request $request, Product $produk)
     {
         $validated = $request->validate([
             'stok' => 'required|integer|min:0|max:100000',
@@ -374,17 +422,24 @@ class ProdukController extends Controller
             'catatan' => 'nullable|string|max:255',
         ]);
 
-        $payload = ['stok' => (int) $validated['stok']];
+        $payload = [
+            'stok' => (int) $validated['stok'],
+            'stock' => (int) $validated['stok'],
+        ];
 
         if ($request->filled('stok_ukuran')) {
             $stokUkuran = $request->input('stok_ukuran');
+            $totalStok = array_sum(array_map('intval', $stokUkuran));
             $payload['stok_ukuran'] = $stokUkuran;
             $payload['size_stock'] = $stokUkuran;
-            $payload['stok'] = array_sum(array_map('intval', $stokUkuran));
+            $payload['stok'] = $totalStok;
+            $payload['stock'] = $totalStok;
         }
+
+        $payload['status'] = \App\Models\Product::statusForStock($payload['stock']);
 
         $produk->update($payload);
 
-        return redirect()->back()->with('success', "✓ Stok untuk produk \"{$produk->nama}\" berhasil diperbarui menjadi {$produk->stok} pcs.");
+        return redirect()->back()->with('success', "âœ“ Stok untuk produk \"{$produk->nama}\" berhasil diperbarui menjadi {$produk->stok} pcs.");
     }
 }

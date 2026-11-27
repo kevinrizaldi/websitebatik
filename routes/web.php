@@ -22,10 +22,10 @@ use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RajaOngkirController;
 use App\Http\Controllers\UlasanController as CustomerUlasanController;
-use App\Models\Kategori;
+use App\Models\Category;
 use App\Models\Order;
-use App\Models\Produk;
-use App\Models\Ulasan;
+use App\Models\Product;
+use App\Models\Review;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -44,7 +44,8 @@ Route::get('/', function () {
         $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
 
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
-            $produks = Produk::query()
+            $produks = Product::query()
+                ->where('status', '!=', 'Diarsipkan')
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                 ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
                 ->latest()
@@ -53,13 +54,15 @@ Route::get('/', function () {
         }
         if (Schema::hasTable('products')) {
 
-            $produkTerbaru = Produk::query()
+            $produkTerbaru = Product::query()
+                ->where('status', '!=', 'Diarsipkan')
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                 ->latest()
                 ->take(2)
                 ->get();
 
-            $produkRating = Produk::query()
+            $produkRating = Product::query()
+                ->where('status', '!=', 'Diarsipkan')
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                 ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
                 ->whereHas('reviews', $approvedReviews)
@@ -76,7 +79,7 @@ Route::get('/', function () {
 
             if ($bannerProduk->count() < 4) {
                 $bannerProduk = $bannerProduk
-                    ->concat(Produk::query()
+                    ->concat(Product::query()
                         ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                         ->whereNotIn('id', $bannerProduk->modelKeys())
                         ->latest()
@@ -87,7 +90,7 @@ Route::get('/', function () {
             }
         }
         if (Schema::hasTable('categories') || Schema::hasTable('kategoris')) {
-            $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
+            $kategoris = Category::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
         Log::warning('Error loading homepage data: '.$e->getMessage(), ['exception' => $e]);
@@ -107,14 +110,15 @@ $catalogHandler = function () {
     try {
         if (Schema::hasTable('products') || Schema::hasTable('produks')) {
             $approvedReviews = static fn ($query) => $query->where('status', 'Disetujui');
-            $produks = Produk::query()
+            $produks = Product::query()
+                ->where('status', '!=', 'Diarsipkan')
                 ->withAvg(['reviews as avg_rating' => $approvedReviews], 'rating')
                 ->withCount(['reviews as approved_reviews_count' => $approvedReviews])
                 ->latest()
                 ->get();
         }
         if (Schema::hasTable('categories') || Schema::hasTable('kategoris')) {
-            $kategoris = Kategori::withCount('produks')->orderBy('nama_kategori')->get();
+            $kategoris = Category::withCount('produks')->orderBy('nama_kategori')->get();
         }
     } catch (Throwable $e) {
         Log::warning('Error loading produk catalog: '.$e->getMessage(), ['exception' => $e]);
@@ -133,7 +137,7 @@ Route::get('/produk-detail/{id?}', function ($id = null) {
         abort(404);
     }
 
-    $produk = Produk::find($id);
+    $produk = Product::find($id);
     if (! $produk) {
         abort(404);
     }
@@ -145,10 +149,10 @@ Route::get('/produk-detail/{id?}', function ($id = null) {
     $ratingBars = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
 
     try {
-        $produksTerkait = Produk::where('id', '!=', $produk->id)->latest()->take(4)->get();
+        $produksTerkait = Product::where('id', '!=', $produk->id)->latest()->take(4)->get();
 
         if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
-            $approved = Ulasan::where('produk_id', $produk->id)->where('status', 'Disetujui');
+            $approved = Review::where('produk_id', $produk->id)->where('status', 'Disetujui');
             $ulasans = (clone $approved)->latest()->take(6)->get();
             $ratingCount = (clone $approved)->count();
             $ratingAvg = $ratingCount > 0 ? round((float) (clone $approved)->avg('rating'), 1) : 0;
@@ -223,7 +227,7 @@ Route::get('/pesanan', function () {
                     ])->count();
 
                 if (Schema::hasTable('reviews') || Schema::hasTable('ulasans')) {
-                    $myReviews = Ulasan::where('user_id', Auth::id())->get(['id', 'order_id', 'produk_id', 'rating', 'comment']);
+                    $myReviews = Review::where('user_id', Auth::id())->get(['id', 'order_id', 'produk_id', 'rating', 'comment']);
                     $reviewedIds = $myReviews->pluck('produk_id')->all();
                     $reviewedPairs = $myReviews->whereNotNull('order_id')->groupBy('order_id')
                         ->map(fn ($rows) => $rows->pluck('produk_id')->all())
@@ -319,6 +323,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::prefix('admin')->group(function () {
         Route::resource('produk', ProdukController::class);
+        Route::patch('/produk/{produk}/archive', [ProdukController::class, 'toggleArchive'])->name('produk.toggle-archive');
         Route::patch('/produk/{produk}/stok', [ProdukController::class, 'updateStock'])->name('produk.update-stock');
     });
 

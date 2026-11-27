@@ -196,7 +196,7 @@
                                 <span class="text-[10px] text-[#8C827A]">Mendukung format JPG, PNG, atau WEBP (Rekomendasi rasio 4:5 atau 1:1)</span>
                                 <div x-show="otherPreviews.length > 0" class="pt-1">
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FAF4ED] text-[#8C6D58] text-[10px] font-semibold border border-[#E5DDD0]">
-                                        ✓ <span x-text="otherPreviews.length + ' Foto Tambahan Terpilih (Maks. 9)'"></span>
+                                        âœ“ <span x-text="otherPreviews.length + ' Foto Tambahan Terpilih (Maks. 9)'"></span>
                                     </span>
                                 </div>
                             </div>
@@ -265,8 +265,8 @@
                             </div>
                         </div>
 
-                        {{-- Harga Jual, Harga Coret, Stok Awal Row --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {{-- Harga Jual & Harga Coret Row --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
                                     Harga Jual (IDR) <span class="text-rose-500">*</span>
@@ -276,7 +276,7 @@
                                        value="{{ old('harga') }}"
                                        placeholder="385000"
                                        min="0"
-                                       max="1000000"
+                                       max="100000000"
                                        required
                                        class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
                             </div>
@@ -295,6 +295,28 @@
                                        class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#7A7269] placeholder-[#9C948A] focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
                                 <p class="text-[10px] text-stone-400 mt-1">Hanya ditampilkan bila diisi.</p>
                             </div>
+                        </div>
+
+                        {{-- Berat Produk & Total Stok Row --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-[#1E1B18] mb-1.5">
+                                    Berat Produk (Gram) <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="number"
+                                           name="berat"
+                                           value="{{ old('berat') }}"
+                                           placeholder="300"
+                                           min="1"
+                                           max="50000"
+                                           required
+                                           class="w-full py-2.5 px-3.5 pr-14 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] placeholder-[#9C948A] font-semibold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
+                                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-stone-400 pointer-events-none">
+                                        gram
+                                    </span>
+                                </div>
+                            </div>
 
                             <div>
                                 <div class="flex items-center justify-between mb-1.5">
@@ -312,7 +334,6 @@
                                            min="0"
                                            max="100000"
                                            class="w-full py-2.5 px-3.5 rounded-xl border border-[#ECE5D8] bg-[#FAF7F2] text-xs text-[#1E1B18] font-bold focus:outline-none focus:ring-2 focus:ring-[#8C6D58] focus:bg-white transition">
-                                    <p class="text-[10px] text-stone-400 mt-1">Jumlah lembar stok kain yang tersedia.</p>
                                 </div>
                                 {{-- Jika Bukan Kain (Busana): Dihitung otomatis dari alokasi stok per ukuran --}}
                                 <div x-show="!isKain">
@@ -361,7 +382,7 @@
                                                     ? 'bg-[#1E1B18] text-white border-[#1E1B18] shadow-xs'
                                                     : 'bg-white text-stone-700 border-[#D9D0C5] hover:border-[#8C6D58] hover:bg-[#FAF0E4]'"
                                                 class="px-2.5 py-1 rounded-lg text-xs font-bold border transition flex items-center gap-1 cursor-pointer">
-                                            <span x-show="hasSize('{{ $presetSize }}')">✓</span>
+                                            <span x-show="hasSize('{{ $presetSize }}')">âœ“</span>
                                             <span x-show="!hasSize('{{ $presetSize }}')">+</span>
                                             <span>{{ $presetSize }}</span>
                                         </button>
@@ -449,7 +470,7 @@
                                     <button type="button"
                                             @click="resetDefaultSizes()"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF0E4] hover:bg-[#F3E5D4] text-[#8C6D58] border border-[#E8D9C5] text-xs font-bold transition cursor-pointer">
-                                        <span>↺</span>
+                                        <span>â†º</span>
                                         <span>Gunakan Ukuran Standar (S, M, L, XL, XXL)</span>
                                     </button>
                                 </div>
@@ -460,7 +481,7 @@
                         <div x-show="isKain" x-transition>
                             <div class="rounded-xl border border-[#E8D9C5] bg-[#FAF0E4]/70 p-4 flex items-start gap-3.5">
                                 <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1E1B18] text-[#C59A53] text-sm">
-                                    🧵
+                                    ðŸ§µ
                                 </div>
                                 <div class="flex-1">
                                     <h4 class="text-xs font-bold text-[#1E1B18]">Produk Kain Lembaran</h4>
@@ -471,8 +492,6 @@
                             </div>
                         </div>
 
-                        {{-- Hidden inputs --}}
-                        <input type="hidden" name="material" value="{{ old('material', 'Katun Primissima Halus 60s, Batik Cap kombinasi Tulis canting tembaga') }}">
 
                         {{-- Panduan Ukuran Produk --}}
                         <div x-show="!isKain" x-transition>

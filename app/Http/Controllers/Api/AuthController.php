@@ -286,6 +286,8 @@ class AuthController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'jenis_kelamin' => $user->jenis_kelamin,
+            'tanggal_lahir' => $user->tanggal_lahir,
             'avatar' => $user->avatar,
             'role' => $user->role ?? 'user',
         ];

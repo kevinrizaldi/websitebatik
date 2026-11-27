@@ -1,5 +1,5 @@
 <x-storefront-layout title="Ulasan Saya">
-    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8" x-data="{ previewImage: null }">
         <p class="text-xs text-stone-500">
             <a href="{{ url('/') }}" class="hover:text-stone-900">Beranda</a>
             <span class="mx-1">›</span>
@@ -54,9 +54,40 @@
                             @endfor
                         </div>
                         <p class="mt-1 text-sm leading-relaxed text-stone-600">"{{ $ulasan->comment }}"</p>
-                        @if ($ulasan->image_path)
-                            <img src="{{ \App\Support\MediaUrl::resolve($ulasan->image_path) }}" alt="Foto ulasan" class="mt-3 h-20 w-20 rounded-xl border border-stone-200 object-cover">
+
+                        @php
+                            $userReviewPhotos = [];
+                            if (!empty($ulasan->image_path)) {
+                                $userReviewPhotos[] = \App\Support\MediaUrl::resolve($ulasan->image_path);
+                            }
+                            if (!empty($ulasan->photos) && is_array($ulasan->photos)) {
+                                foreach ($ulasan->photos as $p) {
+                                    $resP = \App\Support\MediaUrl::resolve($p) ?: $p;
+                                    if ($resP && !in_array($resP, $userReviewPhotos, true)) {
+                                        $userReviewPhotos[] = $resP;
+                                    }
+                                }
+                            }
+                        @endphp
+
+                        @if (count($userReviewPhotos) > 0)
+                            <div class="mt-3 flex flex-wrap items-center gap-2">
+                                @foreach ($userReviewPhotos as $pUrl)
+                                    <button type="button"
+                                            @click="previewImage = '{{ $pUrl }}'"
+                                            class="group relative h-20 w-20 overflow-hidden rounded-xl border border-stone-200 bg-stone-100 hover:ring-2 hover:ring-[#B58742]/50 transition-all cursor-pointer hover:scale-105 shadow-2xs"
+                                            title="Klik untuk melihat foto ukuran penuh">
+                                        <img src="{{ $pUrl }}" alt="Foto ulasan" class="h-full w-full object-cover">
+                                        <span class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                            </svg>
+                                        </span>
+                                    </button>
+                                @endforeach
+                            </div>
                         @endif
+
                         <p class="mt-2 text-[11px] text-stone-400">{{ $ulasan->created_at->format('d M Y, H:i') }} WIB</p>
                     </div>
                 @empty
@@ -66,6 +97,31 @@
                         <a href="{{ route('pesanan.index') }}" class="mt-4 inline-block rounded-xl bg-[#201A17] px-5 py-2.5 text-xs font-bold text-white transition hover:bg-stone-800">Ke Pesanan Saya</a>
                     </div>
                 @endforelse
+            </div>
+        </div>
+
+        <!-- Lightbox Modal Foto Ulasan Saya -->
+        <div x-cloak
+             x-show="previewImage !== null"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @keydown.escape.window="previewImage = null"
+             class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
+             @click="previewImage = null">
+            <button type="button"
+                    @click="previewImage = null"
+                    class="absolute top-5 right-5 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 cursor-pointer"
+                    title="Tutup (Esc)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <div class="relative max-w-4xl max-h-[85vh] flex items-center justify-center" @click.stop>
+                <img :src="previewImage" alt="Foto Ulasan Full" class="max-h-[82vh] max-w-[88vw] w-auto h-auto rounded-2xl object-contain shadow-2xl border border-white/10 select-none">
             </div>
         </div>
     </div>

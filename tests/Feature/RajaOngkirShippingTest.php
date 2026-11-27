@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\CartItem;
-use App\Models\Produk;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -147,7 +147,7 @@ class RajaOngkirShippingTest extends TestCase
     public function test_checkout_records_selected_rajaongkir_shipping_cost(): void
     {
         $user = User::factory()->create();
-        $produk = Produk::create([
+        $produk = Product::create([
             'nama' => 'Kemeja Batik Solo Parang',
             'sku' => 'BTK-SOLO-01',
             'kategori' => 'Kemeja Pria',
