@@ -45,7 +45,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $namaProduk }} — Hamzah Style</title>
+    <title>{{ $namaProduk }} â€” Hamzah Style</title>
     <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style. Warisan batik nusantara modern berkualitas premium.">
 
     <!-- Google Fonts: Poppins -->
@@ -91,9 +91,31 @@
           quantity: 1,
           descOpen: true,
           guideOpen: true,
-          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->count() }},
+          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
           sizeGuideModal: false,
           imageZoomModal: false,
+          reviewPhotoModal: false,
+          reviewActivePhoto: '',
+          reviewPhotosList: [],
+          reviewPhotoIndex: 0,
+
+          openReviewPhoto(photoUrl, allPhotos = []) {
+              this.reviewPhotosList = Array.isArray(allPhotos) && allPhotos.length > 0 ? allPhotos : [photoUrl];
+              const idx = this.reviewPhotosList.indexOf(photoUrl);
+              this.reviewPhotoIndex = idx >= 0 ? idx : 0;
+              this.reviewActivePhoto = this.reviewPhotosList[this.reviewPhotoIndex];
+              this.reviewPhotoModal = true;
+          },
+          prevReviewPhoto() {
+              if (this.reviewPhotosList.length <= 1) return;
+              this.reviewPhotoIndex = (this.reviewPhotoIndex - 1 + this.reviewPhotosList.length) % this.reviewPhotosList.length;
+              this.reviewActivePhoto = this.reviewPhotosList[this.reviewPhotoIndex];
+          },
+          nextReviewPhoto() {
+              if (this.reviewPhotosList.length <= 1) return;
+              this.reviewPhotoIndex = (this.reviewPhotoIndex + 1) % this.reviewPhotosList.length;
+              this.reviewActivePhoto = this.reviewPhotosList[this.reviewPhotoIndex];
+          },
 
           toastMessage: '',
           isAdding: false,
@@ -294,7 +316,7 @@
                             <div class="flex items-center gap-1.5 font-bold text-stone-900">
                                 <div class="flex text-amber-500 text-sm">
                                     @for($s = 1; $s <= 5; $s++)
-                                        <span class="{{ $s <= round($ratingAvg) ? 'text-amber-500' : 'text-stone-300' }}">★</span>
+                                        <span class="{{ $s <= round($ratingAvg) ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
                                     @endfor
                                 </div>
                                 <span class="ml-1 text-sm font-bold">{{ number_format($ratingAvg, 1) }}</span>
@@ -305,7 +327,7 @@
                             </a>
                         @else
                             <div class="flex items-center gap-1 text-stone-400 text-xs">
-                                <span class="text-amber-500">★</span>
+                                <span class="text-amber-500">â˜…</span>
                                 <span>Belum ada ulasan</span>
                             </div>
                         @endif
@@ -349,8 +371,8 @@
                         <div class="space-y-1.5 pt-1">
                             <span class="text-stone-900 font-bold text-xs sm:text-sm block">Ukuran Kain</span>
                             <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#FAF7F2] border border-[#D5CABB] text-xs font-bold text-stone-800">
-                                <span>🧵</span>
-                                <span>Lembaran Kain Batik (2,4 m × 1,15 m)</span>
+                                <span>ðŸ§µ</span>
+                                <span>Lembaran Kain Batik (2,4 m Ã— 1,15 m)</span>
                             </div>
                             <p class="text-[11px] text-stone-500">Kain batik siap dijahit sesuai model pakaian yang Anda inginkan.</p>
                         </div>
@@ -402,7 +424,7 @@
                                     :disabled="quantity <= 1"
                                     :class="quantity <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
                                     class="w-10 h-10 rounded-lg flex items-center justify-center text-stone-700 font-bold text-base transition">
-                                −
+                                âˆ’
                             </button>
                             <span class="w-10 text-center text-sm font-bold text-stone-900" x-text="quantity"></span>
                             <button @click="increaseQty()"
@@ -518,19 +540,19 @@
                     </p>
                     <ul class="space-y-1.5 text-stone-700 text-xs sm:text-sm pt-2">
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">•</span>
+                            <span class="text-stone-400">â€¢</span>
                             <span><strong>Model:</strong> Regular Fit yang pas di badan, kerah rapi dengan kancing dalam</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">•</span>
+                            <span class="text-stone-400">â€¢</span>
                             <span><strong>Bahan:</strong> Katun Prima Halus, adem dan nyaman di kulit</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">•</span>
+                            <span class="text-stone-400">â€¢</span>
                             <span><strong>Kancing:</strong> Kancing batok kelapa alami dengan jahitan kuat dan rapi</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">•</span>
+                            <span class="text-stone-400">â€¢</span>
                             <span><strong>Saku:</strong> Satu saku di dada kiri dengan motif batik yang menyatu rapi</span>
                         </li>
                     </ul>
@@ -559,7 +581,7 @@
                         </span>
                         <div class="flex items-center justify-center gap-1 text-amber-500 text-lg my-2">
                             @for($s = 1; $s <= 5; $s++)
-                                <span class="{{ $s <= round($ratingAvg ?: 5) ? 'text-amber-500' : 'text-stone-300' }}">★</span>
+                                <span class="{{ $s <= round($ratingAvg ?: 5) ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
                             @endfor
                         </div>
                         <span class="font-bold text-stone-900 text-sm block">
@@ -617,7 +639,7 @@
 
                                     <div class="flex text-amber-500 text-xs mb-3">
                                         @for($s = 1; $s <= 5; $s++)
-                                            <span class="{{ $s <= $u->rating ? 'text-amber-500' : 'text-stone-300' }}">★</span>
+                                            <span class="{{ $s <= $u->rating ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
                                         @endfor
                                     </div>
 
@@ -625,16 +647,35 @@
                                         "{{ $u->comment }}"
                                     </p>
 
-                                    @if($u->image_path)
-                                        <div class="flex items-center gap-2 pt-1">
-                                            <img src="{{ \App\Support\MediaUrl::resolve($u->image_path) }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
-                                        </div>
-                                    @endif
+                                    @php
+                                        $uPhotos = [];
+                                        if (!empty($u->image_path)) {
+                                            $uPhotos[] = \App\Support\MediaUrl::resolve($u->image_path);
+                                        }
+                                        if (!empty($u->photos) && is_array($u->photos)) {
+                                            foreach ($u->photos as $p) {
+                                                $resolved = \App\Support\MediaUrl::resolve($p) ?: $p;
+                                                if ($resolved && !in_array($resolved, $uPhotos, true)) {
+                                                    $uPhotos[] = $resolved;
+                                                }
+                                            }
+                                        }
+                                    @endphp
 
-                                    @if($u->photos)
-                                        <div class="flex items-center gap-2 pt-2">
-                                            @foreach($u->photos as $photo)
-                                                <img src="{{ \App\Support\MediaUrl::resolve($photo) ?: $photo }}" alt="Foto ulasan" class="w-12 h-12 rounded-lg object-cover border border-stone-200">
+                                    @if(count($uPhotos) > 0)
+                                        <div class="flex flex-wrap items-center gap-2 pt-2">
+                                            @foreach($uPhotos as $pUrl)
+                                                <button type="button"
+                                                        @click="openReviewPhoto('{{ $pUrl }}', {{ json_encode($uPhotos) }})"
+                                                        class="group relative w-14 h-14 rounded-xl overflow-hidden border border-stone-200 bg-stone-100 hover:border-[#B58742] hover:ring-2 hover:ring-[#B58742]/40 transition-all duration-200 cursor-pointer shadow-2xs hover:scale-105"
+                                                        title="Klik untuk melihat foto ulasan secara penuh">
+                                                    <img src="{{ $pUrl }}" alt="Foto ulasan {{ $u->customer_name }}" class="w-full h-full object-cover">
+                                                    <span class="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                                        <svg class="w-4 h-4 drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                                        </svg>
+                                                    </span>
+                                                </button>
                                             @endforeach
                                         </div>
                                     @endif
@@ -758,6 +799,73 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <!-- Review Photo Lightbox Modal (Full-Screen View) -->
+    <div x-cloak
+         x-show="reviewPhotoModal"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @keydown.escape.window="reviewPhotoModal = false"
+         @keydown.arrow-left.window="prevReviewPhoto()"
+         @keydown.arrow-right.window="nextReviewPhoto()"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 sm:p-6"
+         @click="reviewPhotoModal = false">
+
+        <!-- Controls Top -->
+        <div class="absolute top-4 inset-x-4 sm:inset-x-6 flex items-center justify-between text-white z-20 pointer-events-none">
+            <div class="bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wider flex items-center gap-2 pointer-events-auto border border-white/10">
+                <svg class="w-4 h-4 text-[#E5C38E]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Foto Ulasan Pelanggan</span>
+                <template x-if="reviewPhotosList.length > 1">
+                    <span class="text-stone-300 font-mono" x-text="'(' + (reviewPhotoIndex + 1) + ' / ' + reviewPhotosList.length + ')'"></span>
+                </template>
+            </div>
+            <button type="button"
+                    @click="reviewPhotoModal = false"
+                    class="w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 pointer-events-auto cursor-pointer"
+                    title="Tutup (Esc)">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <template x-if="reviewPhotosList.length > 1">
+            <button type="button"
+                    @click.stop="prevReviewPhoto()"
+                    class="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg"
+                    title="Foto Sebelumnya (←)">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+        </template>
+
+        <template x-if="reviewPhotosList.length > 1">
+            <button type="button"
+                    @click.stop="nextReviewPhoto()"
+                    class="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition border border-white/20 cursor-pointer shadow-lg"
+                    title="Foto Selanjutnya (→)">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </template>
+
+        <!-- Main Image Container -->
+        <div class="relative max-w-4xl max-h-[85vh] flex items-center justify-center" @click.stop>
+            <img :src="reviewActivePhoto"
+                 alt="Foto Ulasan Pelanggan Full"
+                 class="max-h-[82vh] max-w-[88vw] w-auto h-auto rounded-2xl object-contain shadow-2xl border border-white/10 select-none">
         </div>
     </div>
 

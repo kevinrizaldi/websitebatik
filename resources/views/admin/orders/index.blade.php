@@ -156,6 +156,7 @@
                 'Diproses' => ['label' => 'Diproses', 'count' => $counts['diproses']],
                 'Dikirim' => ['label' => 'Dikirim', 'count' => $counts['dikirim']],
                 'Selesai' => ['label' => 'Selesai', 'count' => $counts['selesai']],
+                'Dibatalkan' => ['label' => 'Dibatalkan', 'count' => $counts['dibatalkan']],
             ];
         @endphp
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#EFECE6] pb-3">
@@ -172,15 +173,6 @@
                         <span class="ml-1 opacity-80">({{ $tab['count'] }})</span>
                     </a>
                 @endforeach
-            </div>
-
-            <div class="flex items-center gap-2">
-                <span class="text-xs text-stone-400">Tampilan:</span>
-                <button type="button" class="p-1.5 rounded-lg border border-[#E8E4DC] bg-white text-stone-600 hover:bg-[#FAF7F2] shadow-2xs">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
             </div>
         </div>
 
@@ -209,9 +201,12 @@
                 </div>
 
                 <select onchange="window.location.href=this.value" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
-                    <option value="{{ route('admin.orders.index') }}">Semua Metode Pembayaran</option>
-                    <option value="{{ route('admin.orders.index', ['status' => 'Menunggu Pembayaran']) }}">Menunggu Bayar (Midtrans Pending)</option>
-                    <option value="{{ route('admin.orders.index', ['status' => 'Diproses']) }}">Midtrans Gateway (Settlement)</option>
+                    <option value="{{ route('admin.orders.index') }}">Semua Status</option>
+                    <option value="{{ route('admin.orders.index', ['status' => 'Menunggu Pembayaran']) }}" {{ request('status') === 'Menunggu Pembayaran' ? 'selected' : '' }}>Menunggu Bayar (Midtrans Pending)</option>
+                    <option value="{{ route('admin.orders.index', ['status' => 'Diproses']) }}" {{ request('status') === 'Diproses' ? 'selected' : '' }}>Diproses (Settlement)</option>
+                    <option value="{{ route('admin.orders.index', ['status' => 'Dikirim']) }}" {{ request('status') === 'Dikirim' ? 'selected' : '' }}>Dikirim (Ekspedisi)</option>
+                    <option value="{{ route('admin.orders.index', ['status' => 'Selesai']) }}" {{ request('status') === 'Selesai' ? 'selected' : '' }}>Selesai</option>
+                    <option value="{{ route('admin.orders.index', ['status' => 'Dibatalkan']) }}" {{ request('status') === 'Dibatalkan' ? 'selected' : '' }}>Dibatalkan ({{ $counts['dibatalkan'] }})</option>
                 </select>
 
                 <a href="{{ route('admin.orders.index') }}" class="p-2 rounded-xl border border-[#E8E4DC] bg-white text-stone-500 hover:bg-[#FAF7F2] transition shadow-2xs" title="Reset filter">

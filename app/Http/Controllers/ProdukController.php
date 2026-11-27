@@ -30,6 +30,7 @@ class ProdukController extends Controller
         $availableOnly = ($request->input('status_stok') === 'tersedia');
         $lowStockOnly = $request->boolean('stok_menipis') || ($request->input('status_stok') === 'menipis');
         $outOfStockOnly = $request->boolean('stok_habis') || ($request->input('status_stok') === 'habis');
+        $stokAmanOnly = ($request->input('status_stok') === 'tersedia') || ($request->input('status_stok') === 'aman');
         $kategoriFilter = $validated['kategori'] ?? null;
         $sort = $validated['sort'] ?? 'latest';
 
@@ -75,6 +76,7 @@ class ProdukController extends Controller
             'lowStockCount',
             'outOfStockOnly',
             'outOfStockCount',
+            'stokAmanOnly',
             'stokAmanCount',
             'archivedCount',
             'totalStokFisik',
@@ -418,17 +420,24 @@ class ProdukController extends Controller
             'catatan' => 'nullable|string|max:255',
         ]);
 
-        $payload = ['stok' => (int) $validated['stok']];
+        $payload = [
+            'stok' => (int) $validated['stok'],
+            'stock' => (int) $validated['stok'],
+        ];
 
         if ($request->filled('stok_ukuran')) {
             $stokUkuran = $request->input('stok_ukuran');
+            $totalStok = array_sum(array_map('intval', $stokUkuran));
             $payload['stok_ukuran'] = $stokUkuran;
             $payload['size_stock'] = $stokUkuran;
-            $payload['stok'] = array_sum(array_map('intval', $stokUkuran));
+            $payload['stok'] = $totalStok;
+            $payload['stock'] = $totalStok;
         }
+
+        $payload['status'] = \App\Models\Product::statusForStock($payload['stock']);
 
         $produk->update($payload);
 
-        return redirect()->back()->with('success', "✓ Stok untuk produk \"{$produk->nama}\" berhasil diperbarui menjadi {$produk->stok} pcs.");
+        return redirect()->back()->with('success', "âœ“ Stok untuk produk \"{$produk->nama}\" berhasil diperbarui menjadi {$produk->stok} pcs.");
     }
 }

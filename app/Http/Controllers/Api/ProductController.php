@@ -130,7 +130,7 @@ class ProductController extends Controller
                 'rating' => (int) $review->rating,
                 'comment' => $review->comment ?? $review->komentar ?? '',
                 'status' => $review->status,
-                'photos' => $this->reviewPhotoUrls($review->photos),
+                'photos' => $this->reviewPhotoUrls($review->photos, $review->image_path),
                 'created_at' => $review->created_at?->toIso8601String(),
             ])
             ->values();
@@ -194,7 +194,7 @@ class ProductController extends Controller
                 'user_name' => $review->user?->name ?? 'Pelanggan',
                 'rating' => (int) $review->rating,
                 'comment' => $review->comment ?? $review->komentar ?? '',
-                'photos' => $this->reviewPhotoUrls($review->photos),
+                'photos' => $this->reviewPhotoUrls($review->photos, $review->image_path),
                 'created_at' => $review->created_at?->toIso8601String(),
             ])->values()->all();
         }
@@ -202,11 +202,22 @@ class ProductController extends Controller
         return $data;
     }
 
-    private function reviewPhotoUrls(mixed $photos): array
+    private function reviewPhotoUrls(mixed $photos, ?string $imagePath = null): array
     {
-        return array_map(
-            fn (string $path): string => url('api/media/storage/'.$path),
-            is_array($photos) ? $photos : [],
-        );
+        $all = is_array($photos) ? $photos : [];
+        if ($imagePath && ! in_array($imagePath, $all, true)) {
+            array_unshift($all, $imagePath);
+        }
+
+        return array_values(array_filter(array_map(
+            function (mixed $path): ?string {
+                if (! is_string($path) || trim($path) === '') {
+                    return null;
+                }
+
+                return MediaUrl::resolve($path) ?: url('api/media/storage/'.ltrim($path, '/'));
+            },
+            $all,
+        )));
     }
 }

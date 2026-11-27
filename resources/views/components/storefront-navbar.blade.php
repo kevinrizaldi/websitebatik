@@ -128,10 +128,14 @@
                     <button @click="userDropdownOpen = !userDropdownOpen"
                             @click.away="userDropdownOpen = false"
                             class="flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full border border-stone-300 hover:border-stone-400 bg-white hover:bg-stone-50 transition shadow-2xs">
-                        <div class="w-6 h-6 rounded-full bg-[#201A17] text-white flex items-center justify-center font-bold text-xs">
-                            <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                            </svg>
+                        <div class="w-6 h-6 rounded-full bg-[#201A17] text-[#FAF7F2] flex items-center justify-center font-bold text-[11px]">
+                            @auth
+                                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                            @else
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                </svg>
+                            @endauth
                         </div>
                         <span class="text-xs font-semibold text-stone-800">
                             Akun

@@ -53,7 +53,7 @@ class OrderController extends Controller
             'diproses' => Order::whereIn('status', ['Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi'])->count(),
             'dikirim' => Order::where('status', 'Dikirim')->count(),
             'selesai' => Order::where('status', 'Selesai')->count(),
-            'dibatalkan' => Order::whereIn('status', ['Batal', 'Dibatalkan'])->count(),
+            'dibatalkan' => Order::whereIn('status', ['Batal', 'Dibatalkan', 'batal', 'dibatalkan', 'cancel', 'cancelled', 'expire', 'expired'])->count(),
         ];
 
         // Metrik Keuangan & Pembayaran Midtrans Gateway
@@ -81,7 +81,7 @@ class OrderController extends Controller
             } elseif ($status === 'Diproses') {
                 $query->whereIn('status', ['Diproses', 'Sudah Dibayar', 'Menunggu Verifikasi']);
             } elseif ($status === 'Dibatalkan') {
-                $query->whereIn('status', ['Batal', 'Dibatalkan']);
+                $query->whereIn('status', ['Batal', 'Dibatalkan', 'batal', 'dibatalkan', 'cancel', 'cancelled', 'expire', 'expired']);
             } else {
                 $query->where('status', $status);
             }

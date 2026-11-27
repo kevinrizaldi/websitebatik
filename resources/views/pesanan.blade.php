@@ -1,4 +1,4 @@
-<x-storefront-layout title="Pesanan Saya — Hamzah Style">
+<x-storefront-layout title="Pesanan Saya â€” Hamzah Style">
 @php
     $ordersData = [];
     if (isset($orders) && $orders->isNotEmpty()) {
@@ -103,42 +103,45 @@
                     </div>
 
                     {{-- Filter Status Tabs --}}
+                    @php
+                        $ordersCol = collect($ordersData);
+                    @endphp
                     <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs scrollbar-none sm:text-sm">
                         <button @click="activeTab = 'semua'"
                                 :class="activeTab === 'semua' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-4 py-1.5 transition whitespace-nowrap">
                             <span>Semua</span>
-                            <span class="text-xs" x-text="counts.semua">0</span>
+                            <span class="text-xs" x-text="counts.semua">{{ $ordersCol->count() }}</span>
                         </button>
                         <button @click="activeTab = 'menunggu_pembayaran'"
                                 :class="activeTab === 'menunggu_pembayaran' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Menunggu Pembayaran</span>
-                            <span class="text-xs" x-text="counts.menunggu_pembayaran">0</span>
+                            <span class="text-xs" x-text="counts.menunggu_pembayaran">{{ $ordersCol->where('status', 'menunggu_pembayaran')->count() }}</span>
                         </button>
                         <button @click="activeTab = 'diproses'"
                                 :class="activeTab === 'diproses' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Diproses</span>
-                            <span class="text-xs" x-text="counts.diproses">0</span>
+                            <span class="text-xs" x-text="counts.diproses">{{ $ordersCol->where('status', 'diproses')->count() }}</span>
                         </button>
                         <button @click="activeTab = 'dikirim'"
                                 :class="activeTab === 'dikirim' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Dikirim</span>
-                            <span class="text-xs" x-text="counts.dikirim">0</span>
+                            <span class="text-xs" x-text="counts.dikirim">{{ $ordersCol->where('status', 'dikirim')->count() }}</span>
                         </button>
                         <button @click="activeTab = 'selesai'"
                                 :class="activeTab === 'selesai' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Selesai</span>
-                            <span class="text-xs" x-text="counts.selesai">0</span>
+                            <span class="text-xs" x-text="counts.selesai">{{ $ordersCol->where('status', 'selesai')->count() }}</span>
                         </button>
                         <button @click="activeTab = 'dibatalkan'"
                                 :class="activeTab === 'dibatalkan' ? 'bg-[#201A17] text-white font-semibold' : 'bg-stone-100 hover:bg-stone-200 text-stone-700 font-medium'"
                                 class="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition whitespace-nowrap">
                             <span>Dibatalkan</span>
-                            <span class="text-xs" x-text="counts.dibatalkan">0</span>
+                            <span class="text-xs" x-text="counts.dibatalkan">{{ $ordersCol->where('status', 'dibatalkan')->count() }}</span>
                         </button>
                     </div>
 
@@ -152,13 +155,13 @@
                                         <button @click="copyText(order.id)" class="font-bold text-stone-900 hover:underline" title="Salin nomor pesanan">
                                             #<span x-text="order.id"></span>
                                         </button>
-                                        <span>•</span>
+                                        <span>â€¢</span>
                                         <span x-text="order.tanggal"></span>
 
                                         {{-- Resi Info (if shipped) --}}
                                         <template x-if="order.status === 'dikirim' && order.noResi">
                                             <div class="flex items-center gap-1.5">
-                                                <span>•</span>
+                                                <span>â€¢</span>
                                                 <span>Resi: <span class="font-semibold text-stone-800" x-text="order.noResi"></span></span>
                                                 <button @click="copyText(order.noResi)" class="text-stone-400 hover:text-stone-700" title="Salin nomor resi">
                                                     <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
@@ -169,7 +172,7 @@
                                         {{-- Diterima Oleh (if finished) --}}
                                         <template x-if="order.status === 'selesai' && order.penerima">
                                             <div class="flex items-center gap-1.5">
-                                                <span>•</span>
+                                                <span>â€¢</span>
                                                 <svg class="h-3.5 w-3.5 text-stone-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
                                                 <span class="text-stone-700 font-medium" x-text="order.penerima.includes('Diterima oleh') ? order.penerima : 'Diterima oleh ' + order.penerima"></span>
                                             </div>
@@ -613,7 +616,7 @@
                                 <template x-if="item.reviewed">
                                     <div class="mt-3 rounded-xl bg-stone-50 p-3 text-xs text-stone-600">
                                         <div class="text-amber-500 text-sm mb-1">
-                                            <template x-for="s in [1,2,3,4,5]" :key="s"><span x-text="s <= (item.review?.rating || 0) ? '★' : '☆'"></span></template>
+                                            <template x-for="s in [1,2,3,4,5]" :key="s"><span x-text="s <= (item.review?.rating || 0) ? 'â˜…' : 'â˜†'"></span></template>
                                         </div>
                                         <p x-text="item.review?.comment || ''"></p>
                                     </div>
