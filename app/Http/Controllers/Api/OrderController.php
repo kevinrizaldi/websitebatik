@@ -313,6 +313,8 @@ class OrderController extends Controller
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['required', 'string', 'max:1000'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string', 'max:100'],
             'photos' => ['nullable', 'array', 'max:3'],
             'photos.*' => ['file', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
@@ -361,6 +363,7 @@ class OrderController extends Controller
             'customer_name' => $request->user()->name,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
+            'tags' => ! empty($validated['tags']) ? array_values(array_filter($validated['tags'])) : null,
             'photos' => $paths ?: null,
             'status' => 'Disetujui',
         ]);

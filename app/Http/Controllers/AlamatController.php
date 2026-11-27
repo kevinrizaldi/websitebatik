@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Address;
+use App\Services\RajaOngkirService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,13 @@ use Illuminate\View\View;
 
 class AlamatController extends Controller
 {
+    protected RajaOngkirService $rajaOngkirService;
+
+    public function __construct(?RajaOngkirService $rajaOngkirService = null)
+    {
+        $this->rajaOngkirService = $rajaOngkirService ?? app(RajaOngkirService::class);
+    }
+
     /**
      * Halaman kelola alamat + API daftar alamat untuk checkout.
      * Menyesuaikan tampilan storefront yang sudah ada bila diakses via browser.
@@ -356,12 +364,17 @@ class AlamatController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
+                $matchedRegion = $this->matchRegionFromNominatim(
+                    $data['address'] ?? [],
+                    $data['address']['postcode'] ?? null
+                );
 
                 return response()->json([
                     'success' => true,
                     'display_name' => $data['display_name'] ?? '',
                     'postcode' => $data['address']['postcode'] ?? null,
                     'address' => $data['address'] ?? [],
+                    'matched_region' => $matchedRegion,
                 ]);
             }
         } catch (\Throwable $e) {
@@ -369,5 +382,178 @@ class AlamatController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'Gagal mengambil alamat dari titik koordinat.']);
+    }
+
+    /**
+     * Map Nominatim reverse-geocode address parts to RajaOngkir province, city, district, and postal code.
+     */
+    protected function matchRegionFromNominatim(array $address, ?string $postcode = null): ?array
+    {
+        if (empty($address)) {
+            return null;
+        }
+
+        $rawState = trim((string) ($address['state'] ?? $address['province'] ?? $address['region'] ?? ''));
+        $rawCity = trim((string) ($address['city'] ?? $address['county'] ?? $address['town'] ?? $address['city_district'] ?? $address['municipality'] ?? ''));
+        $rawDistrict = trim((string) ($address['suburb'] ?? $address['district'] ?? $address['city_district'] ?? $address['municipality'] ?? $address['village'] ?? $address['neighbourhood'] ?? ''));
+        $rawPostcode = trim((string) ($postcode ?? $address['postcode'] ?? ''));
+
+        // Standardize common Indonesian province aliases
+        $provinceAliases = [
+            'central java' => 'Jawa Tengah',
+            'east java' => 'Jawa Timur',
+            'west java' => 'Jawa Barat',
+            'special region of yogyakarta' => 'DI Yogyakarta',
+            'daerah istimewa yogyakarta' => 'DI Yogyakarta',
+            'yogyakarta' => 'DI Yogyakarta',
+            'special capital region of jakarta' => 'DKI Jakarta',
+            'daerah khusus ibukota jakarta' => 'DKI Jakarta',
+            'jakarta' => 'DKI Jakarta',
+        ];
+
+        $stateLower = strtolower($rawState);
+        $stateClean = $provinceAliases[$stateLower] ?? trim(preg_replace('/\b(provinsi|daerah khusus ibukota|daerah istimewa)\b/i', '', $rawState));
+
+        $provinces = $this->rajaOngkirService->getProvinces();
+        $matchedProvince = null;
+
+        // 1. Match Province
+        foreach ($provinces as $p) {
+            $pName = (string) ($p['province'] ?? '');
+            if ($pName === '') {
+                continue;
+            }
+
+            if (strcasecmp($pName, $rawState) === 0 || strcasecmp($pName, $stateClean) === 0) {
+                $matchedProvince = $p;
+                break;
+            }
+
+            if ($stateClean !== '' && (stripos($pName, $stateClean) !== false || stripos($stateClean, $pName) !== false)) {
+                $matchedProvince = $p;
+                break;
+            }
+        }
+
+        if (! $matchedProvince) {
+            return null;
+        }
+
+        $provId = (int) $matchedProvince['province_id'];
+        $provName = (string) $matchedProvince['province'];
+
+        // 2. Match City in that Province
+        $cities = $this->rajaOngkirService->getCities($provId);
+        $matchedCity = null;
+
+        $cleanCitySearch = trim(preg_replace('/\b(kota|kabupaten|kab\.)\b/i', '', $rawCity));
+
+        foreach ($cities as $c) {
+            $cName = (string) ($c['city_name'] ?? '');
+            $type = (string) ($c['type'] ?? '');
+            $fullName = trim("{$type} {$cName}");
+
+            if (strcasecmp($cName, $cleanCitySearch) === 0 || strcasecmp($fullName, $rawCity) === 0 || strcasecmp($cName, $rawCity) === 0) {
+                $matchedCity = $c;
+                break;
+            }
+
+            if ($cleanCitySearch !== '' && (stripos($cName, $cleanCitySearch) !== false || stripos($cleanCitySearch, $cName) !== false)) {
+                $matchedCity = $c;
+                break;
+            }
+
+            // Solo / Surakarta alias
+            if ((stripos($cleanCitySearch, 'Solo') !== false || stripos($cleanCitySearch, 'Surakarta') !== false) &&
+                (stripos($cName, 'Surakarta') !== false || stripos($cName, 'Solo') !== false)) {
+                $matchedCity = $c;
+                break;
+            }
+        }
+
+        // If not found in that province, try searching across all cities as fallback
+        if (! $matchedCity && $cleanCitySearch !== '') {
+            foreach ($this->rajaOngkirService->getCities() as $c) {
+                $cName = (string) ($c['city_name'] ?? '');
+                if (strcasecmp($cName, $cleanCitySearch) === 0 ||
+                    ((stripos($cleanCitySearch, 'Solo') !== false || stripos($cleanCitySearch, 'Surakarta') !== false) &&
+                     (stripos($cName, 'Surakarta') !== false || stripos($cName, 'Solo') !== false))) {
+                    $matchedCity = $c;
+                    $provId = (int) ($c['province_id'] ?? $provId);
+                    $provName = (string) ($c['province'] ?? $provName);
+                    break;
+                }
+            }
+        }
+
+        if (! $matchedCity) {
+            return [
+                'province' => $provName,
+                'province_id' => $provId,
+                'city' => null,
+                'city_id' => null,
+                'district' => null,
+                'district_id' => null,
+                'postal_code' => $rawPostcode ?: null,
+            ];
+        }
+
+        $cityId = (int) $matchedCity['city_id'];
+        $type = (string) ($matchedCity['type'] ?? '');
+        $cName = (string) ($matchedCity['city_name'] ?? '');
+        $cityDisplayName = $type ? "{$type} {$cName}" : $cName;
+        $cityDefaultPostal = (string) ($matchedCity['postal_code'] ?? '');
+
+        // 3. Match District (Kecamatan) in that City
+        $districts = $this->rajaOngkirService->getDistricts($cityId);
+        $matchedDistrict = null;
+
+        $cleanDistrictSearch = trim(preg_replace('/\b(kecamatan|kec\.|kelurahan|desa)\b/i', '', $rawDistrict));
+
+        if (! empty($districts)) {
+            $candidateNames = array_filter([
+                $cleanDistrictSearch,
+                (string) ($address['suburb'] ?? ''),
+                (string) ($address['village'] ?? ''),
+                (string) ($address['neighbourhood'] ?? ''),
+                (string) ($address['quarter'] ?? ''),
+                (string) ($address['city_district'] ?? ''),
+            ]);
+
+            foreach ($districts as $d) {
+                $dName = (string) ($d['district_name'] ?? '');
+                if ($dName === '') {
+                    continue;
+                }
+
+                foreach ($candidateNames as $cand) {
+                    $candClean = trim(preg_replace('/\b(kecamatan|kec\.|kelurahan|desa)\b/i', '', $cand));
+                    if ($candClean === '') {
+                        continue;
+                    }
+
+                    if (strcasecmp($dName, $candClean) === 0 || stripos($dName, $candClean) !== false || stripos($candClean, $dName) !== false) {
+                        $matchedDistrict = $d;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        $districtId = $matchedDistrict ? (int) ($matchedDistrict['district_id'] ?? 0) : null;
+        $districtName = $matchedDistrict ? (string) $matchedDistrict['district_name'] : ($cleanDistrictSearch ?: null);
+
+        // 4. Postal Code
+        $finalPostal = $rawPostcode ?: $cityDefaultPostal;
+
+        return [
+            'province' => $provName,
+            'province_id' => $provId,
+            'city' => $cityDisplayName,
+            'city_id' => $cityId,
+            'district' => $districtName,
+            'district_id' => $districtId,
+            'postal_code' => $finalPostal ?: null,
+        ];
     }
 }

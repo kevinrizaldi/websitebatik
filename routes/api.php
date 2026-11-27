@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ShippingController;
+use App\Http\Controllers\AlamatController;
 use App\Http\Controllers\RajaOngkirController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,10 @@ Route::prefix('rajaongkir')->group(function (): void {
     Route::get('/districts', [RajaOngkirController::class, 'districts']);
     Route::get('/postal-codes', [RajaOngkirController::class, 'postalCodes']);
 });
+
+// Geocoding endpoints for address map picker
+Route::get('/alamat/geocode', [AlamatController::class, 'geocode']);
+Route::get('/alamat/reverse-geocode', [AlamatController::class, 'reverseGeocode']);
 
 // Protected endpoints (require Bearer token from Sanctum)
 Route::middleware('auth:sanctum')->group(function (): void {
