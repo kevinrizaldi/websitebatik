@@ -14,15 +14,14 @@ class ProfileController extends Controller
 {
     /**
      * Display the user's profile page.
-     * Admin dialihkan ke dashboard, customer memakai storefront.
+     * Admin memakai halaman profil dashboard, customer memakai storefront.
      */
-    public function edit(Request $request): View|RedirectResponse
+    public function edit(Request $request): View
     {
         $user = $request->user();
 
-        // Admin tidak menggunakan halaman profil khusus, dialihkan langsung ke dashboard
         if ($user->isAdmin()) {
-            return redirect()->route('dashboard');
+            return view('profile.admin', compact('user'));
         }
 
         $alamats = $user->alamats()->latest()->get();
