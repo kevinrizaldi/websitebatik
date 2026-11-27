@@ -10,8 +10,7 @@
                          class="h-7 w-auto object-contain">
                 </div>
                 <p class="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-sm">
-                    Batik Modern & Kerajinan Ramah Lingkungan. Menjaga warisan budaya Nusantara dengan kualitas bahan terbaik dan jahitan rapi buatan pengrajin lokal.
-                </p>
+                   Mengenakan batik berarti ikut melestarikan budaya. Pilih koleksi favoritmu di Hamzah Style Official.
                 <div class="pt-1">
 
                 </div>
