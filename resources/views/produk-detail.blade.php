@@ -13,6 +13,14 @@
     $isKain = str_contains(strtolower($kategoriProduk), 'kain');
     $stokUkuranArray = $produk ? $produk->getStokUkuranArray() : ['All Size' => $stokProduk];
 
+    // Urutkan opsi ukuran sesuai standar fashion: XS, S, M, L, XL, XXL, 3XL, 4XL, All Size
+    $standardSizeOrder = ['XS' => 1, 'S' => 2, 'M' => 3, 'L' => 4, 'XL' => 5, 'XXL' => 6, '2XL' => 6, '3XL' => 7, '4XL' => 8, '5XL' => 9, 'ALL SIZE' => 99];
+    uksort($stokUkuranArray, function($a, $b) use ($standardSizeOrder) {
+        $orderA = $standardSizeOrder[strtoupper(trim($a))] ?? 50;
+        $orderB = $standardSizeOrder[strtoupper(trim($b))] ?? 50;
+        return $orderA <=> $orderB;
+    });
+
     // Jika produk memiliki ukuran spesifik (S, M, L, dll), jangan tampilkan opsi 'All Size'
     $hasSpecificSizes = false;
     foreach (array_keys($stokUkuranArray) as $k) {
@@ -45,7 +53,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $namaProduk }} â€” Hamzah Style</title>
+    <title>{{ $namaProduk }} — Hamzah Style</title>
     <meta name="description" content="{{ $namaProduk }} berbahan {{ $materialProduk }} dari Hamzah Style. Warisan batik nusantara modern berkualitas premium.">
 
     <!-- Google Fonts: Poppins -->
@@ -90,8 +98,8 @@
           },
           quantity: 1,
           descOpen: true,
-          guideOpen: true,
-          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->sum('qty') }},
+          guideOpen: false,
+          cartCount: {{ \App\Models\CartItem::forCurrentVisitor()->count() }},
           sizeGuideModal: false,
           imageZoomModal: false,
           reviewPhotoModal: false,
@@ -316,7 +324,7 @@
                             <div class="flex items-center gap-1.5 font-bold text-stone-900">
                                 <div class="flex text-amber-500 text-sm">
                                     @for($s = 1; $s <= 5; $s++)
-                                        <span class="{{ $s <= round($ratingAvg) ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
+                                        <span class="{{ $s <= round($ratingAvg) ? 'text-amber-500' : 'text-stone-300' }}">★</span>
                                     @endfor
                                 </div>
                                 <span class="ml-1 text-sm font-bold">{{ number_format($ratingAvg, 1) }}</span>
@@ -327,7 +335,7 @@
                             </a>
                         @else
                             <div class="flex items-center gap-1 text-stone-400 text-xs">
-                                <span class="text-amber-500">â˜…</span>
+                                <span class="text-amber-500">★</span>
                                 <span>Belum ada ulasan</span>
                             </div>
                         @endif
@@ -371,8 +379,8 @@
                         <div class="space-y-1.5 pt-1">
                             <span class="text-stone-900 font-bold text-xs sm:text-sm block">Ukuran Kain</span>
                             <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#FAF7F2] border border-[#D5CABB] text-xs font-bold text-stone-800">
-                                <span>ðŸ§µ</span>
-                                <span>Lembaran Kain Batik (2,4 m Ã— 1,15 m)</span>
+                                <span>🧵</span>
+                                <span>Lembaran Kain Batik (2,4 m × 1,15 m)</span>
                             </div>
                             <p class="text-[11px] text-stone-500">Kain batik siap dijahit sesuai model pakaian yang Anda inginkan.</p>
                         </div>
@@ -424,7 +432,7 @@
                                     :disabled="quantity <= 1"
                                     :class="quantity <= 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#FAF4EC] cursor-pointer'"
                                     class="w-10 h-10 rounded-lg flex items-center justify-center text-stone-700 font-bold text-base transition">
-                                âˆ’
+                                −
                             </button>
                             <span class="w-10 text-center text-sm font-bold text-stone-900" x-text="quantity"></span>
                             <button @click="increaseQty()"
@@ -540,19 +548,19 @@
                     </p>
                     <ul class="space-y-1.5 text-stone-700 text-xs sm:text-sm pt-2">
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">â€¢</span>
+                            <span class="text-stone-400">•</span>
                             <span><strong>Model:</strong> Regular Fit yang pas di badan, kerah rapi dengan kancing dalam</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">â€¢</span>
+                            <span class="text-stone-400">•</span>
                             <span><strong>Bahan:</strong> Katun Prima Halus, adem dan nyaman di kulit</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">â€¢</span>
+                            <span class="text-stone-400">•</span>
                             <span><strong>Kancing:</strong> Kancing batok kelapa alami dengan jahitan kuat dan rapi</span>
                         </li>
                         <li class="flex items-start gap-2">
-                            <span class="text-stone-400">â€¢</span>
+                            <span class="text-stone-400">•</span>
                             <span><strong>Saku:</strong> Satu saku di dada kiri dengan motif batik yang menyatu rapi</span>
                         </li>
                     </ul>
@@ -581,7 +589,7 @@
                         </span>
                         <div class="flex items-center justify-center gap-1 text-amber-500 text-lg my-2">
                             @for($s = 1; $s <= 5; $s++)
-                                <span class="{{ $s <= round($ratingAvg ?: 5) ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
+                                <span class="{{ $s <= round($ratingAvg ?: 5) ? 'text-amber-500' : 'text-stone-300' }}">★</span>
                             @endfor
                         </div>
                         <span class="font-bold text-stone-900 text-sm block">
@@ -639,7 +647,7 @@
 
                                     <div class="flex text-amber-500 text-xs mb-3">
                                         @for($s = 1; $s <= 5; $s++)
-                                            <span class="{{ $s <= $u->rating ? 'text-amber-500' : 'text-stone-300' }}">â˜…</span>
+                                            <span class="{{ $s <= $u->rating ? 'text-amber-500' : 'text-stone-300' }}">★</span>
                                         @endfor
                                     </div>
 

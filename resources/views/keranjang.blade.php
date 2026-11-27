@@ -176,13 +176,9 @@
                  return this.selectedItems.reduce((acc, curr) => acc + (curr.harga * curr.qty), 0);
              },
 
-             get discountPromo() {
-                 return (this.rawSubtotal >= 900000) ? 50000 : 0;
-             },
-
              get grandTotal() {
                  if (this.selectedItems.length === 0) return 0;
-                 return Math.max(0, this.rawSubtotal - this.discountPromo);
+                 return this.rawSubtotal;
              },
 
              addRecommendation(prod) {
@@ -400,12 +396,6 @@
                                 <span class="text-stone-600" x-text="'Total Harga (' + totalSelectedQty + ' barang)'"></span>
                                 <span class="font-bold text-stone-900 whitespace-nowrap" x-text="formatRupiah(rawSubtotal)"></span>
                             </div>
-                            <template x-if="discountPromo > 0">
-                                <div class="flex items-center justify-between text-emerald-700 font-medium">
-                                    <span>Diskon Promo</span>
-                                    <span class="font-bold whitespace-nowrap" x-text="'-' + formatRupiah(discountPromo)"></span>
-                                </div>
-                            </template>
                         </div>
 
                         <!-- Divider & Total Belanja -->

@@ -12,11 +12,12 @@ class StorefrontLayout extends Component
         public ?string $title = null,
         public ?string $description = null,
         public ?string $activeNav = null,
+        public ?int $cartCount = null,
     ) {}
 
     public function render(): View
     {
-        $cartCount = CartItem::forCurrentVisitor()->sum('qty');
+        $cartCount = $this->cartCount ?? (int) CartItem::forCurrentVisitor()->count();
 
         return view('layouts.storefront', [
             'cartCount' => $cartCount,
