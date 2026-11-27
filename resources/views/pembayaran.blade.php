@@ -4,79 +4,7 @@
         <script src="{{ $snapJsUrl ?? 'https://app.sandbox.midtrans.com/snap/snap.js' }}" data-client-key="{{ $clientKey ?? config('midtrans.client_key') }}"></script>
     </x-slot>
 
-    <div x-data="{
-        snapToken: '{{ $snapToken ?? '' }}',
-        orderCode: '{{ $order->code ?? '' }}',
-        isProduction: @js((bool) config('midtrans.is_production')),
-        isPaying: false,
-
-        copyText(txt, label) {
-            navigator.clipboard.writeText(txt);
-            window.dispatchEvent(new CustomEvent('show-toast', { detail: label + ' berhasil disalin!' }));
-        },
-
-        orderId: {{ $order->id ?? 'null' }},
-
-        payWithMidtrans() {
-            if (!this.snapToken) {
-                window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Token pembayaran Midtrans tidak valid.' }));
-                return;
-            }
-
-            this.isPaying = true;
-
-            if (typeof window.snap !== 'undefined' && !this.snapToken.startsWith('MOCK_SNAP_')) {
-                window.snap.pay(this.snapToken, {
-                    onSuccess: (result) => {
-                        // Sync status dari Midtrans ke database lokal, lalu redirect
-                        fetch('{{ route('payment.sync') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ order_id: this.orderId }),
-                        })
-                        .finally(() => {
-                            window.location.href = '{{ route('midtrans.finish') }}?order_id=' + encodeURIComponent(this.orderCode) + '&status=success';
-                        });
-                    },
-                    onPending: (result) => {
-                        // Sync juga saat pending (VA/QRIS sudah dipilih)
-                        fetch('{{ route('payment.sync') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-                                'Accept': 'application/json',
-                            },
-                            body: JSON.stringify({ order_id: this.orderId }),
-                        })
-                        .finally(() => {
-                            window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Menunggu pembayaran Anda diselesaikan.' }));
-                            setTimeout(() => {
-                                window.location.href = '{{ route('pesanan.index') }}';
-                            }, 1500);
-                        });
-                    },
-                    onError: (result) => {
-                        window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Pembayaran gagal atau dibatalkan.' }));
-                        this.isPaying = false;
-                    },
-                    onClose: () => {
-                        this.isPaying = false;
-                    }
-                });
-            } else if (this.snapToken.startsWith('MOCK_SNAP_') && !this.isProduction) {
-                // Sandbox fallback simulation — never auto-navigate to mock=1 in production.
-                window.location.href = '{{ route('midtrans.finish') }}?order_id=' + encodeURIComponent(this.orderCode) + '&mock=1';
-            } else {
-                window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Token pembayaran Midtrans tidak valid.' }));
-                this.isPaying = false;
-            }
-        }
-    }">
+    <div x-data="pembayaranPage()">
 
         <!-- Page Title Header -->
         <div class="bg-white border-b border-[#ECE4D8] py-8 sm:py-10">
@@ -252,4 +180,87 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function pembayaranPage() {
+            return {
+                snapToken: @json($snapToken ?? ''),
+                orderCode: @json($order->code ?? ''),
+                orderId: @json($order->id ?? null),
+                isProduction: @json((bool) config('midtrans.is_production')),
+                isPaying: false,
+
+                copyText(txt, label) {
+                    if (!txt) return;
+                    navigator.clipboard.writeText(txt);
+                    window.dispatchEvent(new CustomEvent('show-toast', { detail: label + ' berhasil disalin!' }));
+                },
+
+                payWithMidtrans() {
+                    if (!this.snapToken) {
+                        window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Token pembayaran Midtrans tidak valid.' }));
+                        return;
+                    }
+
+                    this.isPaying = true;
+
+                    if (typeof window.snap !== 'undefined' && !this.snapToken.startsWith('MOCK_SNAP_')) {
+                        window.snap.pay(this.snapToken, {
+                            onSuccess: (result) => {
+                                // Sync status dari Midtrans ke database lokal, lalu redirect
+                                fetch(@json(route('payment.sync')), {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                                        'Accept': 'application/json',
+                                    },
+                                    body: JSON.stringify({ order_id: this.orderId }),
+                                })
+                                .finally(() => {
+                                    window.location.href = @json(route('midtrans.finish')) + '?order_id=' + encodeURIComponent(this.orderCode) + '&status=success';
+                                });
+                            },
+                            onPending: (result) => {
+                                // Sync juga saat pending (VA/QRIS sudah dipilih)
+                                fetch(@json(route('payment.sync')), {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                                        'Accept': 'application/json',
+                                    },
+                                    body: JSON.stringify({ order_id: this.orderId }),
+                                })
+                                .finally(() => {
+                                    window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Menunggu pembayaran Anda diselesaikan.' }));
+                                    setTimeout(() => {
+                                        window.location.href = @json(route('pesanan.index'));
+                                    }, 1500);
+                                });
+                            },
+                            onError: (result) => {
+                                window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Pembayaran gagal atau dibatalkan.' }));
+                                this.isPaying = false;
+                            },
+                            onClose: () => {
+                                this.isPaying = false;
+                                window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Jendela pembayaran ditutup. Anda dapat melanjutkan pembayaran kapan saja.' }));
+                            }
+                        });
+                    } else if (this.snapToken.startsWith('MOCK_SNAP_') && !this.isProduction) {
+                        // Sandbox fallback simulation
+                        window.location.href = @json(route('midtrans.finish')) + '?order_id=' + encodeURIComponent(this.orderCode) + '&mock=1';
+                    } else {
+                        window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Token pembayaran Midtrans tidak valid.' }));
+                        this.isPaying = false;
+                    }
+                }
+            };
+        }
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('pembayaranPage', pembayaranPage);
+        });
+    </script>
 </x-storefront-layout>

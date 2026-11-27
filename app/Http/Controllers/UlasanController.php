@@ -43,10 +43,16 @@ class UlasanController extends Controller
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|min:3|max:1000',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'photos' => 'nullable|array|max:3',
+            'photos.*' => 'image|mimes:jpg,jpeg,png,gif,webp|max:5120',
         ], [
             'image.image' => 'File ulasan harus berupa gambar.',
             'image.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WebP.',
             'image.max' => 'Ukuran gambar maksimal 5 MB.',
+            'photos.max' => 'Maksimal 3 foto ulasan.',
+            'photos.*.image' => 'File ulasan harus berupa gambar.',
+            'photos.*.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WebP.',
+            'photos.*.max' => 'Ukuran setiap foto ulasan maksimal 5 MB.',
         ]);
 
         $user = Auth::user();
@@ -108,9 +114,25 @@ class UlasanController extends Controller
             return $this->denyReview($request, 'Anda sudah memberi ulasan untuk produk ini pada pesanan #'.$targetOrder->code.'.');
         }
 
-        $imagePath = isset($validated['image'])
-            ? $validated['image']->store('ulasan', 'public')
-            : null;
+        // Simpan foto: mendukung multiple photos (hingga 3) dan single image (backward compatibility).
+        $photosPaths = [];
+        if ($request->hasFile('photos')) {
+            foreach ($request->file('photos') as $photoFile) {
+                if ($photoFile) {
+                    $photosPaths[] = $photoFile->store('reviews', 'public');
+                }
+            }
+        }
+
+        $imagePath = null;
+        if (isset($validated['image'])) {
+            $imagePath = $validated['image']->store('ulasan', 'public');
+            if (empty($photosPaths)) {
+                $photosPaths[] = $imagePath;
+            }
+        } elseif (! empty($photosPaths)) {
+            $imagePath = $photosPaths[0];
+        }
 
         try {
             $ulasan = Review::create([
@@ -121,12 +143,18 @@ class UlasanController extends Controller
                 'rating' => (int) $validated['rating'],
                 'comment' => $validated['comment'],
                 'image_path' => $imagePath,
+                'photos' => ! empty($photosPaths) ? $photosPaths : null,
                 'status' => 'Menunggu',
             ]);
         } catch (QueryException $exception) {
             report($exception);
 
-            if ($imagePath) {
+            if (! empty($photosPaths)) {
+                foreach ($photosPaths as $p) {
+                    Storage::disk('public')->delete($p);
+                }
+            }
+            if ($imagePath && ! in_array($imagePath, $photosPaths, true)) {
                 Storage::disk('public')->delete($imagePath);
             }
 
@@ -175,10 +203,16 @@ class UlasanController extends Controller
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'required|string|min:3|max:1000',
             'image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'photos' => 'nullable|array|max:3',
+            'photos.*' => 'image|mimes:jpg,jpeg,png,gif,webp|max:5120',
         ], [
             'image.image' => 'File ulasan harus berupa gambar.',
             'image.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WebP.',
             'image.max' => 'Ukuran gambar maksimal 5 MB.',
+            'photos.max' => 'Maksimal 3 foto ulasan.',
+            'photos.*.image' => 'File ulasan harus berupa gambar.',
+            'photos.*.mimes' => 'Format gambar harus JPG, JPEG, PNG, GIF, atau WebP.',
+            'photos.*.max' => 'Ukuran setiap foto ulasan maksimal 5 MB.',
         ]);
 
         $payload = [
@@ -186,11 +220,35 @@ class UlasanController extends Controller
             'comment' => $validated['comment'],
         ];
 
-        if (! empty($validated['image'])) {
+        if ($request->hasFile('photos')) {
+            if (! empty($ulasan->photos) && is_array($ulasan->photos)) {
+                foreach ($ulasan->photos as $oldP) {
+                    Storage::disk('public')->delete($oldP);
+                }
+            }
             if ($ulasan->image_path) {
                 Storage::disk('public')->delete($ulasan->image_path);
             }
-            $payload['image_path'] = $validated['image']->store('ulasan', 'public');
+            $newPhotos = [];
+            foreach ($request->file('photos') as $photoFile) {
+                if ($photoFile) {
+                    $newPhotos[] = $photoFile->store('reviews', 'public');
+                }
+            }
+            $payload['photos'] = ! empty($newPhotos) ? $newPhotos : null;
+            $payload['image_path'] = $newPhotos[0] ?? null;
+        } elseif (! empty($validated['image'])) {
+            if (! empty($ulasan->photos) && is_array($ulasan->photos)) {
+                foreach ($ulasan->photos as $oldP) {
+                    Storage::disk('public')->delete($oldP);
+                }
+            }
+            if ($ulasan->image_path) {
+                Storage::disk('public')->delete($ulasan->image_path);
+            }
+            $savedImage = $validated['image']->store('ulasan', 'public');
+            $payload['image_path'] = $savedImage;
+            $payload['photos'] = [$savedImage];
         }
 
         $ulasan->update($payload);
@@ -219,6 +277,11 @@ class UlasanController extends Controller
             return $this->denyReview($request, 'Ulasan yang sudah dimoderasi admin tidak dapat dihapus.');
         }
 
+        if (! empty($ulasan->photos) && is_array($ulasan->photos)) {
+            foreach ($ulasan->photos as $p) {
+                Storage::disk('public')->delete($p);
+            }
+        }
         if ($ulasan->image_path) {
             Storage::disk('public')->delete($ulasan->image_path);
         }
