@@ -281,6 +281,11 @@ class AuthController extends Controller
 
     private function formatUser(User $user): array
     {
+        $activeOrdersCount = $user->orders()->whereIn('status', [
+            'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi',
+            'Diproses', 'Sudah Dibayar', 'Dikirim', 'sedang dikirim', 'sedang diproses',
+        ])->count();
+
         return [
             'id' => $user->id,
             'name' => $user->name,
@@ -290,6 +295,8 @@ class AuthController extends Controller
             'tanggal_lahir' => $user->tanggal_lahir,
             'avatar' => $user->avatar,
             'role' => $user->role ?? 'user',
+            'active_orders_count' => $activeOrdersCount,
+            'pesanan_aktif' => $activeOrdersCount,
         ];
     }
 }

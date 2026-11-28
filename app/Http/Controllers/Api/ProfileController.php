@@ -37,6 +37,11 @@ class ProfileController extends Controller
         $user->fill($validated);
         $user->save();
 
+        $activeOrdersCount = $user->orders()->whereIn('status', [
+            'Menunggu Pembayaran', 'Belum Dibayar', 'Menunggu Verifikasi', 'Menunggu Konfirmasi',
+            'Diproses', 'Sudah Dibayar', 'Dikirim', 'sedang dikirim', 'sedang diproses',
+        ])->count();
+
         $formatted = [
             'id' => $user->id,
             'name' => $user->name,
@@ -46,6 +51,8 @@ class ProfileController extends Controller
             'tanggal_lahir' => $user->tanggal_lahir,
             'avatar' => $user->avatar,
             'role' => $user->role ?? 'user',
+            'active_orders_count' => $activeOrdersCount,
+            'pesanan_aktif' => $activeOrdersCount,
         ];
 
         return response()->json([
