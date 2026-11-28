@@ -200,6 +200,7 @@ class ProductController extends Controller
             'description' => $product->description ?: $product->deskripsi,
             'material' => $product->material,
             'size' => $product->size ?: $product->ukuran,
+            'panduan_ukuran' => $product->panduan_ukuran,
             'size_stock' => $sizeStock,
             'sizes' => $sizeStock,
             'image_url' => $mainImage,
