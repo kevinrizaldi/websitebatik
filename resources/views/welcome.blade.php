@@ -77,13 +77,13 @@
                 <div class="lg:col-span-6 lg:pr-6">
                     <!-- Heading -->
                     <h1 class="font-serif-title text-4xl sm:text-5xl lg:text-[62px] font-bold text-[#1F1916] leading-[1.12] tracking-tight mb-6">
-                        Elegan dalam<br>
-                        Setiap Motif
+                        Batik Pilihan<br>
+                        Untuk Harimu
                     </h1>
 
                     <!-- Paragraph -->
                     <p class="text-stone-600 text-base sm:text-lg leading-relaxed mb-8 max-w-xl">
-                        Temukan keindahan batik autentik Indonesia pilihan Hamzah Style. Menggabungkan kemewahan tradisi Nusantara dengan sentuhan modern ramah lingkungan.
+                        Untuk setiap cerita dan kesempatan, temukan batik asli Nusantara yang nyaman dipakai dan siap menemani setiap momen pentingmu.
                     </p>
 
                     <!-- CTA Buttons -->

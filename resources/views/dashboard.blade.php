@@ -3,14 +3,6 @@
         {{-- HEADER DASHBOARD & RINGKASAN PENJUALAN --}}
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-                {{-- Eyebrow --}}
-                <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#A86544] mb-1">
-                    <span>RINGKASAN TOKO</span>
-                    <span>•</span>
-                    <span>SEMESTER {{ now()->month <= 6 ? 'I' : 'II' }} {{ now()->year }}</span>
-                    <span>•</span>
-                    <span class="text-stone-400">Update Otomatis: Baru saja</span>
-                </div>
                 {{-- Title & Subtitle --}}
                 <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">
                     Dashboard Utama & Ringkasan Penjualan

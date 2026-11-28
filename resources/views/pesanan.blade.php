@@ -353,16 +353,31 @@
                                             </a>
                                         </template>
 
-                                        {{-- Tombol Status Dikirim -> Lacak Pengiriman --}}
+                                        {{-- Tombol Status Dikirim -> Lacak Pengiriman & Pesanan Diterima --}}
                                         <template x-if="order.status === 'dikirim'">
-                                            <button @click="openTracking(order)"
-                                                    type="button"
-                                                    class="inline-flex items-center gap-1.5 rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-stone-800">
-                                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
-                                                </svg>
-                                                <span>Lacak Pengiriman</span>
-                                            </button>
+                                            <div class="flex items-center gap-2">
+                                                <button @click="openTracking(order)"
+                                                        type="button"
+                                                        class="inline-flex items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold text-stone-700 transition hover:bg-stone-50">
+                                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+                                                    </svg>
+                                                    <span>Lacak Pengiriman</span>
+                                                </button>
+                                                <form :action="'{{ url('/pesanan') }}/' + (order.dbId || order.id) + '/terima'"
+                                                      method="POST"
+                                                      onsubmit="return confirm('Konfirmasi bahwa Anda telah menerima paket pesanan ini dengan baik?')">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit"
+                                                            class="inline-flex items-center gap-1.5 rounded-xl bg-[#201A17] px-4 py-2 text-xs font-semibold text-white shadow-2xs transition hover:bg-stone-800">
+                                                        <svg class="h-3.5 w-3.5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                                                        </svg>
+                                                        <span>Pesanan Diterima</span>
+                                                    </button>
+                                                </form>
+                                            </div>
                                         </template>
 
                                         {{-- Tombol Status Selesai -> Beli Lagi & Berikan Ulasan --}}
@@ -567,6 +582,25 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Tombol Konfirmasi Pesanan Diterima di Modal Tracking --}}
+                        <template x-if="selectedOrder.status === 'dikirim'">
+                            <div class="pt-3 border-t border-stone-100">
+                                <form :action="'{{ url('/pesanan') }}/' + (selectedOrder.dbId || selectedOrder.id) + '/terima'"
+                                      method="POST"
+                                      onsubmit="return confirm('Konfirmasi bahwa Anda telah menerima paket pesanan ini dengan baik?')">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit"
+                                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#201A17] px-4 py-2.5 text-xs font-semibold text-white shadow-2xs transition hover:bg-stone-800">
+                                        <svg class="h-4 w-4 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/>
+                                        </svg>
+                                        <span>Konfirmasi Pesanan Diterima</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -581,7 +615,7 @@
              x-transition:leave="transition ease-in duration-200"
              x-transition:leave-start="opacity-100"
              x-transition:leave-end="opacity-0">
-            <div class="fixed inset-0 bg-black/50 backdrop-blur-xs" @click="reviewModalOpen = false"></div>
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-xs" @click="closeReviewModal()"></div>
 
             <div class="relative w-full max-w-2xl rounded-3xl border border-[#ECE4D8] bg-white p-6 shadow-2xl sm:p-8 max-h-[90vh] overflow-y-auto"
                  @click.stop>
@@ -591,7 +625,7 @@
                         <p class="text-xs text-stone-500 mt-0.5">Ulasan hanya bisa dikirim untuk pesanan <span class="font-semibold">Selesai</span>. Satu produk = satu ulasan per pesanan.</p>
                         <p class="text-[11px] text-stone-400 font-mono mt-1" x-text="reviewOrder ? '#' + reviewOrder.id : ''"></p>
                     </div>
-                    <button @click="reviewModalOpen = false" class="rounded-full p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700">
+                    <button @click="closeReviewModal()" class="rounded-full p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
@@ -619,6 +653,13 @@
                                             <template x-for="s in [1,2,3,4,5]" :key="s"><span x-text="s <= (item.review?.rating || 0) ? '★' : '☆'"></span></template>
                                         </div>
                                         <p x-text="item.review?.comment || ''"></p>
+                                        <template x-if="item.review?.tags && item.review.tags.length > 0">
+                                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                                <template x-for="t in item.review.tags" :key="t">
+                                                    <span class="inline-flex items-center rounded-lg bg-[#FAF4EE] border border-[#ECE4D8] px-2 py-0.5 text-[10px] font-semibold text-[#8C6226]" x-text="t"></span>
+                                                </template>
+                                            </div>
+                                        </template>
                                     </div>
                                 </template>
 
@@ -645,13 +686,70 @@
                                             </div>
                                         </div>
                                         <div>
+                                            <div class="flex items-center justify-between mb-1.5">
+                                                <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-500">Kesan yang paling Anda sukai</label>
+                                                <span class="text-[10px] text-stone-400">Pilih kesan yang sesuai</span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-2">
+                                                <template x-for="tag in reviewTags" :key="tag">
+                                                    <button type="button"
+                                                            @click="toggleReviewTag(item.produk_id, tag)"
+                                                            class="rounded-xl px-3 py-1.5 text-xs font-medium transition cursor-pointer flex items-center gap-1.5"
+                                                            :class="(reviewDrafts[item.produk_id].tags || []).includes(tag)
+                                                                ? 'bg-[#201A17] text-white shadow-xs'
+                                                                : 'bg-[#FAF4EE] text-stone-700 hover:bg-[#F2EAE0] border border-[#ECE4D8]'">
+                                                        <template x-if="(reviewDrafts[item.produk_id].tags || []).includes(tag)">
+                                                            <svg class="w-3.5 h-3.5 text-[#E5C38E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                                                        </template>
+                                                        <span x-text="tag"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div>
                                             <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">Komentar</label>
                                             <textarea x-model="reviewDrafts[item.produk_id].comment" rows="3" placeholder="Bagikan pengalaman Anda tentang produk ini..."
                                                       class="w-full rounded-xl border border-stone-200 bg-white p-3 text-sm focus:border-stone-400 focus:outline-none"></textarea>
                                         </div>
                                         <div>
-                                            <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-400 mb-1">Foto (opsional)</label>
-                                            <input type="file" accept="image/jpeg,image/png,image/webp" @change="setReviewImage(item.produk_id, $event)" class="block w-full text-xs text-stone-500 file:mr-3 file:rounded-lg file:border-0 file:bg-stone-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-stone-700 hover:file:bg-stone-200">
+                                            <div class="flex items-center justify-between mb-1.5">
+                                                <label class="block text-[11px] font-bold uppercase tracking-wider text-stone-400">Media Produk (opsional)</label>
+                                                <span class="text-[11px] text-stone-400 font-medium" x-text="(reviewDrafts[item.produk_id].photos ? reviewDrafts[item.produk_id].photos.length : 0) + '/3 Terunggah'"></span>
+                                            </div>
+                                            
+                                            <!-- Preview & Tombol Unggah Foto -->
+                                            <div class="flex flex-wrap items-center gap-2.5 mt-1">
+                                                <!-- Preview Thumbnails -->
+                                                <template x-for="(previewUrl, photoIdx) in (reviewDrafts[item.produk_id].photoPreviews || [])" :key="photoIdx">
+                                                    <div class="relative h-16 w-16 rounded-xl border border-stone-200 overflow-hidden group bg-stone-50 shrink-0">
+                                                        <img :src="previewUrl" alt="Preview foto ulasan" class="h-full w-full object-cover">
+                                                        <button type="button"
+                                                                @click.stop="removeReviewPhoto(item.produk_id, photoIdx)"
+                                                                class="absolute top-1 right-1 h-5 w-5 rounded-full bg-stone-900/80 hover:bg-stone-900 text-white flex items-center justify-center transition shadow-xs"
+                                                                title="Hapus foto">
+                                                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                        </button>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Tombol Tambah Foto (maks 3) -->
+                                                <template x-if="!reviewDrafts[item.produk_id].photos || reviewDrafts[item.produk_id].photos.length < 3">
+                                                    <label class="h-16 w-16 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-stone-200 hover:border-stone-400 hover:bg-stone-50 cursor-pointer transition text-stone-400 hover:text-stone-600 shrink-0">
+                                                        <svg class="h-5 w-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                                        </svg>
+                                                        <span class="text-[9px] font-semibold leading-none">Foto</span>
+                                                        <input type="file"
+                                                               accept="image/jpeg,image/png,image/webp"
+                                                               multiple
+                                                               @change="addReviewPhotos(item.produk_id, $event)"
+                                                               class="sr-only">
+                                                    </label>
+                                                </template>
+                                            </div>
+                                            <p class="text-[10px] text-stone-400 mt-1.5">
+                                                Maksimal 3 foto kain & produk riil (JPG, PNG, atau WebP, maks. 5 MB/foto).
+                                            </p>
                                         </div>
                                         <p x-show="reviewDrafts[item.produk_id].error" x-text="reviewDrafts[item.produk_id].error" class="text-xs text-rose-600"></p>
                                         <div class="flex justify-end">
@@ -666,7 +764,7 @@
                         </template>
 
                         <div class="flex items-center justify-end gap-3 pt-2 border-t border-stone-100">
-                            <button @click="reviewModalOpen = false" type="button" class="rounded-xl px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100">Tutup</button>
+                            <button @click="closeReviewModal()" type="button" class="rounded-xl px-4 py-2 text-xs font-semibold text-stone-600 hover:bg-stone-100">Tutup</button>
                         </div>
                     </div>
                 </template>
@@ -686,6 +784,14 @@
                 reviewOrder: null,
                 reviewItem: null,
                 reviewDrafts: {},
+                reviewTags: [
+                    'Kualitas bahan sangat baik',
+                    'Jahitan rapi',
+                    'Warna sesuai foto',
+                    'Ukuran pas di badan',
+                    'Pengiriman cepat',
+                    'Kemasan ramah lingkungan'
+                ],
                 orders: @json($ordersData),
                 nowTime: Date.now(),
 
@@ -758,14 +864,81 @@
                     this.reviewOrder = order;
                     this.reviewItem = item;
                     this.reviewDrafts = {
-                        [item.produk_id]: { rating: 5, comment: '', image: null, submitting: false, error: '' }
+                        [item.produk_id]: {
+                            rating: 5,
+                            comment: '',
+                            tags: [],
+                            photos: [],
+                            photoPreviews: [],
+                            submitting: false,
+                            error: ''
+                        }
                     };
                     this.reviewModalOpen = true;
                 },
 
-                setReviewImage(produkId, event) {
-                    const file = event?.target?.files?.[0] ?? null;
-                    if (this.reviewDrafts[produkId]) this.reviewDrafts[produkId].image = file;
+                closeReviewModal() {
+                    this.reviewModalOpen = false;
+                    Object.values(this.reviewDrafts || {}).forEach(draft => {
+                        if (draft && Array.isArray(draft.photoPreviews)) {
+                            draft.photoPreviews.forEach(url => URL.revokeObjectURL(url));
+                        }
+                    });
+                },
+
+                addReviewPhotos(produkId, event) {
+                    const draft = this.reviewDrafts[produkId];
+                    if (!draft) return;
+                    if (!Array.isArray(draft.photos)) draft.photos = [];
+                    if (!Array.isArray(draft.photoPreviews)) draft.photoPreviews = [];
+
+                    const inputFiles = Array.from(event?.target?.files || []);
+                    if (!inputFiles.length) return;
+
+                    const remainingSlots = 3 - draft.photos.length;
+                    if (remainingSlots <= 0) {
+                        event.target.value = '';
+                        return;
+                    }
+
+                    draft.error = '';
+                    const toAdd = inputFiles.slice(0, remainingSlots);
+                    for (const file of toAdd) {
+                        if (!file.type.startsWith('image/')) {
+                            draft.error = 'Hanya file gambar (JPG, PNG, WebP) yang diizinkan.';
+                            continue;
+                        }
+                        if (file.size > 5 * 1024 * 1024) {
+                            draft.error = `Ukuran foto ${file.name} melebihi 5 MB.`;
+                            continue;
+                        }
+                        draft.photos.push(file);
+                        draft.photoPreviews.push(URL.createObjectURL(file));
+                    }
+                    event.target.value = '';
+                },
+
+                removeReviewPhoto(produkId, photoIndex) {
+                    const draft = this.reviewDrafts[produkId];
+                    if (!draft || !Array.isArray(draft.photos)) return;
+
+                    if (draft.photoPreviews && draft.photoPreviews[photoIndex]) {
+                        URL.revokeObjectURL(draft.photoPreviews[photoIndex]);
+                    }
+                    draft.photos.splice(photoIndex, 1);
+                    draft.photoPreviews.splice(photoIndex, 1);
+                },
+
+                toggleReviewTag(produkId, tag) {
+                    const draft = this.reviewDrafts[produkId];
+                    if (!draft) return;
+                    if (!Array.isArray(draft.tags)) draft.tags = [];
+                    const idx = draft.tags.indexOf(tag);
+                    if (idx > -1) {
+                        draft.tags.splice(idx, 1);
+                    } else {
+                        draft.tags.push(tag);
+                    }
                 },
 
                 async submitItemReview(item) {
@@ -782,7 +955,20 @@
                     form.append('order_code', this.reviewOrder.id);
                     form.append('rating', draft.rating);
                     form.append('comment', draft.comment.trim());
-                    if (draft.image) form.append('image', draft.image);
+
+                    if (Array.isArray(draft.tags) && draft.tags.length > 0) {
+                        draft.tags.forEach(t => {
+                            form.append('tags[]', t);
+                        });
+                    }
+
+                    if (Array.isArray(draft.photos) && draft.photos.length > 0) {
+                        draft.photos.forEach(file => {
+                            form.append('photos[]', file);
+                        });
+                        // Kompatibilitas field single 'image'
+                        form.append('image', draft.photos[0]);
+                    }
 
                     try {
                         const res = await fetch(@json(route('ulasan.store')), {
@@ -799,8 +985,18 @@
                             draft.error = data.message || 'Gagal mengirim ulasan. Coba lagi.';
                             return;
                         }
+
+                        // Bebaskan memory ObjectURL
+                        if (Array.isArray(draft.photoPreviews)) {
+                            draft.photoPreviews.forEach(url => URL.revokeObjectURL(url));
+                        }
+
                         item.reviewed = true;
-                        item.review = { rating: draft.rating, comment: draft.comment.trim() };
+                        item.review = {
+                            rating: draft.rating,
+                            comment: draft.comment.trim(),
+                            tags: Array.isArray(draft.tags) ? [...draft.tags] : []
+                        };
                         delete this.reviewDrafts[item.produk_id];
                         window.dispatchEvent(new CustomEvent('show-toast', { detail: data.message || 'Ulasan berhasil dikirim.' }));
                         this.reviewModalOpen = false;

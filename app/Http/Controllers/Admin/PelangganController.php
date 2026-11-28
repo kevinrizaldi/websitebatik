@@ -48,14 +48,10 @@ class PelangganController extends Controller
             $city = $primaryAddress ? ($primaryAddress->kota.', '.$primaryAddress->provinsi) : 'Indonesia';
             $cityCode = $primaryAddress ? strtoupper(substr($primaryAddress->kota, 0, 3)) : 'IDN';
 
-            // Derive loyalty tier
-            if ($totalSpent >= 2000000 || $ordersCount >= 4) {
-                $tierName = 'Lestari Adibusana Patron';
-                $tierSub = $totalSpent >= 5000000 ? 'Kolektor Masterpiece' : 'Terverifikasi Resmi';
-                $tierBadgeClass = 'bg-[#FAF0E4] text-[#8C5E28] border-[#E9DFD0]';
-            } elseif ($ordersCount >= 2) {
+            // Derive customer status
+            if ($ordersCount >= 2) {
                 $tierName = 'Pelanggan Terverifikasi';
-                $tierSub = 'Patron Aktif';
+                $tierSub = 'Pelanggan Aktif';
                 $tierBadgeClass = 'bg-[#F2F4F7] text-[#344054] border-[#E4E7EC]';
             } elseif ($ordersCount === 1) {
                 $tierName = 'Pembeli Baru';
@@ -85,6 +81,13 @@ class PelangganController extends Controller
             ];
         });
 
+        // Summary counts (computed before tier filter)
+        $verifiedCount = $patrons->filter(fn ($p) => $p->tier_name === 'Pelanggan Terverifikasi')->count();
+        $newCount = $patrons->filter(fn ($p) => $p->tier_name === 'Pembeli Baru')->count();
+        $repeatCount = $patrons->filter(fn ($p) => $p->orders_count >= 2)->count();
+        $repeatRate = $totalPelanggan > 0 ? round(($repeatCount / $totalPelanggan) * 100, 1) : 0;
+        $totalOmzet = (float) $patrons->sum('total_spent');
+
         // Sort collection
         $patrons = match ($sort) {
             'spend_asc' => $patrons->sortBy('total_spent'),
@@ -93,20 +96,12 @@ class PelangganController extends Controller
             default => $patrons->sortByDesc('total_spent'),
         };
 
-        // Filter tier if selected
-        if ($tier === 'vip') {
-            $patrons = $patrons->filter(fn ($p) => $p->tier_name === 'Lestari Adibusana Patron');
-        } elseif ($tier === 'verified') {
-            $patrons = $patrons->filter(fn ($p) => in_array($p->tier_name, ['Lestari Adibusana Patron', 'Pelanggan Terverifikasi']));
+        // Filter status if selected
+        if ($tier === 'verified') {
+            $patrons = $patrons->filter(fn ($p) => $p->tier_name === 'Pelanggan Terverifikasi');
         } elseif ($tier === 'new') {
             $patrons = $patrons->filter(fn ($p) => $p->tier_name === 'Pembeli Baru');
         }
-
-        // Summary counts
-        $vipCount = $patrons->filter(fn ($p) => $p->tier_name === 'Lestari Adibusana Patron')->count();
-        $repeatCount = $patrons->filter(fn ($p) => $p->orders_count >= 2)->count();
-        $repeatRate = $totalPelanggan > 0 ? round(($repeatCount / $totalPelanggan) * 100, 1) : 0;
-        $totalOmzet = (float) $patrons->sum('total_spent');
 
         // Customer growth calculation
         $startThisMonth = now()->startOfMonth();
@@ -130,7 +125,8 @@ class PelangganController extends Controller
             'totalPelanggan' => $totalPelanggan,
             'customersThisMonth' => $customersThisMonth,
             'growthPercent' => $growthPercent,
-            'vipCount' => $vipCount,
+            'verifiedCount' => $verifiedCount,
+            'newCount' => $newCount,
             'repeatRate' => $repeatRate,
             'totalOmzet' => $totalOmzet,
             'search' => $search,

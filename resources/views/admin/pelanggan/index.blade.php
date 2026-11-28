@@ -3,15 +3,6 @@
         {{-- HEADER BREADCRUMB & TITLE --}}
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-                {{-- Breadcrumbs --}}
-                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-1">
-                    <a href="{{ route('dashboard') }}" class="hover:text-stone-700">DASHBOARD</a>
-                    <span>/</span>
-                    <span class="text-[#A86544]">PELANGGAN</span>
-                    <span>/</span>
-                    <span>DIR-CST.2025</span>
-                </div>
-
                 {{-- Title & Subtitle --}}
                 <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">
                     Manajemen Pelanggan
@@ -37,8 +28,8 @@
             </div>
         </div>
 
-        {{-- 4 KPI CARDS --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {{-- 3 KPI CARDS --}}
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             {{-- 1. TOTAL TERDAFTAR --}}
             <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
@@ -89,33 +80,7 @@
                 </div>
             </div>
 
-            {{-- 3. PELANGGAN SETIA --}}
-            <div class="rounded-2xl border border-[#EFECE6] bg-white p-5 shadow-2xs hover:shadow-xs transition">
-                <div class="flex items-center justify-between text-stone-400 mb-2">
-                    <span class="text-[10px] font-bold uppercase tracking-wider">PELANGGAN SETIA</span>
-                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#FAF7F2] text-[#A86544]">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                        </svg>
-                    </div>
-                </div>
-                <div class="flex items-baseline gap-2">
-                    <p class="text-2xl sm:text-3xl font-extrabold text-[#1E1B18]">
-                        {{ $vipCount }}
-                    </p>
-                    <span class="text-xs text-[#5A544E] font-medium">Pelanggan VIP</span>
-                </div>
-                <div class="mt-4 flex items-center gap-1.5 text-[11px] text-stone-500 font-medium">
-                    <strong class="font-bold text-[#1E1B18]">Tier Utama</strong>
-                    <span>•</span>
-                    <span>Akses Bespoke & Pratinjau</span>
-                </div>
-                <div class="mt-2 h-1 w-full rounded-full bg-[#FAF0E4] overflow-hidden">
-                    <div class="h-full rounded-full bg-[#C59A53]" style="width: 75%"></div>
-                </div>
-            </div>
-
-            {{-- 4. TOTAL OMZET PELANGGAN (DARK CARD) --}}
+            {{-- 3. TOTAL OMZET PELANGGAN (DARK CARD) --}}
             <div class="rounded-2xl border border-[#2B2622] bg-[#1E1B18] text-white p-5 shadow-xs relative overflow-hidden">
                 <div class="flex items-center justify-between text-stone-400 mb-2">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">TOTAL PENDAPATAN PELANGGAN</span>
@@ -162,14 +127,13 @@
                     {{-- Status Dropdown --}}
                     <form action="{{ route('admin.pelanggan.index') }}" method="GET" id="filterForm" class="flex items-center gap-2">
                         <input type="hidden" name="search" value="{{ $search }}">
-                        <select name="tier" onchange="document.getElementById('filterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
+                        <select name="tier" onchange="document.getElementById('filterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white pl-3 pr-9 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
                             <option value="all" {{ $tier === 'all' ? 'selected' : '' }}>Status: Semua Pelanggan</option>
-                            <option value="vip" {{ $tier === 'vip' ? 'selected' : '' }}>Status: Pelanggan VIP</option>
                             <option value="verified" {{ $tier === 'verified' ? 'selected' : '' }}>Status: Pelanggan Terverifikasi</option>
                             <option value="new" {{ $tier === 'new' ? 'selected' : '' }}>Status: Pembeli Baru</option>
                         </select>
 
-                        <select name="sort" onchange="document.getElementById('filterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white px-3 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
+                        <select name="sort" onchange="document.getElementById('filterForm').submit()" class="rounded-xl border border-[#E8E4DC] bg-white pl-3 pr-9 py-2 text-xs font-semibold text-stone-700 shadow-2xs focus:border-[#C59A53] focus:ring-0">
                             <option value="spend_desc" {{ $sort === 'spend_desc' ? 'selected' : '' }}>Urutkan: Total Belanja Tertinggi</option>
                             <option value="spend_asc" {{ $sort === 'spend_asc' ? 'selected' : '' }}>Urutkan: Total Belanja Terendah</option>
                             <option value="orders_desc" {{ $sort === 'orders_desc' ? 'selected' : '' }}>Urutkan: Pesanan Terbanyak</option>
@@ -196,21 +160,13 @@
                    ])>
                     Semua ({{ $totalPelanggan }})
                 </a>
-                <a href="{{ route('admin.pelanggan.index', ['tier' => 'vip']) }}"
-                   @class([
-                       'px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs',
-                       'bg-[#1E1B18] text-white' => $tier === 'vip',
-                       'bg-white text-stone-600 border border-[#EFECE6] hover:bg-[#FAF7F2]' => $tier !== 'vip',
-                   ])>
-                    Pelanggan VIP ({{ $vipCount }})
-                </a>
                 <a href="{{ route('admin.pelanggan.index', ['tier' => 'verified']) }}"
                    @class([
                        'px-3.5 py-1.5 rounded-full font-bold transition shadow-2xs',
                        'bg-[#1E1B18] text-white' => $tier === 'verified',
                        'bg-white text-stone-600 border border-[#EFECE6] hover:bg-[#FAF7F2]' => $tier !== 'verified',
                    ])>
-                    Pelanggan Terverifikasi (642)
+                    Pelanggan Terverifikasi ({{ $verifiedCount }})
                 </a>
                 <a href="{{ route('admin.pelanggan.index', ['tier' => 'new']) }}"
                    @class([
@@ -218,7 +174,7 @@
                        'bg-[#1E1B18] text-white' => $tier === 'new',
                        'bg-white text-stone-600 border border-[#EFECE6] hover:bg-[#FAF7F2]' => $tier !== 'new',
                    ])>
-                    Pembeli Baru (454)
+                    Pembeli Baru ({{ $newCount }})
                 </a>
             </div>
         </div>
@@ -232,7 +188,7 @@
                             <th class="py-3.5 px-6">ID PELANGGAN</th>
                             <th class="py-3.5 px-6">NAMA & WILAYAH</th>
                             <th class="py-3.5 px-6">KONTAK & SALURAN</th>
-                            <th class="py-3.5 px-6">TIER LOYALITAS</th>
+                            <th class="py-3.5 px-6">STATUS PELANGGAN</th>
                             <th class="py-3.5 px-6 text-center">PESANAN</th>
                             <th class="py-3.5 px-6 text-right">TOTAL AKUMULASI</th>
                         </tr>

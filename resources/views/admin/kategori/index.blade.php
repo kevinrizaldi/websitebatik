@@ -22,11 +22,6 @@
         {{-- HEADER BREADCRUMB & TITLE --}}
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-                {{-- Eyebrow --}}
-                <div class="inline-flex items-center gap-1.5 rounded-full border border-[#E8D9C5] bg-[#FAF0E4] px-3 py-1 text-[10px] font-bold text-[#8C5E28] uppercase tracking-wider mb-2">
-                    <span>✦</span>
-                    <span>MANAJEMEN KATEGORI</span>
-                </div>
 
                 {{-- Title & Subtitle --}}
                 <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">

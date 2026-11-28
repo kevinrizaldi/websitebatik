@@ -55,6 +55,16 @@
                         </div>
                         <p class="mt-1 text-sm leading-relaxed text-stone-600">"{{ $ulasan->comment }}"</p>
 
+                        @if (!empty($ulasan->tags) && is_array($ulasan->tags))
+                            <div class="mt-2.5 flex flex-wrap gap-1.5">
+                                @foreach ($ulasan->tags as $t)
+                                    <span class="inline-flex items-center rounded-lg bg-[#FAF4EE] border border-[#ECE4D8] px-2.5 py-0.5 text-[11px] font-semibold text-[#8C6226]">
+                                        {{ $t }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+
                         @php
                             $userReviewPhotos = [];
                             if (!empty($ulasan->image_path)) {

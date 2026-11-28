@@ -84,7 +84,20 @@
                                 {{-- Tanggal Lahir --}}
                                 <div>
                                     <dt class="text-[10px] font-bold uppercase tracking-wider text-stone-400">TANGGAL LAHIR</dt>
-                                    <dd class="mt-1 text-base font-semibold text-stone-900">{{ $user->tanggal_lahir ?: '-' }}</dd>
+                                    <dd class="mt-1 text-base font-semibold text-stone-900">
+                                        @if(!empty($user->tanggal_lahir))
+                                            @php
+                                                try {
+                                                    $formattedDate = \Carbon\Carbon::parse($user->tanggal_lahir)->translatedFormat('d F Y');
+                                                } catch (\Exception $e) {
+                                                    $formattedDate = $user->tanggal_lahir;
+                                                }
+                                            @endphp
+                                            {{ $formattedDate }}
+                                        @else
+                                            -
+                                        @endif
+                                    </dd>
                                 </div>
                             </dl>
                         </div>
@@ -149,8 +162,24 @@
                                     </div>
                                     <div>
                                         <label for="tanggal_lahir" class="block text-xs font-bold uppercase tracking-wider text-stone-500">Tanggal Lahir</label>
-                                        <input id="tanggal_lahir" type="text" name="tanggal_lahir" value="{{ old('tanggal_lahir', $user->tanggal_lahir) }}"
-                                               placeholder="Contoh: 25/11/2000" class="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                                        @php
+                                            $valTanggal = old('tanggal_lahir', $user->tanggal_lahir);
+                                            // Konversi jika format sebelumnya DD/MM/YYYY agar cocok dengan input type="date" (YYYY-MM-DD)
+                                            if ($valTanggal && preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $valTanggal)) {
+                                                $parts = explode('/', $valTanggal);
+                                                $valTanggal = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
+                                            } elseif ($valTanggal) {
+                                                try {
+                                                    $valTanggal = \Carbon\Carbon::parse($valTanggal)->format('Y-m-d');
+                                                } catch (\Exception $e) {
+                                                    // tetap gunakan apa adanya
+                                                }
+                                            }
+                                        @endphp
+                                        <input id="tanggal_lahir" type="date" name="tanggal_lahir" value="{{ $valTanggal }}"
+                                               max="{{ now()->format('Y-m-d') }}"
+                                               class="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2.5 text-sm focus:border-stone-400 focus:outline-none">
+                                        @error('tanggal_lahir')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                     </div>
                                 </div>
 

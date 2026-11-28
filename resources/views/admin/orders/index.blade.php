@@ -22,13 +22,6 @@
         {{-- HEADER BREADCRUMB & TITLE --}}
         <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-                {{-- Eyebrow --}}
-                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-[#A86544] mb-1">
-                    <span>PESANAN PELANGGAN</span>
-                    <span>•</span>
-                    <span class="text-emerald-700">Sinkronisasi Real-Time</span>
-                </div>
-
                 {{-- Title & Subtitle --}}
                 <h1 class="font-serif text-2xl sm:text-3xl font-extrabold text-[#1E1B18] tracking-tight">
                     Manajemen Pesanan Pelanggan

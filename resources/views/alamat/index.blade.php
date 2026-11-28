@@ -804,9 +804,28 @@
                     try {
                         const res = await fetch(`{{ route('alamat.reverse-geocode') }}?lat=${lat}&lng=${lng}`);
                         const data = await res.json();
-                        if (data && data.success && data.display_name) {
-                            this.pinAddressHint = data.display_name;
-                            if (!this.addrForm.kodepos && data.postcode) {
+                        if (data && data.success) {
+                            if (data.display_name) {
+                                this.pinAddressHint = data.display_name;
+                            }
+                            if (data.matched_region) {
+                                const mr = data.matched_region;
+                                if (mr.province_id && mr.province) {
+                                    this.addrForm.province_id = mr.province_id;
+                                    this.addrForm.provinsi = mr.province;
+                                    await this.loadCities(mr.province_id);
+                                }
+                                if (mr.city_id && mr.city) {
+                                    this.addrForm.city_id = mr.city_id;
+                                    this.addrForm.kota = mr.city;
+                                }
+                                if (mr.district) {
+                                    this.addrForm.kecamatan = mr.district;
+                                }
+                                if (mr.postal_code) {
+                                    this.addrForm.kodepos = mr.postal_code;
+                                }
+                            } else if (!this.addrForm.kodepos && data.postcode) {
                                 this.addrForm.kodepos = data.postcode;
                             }
                         }

@@ -37,6 +37,7 @@ class Review extends Model
         'customer_name',
         'rating',
         'comment',
+        'tags',
         'image_path',
         'photos',
         'status',
@@ -47,6 +48,7 @@ class Review extends Model
     protected $casts = [
         'rating' => 'integer',
         'photos' => 'array',
+        'tags' => 'array',
     ];
 
     protected static function booted(): void
