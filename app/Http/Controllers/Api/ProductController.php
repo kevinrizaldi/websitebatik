@@ -110,8 +110,30 @@ class ProductController extends Controller
             ->loadAvg('reviews', 'rating')
             ->loadCount('reviews');
 
+        $data = $this->formatProduct($product, includeReviews: true);
+
+        $catId = $product->category_id ?? $product->kategori_id ?? null;
+        $relatedQuery = Product::where('id', '!=', $product->id)
+            ->with(['category:id,name'])
+            ->latest();
+
+        $related = (clone $relatedQuery)
+            ->when($catId, fn ($q) => $q->where(fn ($sub) => $sub->where('category_id', $catId)->orWhere('kategori_id', $catId)))
+            ->take(4)
+            ->get();
+
+        if ($related->count() < 4) {
+            $fallback = (clone $relatedQuery)
+                ->whereNotIn('id', $related->pluck('id'))
+                ->take(4 - $related->count())
+                ->get();
+            $related = $related->concat($fallback);
+        }
+
+        $data['related_products'] = $related->map(fn (Product $p) => $this->formatProduct($p))->values()->all();
+
         return response()->json([
-            'data' => $this->formatProduct($product, includeReviews: true),
+            'data' => $data,
         ]);
     }
 
