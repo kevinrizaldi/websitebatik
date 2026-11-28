@@ -17,6 +17,7 @@
                      {
                          id: {{ $ci->id }},
                          produkId: {{ $ci->produk_id }},
+                         detailUrl: '{{ route('produk.detail', $ci->produk_id) }}',
                          selected: {{ $ci->selected ? 'true' : 'false' }},
                          nama: {{ json_encode($ci->produk->nama ?? 'Produk Batik') }},
                          kategoriBadge: {{ json_encode(strtoupper($ci->produk->kategoriRelasi?->nama_kategori ?? $ci->produk->kategori ?? 'TULIS')) }},
@@ -312,11 +313,13 @@
                                 </div>
 
                                 <!-- Product Image container -->
-                                <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-[#FAF2EA] border border-[#ECE4D8] shrink-0 flex items-center justify-center">
+                                <a :href="item.detailUrl || ('/produk-detail/' + item.produkId)"
+                                   class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-[#FAF2EA] border border-[#ECE4D8] shrink-0 flex items-center justify-center group/img block cursor-pointer"
+                                   title="Lihat detail produk">
                                     <template x-if="item.gambar">
-                                        <img :src="item.gambar" :alt="item.nama" class="w-full h-full object-cover">
+                                        <img :src="item.gambar" :alt="item.nama" class="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300">
                                     </template>
-                                </div>
+                                </a>
 
                                 <!-- Info & Details -->
                                 <div class="flex-1 min-w-0">
@@ -324,8 +327,12 @@
                                         <div>
                                             <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-stone-400 block"
                                                   x-text="item.kategoriSub"></span>
-                                            <h3 class="font-bold text-stone-900 text-sm sm:text-base leading-snug mt-0.5"
-                                                x-text="item.nama"></h3>
+                                            <a :href="item.detailUrl || ('/produk-detail/' + item.produkId)"
+                                               class="group/title block mt-0.5"
+                                               title="Lihat detail produk">
+                                                <h3 class="font-bold text-stone-900 text-sm sm:text-base leading-snug group-hover/title:text-[#B58742] transition line-clamp-2"
+                                                    x-text="item.nama"></h3>
+                                            </a>
                                             <div class="mt-1">
                                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#FAF4ED] border border-[#ECE4D8] text-stone-600 text-[11px] font-medium"
                                                       x-text="item.varian"></span>
